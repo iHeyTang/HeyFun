@@ -9,7 +9,7 @@ import { mcpServerSchema } from '@/lib/tools';
 import fs from 'fs';
 import path from 'path';
 
-const MANUS_URL = process.env.MANUS_URL || 'http://localhost:5172';
+const AGENT_URL = process.env.AGENT_URL || 'http://localhost:5172';
 
 const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
 
@@ -127,7 +127,7 @@ export const createTask = withUserAuth(async ({ organization, args }: AuthWrappe
   files.forEach(file => formData.append('files', file, file.name));
 
   const [error, response] = await to(
-    fetch(`${MANUS_URL}/tasks`, {
+    fetch(`${AGENT_URL}/tasks`, {
       method: 'POST',
       body: formData,
     }).then(async res => {
@@ -163,7 +163,7 @@ export const terminateTask = withUserAuth(async ({ organization, args }: AuthWra
   }
 
   const [error] = await to(
-    fetch(`${MANUS_URL}/tasks/terminate`, {
+    fetch(`${AGENT_URL}/tasks/terminate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ task_id: `${organization.id}/${taskId}` }),
@@ -195,7 +195,7 @@ export const getSharedTask = async ({ taskId }: { taskId: string }) => {
 
 // Handle event stream in background
 async function handleTaskEvents(taskId: string, outId: string, organizationId: string) {
-  const streamResponse = await fetch(`${MANUS_URL}/tasks/${outId}/events`);
+  const streamResponse = await fetch(`${AGENT_URL}/tasks/${outId}/events`);
   const reader = streamResponse.body?.getReader();
   if (!reader) throw new Error('Failed to get response stream');
 

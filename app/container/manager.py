@@ -23,7 +23,7 @@ class ContainerConfig(BaseModel):
     environment: Dict[str, str] = Field(default_factory=dict)
     volumes: Dict[str, Dict[str, str]] = Field(default_factory=dict)
     ports: Dict[str, str] = Field(default_factory=dict)
-    network: str = "openmanus-container-network"
+    network: str = "heyfun-container-network"
     memory_limit: str = "1g"
     cpu_limit: float = 1.0
     restart_policy: str = "no"

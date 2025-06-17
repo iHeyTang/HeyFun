@@ -55,10 +55,10 @@ export default function LoginPage() {
       <Card className="w-[400px] shadow-lg">
         <CardContent>
           <div className="flex justify-center">
-            <img src={logo.src} alt="OpenManus Logo" className="h-24 w-auto" />
+            <img src={logo.src} alt="HeyFun Logo" className="h-24 w-auto" />
           </div>
           <div className="mb-6">
-            <CardDescription className="text-center text-base">Sign in to your OpenManus account</CardDescription>
+            <CardDescription className="text-center text-base">Sign in to your HeyFun account</CardDescription>
           </div>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">

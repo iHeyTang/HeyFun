@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/api/openmanus/tasks/:task_id/events',
+        source: '/api/heyfun/tasks/:task_id/events',
         headers: [
           { key: 'Connection', value: 'keep-alive' },
           { key: 'Cache-Control', value: 'no-cache' },

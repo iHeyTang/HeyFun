@@ -3,7 +3,7 @@ from datetime import datetime
 from json import dumps
 from typing import Dict
 
-from app.agent.manus import Manus
+from app.agent.funmax import FunMax
 from app.apis.models.task import Task
 from app.logger import logger
 from app.utils.agent_event import BaseAgentEvents, EventItem
@@ -46,7 +46,7 @@ class TaskManager:
         except Exception as e:
             logger.error(f"Error in task {task_id}: {str(e)}")
 
-    def create_task(self, task_id: str, agent: Manus) -> Task:
+    def create_task(self, task_id: str, agent: FunMax) -> Task:
         task = Task(
             id=task_id,
             created_at=datetime.now(),

@@ -166,7 +166,7 @@ class BaseAgent(BaseModel, ABC):
         """Prepare the agent for execution."""
         if not isinstance(self.sandbox, DockerSandbox):
             orgnization_id, task_id = self.task_id.split("/")
-            sandbox_id = f"openmanus-sandbox-{orgnization_id}-{task_id}"
+            sandbox_id = f"heyfun-sandbox-{orgnization_id}-{task_id}"
             host_workspace_root = str(f"{config.host_workspace_root}/{orgnization_id}")
 
             await SANDBOX_MANAGER.create_sandbox(

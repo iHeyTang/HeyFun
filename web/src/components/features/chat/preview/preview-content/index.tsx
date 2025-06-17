@@ -148,7 +148,7 @@ export const PreviewContent = ({ messages }: { messages: Message[] }) => {
       <div className="relative w-full">
         <Image
           src={getImageUrl(data.screenshot)}
-          alt="Manus's Computer Screen"
+          alt="FunMax's Computer Screen"
           width={1920}
           height={1080}
           className="h-auto w-full"
@@ -481,7 +481,7 @@ const formatFileSize = (size: number): string => {
 const NotPreview = () => {
   return (
     <div className="flex h-full items-center justify-center">
-      <div className="animate-pulse text-gray-500">Manus is not using the computer right now...</div>
+      <div className="animate-pulse text-gray-500">FunMax is not using the computer right now...</div>
     </div>
   );
 };

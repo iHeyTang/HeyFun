@@ -10,13 +10,13 @@ import { JSONSchema } from 'json-schema-to-ts';
 import path from 'path';
 import { z } from 'zod';
 
-const MANUS_URL = process.env.MANUS_URL || 'http://localhost:5172';
+const AGENT_URL = process.env.AGENT_URL || 'http://localhost:5172';
 
 const ajv = new Ajv();
 
 export const listAgentTools = withUserAuth(async ({ organization }: AuthWrapperContext<{}>) => {
   // Get system tools
-  const systemTools = await fetch(`${MANUS_URL}/tools`)
+  const systemTools = await fetch(`${AGENT_URL}/tools`)
     .then(res => res.json() as Promise<{ name: string; type: 'tool' | 'mcp'; description: string; parameters: JSONSchema }[]>)
     .then(res => res.map(r => ({ ...r, id: r.name, source: 'BUILT_IN', schema: { id: r.name, name: r.name } })));
 

@@ -11,14 +11,14 @@ if [ $# -gt 1 ]; then
 fi
 
 VERSION=${1}
-CORE_IMAGE="iheytang/openmanus-core:${VERSION}"
-WEB_IMAGE="iheytang/openmanus-web:${VERSION}"
+AGENT_IMAGE="iheytang/heyfun-agent:${VERSION}"
+WEB_IMAGE="iheytang/heyfun-web:${VERSION}"
 ALIYUN_REGISTRY="registry.cn-hangzhou.aliyuncs.com/iheytang"
 
 # Print build information
 echo "=============================================="
 echo "Starting to build Docker images..."
-echo "Core service image: ${CORE_IMAGE}"
+echo "Agent service image: ${AGENT_IMAGE}"
 echo "Web service image: ${WEB_IMAGE}"
 echo "Version: ${VERSION}"
 echo "=============================================="
@@ -28,7 +28,7 @@ echo "=============================================="
 echo "Building core service image..."
 echo "Using Dockerfile: Dockerfile.run_api"
 echo "=============================================="
-docker build --progress=plain -t ${CORE_IMAGE} -f Dockerfile.run_api .
+docker build --progress=plain -t ${AGENT_IMAGE} -f Dockerfile.run_api .
 
 # Build web service image
 echo "=============================================="
@@ -41,7 +41,7 @@ docker build --progress=plain -t ${WEB_IMAGE} -f web/Dockerfile web/
 if [ $? -eq 0 ]; then
     echo "=============================================="
     echo "Build successful!"
-    echo "Core service image: ${CORE_IMAGE}"
+    echo "Agent service image: ${AGENT_IMAGE}"
     echo "Web service image: ${WEB_IMAGE}"
     echo "Version: ${VERSION}"
     echo "=============================================="
@@ -50,13 +50,13 @@ if [ $? -eq 0 ]; then
     echo "=============================================="
     echo "Tagging images for Aliyun registry..."
     echo "=============================================="
-    docker tag ${CORE_IMAGE} ${ALIYUN_REGISTRY}/openmanus-core:${VERSION}
-    docker tag ${WEB_IMAGE} ${ALIYUN_REGISTRY}/openmanus-web:${VERSION}
+    docker tag ${AGENT_IMAGE} ${ALIYUN_REGISTRY}/heyfun-agent:${VERSION}
+    docker tag ${WEB_IMAGE} ${ALIYUN_REGISTRY}/heyfun-web:${VERSION}
 
     echo "=============================================="
     echo "Images tagged successfully:"
-    echo "${ALIYUN_REGISTRY}/openmanus-core:${VERSION}"
-    echo "${ALIYUN_REGISTRY}/openmanus-web:${VERSION}"
+    echo "${ALIYUN_REGISTRY}/heyfun-agent:${VERSION}"
+    echo "${ALIYUN_REGISTRY}/heyfun-web:${VERSION}"
     echo "=============================================="
 else
     echo "=============================================="

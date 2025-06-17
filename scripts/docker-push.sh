@@ -9,14 +9,14 @@ if [ $# -gt 1 ]; then
 fi
 
 VERSION=${1}
-CORE_IMAGE="iheytang/openmanus-core:${VERSION}"
-WEB_IMAGE="iheytang/openmanus-web:${VERSION}"
+AGENT_IMAGE="iheytang/heyfun-agent:${VERSION}"
+WEB_IMAGE="iheytang/heyfun-web:${VERSION}"
 ALIYUN_REGISTRY="registry.cn-hangzhou.aliyuncs.com/iheytang"
 
 # Print push information
 echo "=============================================="
 echo "Starting to push Docker images..."
-echo "Core service image: ${CORE_IMAGE}"
+echo "Agent service image: ${AGENT_IMAGE}"
 echo "Web service image: ${WEB_IMAGE}"
 echo "Version: ${VERSION}"
 echo "=============================================="
@@ -25,26 +25,26 @@ echo "=============================================="
 echo "=============================================="
 echo "Pushing to Docker Hub..."
 echo "=============================================="
-docker push ${CORE_IMAGE}
+docker push ${AGENT_IMAGE}
 docker push ${WEB_IMAGE}
 
 # Push to Aliyun registry
 echo "=============================================="
 echo "Pushing to Aliyun registry..."
 echo "=============================================="
-docker push ${ALIYUN_REGISTRY}/openmanus-core:${VERSION}
-docker push ${ALIYUN_REGISTRY}/openmanus-web:${VERSION}
+docker push ${ALIYUN_REGISTRY}/heyfun-agent:${VERSION}
+docker push ${ALIYUN_REGISTRY}/heyfun-web:${VERSION}
 
 # Check push result
 if [ $? -eq 0 ]; then
     echo "=============================================="
     echo "Push successful!"
     echo "Docker Hub images:"
-    echo "- ${CORE_IMAGE}"
+    echo "- ${AGENT_IMAGE}"
     echo "- ${WEB_IMAGE}"
     echo "Aliyun registry images:"
-    echo "- ${ALIYUN_REGISTRY}/openmanus-core:${VERSION}"
-    echo "- ${ALIYUN_REGISTRY}/openmanus-web:${VERSION}"
+    echo "- ${ALIYUN_REGISTRY}/heyfun-agent:${VERSION}"
+    echo "- ${ALIYUN_REGISTRY}/heyfun-web:${VERSION}"
     echo "Version: ${VERSION}"
     echo "=============================================="
 else

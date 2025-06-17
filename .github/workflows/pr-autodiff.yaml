@@ -22,7 +22,7 @@ jobs:
         id: get-pr-sha
         run: |
           PR_URL="${{ github.event.issue.pull_request.url || github.event.pull_request.url }}"
-          # https://api.github.com/repos/OpenManus/pulls/1
+          # https://api.github.com/repos/iHeyTang/HeyFun/pulls/1
           RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" $PR_URL)
           SHA=$(echo $RESPONSE | jq -r '.head.sha')
           TARGET_BRANCH=$(echo $RESPONSE | jq -r '.base.ref')

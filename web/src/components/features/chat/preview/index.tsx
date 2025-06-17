@@ -17,7 +17,7 @@ export const ChatPreview = ({ messages, taskId }: ChatPreviewProps) => {
     <Card className="flex h-full flex-col gap-0 px-2">
       <CardHeader className="flex-none p-2 py-1">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-normal">Manus's Computer</CardTitle>
+          <CardTitle className="text-normal">FunMax's Computer</CardTitle>
           <Button
             variant="outline"
             size="sm"

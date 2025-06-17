@@ -21,7 +21,7 @@ const PrepareMessage = ({ message }: { message: AggregatedMessage & { type: 'age
 
   return (
     <div className="container mx-auto max-w-4xl">
-      <div className="mb-2 text-lg font-bold">✨ Manus</div>
+      <div className="mb-2 text-lg font-bold">✨ FunMax</div>
       {!prepareCompleteMessage ? (
         <div className="text-muted-foreground mt-2 mb-2 font-mono text-xs">
           <Badge
@@ -48,7 +48,7 @@ const PlanMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:
 
   return (
     <div className="container mx-auto max-w-4xl">
-      <div className="mb-2 text-lg font-bold">✨ Manus</div>
+      <div className="mb-2 text-lg font-bold">✨ FunMax</div>
       {planCompleteMessage ? (
         <div className="space-y-2">
           <div className="text-muted-foreground mt-2 mb-2 font-mono text-xs">
@@ -133,7 +133,7 @@ const StepMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:
         <div className="space-y-2">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-2 flex items-center justify-between">
-              <div className="text-lg font-bold">✨ Manus</div>
+              <div className="text-lg font-bold">✨ FunMax</div>
               <div className="text-xs font-medium text-gray-500 italic opacity-0 transition-opacity duration-300 group-hover:opacity-100 hover:opacity-100">
                 {thinkMessage.createdAt
                   ? new Date(thinkMessage.createdAt).toLocaleString('zh-CN', {

@@ -7,7 +7,7 @@ from app.agent.react import ReActAgent
 from app.context.browser import BrowserContextHelper
 from app.context.toolcall import ToolCallContextHelper
 from app.logger import logger
-from app.prompt.manus import NEXT_STEP_PROMPT, PLAN_PROMPT, SYSTEM_PROMPT
+from app.prompt.funmax import NEXT_STEP_PROMPT, PLAN_PROMPT, SYSTEM_PROMPT
 from app.schema import Message
 from app.tool import Terminate, ToolCollection
 from app.tool.base import BaseTool
@@ -47,10 +47,10 @@ class McpToolConfig(BaseModel):
     headers: dict[str, Any]
 
 
-class Manus(ReActAgent):
+class FunMax(ReActAgent):
     """A versatile general-purpose agent."""
 
-    name: str = "Manus"
+    name: str = "FunMax"
     description: str = (
         "A versatile agent that can solve various tasks using multiple tools"
     )
@@ -63,11 +63,12 @@ class Manus(ReActAgent):
     browser_context_helper: Optional[BrowserContextHelper] = None
 
     @model_validator(mode="after")
-    def initialize_helper(self) -> "Manus":
+    def initialize_helper(self) -> "FunMax":
         organization_id, task_id = self.task_id.split("/")
         self.task_dir = f"/workspace/{organization_id}/{task_id}"
         self.system_prompt = SYSTEM_PROMPT.format(
             task_id=task_id,
+            name=self.name,
             language=self.language or "English",
             max_steps=self.max_steps,
             current_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC"),
@@ -201,7 +202,7 @@ class Manus(ReActAgent):
         return browser_in_use
 
     async def cleanup(self):
-        """Clean up Manus agent resources."""
+        """Clean up agent resources."""
         logger.info(f"🧹 Cleaning up resources for agent '{self.name}'...")
         if self.browser_context_helper:
             await self.browser_context_helper.cleanup_browser()

@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "OpenManus: API",
+      "name": "HeyFun: API",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/run_api.py",

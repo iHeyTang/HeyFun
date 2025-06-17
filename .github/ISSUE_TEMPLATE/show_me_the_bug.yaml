@@ -1,5 +1,5 @@
 name: "🪲 Show me the Bug"
-description: Report a bug encountered while using OpenManus and seek assistance.
+description: Report a bug encountered while using HeyFun and seek assistance.
 labels: bug
 body:
   - type: textarea
@@ -26,11 +26,11 @@ body:
       description: |
         System: e.g., Ubuntu 22.04
         Python: e.g., 3.12
-        OpenManus version: e.g., 0.1.0
+        HeyFun version: e.g., 0.1.0
       value: |
         - System version:
         - Python version:
-        - OpenManus version or branch:
+        - HeyFun version or branch:
         - Installation method (e.g., `pip install -r requirements.txt` or `pip install -e .`):
     validations:
       required: true

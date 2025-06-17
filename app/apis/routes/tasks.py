@@ -6,7 +6,7 @@ from typing import Any, List, Optional, Union, cast
 from fastapi import APIRouter, Body, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from app.agent.manus import Manus, McpToolConfig
+from app.agent.funmax import FunMax, McpToolConfig
 from app.apis.services.task_manager import task_manager
 from app.config import LLMSettings, config
 from app.llm import LLM
@@ -14,7 +14,7 @@ from app.logger import logger
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
-AGENT_NAME = "Manus"
+AGENT_NAME = "FunMax"
 
 
 def parse_tools(tools: list[str]) -> list[Union[str, McpToolConfig]]:
@@ -97,7 +97,7 @@ async def create_task(
 
     task = task_manager.create_task(
         task_id,
-        Manus(
+        FunMax(
             name=AGENT_NAME,
             description="A versatile agent that can solve various tasks using multiple tools",
             task_id=task_id,

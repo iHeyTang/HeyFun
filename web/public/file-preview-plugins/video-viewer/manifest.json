@@ -2,7 +2,7 @@
   "name": "video-viewer",
   "version": "1.0.0",
   "description": "Video file viewer",
-  "author": "OpenManus Team",
+  "author": "HeyFun Team",
   "fileTypes": ["mp4", "webm", "ogg", "mov"],
   "entryPoint": "index.js",
   "styles": ["style.css"],
