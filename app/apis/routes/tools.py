@@ -2,7 +2,7 @@ from typing import cast
 
 from fastapi import APIRouter
 
-from app.agent.manus import SYSTEM_TOOLS
+from app.agent.funmax import SYSTEM_TOOLS
 from app.tool.base import BaseTool
 
 router = APIRouter(prefix="/tools", tags=["tools"])
