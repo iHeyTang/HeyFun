@@ -13,7 +13,7 @@ from app.memory import Memory
 from app.sandbox.client import SANDBOX_MANAGER
 from app.sandbox.core.sandbox import DockerSandbox
 from app.schema import ROLE_TYPE, AgentState, Message
-from app.utils.agent_event import BaseAgentEvents, EventHandler, EventItem, EventQueue
+from app.utils.agent_event import AgentEvent, BaseAgentEvents, EventHandler, EventItem
 
 
 class BaseAgent(BaseModel, ABC):
@@ -24,7 +24,7 @@ class BaseAgent(BaseModel, ABC):
     """
 
     enable_event_queue: bool = Field(default=True, description="Enable event queue")
-    _private_event_queue: EventQueue = PrivateAttr(default_factory=EventQueue)
+    _private_event_queue: AgentEvent = PrivateAttr(default_factory=AgentEvent)
 
     # Core attributes
     name: str = Field(..., description="Unique name of the agent")

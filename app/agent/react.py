@@ -7,7 +7,7 @@ from app.agent.base import BaseAgent
 from app.llm import LLM
 from app.memory import Memory
 from app.schema import AgentState
-from app.utils.agent_event import EventQueue, ReActAgentEvents
+from app.utils.agent_event import AgentEvent, ReActAgentEvents
 
 
 class ReActAgent(BaseAgent, ABC):
@@ -33,7 +33,7 @@ class ReActAgent(BaseAgent, ABC):
     async def act(self) -> str:
         """Execute decided actions"""
 
-    @EventQueue.event_wrapper(
+    @AgentEvent.event_wrapper(
         ReActAgentEvents.STEP_START,
         ReActAgentEvents.STEP_COMPLETE,
         ReActAgentEvents.STEP_ERROR,
