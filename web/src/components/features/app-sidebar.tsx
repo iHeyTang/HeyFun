@@ -25,6 +25,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '../ui/button';
 import { getMe } from '@/actions/me';
+import logo from '@/assets/logo.png';
+import Image from 'next/image';
 
 export const useRecentTasks = create<{ tasks: Tasks[]; refreshTasks: () => Promise<void> }>(set => ({
   tasks: [],
@@ -76,7 +78,10 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center justify-between">
-          <span className="text-lg font-bold">{me?.organizationName || 'HeyFun'}</span>
+          <div className="flex items-center gap-2">
+            <Image src={logo} alt="HeyFun" className="object-contain" width={32} height={32} />
+            <span className="text-lg font-bold">{'HeyFun'}</span>
+          </div>
           <Link href="https://github.com/iheytang/HeyFun" target="_blank" rel="noopener noreferrer">
             <svg viewBox="0 0 24 24" className="h-5 w-5 opacity-80" color="text-inherit" xmlns="http://www.w3.org/2000/svg">
               <title>GitHub</title>
@@ -106,13 +111,14 @@ export function AppSidebar() {
       <SidebarFooter>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-16 w-full">
-              <div className="flex h-16 w-full items-center gap-3">
+            <Button variant="ghost" className="h-20 w-full">
+              <div className="flex h-20 w-full items-center gap-3">
                 <Avatar className="h-6 w-6">
                   <AvatarFallback className="text-base">{me?.name ? me.name.charAt(0).toUpperCase() : '?'}</AvatarFallback>
                 </Avatar>
                 <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
                   <span className="truncate text-sm font-medium">{me?.name || me?.email}</span>
+                  <span className="text-muted-foreground truncate text-xs">{me?.organizationName}</span>
                   <span className="text-muted-foreground truncate text-xs">{me?.email}</span>
                 </div>
                 <ChevronsUpDown className="text-muted-foreground h-4 w-4 shrink-0" />
