@@ -215,7 +215,7 @@ class BaseAgent(BaseModel, ABC):
 
                 try:
                     step_result = await self.step()
-                except Exception as e:
+                except Exception:
                     raise
 
                 # Check for stuck state
