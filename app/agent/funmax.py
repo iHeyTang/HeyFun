@@ -21,6 +21,7 @@ from app.tool.str_replace_editor import StrReplaceEditor
 from app.tool.web_search import WebSearch
 from app.utils.agent_event import BaseAgentEvents
 
+
 SYSTEM_TOOLS: list[BaseTool] = [
     Bash(),
     WebSearch(),

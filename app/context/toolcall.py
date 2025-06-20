@@ -10,6 +10,7 @@ from app.tool.base import BaseTool
 from app.tool.mcp import MCPToolCallHost
 from app.utils.agent_event import ToolCallAgentEvents
 
+
 # Avoid circular import if BrowserAgent needs BrowserContextHelper
 if TYPE_CHECKING:
     from app.agent.base import BaseAgent  # Or wherever memory is defined

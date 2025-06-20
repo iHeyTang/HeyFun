@@ -1,8 +1,5 @@
-import os
-import threading
 import tomllib
 import webbrowser
-from functools import partial
 from pathlib import Path
 from typing import Any, Dict
 
@@ -13,6 +10,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from app.apis import router
+
 
 app = FastAPI()
 

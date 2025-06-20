@@ -16,6 +16,7 @@ from docker import APIClient
 from docker.errors import APIError
 from docker.models.containers import Container
 
+
 if sys.platform == "win32":
     import docker.transport.npipesocket
 

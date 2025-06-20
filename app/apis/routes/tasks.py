@@ -12,6 +12,7 @@ from app.config import LLMSettings, config
 from app.llm import LLM
 from app.logger import logger
 
+
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 AGENT_NAME = "FunMax"

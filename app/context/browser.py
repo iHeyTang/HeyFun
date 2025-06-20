@@ -16,6 +16,7 @@ from app.prompt.browser import NEXT_STEP_PROMPT
 from app.schema import Message
 from app.tool import BrowserUseTool
 
+
 # Avoid circular import if BrowserAgent needs BrowserContextHelper
 if TYPE_CHECKING:
     from app.agent.base import BaseAgent  # Or wherever memory is defined

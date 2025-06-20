@@ -2,6 +2,7 @@ import os
 
 import i18n
 
+
 # set translation file directory
 i18n.load_path.append(os.path.join(os.path.dirname(__file__), "translations"))
 

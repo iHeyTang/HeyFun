@@ -5,6 +5,10 @@
             "source.organizeImports": "always"
         }
     },
+    "isort.args": [
+      "--profile=black",
+      "--lines-after-imports=2"
+    ],
     "[toml]": {
         "editor.defaultFormatter": "tamasfe.even-better-toml",
     },

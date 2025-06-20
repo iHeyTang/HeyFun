@@ -18,6 +18,7 @@ from typing import (
 
 from app.logger import logger
 
+
 if TYPE_CHECKING:
     from app.agent.base import BaseAgent
 
@@ -117,7 +118,6 @@ class AgentEvent:
     def put(self, event: EventItem) -> None:
         self.queue.append(event)
         self._event.set()
-        pass
 
     def add_handler(self, event_pattern: str, handler: EventHandler) -> None:
         """Add an event handler with regex pattern support.

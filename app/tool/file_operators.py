@@ -6,6 +6,7 @@ from app.exceptions import ToolError
 from app.tool.base import BaseTool, CLIResult, ToolResult
 from app.workspace import PathLike
 
+
 _FILE_OPERATOR_DESCRIPTION = """A tool for performing file operations.
 Provides functionality for reading, writing, and checking file properties."""
 

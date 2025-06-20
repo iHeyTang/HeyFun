@@ -1,4 +1,3 @@
-from functools import partial
 import app
 from run_api import load_config
 

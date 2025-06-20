@@ -5,6 +5,7 @@ from typing import Union
 from app.config import config
 from app.exceptions import ToolError
 
+
 PathLike = Union[str, Path]
 
 

@@ -4,9 +4,9 @@ from collections import defaultdict
 from typing import Any, DefaultDict, List, Literal, Optional, get_args
 
 from app.exceptions import ToolError
-from app.tool import BaseTool
 from app.tool.base import CLIResult, ToolResult
 from app.tool.file_operators import FileOperator, PathLike
+
 
 Command = Literal[
     "view",
