@@ -131,10 +131,10 @@ export const InputConfigDialog = React.forwardRef<InputConfigDialogRef, InputCon
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent style={{ width: '90vw', maxWidth: '90vw', display: 'flex', flexDirection: 'column', height: '80vh', maxHeight: '80vh' }}>
           <DialogHeader>
-            <DialogTitle>Tools Configuration</DialogTitle>
+            <DialogTitle>Task Configuration</DialogTitle>
           </DialogHeader>
 
-          <div className="flex h-full flex-1 flex-col gap-4">
+          <div className="flex h-[calc(100%-64px)] flex-1 flex-col gap-4">
             <div className="flex flex-col gap-2">
               <Label>Model</Label>
               <Select value={enabledModel} onValueChange={value => handleSelectModel(value)}>
@@ -176,7 +176,7 @@ export const InputConfigDialog = React.forwardRef<InputConfigDialogRef, InputCon
                   className={`group hover:bg-muted relative flex h-[80px] cursor-pointer flex-col justify-between rounded-md border p-2 transition-colors ${
                     enabledTools?.includes(tool.id) ? 'border-primary bg-muted' : ''
                   }`}
-                  onClick={() => handleShowToolInfo(tool.id)}
+                  onClick={() => handleToggleTool(tool.id)}
                 >
                   <div className="flex items-center justify-between">
                     <span className="line-clamp-1 text-sm font-medium">{tool.name}</span>
