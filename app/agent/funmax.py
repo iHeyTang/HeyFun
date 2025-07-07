@@ -20,6 +20,7 @@ from app.tool.planning import PlanningTool
 from app.tool.str_replace_editor import StrReplaceEditor
 from app.tool.web_search import WebSearch
 from app.utils.agent_event import BaseAgentEvents
+from app.utils.prompt_template import template_manager
 
 
 SYSTEM_TOOLS: list[BaseTool] = [
@@ -67,14 +68,16 @@ class FunMax(ReActAgent):
     def initialize_helper(self) -> "FunMax":
         organization_id, task_id = self.task_id.split("/")
         self.task_dir = f"/workspace/{organization_id}/{task_id}"
-        self.system_prompt = SYSTEM_PROMPT.format(
+        self.system_prompt = template_manager.render_template_safe(
+            SYSTEM_PROMPT,
             task_id=task_id,
             name=self.name,
             language=self.language or "English",
             max_steps=self.max_steps,
             current_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC"),
         )
-        self.next_step_prompt = NEXT_STEP_PROMPT.format(
+        self.next_step_prompt = template_manager.render_template_safe(
+            NEXT_STEP_PROMPT,
             max_steps=self.max_steps,
             current_step=self.current_step,
             remaining_steps=self.max_steps - self.current_step,
@@ -139,7 +142,8 @@ class FunMax(ReActAgent):
         # Create planning message
         self.emit(BaseAgentEvents.LIFECYCLE_PLAN_START, {})
 
-        plan_prompt = PLAN_PROMPT.format(
+        plan_prompt = template_manager.render_template_safe(
+            PLAN_PROMPT,
             language=self.language or "English",
             max_steps=self.max_steps,
             available_tools="\n".join(
@@ -166,7 +170,8 @@ class FunMax(ReActAgent):
         """Process current state and decide next actions with appropriate context."""
         # Update next_step_prompt with current step information
         original_prompt = self.next_step_prompt
-        self.next_step_prompt = NEXT_STEP_PROMPT.format(
+        self.next_step_prompt = template_manager.render_template_safe(
+            NEXT_STEP_PROMPT,
             max_steps=self.max_steps,
             current_step=self.current_step,
             remaining_steps=self.max_steps - self.current_step,
