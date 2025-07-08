@@ -185,6 +185,7 @@ class AgentEvent:
         if self._task and not self._task.done():
             self._task.cancel()
 
+    @staticmethod
     def event_wrapper(
         before_event: str, after_event: str, error_event: Optional[str] = None
     ):

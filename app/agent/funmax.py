@@ -61,15 +61,44 @@ class FunMax(ReActAgent):
     tools: list[Union[McpToolConfig, str]]
     task_request: str
     history: list[dict[str, Any]]
-    tool_call_context_helper: Optional[ToolCallContextHelper] = None
-    browser_context_helper: Optional[BrowserContextHelper] = None
+    custom_prompt_templates: dict[str, str] = {}
+
+    # Override parent class fields to make them non-optional
+    system_prompt: str = ""
+    next_step_prompt: str = ""
+
+    _tool_call_context_helper: Optional[ToolCallContextHelper] = None
+    _browser_context_helper: Optional[BrowserContextHelper] = None
+
+    @property
+    def tool_call_context_helper(self) -> ToolCallContextHelper:
+        if self._tool_call_context_helper is None:
+            raise RuntimeError("tool_call_context_helper is not initialized")
+        return self._tool_call_context_helper
+
+    @property
+    def browser_context_helper(self) -> BrowserContextHelper:
+        if self._browser_context_helper is None:
+            raise RuntimeError("browser_context_helper is not initialized")
+        return self._browser_context_helper
 
     @model_validator(mode="after")
     def initialize_helper(self) -> "FunMax":
         organization_id, task_id = self.task_id.split("/")
         self.task_dir = f"/workspace/{organization_id}/{task_id}"
+
+        self.system_prompt_template = self.custom_prompt_templates.get(
+            "system_prompt", SYSTEM_PROMPT
+        )
+        self.next_step_prompt_template = self.custom_prompt_templates.get(
+            "next_step_prompt", NEXT_STEP_PROMPT
+        )
+        self.plan_prompt_template = self.custom_prompt_templates.get(
+            "plan_prompt", PLAN_PROMPT
+        )
+
         self.system_prompt = template_manager.render_template_safe(
-            SYSTEM_PROMPT,
+            self.system_prompt_template,
             task_id=task_id,
             name=self.name,
             language=self.language or "English",
@@ -77,7 +106,7 @@ class FunMax(ReActAgent):
             current_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC"),
         )
         self.next_step_prompt = template_manager.render_template_safe(
-            NEXT_STEP_PROMPT,
+            self.next_step_prompt_template,
             max_steps=self.max_steps,
             current_step=self.current_step,
             remaining_steps=self.max_steps - self.current_step,
@@ -98,8 +127,8 @@ class FunMax(ReActAgent):
                     role=message["role"], content=message["message"]
                 )
 
-        self.browser_context_helper = BrowserContextHelper(self)
-        self.tool_call_context_helper = ToolCallContextHelper(self)
+        self._browser_context_helper = BrowserContextHelper(self)
+        self._tool_call_context_helper = ToolCallContextHelper(self)
         self.tool_call_context_helper.available_tools = ToolCollection(Terminate())
 
         if self.tools:
@@ -143,7 +172,7 @@ class FunMax(ReActAgent):
         self.emit(BaseAgentEvents.LIFECYCLE_PLAN_START, {})
 
         plan_prompt = template_manager.render_template_safe(
-            PLAN_PROMPT,
+            self.plan_prompt_template,
             language=self.language or "English",
             max_steps=self.max_steps,
             available_tools="\n".join(
@@ -171,7 +200,7 @@ class FunMax(ReActAgent):
         # Update next_step_prompt with current step information
         original_prompt = self.next_step_prompt
         self.next_step_prompt = template_manager.render_template_safe(
-            NEXT_STEP_PROMPT,
+            self.next_step_prompt_template,
             max_steps=self.max_steps,
             current_step=self.current_step,
             remaining_steps=self.max_steps - self.current_step,

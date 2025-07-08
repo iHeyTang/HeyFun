@@ -42,7 +42,7 @@ class BaseAgent(BaseModel, ABC):
         None, description="Prompt for determining next action"
     )
 
-    task_id: Optional[str] = Field(None, description="Task ID for the agent")
+    task_id: str = Field(..., description="Task ID for the agent")
 
     # Dependencies
     llm: LLM = Field(default_factory=LLM, description="Language model instance")
@@ -382,5 +382,5 @@ class BaseAgent(BaseModel, ABC):
 
     async def cleanup(self):
         """Clean up the agent's resources."""
-        if self.sandbox:
+        if self.sandbox and self.sandbox.id:
             await SANDBOX_MANAGER.delete_sandbox(self.sandbox.id)

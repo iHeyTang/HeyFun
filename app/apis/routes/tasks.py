@@ -53,21 +53,22 @@ def parse_tools(tools: list[str]) -> list[Union[str, McpToolConfig]]:
 async def create_task(
     task_id: str = Form(...),
     prompt: str = Form(...),
-    should_plan: Optional[bool] = Form(False),
+    should_plan: bool = Form(False),
     tools: Optional[list[str]] = Form(None),
     preferences: Optional[str] = Form(None),
     llm_config: Optional[str] = Form(None),
     history: Optional[str] = Form(None),
+    prompts: Optional[str] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
 ):
     print(
         f"Creating task {task_id} with prompt: {prompt}, should_plan: {should_plan}, tools: {tools}, preferences: {preferences}, llm_config: {llm_config}"
     )
     # Parse preferences and llm_config from JSON strings
-    preferences_dict = None
+    preferences_dict: dict[str, Any] = {}
     if preferences:
         try:
-            preferences_dict: dict[str, Any] = json.loads(preferences)
+            preferences_dict = json.loads(preferences)
         except json.JSONDecodeError as e:
             raise HTTPException(
                 status_code=400,
@@ -96,6 +97,13 @@ async def create_task(
         task = task_manager.tasks[task_id]
         await task.agent.terminate()
 
+    custom_prompt_templates: dict[str, str] = {}
+    if prompts:
+        try:
+            custom_prompt_templates = json.loads(prompts)
+        except json.JSONDecodeError:
+            logger.error(f"Invalid prompts JSON format: {prompts}, use default prompts")
+
     task = task_manager.create_task(
         task_id,
         FunMax(
@@ -103,17 +111,15 @@ async def create_task(
             description="A versatile agent that can solve various tasks using multiple tools",
             task_id=task_id,
             should_plan=should_plan,
-            llm=(
-                LLM(config_name=task_id, llm_config=llm_config_obj)
-                if llm_config_obj
-                else None
-            ),
+            llm=LLM(config_name=task_id, llm_config=llm_config_obj),
             enable_event_queue=True,
             max_steps=preferences_dict.get("max_steps", 20),
             language=preferences_dict.get("language", "English"),
             tools=processed_tools,
             task_request=prompt,
             history=history_list,
+            sandbox=None,
+            custom_prompt_templates=custom_prompt_templates,
         ),
     )
 
@@ -131,7 +137,7 @@ async def create_task(
         for file in files or []:
             file = cast(UploadFile, file)
             try:
-                safe_filename = Path(file.filename).name
+                safe_filename = Path(file.filename).name if file.filename else None
                 if not safe_filename:
                     raise HTTPException(status_code=400, detail="Invalid filename")
 
