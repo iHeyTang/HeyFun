@@ -31,7 +31,7 @@ class LLMSettings(BaseModel):
 
 
 class ProxySettings(BaseModel):
-    server: str = Field(None, description="Proxy server address")
+    server: str = Field(..., description="Proxy server address")
     username: Optional[str] = Field(None, description="Proxy username")
     password: Optional[str] = Field(None, description="Proxy password")
 
@@ -107,6 +107,22 @@ class MCPSettings(BaseModel):
     )
 
 
+class DatabaseSettings(BaseModel):
+    """Database configuration settings"""
+
+    url: str = Field(
+        default="postgresql://postgres:postgres@localhost:5432/heyfun?schema=public",
+        description="Database connection URL",
+    )
+    echo: bool = Field(default=False, description="Echo SQL queries for debugging")
+    pool_pre_ping: bool = Field(
+        default=True, description="Pre-ping database connections"
+    )
+    pool_recycle: int = Field(
+        default=3600, description="Connection pool recycle time in seconds"
+    )
+
+
 class AppConfig(BaseModel):
     llm: Dict[str, LLMSettings]
     sandbox: Optional[SandboxSettings] = Field(
@@ -119,6 +135,9 @@ class AppConfig(BaseModel):
         None, description="Search configuration"
     )
     mcp_config: Optional[MCPSettings] = Field(None, description="MCP configuration")
+    database: Optional[DatabaseSettings] = Field(
+        None, description="Database configuration"
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -228,6 +247,13 @@ class Config:
         else:
             mcp_settings = MCPSettings()
 
+        database_config = raw_config.get("database", {})
+        database_settings = (
+            DatabaseSettings(**database_config)
+            if database_config
+            else DatabaseSettings()
+        )
+
         config_dict = {
             "llm": {
                 "default": default_settings,
@@ -240,6 +266,7 @@ class Config:
             "browser_config": browser_settings,
             "search_config": search_settings,
             "mcp_config": mcp_settings,
+            "database": database_settings,
         }
 
         self._config = AppConfig(**config_dict)
@@ -264,6 +291,21 @@ class Config:
     def mcp_config(self) -> MCPSettings:
         """Get the MCP configuration"""
         return self._config.mcp_config
+
+    @property
+    def database(self) -> DatabaseSettings:
+        """Get the database configuration"""
+        return self._config.database
+
+    @property
+    def database_url(self) -> str:
+        """Get the database URL"""
+        return self._config.database.url
+
+    @property
+    def debug(self) -> bool:
+        """Get debug mode"""
+        return self._config.database.echo
 
     @property
     def workspace_root(self) -> Path:

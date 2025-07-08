@@ -40,5 +40,8 @@ beautifulsoup4~=4.13.3
 huggingface-hub~=0.29.2
 setuptools~=75.8.0
 
+sqlmodel~=0.0.24
+psycopg2-binary~=2.9.9
+
 python-multipart~=0.0.20
 jinja2~=3.1.3
