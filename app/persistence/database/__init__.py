@@ -2,7 +2,6 @@
 Persistence module for database operations
 """
 
-from .database import create_db_and_tables, engine, get_session, get_session_sync
 from .models import (
     Agents,
     AgentTools,
@@ -19,6 +18,7 @@ from .models import (
     ToolSchemas,
     Users,
 )
+from .session import get_session
 
 
 __all__ = [
@@ -38,8 +38,5 @@ __all__ = [
     "ToolSchemas",
     "AgentTools",
     # Database
-    "engine",
-    "create_db_and_tables",
     "get_session",
-    "get_session_sync",
 ]

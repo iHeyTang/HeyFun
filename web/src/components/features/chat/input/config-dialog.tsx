@@ -1,5 +1,3 @@
-import { getLlmConfigs } from '@/actions/config';
-import { removeTool } from '@/actions/tools';
 import { confirm } from '@/components/block/confirm';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,7 +6,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useServerAction } from '@/hooks/use-async';
+import { useLlmConfigs } from '@/hooks/use-configs';
+import { useAgentTools } from '@/hooks/use-tools';
 import { Info, Plus, X } from 'lucide-react';
 import React, { useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
@@ -17,7 +16,6 @@ import remarkGfm from 'remark-gfm';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { AddNewCustomToolDialog, AddNewCustomToolDialogRef } from './add-new-custom-tool-dialog';
-import useAgentTools from '@/hooks/use-tools';
 
 const DEFAULT_SELECTED_TOOLS = ['web_search', 'str_replace_editor', 'python_execute', 'browser_use'];
 
@@ -56,7 +54,7 @@ export const InputConfigDialog = React.forwardRef<InputConfigDialogRef, InputCon
   const [showToolId, setShowToolId] = useState<string | null>(null);
   const addNewCustomToolRef = useRef<AddNewCustomToolDialogRef>(null);
 
-  const { data: llmConfigs } = useServerAction(getLlmConfigs, {});
+  const { llmConfigs, loadingLlmConfigs } = useLlmConfigs();
   const { allTools, refreshTools } = useAgentTools();
 
   const { enabledModel, setEnabledModel, enabledTools, setEnabledTools } = useInputConfig();
@@ -111,7 +109,7 @@ export const InputConfigDialog = React.forwardRef<InputConfigDialogRef, InputCon
         </div>
       ),
       onConfirm: async () => {
-        await removeTool({ toolId });
+        await fetch(`/api/tools/${toolId}`, { method: 'DELETE' }).then(res => res.json());
         setShowToolId(null);
         refreshTools();
       },

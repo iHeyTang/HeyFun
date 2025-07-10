@@ -1,6 +1,5 @@
 'use client';
 
-import { getTask, createTask, terminateTask } from '@/actions/tasks';
 import { ChatInput } from '@/components/features/chat/input';
 import { ChatMessages } from '@/components/features/chat/messages';
 import { ChatPreview } from '@/components/features/chat/preview';
@@ -41,7 +40,7 @@ export default function ChatPage() {
   };
 
   const refreshTask = async () => {
-    const res = await getTask({ taskId });
+    const res = await fetch(`/api/tasks/${taskId}`).then(res => res.json());
     if (res.error || !res.data) {
       console.error('Error fetching task:', res.error);
       return;
@@ -99,14 +98,17 @@ export default function ChatPage() {
 
   const handleSubmit = async (value: { modelId: string; prompt: string; tools: string[]; files: File[]; shouldPlan: boolean }) => {
     try {
-      const res = await createTask({
-        taskId,
-        modelId: value.modelId,
-        prompt: value.prompt,
-        tools: value.tools,
-        files: value.files,
-        shouldPlan: value.shouldPlan,
-      });
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          taskId,
+          modelId: value.modelId,
+          prompt: value.prompt,
+          tools: value.tools,
+          files: value.files,
+          shouldPlan: value.shouldPlan,
+        }),
+      }).then(res => res.json());
       if (res.error) {
         console.error('Error restarting task:', res.error);
       }
@@ -136,7 +138,7 @@ export default function ChatPage() {
             status={isThinking ? 'thinking' : isTerminating ? 'terminating' : 'completed'}
             onSubmit={handleSubmit}
             onTerminate={async () => {
-              await terminateTask({ taskId });
+              await fetch(`/api/tasks/${taskId}/terminate`, { method: 'POST' });
               router.refresh();
             }}
             taskId={taskId}

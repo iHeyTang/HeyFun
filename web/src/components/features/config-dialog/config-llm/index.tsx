@@ -1,15 +1,14 @@
 'use client';
 
-import { getLlmConfigs, removeLlmConfig } from '@/actions/config';
 import { confirm } from '@/components/block/confirm';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useServerAction } from '@/hooks/use-async';
+import { useLlmConfigs } from '@/hooks/use-configs';
 import { Pencil, Plus, Trash } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import { toast } from 'sonner';
 import { ConfigDialog, ConfigDialogRef } from './config-dialog';
-import { useTranslations } from 'next-intl';
 
 export interface ConfigFormData {
   id?: string;
@@ -23,7 +22,7 @@ export interface ConfigFormData {
 
 export default function ConfigLlm() {
   const t = useTranslations('config.llm');
-  const { data: configs, refresh: refreshConfigs } = useServerAction(getLlmConfigs, {});
+  const { llmConfigs, loadingLlmConfigs, refreshLlmConfigs } = useLlmConfigs();
   const configDialogRef = useRef<ConfigDialogRef>(null);
 
   const handleAddNew = () => {
@@ -39,8 +38,8 @@ export default function ConfigLlm() {
       content: t('confirmDelete'),
       onConfirm: async () => {
         if (config.id) {
-          await removeLlmConfig({ id: config.id });
-          refreshConfigs();
+          await fetch(`/api/configs/llm/${config.id}`, { method: 'DELETE' }).then(res => res.json());
+          refreshLlmConfigs();
           toast.success(t('modelRemoved'));
         }
       },
@@ -66,7 +65,7 @@ export default function ConfigLlm() {
           </Button>
         </div>
         <div className="grid gap-4">
-          {configs?.map(config => (
+          {llmConfigs?.map(config => (
             <div key={config.id} className="flex items-center justify-between rounded-lg border p-4 shadow-sm transition-all hover:shadow-md">
               <div className="flex flex-col gap-1">
                 <div className="font-medium">{config.model}</div>
@@ -84,7 +83,7 @@ export default function ConfigLlm() {
           ))}
         </div>
       </div>
-      <ConfigDialog ref={configDialogRef} onSuccess={refreshConfigs} />
+      <ConfigDialog ref={configDialogRef} onSuccess={refreshLlmConfigs} />
     </>
   );
 }

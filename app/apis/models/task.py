@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -9,6 +10,7 @@ class Task(BaseModel):
     id: str
     created_at: datetime
     agent: "FunMax"
+    organization_id: Optional[str] = None
 
     def model_dump(self, *args, **kwargs):
         data = super().model_dump(*args, **kwargs)

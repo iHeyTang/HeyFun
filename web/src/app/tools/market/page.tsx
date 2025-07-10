@@ -1,21 +1,28 @@
 'use client';
-import { listAgentTools, listToolSchemas } from '@/actions/tools';
-import { Sparkles, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useServerAction } from '@/hooks/use-async';
+import { useMe } from '@/hooks/use-me';
+import { Plus, Sparkles } from 'lucide-react';
 import { useRef } from 'react';
 import { ToolInfoDialog, ToolInfoDialogRef } from './tool-info-dialog';
 import { ToolRegisterDialog, ToolRegisterDialogRef } from './tool-register-dialog';
-import { useServerAction } from '@/hooks/use-async';
-import { Button } from '@/components/ui/button';
-import { getMe } from '@/actions/me';
+import { useAgentTools } from '@/hooks/use-tools';
 
 export default function MarketplacePage() {
-  const { data: allTools = [], refresh: refreshAllTools } = useServerAction(listToolSchemas, {}, { cache: 'all-tools' });
-  const { data: installedTools = [], refresh: refreshInstalledTools } = useServerAction(listAgentTools, {}, { cache: 'installed-tools' });
+  const { data: allTools = [], refresh: refreshAllTools } = useServerAction(
+    async () => {
+      const res = await fetch('/api/tools/schemas').then(res => res.json() as Promise<any>);
+      return res.data.data;
+    },
+    {},
+    { cache: 'all-tools' },
+  );
+  const { allTools: installedTools, refreshTools: refreshInstalledTools } = useAgentTools();
 
   const toolInfoDialogRef = useRef<ToolInfoDialogRef>(null);
   const toolRegisterDialogRef = useRef<ToolRegisterDialogRef>(null);
 
-  const { data: me } = useServerAction(getMe, {});
+  const { me } = useMe();
 
   const handleConfigSuccess = () => {
     refreshAllTools();

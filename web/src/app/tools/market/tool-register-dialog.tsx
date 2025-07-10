@@ -1,4 +1,3 @@
-import { registerTool } from '@/actions/tools';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -46,14 +45,17 @@ export const ToolRegisterDialog = forwardRef<ToolRegisterDialogRef, ToolRegister
   const onSubmit = async (values: z.infer<typeof toolSchema>) => {
     try {
       const configuration = JSON.parse(values.configuration);
-      await registerTool({
-        name: values.name,
-        description: values.description,
-        repoUrl: values.repoUrl,
-        command: configuration.command,
-        args: configuration.args,
-        envSchema: configuration.envSchema,
-      });
+      await fetch('/api/tools/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: values.name,
+          description: values.description,
+          repoUrl: values.repoUrl,
+          command: configuration.command,
+          args: configuration.args,
+          envSchema: configuration.envSchema,
+        }),
+      }).then(res => res.json());
 
       toast.success('Success', {
         description: 'Tool registered successfully',

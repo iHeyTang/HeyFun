@@ -1,7 +1,7 @@
 import tomllib
 import webbrowser
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Sequence
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -25,10 +25,10 @@ app.add_middleware(
 app.include_router(router)
 
 
-def format_validation_error(errors: list[Any]) -> Dict[str, Any]:
+def format_validation_error(errors: Sequence[Any]) -> Dict[str, Any]:
     """Format validation error messages"""
     formatted_errors = []
-    for error in errors:
+    for error in list(errors):
         loc = ".".join(str(x) for x in error["loc"])
         msg = error["msg"]
         formatted_errors.append({"field": loc, "message": msg})

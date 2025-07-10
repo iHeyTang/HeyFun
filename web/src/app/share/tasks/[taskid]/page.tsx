@@ -1,6 +1,5 @@
 'use client';
 
-import { getSharedTask } from '@/actions/tasks';
 import { ChatMessages } from '@/components/features/chat/messages';
 import { ChatPreview } from '@/components/features/chat/preview';
 import { usePreviewData } from '@/components/features/chat/preview/store';
@@ -66,21 +65,16 @@ export default function ChatSharePage() {
   };
 
   const refreshTask = async () => {
-    const res = await getSharedTask({ taskId });
-    if (res.error || !res.data) {
-      console.error('Error fetching task:', res.error);
-      return;
-    }
-
+    const res = await fetch(`/api/shared_tasks/${taskId}`).then(res => res.json());
     setMessages([]);
     if (timeoutIdRef.current) {
       clearTimeout(timeoutIdRef.current);
       timeoutIdRef.current = null;
     }
 
-    messagesQueueRef.current = res.data.progresses.map(step => ({
+    messagesQueueRef.current = res.progresses.map((step: any) => ({
       ...step,
-      index: step.index! || 0,
+      index: step.index || 0,
       type: step.type as any,
       role: 'assistant' as const,
     }));

@@ -1,13 +1,9 @@
 'use client';
 
 import logo from '@/assets/logo.png';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Send } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createTask } from '@/actions/tasks';
 import { useRecentTasks } from '@/components/features/app-sidebar';
 import { ChatInput } from '@/components/features/chat/input';
 
@@ -43,14 +39,17 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      const res = await createTask({
-        taskId: undefined,
-        modelId: input.modelId,
-        prompt: input.prompt,
-        tools: input.tools,
-        files: input.files,
-        shouldPlan: input.shouldPlan,
-      });
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        body: JSON.stringify({
+          taskId: undefined,
+          modelId: input.modelId,
+          prompt: input.prompt,
+          tools: input.tools,
+          files: input.files,
+          shouldPlan: input.shouldPlan,
+        }),
+      }).then(res => res.json());
       if (res.error || !res.data) {
         throw new Error('Failed to create task');
       }

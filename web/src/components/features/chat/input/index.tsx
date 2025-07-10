@@ -1,5 +1,3 @@
-import { getLlmConfigs } from '@/actions/config';
-import { shareTask } from '@/actions/tasks';
 import { confirm } from '@/components/block/confirm';
 import { useConfigDialog } from '@/components/features/config-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useServerAction } from '@/hooks/use-async';
+import { useLlmConfigs } from '@/hooks/use-configs';
 import { Check, Circle, Paperclip, PauseCircle, Rocket, Send, Share2, Wrench, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState } from 'react';
@@ -39,7 +37,7 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate, taskId }: Ch
   const [isSharing, setIsSharing] = useState(false);
   const { enabledModel, enabledTools } = useInputConfig();
 
-  const { data: llmConfigs, isLoading: loadingLlmConfigs } = useServerAction(getLlmConfigs, {});
+  const { llmConfigs, loadingLlmConfigs } = useLlmConfigs();
 
   const currentModel = useMemo(() => llmConfigs?.find(c => c.id === enabledModel), [llmConfigs, enabledModel]);
 
@@ -110,7 +108,10 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate, taskId }: Ch
     try {
       const daysToMs = parseInt(shareExpiration) * 24 * 60 * 60 * 1000;
       const expiresAt = Date.now() + daysToMs;
-      await shareTask({ taskId, expiresAt });
+      await fetch(`/api/tasks/${taskId}/share`, {
+        method: 'POST',
+        body: JSON.stringify({ expiresAt }),
+      }).then(res => res.json());
       navigator.clipboard.writeText(shareUrl);
       toast.success('Share Link Copied');
     } catch (error) {

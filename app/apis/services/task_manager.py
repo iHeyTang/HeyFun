@@ -1,11 +1,15 @@
 import asyncio
 from datetime import datetime
 from json import dumps
-from typing import Dict
+from typing import Dict, Optional
+
+from sqlmodel import Session, asc, select
 
 from app.agent.funmax import FunMax
 from app.apis.models.task import Task
 from app.logger import logger
+from app.persistence.database import TaskProgresses, Tasks
+from app.persistence.database.session import get_session
 from app.utils.agent_event import BaseAgentEvents, EventItem
 
 
@@ -46,17 +50,21 @@ class TaskManager:
         except Exception as e:
             logger.error(f"Error in task {task_id}: {str(e)}")
 
-    def create_task(self, task_id: str, agent: FunMax) -> Task:
+    def create_task(
+        self, task_id: str, agent: FunMax, organization_id: Optional[str] = None
+    ) -> Task:
         task = Task(
             id=task_id,
             created_at=datetime.now(),
             agent=agent,
+            organization_id=organization_id,
         )
         self.tasks[task_id] = task
         self.histories[task_id] = []
         return task
 
     async def update_task_progress(self, task_id: str, event: EventItem):
+        """Update task progress and persist to database"""
         if task_id in self.tasks:
             event_dict = {
                 "index": len(self.histories[task_id]),
@@ -68,6 +76,91 @@ class TaskManager:
                 "content": event.content,
             }
             self.histories[task_id].append(event_dict)
+
+            # Persist to database
+            await self._persist_task_progress(task_id, event)
+
+    async def _persist_task_progress(self, task_id: str, event: EventItem):
+        """Persist task progress to database"""
+        try:
+            for session in get_session():
+                # Get existing task progresses to determine index and round
+                result = session.exec(
+                    select(TaskProgresses)
+                    .where(TaskProgresses.taskId == task_id)
+                    .order_by(asc(TaskProgresses.index))
+                )
+                task_progresses = result.all()
+
+                rounds = [progress.round for progress in task_progresses]
+                round_num = max(rounds, default=1)
+                message_index = len(task_progresses)
+
+                # for backward compatibility, event_name is used in the past
+                event_type = event.name or getattr(event, "event_name", event.name)
+
+                # Handle special event types
+                if event_type == "agent:lifecycle:summary":
+                    self._update_task_summary(
+                        session, task_id, event.content.get("summary")
+                    )
+                    return
+
+                # Get organization_id from task
+                task = self.tasks.get(task_id)
+                organization_id = (
+                    task.organization_id if task and task.organization_id else task_id
+                )
+
+                # Create task progress record
+                task_progress = TaskProgresses(
+                    taskId=task_id,
+                    organizationId=organization_id,
+                    index=message_index,
+                    round=round_num,
+                    step=event.step,
+                    type=event_type,
+                    content=event.content,
+                )
+
+                session.add(task_progress)
+                session.commit()
+
+                # Handle lifecycle events
+                if event_type == "agent:lifecycle:complete":
+                    self._update_task_status(session, task_id, "completed")
+                elif event_type == "agent:lifecycle:terminating":
+                    self._update_task_status(session, task_id, "terminating")
+                elif event_type == "agent:lifecycle:terminated":
+                    self._update_task_status(session, task_id, "terminated")
+                break
+
+        except Exception as e:
+            logger.error(
+                f"Failed to persist task progress for task {task_id}: {str(e)}"
+            )
+
+    def _update_task_summary(self, session: Session, task_id: str, summary: str):
+        """Update task summary in database"""
+        try:
+            result = session.exec(select(Tasks).where(Tasks.id == task_id))
+            task = result.first()
+            if task:
+                task.summary = summary
+                session.commit()
+        except Exception as e:
+            logger.error(f"Failed to update task summary for task {task_id}: {str(e)}")
+
+    def _update_task_status(self, session: Session, task_id: str, status: str):
+        """Update task status in database"""
+        try:
+            result = session.exec(select(Tasks).where(Tasks.id == task_id))
+            task = result.first()
+            if task:
+                task.status = status
+                session.commit()
+        except Exception as e:
+            logger.error(f"Failed to update task status for task {task_id}: {str(e)}")
 
     async def terminate_task(self, task_id: str):
         if task_id in self.tasks:

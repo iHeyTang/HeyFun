@@ -1,4 +1,3 @@
-import { installTool } from '@/actions/tools';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -40,10 +39,13 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsLoading(true);
-      await installTool({
-        toolId: tool!.id,
-        env: values,
-      });
+      await fetch('/api/tools/install', {
+        method: 'POST',
+        body: JSON.stringify({
+          toolId: tool!.id,
+          env: values,
+        }),
+      }).then(res => res.json());
       toast.success('Install success', {
         description: 'Tool config saved',
       });

@@ -1,16 +1,30 @@
 import asyncio
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
-from fastapi import APIRouter, Body, File, Form, HTTPException, UploadFile
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
+)
+from fastapi.responses import StreamingResponse
+from sqlmodel import Session, desc, select
 
 from app.agent.funmax import FunMax, McpToolConfig
+from app.apis.request_context import RequestContext, get_request_context
 from app.apis.services.task_manager import task_manager
 from app.config import LLMSettings, config
 from app.llm import LLM
 from app.logger import logger
+from app.persistence.database.models import TaskProgresses, Tasks
+from app.persistence.database.session import get_session
 
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -49,6 +63,66 @@ def parse_tools(tools: list[str]) -> list[Union[str, McpToolConfig]]:
     return processed_tools
 
 
+@router.get("")
+async def get_tasks_paginated(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    context: RequestContext = Depends(get_request_context),
+):
+    """Get paginated tasks for an organization"""
+    offset = (page - 1) * page_size
+
+    current_organization = await context.current_organization
+    tasks = context.db.exec(
+        select(Tasks)
+        .where(Tasks.organizationId == current_organization.id)
+        .order_by(desc(Tasks.createdAt))
+        .offset(offset)
+        .limit(page_size)
+    ).all()
+
+    total = len(
+        context.db.exec(
+            select(Tasks).where(Tasks.organizationId == current_organization.id)
+        ).all()
+    )
+
+    return {
+        "tasks": [task.model_dump() for task in tasks],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+@router.get("/{organization_id}/{task_id}")
+async def get_task(
+    organization_id: str,
+    task_id: str,
+    context: RequestContext = Depends(get_request_context),
+):
+    """Get task details with progresses"""
+    task = context.db.exec(
+        select(Tasks).where(
+            Tasks.id == task_id, Tasks.organizationId == organization_id
+        )
+    ).first()
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Get task progresses
+    progresses = context.db.exec(
+        select(TaskProgresses).where(TaskProgresses.taskId == task_id).order_by("index")
+    ).all()
+
+    # Convert to dict for JSON response
+    task_dict = task.model_dump()
+    task_dict["progresses"] = [progress.model_dump() for progress in progresses]
+
+    return task_dict
+
+
 @router.post("")
 async def create_task(
     task_id: str = Form(...),
@@ -60,6 +134,7 @@ async def create_task(
     history: Optional[str] = Form(None),
     prompts: Optional[str] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
+    session: Session = Depends(get_session),
 ):
     print(
         f"Creating task {task_id} with prompt: {prompt}, should_plan: {should_plan}, tools: {tools}, preferences: {preferences}, llm_config: {llm_config}"
@@ -180,17 +255,6 @@ async def task_events(organization_id: str, task_id: str):
     )
 
 
-@router.get("")
-async def get_tasks():
-    sorted_tasks = sorted(
-        task_manager.tasks.values(), key=lambda task: task.created_at, reverse=True
-    )
-    return JSONResponse(
-        content=[task.model_dump() for task in sorted_tasks],
-        headers={"Content-Type": "application/json"},
-    )
-
-
 @router.post("/terminate")
 async def terminate_task(task_id: str = Body(..., embed=True)):
     """Terminate a task immediately.
@@ -205,3 +269,31 @@ async def terminate_task(task_id: str = Body(..., embed=True)):
     await task.agent.terminate()
 
     return {"message": f"Task {task_id} terminated successfully", "task_id": task_id}
+
+
+@router.post("/{organization_id}/{task_id}/share")
+async def share_task(
+    organization_id: str,
+    task_id: str,
+    expires_at: int = Body(..., embed=True),
+    session: Session = Depends(get_session),
+):
+    """Share a task with expiration time"""
+    task = session.exec(
+        select(Tasks).where(
+            Tasks.id == task_id, Tasks.organizationId == organization_id
+        )
+    ).first()
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Update task with share expiration
+    task.shareExpiresAt = datetime.fromtimestamp(
+        expires_at / 1000
+    )  # Convert from milliseconds
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+
+    return {"message": "Task shared successfully", "task_id": task_id}

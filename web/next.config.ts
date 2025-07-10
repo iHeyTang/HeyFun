@@ -30,6 +30,10 @@ const nextConfig: NextConfig = {
         source: '/',
         destination: '/tasks',
       },
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:5172/api/:path*',
+      },
     ];
   },
   async headers() {

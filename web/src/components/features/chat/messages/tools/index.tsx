@@ -3,7 +3,7 @@ import { AggregatedMessage, Message } from '@/lib/chat-messages/types';
 import { getImageUrl } from '@/lib/image';
 import Image from 'next/image';
 import { usePreviewData } from '../../preview/store';
-import useAgentTools from '@/hooks/use-tools';
+import { useAgentTools } from '@/hooks/use-tools';
 
 type ToolCall = {
   id: string;

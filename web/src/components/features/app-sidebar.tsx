@@ -1,6 +1,8 @@
 'use client';
 
-import { pageTasks } from '@/actions/tasks';
+import logo from '@/assets/logo.png';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
   Sidebar,
   SidebarContent,
@@ -13,43 +15,29 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useMe } from '@/hooks/use-me';
 import { cn } from '@/lib/utils';
 import { Tasks } from '@prisma/client';
+import { ChevronsUpDown, LogOutIcon, SettingsIcon } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { create } from 'zustand';
-import { useConfigDialog } from './config-dialog';
-import { LogOutIcon, SettingsIcon, ChevronsUpDown } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '../ui/button';
-import { getMe } from '@/actions/me';
-import logo from '@/assets/logo.png';
-import Image from 'next/image';
+import { useConfigDialog } from './config-dialog';
 
 export const useRecentTasks = create<{ tasks: Tasks[]; refreshTasks: () => Promise<void> }>(set => ({
   tasks: [],
   refreshTasks: async () => {
-    const res = await pageTasks({ page: 1, pageSize: 30 });
-    set({ tasks: res.data?.tasks || [] });
-  },
-}));
-
-const useMeStore = create<{ me: Awaited<ReturnType<typeof getMe>>['data'] | null; refreshMe: () => Promise<void> }>(set => ({
-  me: null,
-  refreshMe: async () => {
-    const res = await getMe({});
-    if (res.error || !res.data) {
-      throw new Error('Failed to fetch user data');
-    }
-    set({ me: res.data });
+    const res = await fetch('/api/tasks?page=1&page_size=100').then(res => res.json());
+    set({ tasks: (res.tasks || []) as Tasks[] });
   },
 }));
 
 export function AppSidebar() {
   const router = useRouter();
-  const { me, refreshMe } = useMeStore();
+  const { me, refreshMe } = useMe();
   const { tasks, refreshTasks } = useRecentTasks();
   const { show } = useConfigDialog();
   const pathname = usePathname();
@@ -57,17 +45,19 @@ export function AppSidebar() {
   const currentTaskId = pathname.split('/').pop();
 
   useEffect(() => {
-    refreshMe()
-      .then(() => {
-        refreshTasks();
-      })
-      .catch(error => {
-        if (error?.message.startsWith('Authentication failed')) {
-          document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
-          router.push('/login');
-        }
-      });
+    refreshMe().catch(error => {
+      if (error?.message.startsWith('Authentication failed')) {
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+        router.push('/login');
+      }
+    });
   }, []);
+
+  useEffect(() => {
+    if (me?.id) {
+      refreshTasks();
+    }
+  }, [me?.id]);
 
   const handleLogout = () => {
     document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';

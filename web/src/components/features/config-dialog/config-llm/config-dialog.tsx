@@ -1,6 +1,5 @@
 'use client';
 
-import { updateLlmConfig } from '@/actions/config';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormField } from '@/components/ui/form';
@@ -77,7 +76,10 @@ export const ConfigDialog = React.forwardRef<ConfigDialogRef, ConfigDialogProps>
   const onSubmit = async (data: ConfigFormData) => {
     try {
       setLoading(true);
-      await updateLlmConfig({ ...data, id: data.id || undefined });
+      await fetch(`/api/configs/llm/${data.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }).then(res => res.json());
       toast.success(t('configUpdated'));
       props.onSuccess?.(true);
       setOpen(false);

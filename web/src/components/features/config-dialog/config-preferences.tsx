@@ -1,6 +1,5 @@
 'use client';
 
-import { getPreferences, updatePreferences } from '@/actions/config';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,12 +9,13 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { ThemeToggle } from '../theme-toggle';
 import { useTheme } from 'next-themes';
+import { usePreferences } from '@/hooks/use-configs';
 
 export default function ConfigLlm(props: { onSuccess?: (success: boolean) => void }) {
   const t = useTranslations('config');
   const router = useRouter();
+  const { preferences, refreshPreferences } = usePreferences();
 
   const { setTheme, theme } = useTheme();
   const [loading, setLoading] = useState(false);
@@ -23,8 +23,9 @@ export default function ConfigLlm(props: { onSuccess?: (success: boolean) => voi
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const config = await getPreferences({});
-        setSelectedLanguage(config.data?.language || '');
+        await refreshPreferences();
+        setSelectedLanguage(preferences.language);
+        setTheme(preferences.theme);
       } catch (error) {
         toast.error(t('toast.loadConfigError'));
       }
@@ -35,7 +36,10 @@ export default function ConfigLlm(props: { onSuccess?: (success: boolean) => voi
   const handleLanguageChange = async (value: string) => {
     setLoading(true);
     try {
-      await updatePreferences({ language: value });
+      await fetch('/api/configs/preferences', {
+        method: 'PUT',
+        body: JSON.stringify({ language: value }),
+      }).then(res => res.json());
       setSelectedLanguage(value);
       toast.success(t('toast.updateSuccess'));
       props.onSuccess?.(true);

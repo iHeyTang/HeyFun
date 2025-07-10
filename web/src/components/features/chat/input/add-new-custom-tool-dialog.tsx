@@ -1,4 +1,3 @@
-import { installCustomTool } from '@/actions/tools';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -32,7 +31,10 @@ export const AddNewCustomToolDialog = React.forwardRef<AddNewCustomToolDialogRef
       return;
     }
     if (toolName && toolConfig) {
-      const res = await installCustomTool({ name: toolName, config: toolConfig });
+      const res = await fetch('/api/tools/install/custom', {
+        method: 'POST',
+        body: JSON.stringify({ name: toolName, config: toolConfig }),
+      }).then(res => res.json());
       if (res.error) {
         toast.error(res.error);
       } else {
