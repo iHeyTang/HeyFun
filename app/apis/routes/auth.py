@@ -23,11 +23,19 @@ class SignupData(BaseModel):
     organizationName: str
 
 
+class SigninResponse(BaseModel):
+    token: str
+
+
+class SignupResponse(BaseModel):
+    message: str
+
+
 @router.post("/signin")
 async def signin(
     body: SigninData = Body(...),
     context: RequestContext = Depends(get_request_context),
-):
+) -> SigninResponse:
     # 1. Verify user
     user = context.db.exec(select(Users).where(Users.email == body.email)).one()
     if not user:
@@ -60,14 +68,14 @@ async def signin(
         name=user.name,
         is_first_login=user.isFirstLogin,
     )
-    return {"token": token}
+    return SigninResponse(token=token)
 
 
 @router.post("/signup")
 async def signup(
     body: SignupData = Body(...),
     context: RequestContext = Depends(get_request_context),
-):
+) -> SignupResponse:
     exist_user = context.db.exec(select(Users).where(Users.email == body.email)).one()
     if exist_user:
         raise HTTPException(status_code=400, detail="User already exists")
@@ -87,4 +95,4 @@ async def signup(
     org_user = OrganizationUsers(userId=user.id, organizationId=org.id)
     context.db.add_all([user, org, org_user])
     context.db.commit()
-    return {"message": "Registration successful"}
+    return SignupResponse(message="Registration successful")

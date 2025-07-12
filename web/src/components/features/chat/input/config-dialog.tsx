@@ -16,6 +16,7 @@ import remarkGfm from 'remark-gfm';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { AddNewCustomToolDialog, AddNewCustomToolDialogRef } from './add-new-custom-tool-dialog';
+import { removeToolApiToolsToolIdDelete } from '@/server';
 
 const DEFAULT_SELECTED_TOOLS = ['web_search', 'str_replace_editor', 'python_execute', 'browser_use'];
 
@@ -109,7 +110,7 @@ export const InputConfigDialog = React.forwardRef<InputConfigDialogRef, InputCon
         </div>
       ),
       onConfirm: async () => {
-        await fetch(`/api/tools/${toolId}`, { method: 'DELETE' }).then(res => res.json());
+        await removeToolApiToolsToolIdDelete({ path: { tool_id: toolId } });
         setShowToolId(null);
         refreshTools();
       },

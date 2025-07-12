@@ -7,12 +7,13 @@ import { useRef } from 'react';
 import { ToolInfoDialog, ToolInfoDialogRef } from './tool-info-dialog';
 import { ToolRegisterDialog, ToolRegisterDialogRef } from './tool-register-dialog';
 import { useAgentTools } from '@/hooks/use-tools';
+import { listToolSchemasApiToolsSchemasGet } from '@/server';
 
 export default function MarketplacePage() {
   const { data: allTools = [], refresh: refreshAllTools } = useServerAction(
     async () => {
-      const res = await fetch('/api/tools/schemas').then(res => res.json() as Promise<any>);
-      return res.data.data;
+      const res = await listToolSchemasApiToolsSchemasGet({});
+      return { data: res.data, error: undefined };
     },
     {},
     { cache: 'all-tools' },
@@ -46,7 +47,7 @@ export default function MarketplacePage() {
           </div>
         </div>
         <p className="text-muted-foreground max-w-2xl text-center">Explore and install powerful tools to enhance your productivity</p>
-        {me?.isRoot && (
+        {me?.is_root && (
           <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={() => toolRegisterDialogRef.current?.showRegister()}>
             <Plus className="h-4 w-4" />
             Register Custom Tool

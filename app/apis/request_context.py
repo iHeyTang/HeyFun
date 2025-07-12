@@ -77,9 +77,14 @@ class RequestContext:
         return self._session_data
 
     @property
-    async def current_user(self) -> Optional[Users]:
+    async def current_user(self) -> Users:
         """Get current user"""
         await self._ensure_loaded()
+        if not self._current_user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
         return self._current_user
 
     @property

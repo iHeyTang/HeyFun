@@ -44,6 +44,9 @@ class BaseAgent(BaseModel, ABC):
 
     task_id: str = Field(..., description="Task ID for the agent")
 
+    workspace_root: str = Field(..., description="Workspace root directory")
+    task_dir: str = Field(default="", description="Task directory")
+
     # Dependencies
     llm: LLM = Field(default_factory=LLM, description="Language model instance")
     memory: Memory = Field(default_factory=Memory, description="Agent's memory store")
@@ -164,15 +167,17 @@ class BaseAgent(BaseModel, ABC):
 
     async def prepare(self) -> None:
         """Prepare the agent for execution."""
+        self.task_dir = f"/workspace/{self.workspace_root}/{self.task_id}"
         if not isinstance(self.sandbox, DockerSandbox):
-            orgnization_id, task_id = self.task_id.split("/")
-            sandbox_id = f"heyfun-sandbox-{orgnization_id}-{task_id}"
-            host_workspace_root = str(f"{config.host_workspace_root}/{orgnization_id}")
+            sandbox_id = f"heyfun-sandbox-{self.workspace_root}-{self.task_id}"
+            host_workspace_root = str(
+                f"{config.host_workspace_root}/{self.workspace_root}"
+            )
 
             await SANDBOX_MANAGER.create_sandbox(
                 sandbox_id=sandbox_id,
                 host_workspace=host_workspace_root,
-                default_working_directory=f"/workspace/{task_id}",
+                default_working_directory=f"/workspace/{self.task_id}",
             )
             self.sandbox = await SANDBOX_MANAGER.get_sandbox(sandbox_id)
 

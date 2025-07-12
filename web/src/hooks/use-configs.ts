@@ -1,16 +1,8 @@
-import { useEffect } from 'react';
+import { getLlmConfigsApiConfigLlmGet, getPreferencesApiConfigPreferencesGet, LlmConfigResponse, PreferencesResponse } from '@/server';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { create } from 'zustand';
 
-type LlmConfig = {
-  id: string;
-  name: string;
-  model: string;
-  apiKey: string;
-  baseUrl: string;
-  maxTokens: number;
-  temperature: number;
-  apiType: string;
-};
+type LlmConfig = LlmConfigResponse;
 
 const useLlmConfigsStore = create<{
   llmConfigs: LlmConfig[];
@@ -21,39 +13,45 @@ const useLlmConfigsStore = create<{
   loadingLlmConfigs: false,
   refreshLlmConfigs: async () => {
     set({ loadingLlmConfigs: true });
-    const res = await fetch('/api/config/llm/all').then(res => res.json());
-    set({ llmConfigs: res });
+    const res = await getLlmConfigsApiConfigLlmGet({});
+    if (!res.data) return;
+    set({ llmConfigs: res.data });
     set({ loadingLlmConfigs: false });
   },
 }));
 
 export const useLlmConfigs = () => {
   const { llmConfigs, loadingLlmConfigs, refreshLlmConfigs } = useLlmConfigsStore();
+
+  const loadingRef = useRef(false);
+
   useEffect(() => {
-    refreshLlmConfigs();
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    refreshLlmConfigs().finally(() => {
+      loadingRef.current = false;
+    });
   }, []);
+
   return { llmConfigs, loadingLlmConfigs, refreshLlmConfigs };
 };
 
-interface Preferences {
-  language: string;
+type Preferences = Pick<PreferencesResponse, 'language'> & {
   theme: string;
-}
+};
 
 const usePreferencesStore = create<{
   preferences: Preferences;
   loadingPreferences: boolean;
   refreshPreferences: () => Promise<void>;
 }>(set => ({
-  preferences: {
-    language: 'en',
-    theme: 'light',
-  },
+  preferences: { language: 'en', theme: 'light' },
   loadingPreferences: false,
   refreshPreferences: async () => {
     set({ loadingPreferences: true });
-    const res = await fetch('/api/config/preferences').then(res => res.json());
-    set({ preferences: res });
+    const res = await getPreferencesApiConfigPreferencesGet({});
+    if (!res.data) return;
+    set({ preferences: { ...res.data, theme: 'light' } });
     set({ loadingPreferences: false });
   },
 }));

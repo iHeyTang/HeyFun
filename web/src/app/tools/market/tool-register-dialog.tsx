@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { registerToolApiToolsRegisterPost } from '@/server';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { forwardRef, useImperativeHandle, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -45,17 +46,16 @@ export const ToolRegisterDialog = forwardRef<ToolRegisterDialogRef, ToolRegister
   const onSubmit = async (values: z.infer<typeof toolSchema>) => {
     try {
       const configuration = JSON.parse(values.configuration);
-      await fetch('/api/tools/register', {
-        method: 'POST',
-        body: JSON.stringify({
+      await registerToolApiToolsRegisterPost({
+        body: {
           name: values.name,
           description: values.description,
           repoUrl: values.repoUrl,
           command: configuration.command,
           args: configuration.args,
           envSchema: configuration.envSchema,
-        }),
-      }).then(res => res.json());
+        },
+      });
 
       toast.success('Success', {
         description: 'Tool registered successfully',

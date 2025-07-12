@@ -39,11 +39,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/api/heyfun/tasks/:task_id/events',
+        source: '/api/tasks/:task_id/events',
         headers: [
           { key: 'Connection', value: 'keep-alive' },
           { key: 'Cache-Control', value: 'no-cache' },
           { key: 'Content-Type', value: 'text/event-stream' },
+          { key: 'X-Accel-Buffering', value: 'no' },
         ],
       },
     ];

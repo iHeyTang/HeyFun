@@ -121,77 +121,7 @@ def encrypt_long_text_with_public_key(data: str, public_key_pem: str) -> str:
     return encrypt_with_public_key(data, public_key_pem)
 
 
-@router.get("/llm", response_model=Optional[LlmConfigResponse])
-async def get_llm_config(context: RequestContext = Depends(get_request_context)):
-    """Get default LLM configuration for the organization"""
-    # Get organization
-    user = await context.current_user
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-
-    org_user = context.db.exec(
-        select(OrganizationUsers).where(OrganizationUsers.userId == user.id)
-    ).first()
-
-    if not org_user:
-        raise HTTPException(
-            status_code=404, detail="User not associated with any organization"
-        )
-
-    # Get LLM config
-    config = context.db.exec(
-        select(LlmConfigs).where(
-            LlmConfigs.organizationId == org_user.organizationId,
-            LlmConfigs.type == "default",
-        )
-    ).first()
-
-    if not config:
-        return None
-
-    # Decrypt API key
-    private_key_path = Path(Path.cwd()) / "keys" / "private.pem"
-    if not private_key_path.exists():
-        raise HTTPException(status_code=500, detail="Private key not found")
-
-    private_key = private_key_path.read_text("utf-8")
-    decrypted_api_key = ""
-    if config.apiKey:
-        try:
-            decrypted_api_key = decrypt_with_private_key(config.apiKey, private_key)
-        except Exception:
-            decrypted_api_key = ""
-
-    # Mask API key and base URL
-    masked_api_key = (
-        mask_data_for_llm_api_key(decrypted_api_key) if decrypted_api_key else ""
-    )
-    masked_base_url = (
-        re.sub(r"//[^:]+:[^@]+@", "//***:***@", config.baseUrl)
-        if config.baseUrl
-        else ""
-    )
-
-    return LlmConfigResponse(
-        id=config.id,
-        type=config.type,
-        model=config.model,
-        baseUrl=masked_base_url,
-        apiKey=masked_api_key,
-        maxTokens=config.maxTokens,
-        maxInputTokens=config.maxInputTokens,
-        temperature=config.temperature,
-        apiType=config.apiType,
-        apiVersion=config.apiVersion,
-        isActive=config.isActive,
-        createdAt=config.createdAt.isoformat(),
-        updatedAt=config.updatedAt.isoformat(),
-        organizationId=config.organizationId,
-        name=config.name,
-    )
-
-
-@router.get("/llm/all", response_model=List[LlmConfigResponse])
+@router.get("/llm", response_model=List[LlmConfigResponse])
 async def get_llm_configs(context: RequestContext = Depends(get_request_context)):
     """Get all LLM configurations for the organization"""
     # Get organization

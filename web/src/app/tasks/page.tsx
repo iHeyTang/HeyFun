@@ -1,11 +1,12 @@
 'use client';
 
 import logo from '@/assets/logo.png';
-import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useRecentTasks } from '@/components/features/app-sidebar';
 import { ChatInput } from '@/components/features/chat/input';
+import { createTaskApiTasksPost } from '@/server/sdk.gen';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 
 const EmptyState = () => (
   <div className="flex h-full flex-col items-center justify-center opacity-50">
@@ -39,22 +40,21 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/tasks', {
-        method: 'POST',
-        body: JSON.stringify({
-          taskId: undefined,
-          modelId: input.modelId,
+      const res = await createTaskApiTasksPost({
+        body: {
+          task_id: '',
           prompt: input.prompt,
           tools: input.tools,
           files: input.files,
-          shouldPlan: input.shouldPlan,
-        }),
-      }).then(res => res.json());
+          should_plan: input.shouldPlan,
+          llm_config: { modelId: input.modelId },
+        },
+      });
       if (res.error || !res.data) {
         throw new Error('Failed to create task');
       }
       await refreshTasks();
-      router.push(`/tasks/${res.data.id}`);
+      router.push(`/tasks/${res.data.task_id}`);
     } catch (error: any) {
       if (error.name === 'AbortError') {
         return;

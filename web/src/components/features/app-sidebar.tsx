@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useMe } from '@/hooks/use-me';
 import { cn } from '@/lib/utils';
-import { Tasks } from '@prisma/client';
+import { getTasksPaginatedApiTasksGet, TaskResponse } from '@/server';
 import { ChevronsUpDown, LogOutIcon, SettingsIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -27,11 +27,11 @@ import { create } from 'zustand';
 import { Button } from '../ui/button';
 import { useConfigDialog } from './config-dialog';
 
-export const useRecentTasks = create<{ tasks: Tasks[]; refreshTasks: () => Promise<void> }>(set => ({
+export const useRecentTasks = create<{ tasks: TaskResponse[]; refreshTasks: () => Promise<void> }>(set => ({
   tasks: [],
   refreshTasks: async () => {
-    const res = await fetch('/api/tasks?page=1&page_size=100').then(res => res.json());
-    set({ tasks: (res.tasks || []) as Tasks[] });
+    const res = await getTasksPaginatedApiTasksGet({ query: { page: 1, page_size: 100 } });
+    set({ tasks: (res.data?.tasks || []) as unknown as TaskResponse[] });
   },
 }));
 
@@ -108,7 +108,7 @@ export function AppSidebar() {
                 </Avatar>
                 <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
                   <span className="truncate text-sm font-medium">{me?.name || me?.email}</span>
-                  <span className="text-muted-foreground truncate text-xs">{me?.organizationName}</span>
+                  <span className="text-muted-foreground truncate text-xs">{me?.organization_name}</span>
                   <span className="text-muted-foreground truncate text-xs">{me?.email}</span>
                 </div>
                 <ChevronsUpDown className="text-muted-foreground h-4 w-4 shrink-0" />

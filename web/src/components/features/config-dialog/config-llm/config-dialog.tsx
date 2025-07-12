@@ -12,6 +12,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { ConfigFormData } from '.';
 import { useTranslations } from 'next-intl';
+import { updateLlmConfigApiConfigLlmPost } from '@/server';
 
 interface ConfigDialogProps {
   onSuccess?: (success: boolean) => void;
@@ -76,10 +77,7 @@ export const ConfigDialog = React.forwardRef<ConfigDialogRef, ConfigDialogProps>
   const onSubmit = async (data: ConfigFormData) => {
     try {
       setLoading(true);
-      await fetch(`/api/configs/llm/${data.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }).then(res => res.json());
+      await updateLlmConfigApiConfigLlmPost({ body: data });
       toast.success(t('configUpdated'));
       props.onSuccess?.(true);
       setOpen(false);

@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional, Union
 
 from sqlmodel import JSON, Column, Field, SQLModel, Text
 
@@ -70,7 +70,9 @@ class Tasks(BaseModel, table=True):
     summary: Optional[str] = Field(default=None)
     prompt: str = Field(sa_column=Column(Text))
     status: str = Field(default="pending")
-    tools: Dict[str, Any] = Field(default_factory=list, sa_column=Column(JSON))
+    tools: List[Union[str, Dict[str, Any]]] = Field(
+        default_factory=list, sa_column=Column(JSON)
+    )
     shareExpiresAt: Optional[datetime] = Field(default=None)
 
 

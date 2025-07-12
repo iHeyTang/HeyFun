@@ -4,11 +4,12 @@ import { ChatMessages } from '@/components/features/chat/messages';
 import { ChatPreview } from '@/components/features/chat/preview';
 import { usePreviewData } from '@/components/features/chat/preview/store';
 import { aggregateMessages } from '@/lib/chat-messages';
-import { Message } from '@/lib/chat-messages/types';
+import { AgentLifecycleType, Message } from '@/lib/chat-messages/types';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sparkles } from 'lucide-react';
+import { getSharedTaskApiSharedTasksTaskIdGet } from '@/server';
 
 export default function ChatSharePage() {
   const router = useRouter();
@@ -65,19 +66,21 @@ export default function ChatSharePage() {
   };
 
   const refreshTask = async () => {
-    const res = await fetch(`/api/shared_tasks/${taskId}`).then(res => res.json());
+    const res = await getSharedTaskApiSharedTasksTaskIdGet({ path: { task_id: taskId } });
     setMessages([]);
     if (timeoutIdRef.current) {
       clearTimeout(timeoutIdRef.current);
       timeoutIdRef.current = null;
     }
 
-    messagesQueueRef.current = res.progresses.map((step: any) => ({
-      ...step,
-      index: step.index || 0,
-      type: step.type as any,
-      role: 'assistant' as const,
-    }));
+    messagesQueueRef.current =
+      res?.data?.progresses?.map(step => ({
+        index: step.index || 0,
+        type: step.type as AgentLifecycleType,
+        role: 'assistant' as const,
+        createdAt: step.createdAt ? new Date(step.createdAt) : undefined,
+        content: step.content,
+      })) || [];
 
     if (messagesQueueRef.current.length > 0) {
       timeoutIdRef.current = setTimeout(processMessageQueue, 500);

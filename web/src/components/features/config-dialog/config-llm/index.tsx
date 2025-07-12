@@ -4,6 +4,7 @@ import { confirm } from '@/components/block/confirm';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useLlmConfigs } from '@/hooks/use-configs';
+import { removeLlmConfigApiConfigLlmConfigIdDelete } from '@/server';
 import { Pencil, Plus, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
@@ -38,7 +39,7 @@ export default function ConfigLlm() {
       content: t('confirmDelete'),
       onConfirm: async () => {
         if (config.id) {
-          await fetch(`/api/configs/llm/${config.id}`, { method: 'DELETE' }).then(res => res.json());
+          await removeLlmConfigApiConfigLlmConfigIdDelete({ path: { config_id: config.id } });
           refreshLlmConfigs();
           toast.success(t('modelRemoved'));
         }

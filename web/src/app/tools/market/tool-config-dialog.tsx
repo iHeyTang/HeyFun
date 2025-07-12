@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Tools } from '@prisma/client';
+import { installToolApiToolsInstallPost, ToolSchemaResponse } from '@/server';
 import { JSONSchema } from 'json-schema-to-ts';
 import { forwardRef, useImperativeHandle, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -15,16 +15,16 @@ interface ToolConfigDialogProps {
 }
 
 export interface ToolConfigDialogRef {
-  showConfig: (tool: Tools) => void;
+  showConfig: (tool: ToolSchemaResponse) => void;
 }
 
 export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialogProps>(({ onSuccess }, ref) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [tool, setTool] = useState<Tools>();
+  const [tool, setTool] = useState<ToolSchemaResponse>();
   const [open, setOpen] = useState(false);
 
   useImperativeHandle(ref, () => ({
-    showConfig: tool => {
+    showConfig: (tool: ToolSchemaResponse) => {
       setTool(tool);
       setOpen(true);
     },
@@ -39,13 +39,7 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsLoading(true);
-      await fetch('/api/tools/install', {
-        method: 'POST',
-        body: JSON.stringify({
-          toolId: tool!.id,
-          env: values,
-        }),
-      }).then(res => res.json());
+      await installToolApiToolsInstallPost({ body: { toolId: tool!.id, env: values } });
       toast.success('Install success', {
         description: 'Tool config saved',
       });
@@ -73,7 +67,7 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
         <div className="mt-4 flex-1">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {tool.envSchema.properties &&
+              {tool.envSchema?.properties &&
                 Object.entries(tool.envSchema.properties).map(([key, value]: [string, any]) => (
                   <FormField
                     key={key}
@@ -140,14 +134,14 @@ const generateZodSchema = (schema: Exclude<JSONSchema, boolean>) => {
   return z.object(zodSchema);
 };
 
-const generateDefaultValues = (schema?: Tools['envSchema']) => {
+const generateDefaultValues = (schema?: ToolSchemaResponse['envSchema']) => {
   const defaultValues: Record<string, any> = {};
   if (!schema?.properties) {
     return defaultValues;
   }
 
   Object.entries(schema.properties).forEach(([key, _propSchema]) => {
-    const propSchema = _propSchema as PrismaJson.JsonSchema;
+    const propSchema = _propSchema as JSONSchema;
     if (typeof propSchema === 'boolean') {
       defaultValues[key] = false;
       return;

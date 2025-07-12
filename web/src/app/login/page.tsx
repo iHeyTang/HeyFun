@@ -1,13 +1,14 @@
 'use client';
 
+import logo from '@/assets/logo.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { signinApiAuthSigninPost } from '@/server';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import logo from '@/assets/logo.png';
-import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,22 +21,19 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/signin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await signinApiAuthSigninPost({
+        body: {
+          email,
+          password,
         },
-        body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+      if (response.error || !response.data) {
+        throw new Error(response.error?.detail?.[0]?.msg || 'Login failed');
       }
 
       // Save token to cookie
-      document.cookie = `token=${data.token}; path=/`;
+      document.cookie = `token=${response.data.token}; path=/`;
 
       toast.success('Login successful', {
         description: 'Redirecting to home page...',

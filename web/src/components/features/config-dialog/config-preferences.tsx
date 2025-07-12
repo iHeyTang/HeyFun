@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { usePreferences } from '@/hooks/use-configs';
+import { updatePreferencesApiConfigPreferencesPost } from '@/server';
 
 export default function ConfigLlm(props: { onSuccess?: (success: boolean) => void }) {
   const t = useTranslations('config');
@@ -24,8 +25,8 @@ export default function ConfigLlm(props: { onSuccess?: (success: boolean) => voi
     const loadConfig = async () => {
       try {
         await refreshPreferences();
-        setSelectedLanguage(preferences.language);
-        setTheme(preferences.theme);
+        setSelectedLanguage(preferences.language || 'en');
+        setTheme(preferences.theme || 'light');
       } catch (error) {
         toast.error(t('toast.loadConfigError'));
       }
@@ -36,10 +37,7 @@ export default function ConfigLlm(props: { onSuccess?: (success: boolean) => voi
   const handleLanguageChange = async (value: string) => {
     setLoading(true);
     try {
-      await fetch('/api/configs/preferences', {
-        method: 'PUT',
-        body: JSON.stringify({ language: value }),
-      }).then(res => res.json());
+      await updatePreferencesApiConfigPreferencesPost({ body: { language: value } });
       setSelectedLanguage(value);
       toast.success(t('toast.updateSuccess'));
       props.onSuccess?.(true);

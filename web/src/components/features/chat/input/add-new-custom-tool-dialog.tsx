@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { installCustomToolApiToolsInstallCustomPost } from '@/server';
 import React, { useImperativeHandle, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -31,14 +32,11 @@ export const AddNewCustomToolDialog = React.forwardRef<AddNewCustomToolDialogRef
       return;
     }
     if (toolName && toolConfig) {
-      const res = await fetch('/api/tools/install/custom', {
-        method: 'POST',
-        body: JSON.stringify({ name: toolName, config: toolConfig }),
-      }).then(res => res.json());
+      const res = await installCustomToolApiToolsInstallCustomPost({ body: { name: toolName, config: toolConfig } });
       if (res.error) {
-        toast.error(res.error);
+        toast.error(res.error.detail?.[0]?.msg || 'Tool installed failed');
       } else {
-        toast.success(res.data?.message || 'Tool installed successfully');
+        toast.success('Tool installed successfully');
         setOpen(false);
         props.onSuccess?.();
       }

@@ -6,6 +6,13 @@ import { ChatPreview } from '@/components/features/chat/preview';
 import { usePreviewData } from '@/components/features/chat/preview/store';
 import { aggregateMessages } from '@/lib/chat-messages';
 import { Message } from '@/lib/chat-messages/types';
+import {
+  createTaskApiTasksPost,
+  taskEventsApiTasksTaskIdEventsGet,
+  getTaskApiTasksTaskIdGet,
+  terminateTaskApiTasksTaskIdTerminatePost,
+} from '@/server';
+import { uniqBy } from 'lodash';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -22,6 +29,7 @@ export default function ChatPage() {
   const [isTerminating, setIsTerminating] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const shouldAutoScroll = isNearBottom;
 
@@ -39,48 +47,156 @@ export default function ChatPage() {
     }
   };
 
-  const refreshTask = async () => {
-    const res = await fetch(`/api/tasks/${taskId}`).then(res => res.json());
-    if (res.error || !res.data) {
-      console.error('Error fetching task:', res.error);
-      return;
+  const connectToEventStream = () => {
+    if (!taskId) return;
+
+    // 关闭之前的连接
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
     }
-    setMessages(res.data.progresses.map(step => ({ ...step, index: step.index! || 0, type: step.type as any, role: 'assistant' as const })));
-    if (shouldAutoScroll) {
-      requestAnimationFrame(scrollToBottom);
-      const nextMessage = messages[messages.length - 1];
-      if (shouldAutoScroll) {
-        if (nextMessage?.type === 'agent:lifecycle:step:think:browser:browse:complete') {
-          setPreviewData({
-            type: 'browser',
-            url: nextMessage.content.url,
-            title: nextMessage.content.title,
-            screenshot: nextMessage.content.screenshot,
-          });
+
+    // 创建新的EventSource连接
+    const eventSource = new EventSource(`http://localhost:5172/api/tasks/${taskId}/events`, { withCredentials: true });
+    eventSourceRef.current = eventSource;
+
+    eventSource.onmessage = event => {
+      try {
+        const data = JSON.parse(event.data);
+
+        // 转换事件数据为Message格式
+        const message: Message = {
+          index: data.index || 0,
+          type: data.name as any,
+          role: 'assistant' as const,
+          createdAt: new Date(),
+          step: data.step,
+          content: data.content,
+        };
+
+        setMessages(prevMessages => {
+          const newMessages = uniqBy([...prevMessages, message], 'index');
+
+          // 处理预览数据
+          if (shouldAutoScroll) {
+            if (message.type === 'agent:lifecycle:step:think:browser:browse:complete') {
+              setPreviewData({
+                type: 'browser',
+                url: message.content.url,
+                title: message.content.title,
+                screenshot: message.content.screenshot,
+              });
+            }
+            if (message.type === 'agent:lifecycle:step:act:tool:execute:start') {
+              setPreviewData({ type: 'tool', toolId: message.content.id });
+            }
+          }
+
+          return newMessages;
+        });
+
+        // 更新任务状态
+        if (data.name === 'agent:lifecycle:complete') {
+          setIsThinking(false);
+          // 任务完成，主动关闭连接
+          if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+          }
+        } else if (data.name === 'agent:lifecycle:terminating') {
+          setIsTerminating(true);
+        } else if (data.name === 'agent:lifecycle:terminated') {
+          setIsThinking(false);
+          setIsTerminating(false);
+          // 任务终止，主动关闭连接
+          if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+          }
+        } else if (data.name === 'agent:lifecycle:start') {
+          setIsThinking(true);
+          setIsTerminating(false);
         }
-        if (nextMessage?.type === 'agent:lifecycle:step:act:tool:execute:start') {
-          setPreviewData({ type: 'tool', toolId: nextMessage.content.id });
+      } catch (error) {
+        console.error('Error parsing SSE event:', error);
+      }
+    };
+
+    // 监听特定的事件类型
+    eventSource.addEventListener('complete', () => {
+      console.log('Task completed, closing connection');
+      setIsThinking(false);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    });
+
+    eventSource.addEventListener('terminated', () => {
+      console.log('Task terminated, closing connection');
+      setIsThinking(false);
+      setIsTerminating(false);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    });
+
+    eventSource.addEventListener('error', event => {
+      console.log('Server sent error event:', event);
+      // 服务器发送了错误事件，关闭连接
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    });
+
+    eventSource.onerror = error => {
+      console.error('EventSource error:', error);
+      // 只有在任务还在进行中时才重新连接
+      if (isThinking && !isTerminating) {
+        setTimeout(() => {
+          connectToEventStream();
+        }, 5000);
+      } else {
+        // 任务已完成或终止，关闭连接
+        if (eventSourceRef.current) {
+          eventSourceRef.current.close();
+          eventSourceRef.current = null;
         }
       }
+    };
+
+    eventSource.onopen = () => {
+      console.log('EventSource connected');
+    };
+  };
+
+  const getInitialTaskStatus = async () => {
+    if (!taskId) return;
+
+    try {
+      const res = await getTaskApiTasksTaskIdGet({ path: { task_id: taskId } });
+      if (res.error || !res.data) {
+        console.error('Error fetching task:', res.error);
+        return;
+      }
+
+      // 设置初始状态
+      setIsThinking(res.data.status !== 'completed' && res.data.status !== 'failed' && res.data.status !== 'terminated');
+      setIsTerminating(res.data.status === 'terminating');
+
+      connectToEventStream();
+    } catch (error) {
+      console.error('Error getting initial task status:', error);
     }
-    setIsThinking(res.data!.status !== 'completed' && res.data!.status !== 'failed' && res.data!.status !== 'terminated');
-    setIsTerminating(res.data!.status === 'terminating');
   };
 
   useEffect(() => {
     setPreviewData(null);
     if (!taskId) return;
-    refreshTask();
-  }, [taskId]);
 
-  useEffect(() => {
-    refreshTask();
-    if (!taskId || !isThinking) return;
-    const interval = setInterval(refreshTask, 2000);
-    return () => {
-      clearInterval(interval);
-    };
-  }, [taskId, isThinking, shouldAutoScroll]);
+    getInitialTaskStatus();
+  }, [taskId]);
 
   useEffect(() => {
     if (shouldAutoScroll) {
@@ -93,26 +209,29 @@ export default function ChatPage() {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
     };
   }, []);
 
   const handleSubmit = async (value: { modelId: string; prompt: string; tools: string[]; files: File[]; shouldPlan: boolean }) => {
     try {
-      const res = await fetch(`/api/tasks/${taskId}`, {
-        method: 'POST',
-        body: JSON.stringify({
-          taskId,
-          modelId: value.modelId,
+      const res = await createTaskApiTasksPost({
+        body: {
+          task_id: taskId,
+          llm_config: { modelId: value.modelId },
           prompt: value.prompt,
           tools: value.tools,
           files: value.files,
-          shouldPlan: value.shouldPlan,
-        }),
-      }).then(res => res.json());
+        },
+      });
       if (res.error) {
         console.error('Error restarting task:', res.error);
       }
       setIsThinking(true);
+      setMessages([]); // 清空之前的消息
+      connectToEventStream(); // 重新连接事件流
       router.refresh();
     } catch (error) {
       console.error('Error submitting task:', error);
@@ -138,7 +257,7 @@ export default function ChatPage() {
             status={isThinking ? 'thinking' : isTerminating ? 'terminating' : 'completed'}
             onSubmit={handleSubmit}
             onTerminate={async () => {
-              await fetch(`/api/tasks/${taskId}/terminate`, { method: 'POST' });
+              await terminateTaskApiTasksTaskIdTerminatePost({ path: { task_id: taskId } });
               router.refresh();
             }}
             taskId={taskId}

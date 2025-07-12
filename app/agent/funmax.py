@@ -84,9 +84,6 @@ class FunMax(ReActAgent):
 
     @model_validator(mode="after")
     def initialize_helper(self) -> "FunMax":
-        organization_id, task_id = self.task_id.split("/")
-        self.task_dir = f"/workspace/{organization_id}/{task_id}"
-
         self.system_prompt_template = self.custom_prompt_templates.get(
             "system_prompt", SYSTEM_PROMPT
         )
@@ -99,7 +96,7 @@ class FunMax(ReActAgent):
 
         self.system_prompt = template_manager.render_template_safe(
             self.system_prompt_template,
-            task_id=task_id,
+            task_id=self.task_id,
             name=self.name,
             language=self.language or "English",
             max_steps=self.max_steps,
@@ -121,11 +118,11 @@ class FunMax(ReActAgent):
             role="system", content=self.system_prompt, base64_image=None
         )
 
-        if self.history:
-            for message in self.history:
-                await self.update_memory(
-                    role=message["role"], content=message["message"]
-                )
+        # if self.history:
+        #     for message in self.history:
+        #         await self.update_memory(
+        #             role=message["role"], content=message["message"]
+        #         )
 
         self._browser_context_helper = BrowserContextHelper(self)
         self._tool_call_context_helper = ToolCallContextHelper(self)

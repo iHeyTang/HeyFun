@@ -1,16 +1,8 @@
 import { create } from 'zustand';
 import { useCallback, useEffect } from 'react';
+import { listAgentToolsApiToolsGet, ToolInfo } from '@/server';
 
-type AgentTool = {
-  id: string;
-  name: string;
-  description: string;
-  repoUrl: string;
-  command: string;
-  args: string[];
-  type: string;
-  source: string;
-};
+type AgentTool = ToolInfo;
 
 interface AgentToolsState {
   allTools: AgentTool[];
@@ -33,9 +25,9 @@ const useAgentToolsStore = create<AgentToolsState>((set, get) => ({
     const { setLoading, setAllTools, setInitialized } = get();
     try {
       setLoading(true);
-      const response = await fetch('/api/tools').then(res => res.json());
-      if (response) {
-        setAllTools(response);
+      const response = await listAgentToolsApiToolsGet({});
+      if (response.data) {
+        setAllTools(response.data);
         setInitialized(true);
       }
     } catch (error) {

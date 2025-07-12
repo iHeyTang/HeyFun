@@ -1,13 +1,14 @@
 'use client';
 
+import logo from '@/assets/logo.png';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { signupApiAuthSignupPost } from '@/server/sdk.gen';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import logo from '@/assets/logo.png';
-import Link from 'next/link';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -34,18 +35,12 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      const response = await signupApiAuthSignupPost({
+        body: formData,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
+      if (response.error) {
+        throw new Error(response.error.detail?.[0]?.msg || 'Registration failed');
       }
 
       toast.success('Registration successful', {
