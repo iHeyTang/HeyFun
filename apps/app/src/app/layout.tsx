@@ -1,0 +1,49 @@
+import { ConfirmDialog } from '@/components/block/confirm';
+import { Toaster } from '@/components/ui/sonner';
+import type { Metadata } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale } from 'next-intl/server';
+import { Geist, Geist_Mono } from 'next/font/google';
+import { ThemeProvider } from 'next-themes';
+import './globals.css';
+import { AppSidebar } from '@/components/features/app-sidebar';
+
+const geistSans = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+});
+
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+});
+
+export const metadata: Metadata = {
+  title: 'HeyFun',
+  description: "Hey! Let's bring a little fun to this world together.",
+};
+
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const locale = await getLocale();
+
+  return (
+    <html lang={locale} suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} h-screen w-screen overflow-hidden antialiased`}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <NextIntlClientProvider>
+            <div className="flex h-full w-full">
+              <AppSidebar />
+              <div className="h-full flex-1 overflow-hidden">{children}</div>
+            </div>
+          </NextIntlClientProvider>
+          <Toaster />
+          <ConfirmDialog />
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}

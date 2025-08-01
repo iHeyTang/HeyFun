@@ -1,0 +1,263 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator json {
+  // Read more: https://github.com/arthurfiorette/prisma-json-types-generator
+  provider = "prisma-json-types-generator"
+  allowAny = "true"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  password     String
+  isFirstLogin Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([name])
+}
+
+model Organizations {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
+model Preferences {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  language       String?
+}
+
+model OrganizationUsers {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, userId])
+}
+
+model Tasks {
+  id             String           @id @default(cuid())
+  outId          String?          @unique
+  llmId          String
+  summary        String?
+  prompt         String           @db.Text
+  status         String           @default("pending")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  organizationId String
+  tools          Json             @default("[]")
+  shareExpiresAt DateTime?
+  progresses     TaskProgresses[]
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([createdAt])
+}
+
+model TaskProgresses {
+  id             String   @id @default(cuid())
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  taskId         String
+  index          Int
+  round          Int      @default(1)
+  step           Int
+  type           String
+  content        Json
+
+  task Tasks @relation(fields: [taskId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, taskId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model LlmConfigs {
+  id             String   @id @default(cuid())
+  type           String
+  model          String
+  baseUrl        String
+  apiKey         String
+  maxTokens      Int
+  maxInputTokens Int?
+  temperature    Float
+  apiType        String
+  apiVersion     String?
+  isActive       Boolean
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+  name           String?
+
+  @@index([organizationId])
+  @@index([isActive])
+}
+
+model ModelProviderConfigs {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+  // provider id, identify certain provider, such as "openai"
+  provider       String
+  // if true, this is the default config for the same type of provider. it not used for now because we only have one config for each provider.
+  isDefault      Boolean  @default(false)
+  // config is a encrypted string, it contains the config for the provider. each provider has its own config schema.
+  config         String   @db.Text
+
+  @@index([organizationId])
+  @@index([provider])
+}
+
+model Agents {
+  id             String   @id @default(cuid())
+  name           String
+  description    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+  llmId          String
+  /// [JSONSchema] String[]
+  tools          Json     @default("[]")
+
+  @@index([organizationId])
+  @@index([createdAt])
+}
+
+model InviteCodes {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  email     String    @unique
+  isUsed    Boolean   @default(false)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([isUsed])
+}
+
+// @deprecated: use ToolSchemas instead
+model Tools {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  description   String?  @db.Text
+  command       String
+  /// [StringList] Args for stdio
+  args          Json     @default("[]")
+  /// [JSONSchema] JsonSchema
+  envSchema     Json     @default("{}")
+  url           String   @default("")
+  /// [JSONSchema] JsonSchema
+  querySchema   Json     @default("{}")
+  /// [JSONSchema] JsonSchema
+  headersSchema Json     @default("{}")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  organizationTools OrganizationTools[]
+
+  @@index([name])
+  @@index([createdAt])
+}
+
+// @deprecated: use AgentTools instead
+model OrganizationTools {
+  id             String   @id @default(cuid())
+  toolId         String
+  organizationId String
+  // for stdio
+  env            String?
+  // for sse
+  query          String?
+  headers        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tool Tools @relation(fields: [toolId], references: [id])
+
+  @@unique([toolId, organizationId])
+  @@index([toolId])
+  @@index([organizationId])
+  @@index([createdAt])
+}
+
+enum AgentToolSource {
+  STANDARD
+  CUSTOM
+}
+
+model AgentTools {
+  id             String          @id @default(cuid())
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organizationId String
+  name           String?
+  source         AgentToolSource
+  schemaId       String?
+  // for stdio
+  env            String?
+  // for sse
+  query          String?
+  headers        String?
+  // for custom
+  customConfig   String?
+
+  schema ToolSchemas? @relation(fields: [schemaId], references: [id])
+
+  @@unique([schemaId, organizationId])
+  @@index([schemaId])
+  @@index([organizationId])
+  @@index([createdAt])
+}
+
+model ToolSchemas {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  name          String   @unique
+  description   String?  @db.Text
+  repoUrl       String?
+  /// Command for stdio
+  command       String   @default("")
+  /// [StringList] Args for stdio
+  args          Json     @default("[]")
+  /// [JSONSchema] EnvSchema for stdio
+  envSchema     Json     @default("{}")
+  /// Url for sse
+  url           String   @default("")
+  /// QuerySchema for sse
+  querySchema   Json     @default("{}")
+  /// [JSONSchema] HeadersSchema for sse
+  headersSchema Json     @default("{}")
+
+  AgentTools AgentTools[]
+
+  @@index([name])
+  @@index([createdAt])
+}
