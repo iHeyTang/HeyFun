@@ -1,100 +1,93 @@
-export interface TemplateVariables {
-  [key: string]: string | number | boolean | null | undefined;
+import Handlebars from "handlebars";
+
+// 定义模板函数类型
+export type HandlebarsTemplateDelegate = Handlebars.TemplateDelegate;
+
+/**
+ * 模板数据接口
+ */
+export interface TemplateData {
+  [key: string]: any;
 }
 
 /**
- * 简单的模板管理器，用于渲染包含{{ variable }}格式变量的模板
+ * 编译模板并返回渲染函数
+ * @param template 模板字符串
+ * @returns 编译后的模板函数
  */
-export class TemplateManager {
-  /**
-   * 渲染模板，替换其中的变量
-   * @param template 包含{{ variable }}格式变量的模板字符串
-   * @param variables 变量对象
-   * @returns 渲染后的字符串
-   */
-  public renderTemplate(template: string, variables: TemplateVariables): string {
-    let result = template;
-
-    // 匹配 {{ variable }} 格式的变量
-    const variableRegex = /\{\{\s*(\w+)\s*\}\}/g;
-
-    result = result.replace(variableRegex, (match, variableName) => {
-      const value = variables[variableName];
-      if (value === null || value === undefined) {
-        console.warn(`Template variable '${variableName}' is not defined`);
-        return match; // 保持原样
-      }
-      return String(value);
-    });
-
-    return result;
-  }
-
-  /**
-   * 安全渲染模板，如果变量不存在则使用默认值
-   * @param template 模板字符串
-   * @param variables 变量对象
-   * @param defaultValue 变量不存在时的默认值
-   * @returns 渲染后的字符串
-   */
-  public renderTemplateSafe(
-    template: string,
-    variables: TemplateVariables,
-    defaultValue: string = ''
-  ): string {
-    let result = template;
-
-    const variableRegex = /\{\{\s*(\w+)\s*\}\}/g;
-
-    result = result.replace(variableRegex, (match, variableName) => {
-      const value = variables[variableName];
-      if (value === null || value === undefined) {
-        return defaultValue;
-      }
-      return String(value);
-    });
-
-    return result;
-  }
-
-  /**
-   * 获取模板中的所有变量名
-   * @param template 模板字符串
-   * @returns 变量名数组
-   */
-  public getTemplateVariables(template: string): string[] {
-    const variableRegex = /\{\{\s*(\w+)\s*\}\}/g;
-    const variables: string[] = [];
-    let match;
-
-    while ((match = variableRegex.exec(template)) !== null) {
-      if (!variables.includes(match[1])) {
-        variables.push(match[1]);
-      }
-    }
-
-    return variables;
-  }
-
-  /**
-   * 验证模板变量是否都已提供
-   * @param template 模板字符串
-   * @param variables 变量对象
-   * @returns 缺失的变量名数组
-   */
-  public validateTemplate(template: string, variables: TemplateVariables): string[] {
-    const requiredVariables = this.getTemplateVariables(template);
-    const missingVariables: string[] = [];
-
-    for (const variable of requiredVariables) {
-      if (!(variable in variables) || variables[variable] === null || variables[variable] === undefined) {
-        missingVariables.push(variable);
-      }
-    }
-
-    return missingVariables;
-  }
+export function compileTemplate(template: string): HandlebarsTemplateDelegate {
+  return Handlebars.compile(template);
 }
 
-// 导出单例模板管理器
-export const templateManager = new TemplateManager();
+/**
+ * 直接渲染模板
+ * @param template 模板字符串
+ * @param data 模板数据
+ * @returns 渲染后的字符串
+ */
+export function renderTemplate(template: string, data: TemplateData): string {
+  const compiled = compileTemplate(template);
+  return compiled(data);
+}
+
+/**
+ * 预编译模板以提高性能
+ * @param templates 模板对象，键为模板名称，值为模板字符串
+ * @returns 编译后的模板对象
+ */
+export function compileTemplates<T extends Record<string, string>>(
+  templates: T
+): Record<keyof T, HandlebarsTemplateDelegate> {
+  const compiled: Record<keyof T, HandlebarsTemplateDelegate> = {} as any;
+
+  for (const [key, template] of Object.entries(templates)) {
+    compiled[key as keyof T] = compileTemplate(template);
+  }
+
+  return compiled;
+}
+
+/**
+ * 注册Handlebars助手函数
+ * @param name 助手名称
+ * @param fn 助手函数
+ */
+export function registerHelper(
+  name: string,
+  fn: (...args: any[]) => string
+): void {
+  Handlebars.registerHelper(name, fn);
+}
+
+/**
+ * 注册默认助手函数
+ */
+export function registerDefaultHelpers(): void {
+  // 格式化时间助手
+  registerHelper("formatTime", function (time: string | Date, format?: string) {
+    const date = new Date(time);
+    if (format === "iso") {
+      return date.toISOString();
+    }
+    if (format === "local") {
+      return date.toLocaleString();
+    }
+    return date.toISOString();
+  });
+
+  // 条件助手
+  registerHelper(
+    "ifEquals",
+    function (this: any, arg1: any, arg2: any, options: any) {
+      return arg1 === arg2 ? options.fn(this) : options.inverse(this);
+    }
+  );
+
+  // 默认值助手
+  registerHelper("default", function (value: any, defaultValue: any) {
+    return value || defaultValue;
+  });
+}
+
+// 注册默认助手函数
+registerDefaultHelpers();

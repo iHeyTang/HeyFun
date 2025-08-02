@@ -63,8 +63,6 @@ export class AgentEvent {
         // 处理队列中的所有事件
         while (this.queue.length > 0) {
           const event = this.queue.shift()!;
-          console.log(`Processing event: ${event.name}`);
-
           if (this.handlers.length === 0) {
             console.warn('No event handlers registered');
             continue;

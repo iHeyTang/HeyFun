@@ -1,5 +1,5 @@
 {
-  "name": "HeyFunAI",
+  "name": "HeyFun",
   "private": true,
   "scripts": {
     "build": "turbo run build",

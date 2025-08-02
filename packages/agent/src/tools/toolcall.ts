@@ -54,12 +54,10 @@ export class ToolCallContextHelper {
   /**
    * 询问工具 - 让LLM选择要使用的工具
    */
-  async askTool(): Promise<boolean> {
+  async askTool(prompt: string): Promise<boolean> {
     // 添加next_step_prompt作为用户消息
-    if (this.agent.next_step_prompt) {
-      await this.agent.updateMemory(
-        createMessage.user(this.agent.next_step_prompt)
-      );
+    if (prompt) {
+      await this.agent.updateMemory(createMessage.user(prompt));
     }
 
     try {
@@ -87,12 +85,6 @@ export class ToolCallContextHelper {
       this.toolCalls = this.extractToolCalls(response);
       const content = response.choices[0]?.message?.content || "";
 
-      // 记录响应信息
-      console.log(`✨ ${this.agent.name}'s thoughts: ${content}`);
-      console.log(
-        `🛠️ ${this.agent.name} selected ${this.toolCalls.length} tools to use`
-      );
-
       // 发射工具选择事件
       this.agent.emit(ToolCallAgentEvents.TOOL_SELECTED, {
         thoughts: content,
@@ -104,8 +96,6 @@ export class ToolCallContextHelper {
           tools: this.toolCalls.map((call) => call.function.name),
           arguments: this.toolCalls[0]?.function?.arguments,
         };
-        console.log(`🧰 Tools being prepared: ${toolInfo.tools}`);
-        console.log(`🔧 Tool arguments: ${toolInfo.arguments}`);
       }
 
       // 处理不同的工具选择模式
@@ -150,7 +140,10 @@ export class ToolCallContextHelper {
         : result;
 
       console.log(
-        `🎯 Tool '${toolCall.function.name}' completed! Result: ${truncatedResult}`
+        `🎯 Tool '${toolCall.function.name}' completed! Result: ${truncatedResult.slice(
+          0,
+          100
+        )}`
       );
 
       // 添加工具响应到内存

@@ -1,18 +1,23 @@
 import { Chat } from "@repo/llm";
 import { ToolCallContextHelper } from "../tools/toolcall";
-import { NEXT_STEP_PROMPT, PLAN_PROMPT, SYSTEM_PROMPT } from "../prompt/funmax";
 import type { ToolConfig } from "../tools/types";
 import { createMessage } from "../utils/message";
-import { templateManager } from "../utils/template";
+import { renderTemplate } from "../utils/template";
 import { BaseAgentEvents } from "./base";
 import { ReActAgent, ReActAgentConfig } from "./react";
+
+export interface PromptTemplates {
+  system: string;
+  next: string;
+  plan: string;
+}
 
 export interface FunMaxConfig extends ReActAgentConfig {
   task_request: string;
   language?: string;
   tools?: ToolConfig[];
   history?: Chat.ChatCompletionMessageParam[];
-  custom_prompt_templates?: Record<string, string>;
+  promptTemplates: PromptTemplates;
 }
 
 /**
@@ -38,19 +43,10 @@ export class FunMax extends ReActAgent {
   public readonly tools: ToolConfig[];
   public readonly task_request: string;
   public readonly history: Chat.ChatCompletionMessageParam[];
-  public readonly custom_prompt_templates: Record<string, string>;
-
-  // 动态设置的提示词
-  public system_prompt: string = "";
-  public next_step_prompt: string = "";
+  public readonly custom_prompt_templates: PromptTemplates;
 
   // 任务上下文
   public task_context: TaskContext;
-
-  // 提示词模板
-  private system_prompt_template: string = "";
-  private next_step_prompt_template: string = "";
-  private plan_prompt_template: string = "";
 
   // 上下文助手（暂时设为可选，实际使用时需要初始化）
   private _tool_call_context_helper?: ToolCallContextHelper;
@@ -62,7 +58,7 @@ export class FunMax extends ReActAgent {
     this.tools = config.tools || [];
     this.task_request = config.task_request;
     this.history = config.history || [];
-    this.custom_prompt_templates = config.custom_prompt_templates || {};
+    this.custom_prompt_templates = config.promptTemplates || {};
 
     // 解析任务ID以获取任务上下文
     const [organization_id, task_id] = this.task_id.split("/");
@@ -74,55 +70,6 @@ export class FunMax extends ReActAgent {
       task_dir: `/workspace/${organization_id}/${task_id}`,
       organization_id,
     };
-
-    // 初始化模板
-    this.initializeTemplates();
-
-    // 只渲染固定的系统提示词
-    this.renderSystemPrompt();
-  }
-
-  /**
-   * 初始化提示词模板
-   */
-  private initializeTemplates(): void {
-    this.system_prompt_template =
-      this.custom_prompt_templates.system_prompt || SYSTEM_PROMPT;
-    this.next_step_prompt_template =
-      this.custom_prompt_templates.next_step_prompt || NEXT_STEP_PROMPT;
-    this.plan_prompt_template =
-      this.custom_prompt_templates.plan_prompt || PLAN_PROMPT;
-  }
-
-  /**
-   * 渲染系统提示词（固定内容）
-   */
-  private renderSystemPrompt(): void {
-    this.system_prompt = templateManager.renderTemplateSafe(
-      this.system_prompt_template,
-      {
-        task_id: this.task_context.task_id,
-        name: this.name,
-        language: this.language || "English",
-        max_steps: this.max_steps,
-        current_time:
-          new Date().toISOString().replace("T", " ").substring(0, 19) + " UTC",
-      }
-    );
-  }
-
-  /**
-   * 渲染下一步提示词（动态内容）
-   */
-  private renderNextStepPrompt(): void {
-    this.next_step_prompt = templateManager.renderTemplateSafe(
-      this.next_step_prompt_template,
-      {
-        max_steps: this.max_steps,
-        current_step: this.current_step,
-        remaining_steps: this.max_steps - this.current_step,
-      }
-    );
   }
 
   /**
@@ -132,7 +79,13 @@ export class FunMax extends ReActAgent {
     await super.prepare();
 
     // 添加系统提示词到内存
-    await this.updateMemory(createMessage.system(this.system_prompt));
+    const system_prompt = renderTemplate(this.custom_prompt_templates.system, {
+      task_id: this.task_context.task_id,
+      language: this.language || "English",
+      max_steps: this.max_steps,
+      current_time: new Date().toISOString(),
+    });
+    await this.updateMemory(createMessage.system(system_prompt));
 
     // 添加历史消息到内存
     if (this.history && this.history.length > 0) {
@@ -206,17 +159,14 @@ export class FunMax extends ReActAgent {
   public async plan(): Promise<string> {
     this.emit(BaseAgentEvents.LIFECYCLE_PLAN_START, {});
 
-    const planPrompt = templateManager.renderTemplateSafe(
-      this.plan_prompt_template,
-      {
-        language: this.language || "English",
-        max_steps: this.max_steps,
-        available_tools:
-          this._tool_call_context_helper?.availableTools.tools
-            .map((tool) => `- ${tool.name}: ${tool.description}`)
-            .join("\n") || "No tools available",
-      }
-    );
+    const planPrompt = renderTemplate(this.custom_prompt_templates.plan, {
+      language: this.language || "English",
+      max_steps: this.max_steps,
+      available_tools:
+        this._tool_call_context_helper?.availableTools.tools
+          .map((tool) => `- ${tool.name}: ${tool.description}`)
+          .join("\n") || "No tools available",
+    });
 
     try {
       const response = await this.llm.chat({
@@ -247,16 +197,16 @@ export class FunMax extends ReActAgent {
    */
   public async think(): Promise<boolean> {
     // 更新下一步提示词
-    const originalPrompt = this.next_step_prompt;
-    this.renderNextStepPrompt();
+    const next_step_prompt = renderTemplate(this.custom_prompt_templates.next, {
+      max_steps: this.max_steps,
+      current_step: this.current_step,
+      remaining_steps: this.max_steps - this.current_step,
+    });
 
     let result = false;
     if (this._tool_call_context_helper) {
-      result = await this._tool_call_context_helper.askTool();
+      result = await this._tool_call_context_helper.askTool(next_step_prompt);
     }
-
-    // 恢复原始提示词
-    this.next_step_prompt = originalPrompt;
 
     return result;
   }

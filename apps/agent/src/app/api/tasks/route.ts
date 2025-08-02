@@ -1,8 +1,8 @@
-import { FunMax, FunMaxConfig } from "@repo/agent";
-import { Chat } from "@repo/llm";
+import { EventItem, FunMax, FunMaxConfig } from "@repo/agent";
 import { NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "crypto";
-import { EventItem } from "../../../../../../packages/agent/src/event";
+import NEXT_STEP_PROMPT from "../../../prompt/funmax/next";
+import PLAN_PROMPT from "../../../prompt/funmax/plan";
+import SYSTEM_PROMPT from "../../../prompt/funmax/system";
 
 // 声明全局变量
 declare global {
@@ -45,7 +45,6 @@ const pushEventImmediately = (taskId: string, event: EventItem) => {
           controller.enqueue(
             new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`)
           );
-          console.log(`[SSE ${taskId}] Event pushed immediately:`, event.name);
         } catch (error) {
           console.error(`[SSE ${taskId}] Failed to send event:`, error);
         }
@@ -58,8 +57,17 @@ const pushEventImmediately = (taskId: string, event: EventItem) => {
 
 export const POST = async (req: NextRequest) => {
   const args = (await req.json()) as FunMaxConfig;
-  console.log(JSON.stringify(args, null, 2));
   const taskId = args.task_id;
+  if (!args.promptTemplates) {
+    args.promptTemplates = {
+      system: SYSTEM_PROMPT,
+      next: NEXT_STEP_PROMPT,
+      plan: PLAN_PROMPT,
+    };
+  }
+  args.promptTemplates.system = args.promptTemplates.system || SYSTEM_PROMPT;
+  args.promptTemplates.next = args.promptTemplates.next || NEXT_STEP_PROMPT;
+  args.promptTemplates.plan = args.promptTemplates.plan || PLAN_PROMPT;
 
   // 初始化任务状态
   global.taskStatus.set(taskId, { status: "pending", history: [] });

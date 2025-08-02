@@ -27,8 +27,6 @@ export interface BaseAgentConfig {
   llm: LLMClient | LLMClientConfig;
   description?: string;
   should_plan?: boolean;
-  system_prompt?: string;
-  next_step_prompt?: string;
   task_id: string;
   memory?: Memory;
   state?: AgentState;
@@ -48,10 +46,6 @@ export abstract class BaseAgent {
   public readonly name: string;
   public readonly description?: string;
   public readonly should_plan: boolean;
-
-  // Prompts
-  public system_prompt?: string;
-  public next_step_prompt?: string;
 
   public readonly task_id: string;
 
@@ -74,8 +68,6 @@ export abstract class BaseAgent {
     this.name = config.name;
     this.description = config.description;
     this.should_plan = config.should_plan ?? true;
-    this.system_prompt = config.system_prompt;
-    this.next_step_prompt = config.next_step_prompt;
     this.task_id = config.task_id;
     this.state = config.state ?? AgentState.IDLE;
     this.should_terminate = config.should_terminate ?? false;
@@ -151,7 +143,6 @@ export abstract class BaseAgent {
   public async updateMemory(
     message: Chat.ChatCompletionMessageParam
   ): Promise<void> {
-    console.log(`Adding message to memory: ${JSON.stringify(message)}`);
     await this.memory.addMessage(message);
     this.emit(BaseAgentEvents.MEMORY_ADDED, {
       role: message.role,
@@ -284,11 +275,10 @@ export abstract class BaseAgent {
   public handleStuckState(): void {
     const stuck_prompt =
       "Observed duplicate responses. Consider new strategies and avoid repeating ineffective paths already attempted.";
-    this.next_step_prompt = `${stuck_prompt}\n${this.next_step_prompt || ""}`;
     console.warn(`Agent detected stuck state. Added prompt: ${stuck_prompt}`);
 
     this.emit(BaseAgentEvents.STATE_STUCK_HANDLED, {
-      new_prompt: this.next_step_prompt,
+      new_prompt: stuck_prompt,
     });
   }
 
