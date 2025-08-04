@@ -1,6 +1,6 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { ContentBlock } from "@modelcontextprotocol/sdk/types.js";
-import type { Chat } from "@repo/llm";
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
+import type { Chat } from '@repo/llm';
 
 /**
  * MCP工具配置接口
@@ -17,15 +17,19 @@ export interface ToolConfig {
   headers: Record<string, any>;
 }
 
+export interface BaseToolParameters {
+  [key: string]: unknown;
+}
+
 /**
  * 基础工具接口
  */
-export interface BaseTool {
+export interface BaseTool<P extends BaseToolParameters = BaseToolParameters> {
   name: string;
   description: string;
 
   // 执行工具
-  execute(params: Parameters<Client["callTool"]>[0]): Promise<ToolResult>;
+  execute(params: P): Promise<ToolResult>;
 
   // 转换为OpenAI工具格式
   toOpenAITool(): Chat.ChatCompletionTool;

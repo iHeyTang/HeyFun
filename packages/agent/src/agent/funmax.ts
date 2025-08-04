@@ -1,10 +1,10 @@
-import { Chat } from "@repo/llm";
-import { ToolCallContextHelper } from "../tools/toolcall";
-import type { ToolConfig } from "../tools/types";
-import { createMessage } from "../utils/message";
-import { renderTemplate } from "../utils/template";
-import { BaseAgentEvents } from "./base";
-import { ReActAgent, ReActAgentConfig } from "./react";
+import { Chat } from '@repo/llm';
+import { ToolCallContextHelper } from '../tools/toolcall';
+import type { ToolConfig } from '../tools/types';
+import { createMessage } from '../utils/message';
+import { renderTemplate } from '../utils/template';
+import { BaseAgentEvents } from './base';
+import { ReActAgent, ReActAgentConfig } from './react';
 
 export interface PromptTemplates {
   system: string;
@@ -34,9 +34,8 @@ export interface TaskContext {
  * 可以使用多种工具解决各种任务的通用代理
  */
 export class FunMax extends ReActAgent {
-  public readonly name: string = "FunMax";
-  public readonly description: string =
-    "A versatile agent that can solve various tasks using multiple tools";
+  public readonly name: string = 'FunMax';
+  public readonly description: string = 'A versatile agent that can solve various tasks using multiple tools';
 
   // 配置属性
   public readonly language: string;
@@ -54,24 +53,24 @@ export class FunMax extends ReActAgent {
   constructor(config: FunMaxConfig) {
     super(config);
 
-    this.language = config.language || "English";
+    this.language = config.language || 'English';
     this.tools = config.tools || [];
     this.task_request = config.task_request;
     this.history = config.history || [];
     this.custom_prompt_templates = config.promptTemplates || {
-      system: "",
-      next: "",
-      plan: "",
+      system: '',
+      next: '',
+      plan: '',
     };
 
     // 解析任务ID以获取任务上下文
-    const [organization_id, task_id] = this.task_id.split("/");
+    const [organization_id, task_id] = this.task_id.split('/');
     if (!organization_id || !task_id) {
-      throw new Error("Invalid task ID");
+      throw new Error('Invalid task ID');
     }
     this.task_context = {
       task_id,
-      task_dir: `/workspace/${organization_id}/${task_id}`,
+      task_dir: `workspace`,
       organization_id,
     };
   }
@@ -82,12 +81,16 @@ export class FunMax extends ReActAgent {
   public async prepare(): Promise<void> {
     await super.prepare();
 
+    // 切换到任务工作目录
+    await this.switchToTaskDirectory();
+
     // 添加系统提示词到内存
     const system_prompt = renderTemplate(this.custom_prompt_templates.system, {
       task_id: this.task_context.task_id,
-      language: this.language || "English",
+      language: this.language || 'English',
       max_steps: this.max_steps,
       current_time: new Date().toISOString(),
+      task_dir: this.task_context.task_dir,
     });
     await this.updateMemory(createMessage.system(system_prompt));
 
@@ -109,10 +112,32 @@ export class FunMax extends ReActAgent {
     this.emit(BaseAgentEvents.LIFECYCLE_SUMMARY, { summary });
 
     console.log(summary);
-    console.log("--------------------------------");
+    console.log('--------------------------------');
     console.log(
-      `prepare success, available tools: ${this._tool_call_context_helper?.availableTools.tools.map((tool) => tool.name).join(", ") || "none"}`
+      `prepare success, available tools: ${this._tool_call_context_helper?.availableTools.tools.map(tool => tool.name).join(', ') || 'none'}`,
     );
+  }
+
+  /**
+   * 切换到任务工作目录
+   */
+  private async switchToTaskDirectory(): Promise<void> {
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+
+      // 确保任务目录存在
+      console.log(`📁 Switching to task directory: ${this.task_context.task_dir}`);
+      await fs.mkdir(this.task_context.task_dir, { recursive: true });
+
+      // 切换到任务目录
+      process.chdir(this.task_context.task_dir);
+
+      console.log(`📁 Switched to task directory: ${this.task_context.task_dir}`);
+    } catch (error) {
+      console.error(`❌ Failed to switch to task directory: ${error}`);
+      throw error;
+    }
   }
 
   /**
@@ -143,17 +168,15 @@ export class FunMax extends ReActAgent {
         messages: [
           createMessage.user(this.task_request),
           createMessage.system(
-            "Summarize the requirements or tasks provided by the user, Ensure that the core of the task can be reflected, answer in the user's language within 15 characters"
+            "Summarize the requirements or tasks provided by the user, Ensure that the core of the task can be reflected, answer in the user's language within 15 characters",
           ),
         ],
       });
 
-      return (
-        response.choices[0]?.message?.content || "Task summary not available"
-      );
+      return response.choices[0]?.message?.content || 'Task summary not available';
     } catch (error) {
-      console.error("Error generating task summary:", error);
-      return "Unable to generate task summary";
+      console.error('Error generating task summary:', error);
+      return 'Unable to generate task summary';
     }
   }
 
@@ -164,24 +187,18 @@ export class FunMax extends ReActAgent {
     this.emit(BaseAgentEvents.LIFECYCLE_PLAN_START, {});
 
     const planPrompt = renderTemplate(this.custom_prompt_templates.plan, {
-      language: this.language || "English",
+      language: this.language || 'English',
       max_steps: this.max_steps,
       available_tools:
-        this._tool_call_context_helper?.availableTools.tools
-          .map((tool) => `- ${tool.name}: ${tool.description}`)
-          .join("\n") || "No tools available",
+        this._tool_call_context_helper?.availableTools.tools.map(tool => `- ${tool.name}: ${tool.description}`).join('\n') || 'No tools available',
     });
 
     try {
       const response = await this.llm.chat({
-        messages: [
-          createMessage.system(planPrompt),
-          createMessage.user(this.task_request),
-        ],
+        messages: [createMessage.system(planPrompt), createMessage.user(this.task_request)],
       });
 
-      const planningMessage =
-        response.choices[0]?.message?.content || "Unable to create plan";
+      const planningMessage = response.choices[0]?.message?.content || 'Unable to create plan';
 
       // 将计划添加到内存
       await this.updateMemory(createMessage.user(planningMessage));
@@ -191,7 +208,7 @@ export class FunMax extends ReActAgent {
 
       return planningMessage;
     } catch (error) {
-      console.error("Error creating plan:", error);
+      console.error('Error creating plan:', error);
       throw error;
     }
   }
@@ -220,11 +237,11 @@ export class FunMax extends ReActAgent {
    */
   public async act(): Promise<string> {
     if (!this._tool_call_context_helper) {
-      return "No tool context helper available";
+      return 'No tool context helper available';
     }
 
     const results = await this._tool_call_context_helper.executeTool();
-    return results.join("\n\n");
+    return results.join('\n\n');
   }
 
   /**

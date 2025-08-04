@@ -1,12 +1,18 @@
 import { LLMClient } from '@repo/llm';
-import { ToolResult } from '../types';
+import { BaseToolParameters, ToolResult } from '../types';
 import { AbstractBaseTool } from './base';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+
+interface ToolParameters extends BaseToolParameters {
+  messages: Array<{ role: string; content: string }>;
+  system_message?: string;
+  temperature?: number;
+  max_tokens?: number;
+}
 
 /**
  * 创建聊天完成工具 - 用于与LLM进行对话
  */
-export class CreateChatCompletionTool extends AbstractBaseTool {
+export class CreateChatCompletionTool extends AbstractBaseTool<ToolParameters> {
   public name = 'create_chat_completion';
   public description = 'Create a chat completion using the LLM for specific tasks or questions';
 
@@ -14,16 +20,10 @@ export class CreateChatCompletionTool extends AbstractBaseTool {
     super();
   }
 
-  async execute(params: Parameters<Client["callTool"]>[0]): Promise<ToolResult> {
-    const input = params.arguments as {
-    messages: Array<{ role: string; content: string }>;
-    system_message?: string;
-    temperature?: number;
-    max_tokens?: number;
-  };
+  async execute(input: ToolParameters): Promise<ToolResult> {
     if (!this.llm) {
       return {
-        content: 'Error: No LLM instance available',
+        content: [{ type: 'text', text: 'Error: No LLM instance available' }],
         error: 'LLM not configured',
       };
     }
@@ -50,12 +50,12 @@ export class CreateChatCompletionTool extends AbstractBaseTool {
       const content = response.choices[0]?.message?.content || 'No response generated';
 
       return {
-        content: `Chat completion result:\n${content}`,
+        content: [{ type: 'text', text: `Chat completion result:\n${content}` }],
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       return {
-        content: `Error creating chat completion: ${errorMessage}`,
+        content: [{ type: 'text', text: `Error creating chat completion: ${errorMessage}` }],
         error: errorMessage,
       };
     }

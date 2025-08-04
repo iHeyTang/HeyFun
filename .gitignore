@@ -38,4 +38,5 @@ yarn-error.log*
 *.pem
 
 # HeyFun
-workspace/
+apps/agent/workspace/**/*
+!apps/agent/workspace/example.md

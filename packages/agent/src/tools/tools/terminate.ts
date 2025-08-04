@@ -1,17 +1,22 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { ToolResult } from '../types';
+import { BaseToolParameters, ToolResult } from '../types';
 import { AbstractBaseTool } from './base';
+
+interface ToolParameters extends BaseToolParameters {
+  reason: string;
+  summary: string;
+}
 
 /**
  * Terminate工具 - 用于终止任务执行
  */
-export class TerminateTool extends AbstractBaseTool {
+export class TerminateTool extends AbstractBaseTool<ToolParameters> {
   public name = 'terminate';
   public description = 'Terminate the current task execution when the task is completed or should be stopped';
 
-  async execute(params: Parameters<Client["callTool"]>[0]): Promise<ToolResult> {
-    const reason = (params.arguments as any)?.reason || 'Task completed';
-    const summary = (params.arguments as any)?.summary || 'No summary provided';
+  async execute(input: ToolParameters): Promise<ToolResult> {
+    const reason = input.reason || 'Task completed';
+    const summary = input.summary || 'No summary provided';
 
     return {
       content: [

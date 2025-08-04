@@ -1,15 +1,14 @@
 import type { Chat } from '@repo/llm';
-import type { BaseTool, ToolResult } from '../types';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import type { BaseTool, BaseToolParameters, ToolResult } from '../types';
 
 /**
  * 抽象基础工具类
  */
-export abstract class AbstractBaseTool implements BaseTool {
+export abstract class AbstractBaseTool<P extends BaseToolParameters> implements BaseTool<P> {
   public abstract name: string;
   public abstract description: string;
 
-  abstract execute(params: Parameters<Client["callTool"]>[0]): Promise<ToolResult>;
+  abstract execute(params: P): Promise<ToolResult>;
 
   /**
    * 转换为OpenAI工具格式
