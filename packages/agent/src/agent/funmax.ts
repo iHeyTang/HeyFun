@@ -83,6 +83,8 @@ export class FunMax extends ReActAgent {
 
     // 切换到任务工作目录
     await this.switchToTaskDirectory();
+    const current_dir = process.cwd();
+    this.task_context.task_dir = current_dir;
 
     // 添加系统提示词到内存
     const system_prompt = renderTemplate(this.custom_prompt_templates.system, {
