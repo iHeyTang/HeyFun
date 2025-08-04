@@ -17,7 +17,7 @@ export interface FunMaxConfig extends ReActAgentConfig {
   language?: string;
   tools?: ToolConfig[];
   history?: Chat.ChatCompletionMessageParam[];
-  promptTemplates: PromptTemplates;
+  promptTemplates?: PromptTemplates;
 }
 
 /**
@@ -58,7 +58,11 @@ export class FunMax extends ReActAgent {
     this.tools = config.tools || [];
     this.task_request = config.task_request;
     this.history = config.history || [];
-    this.custom_prompt_templates = config.promptTemplates || {};
+    this.custom_prompt_templates = config.promptTemplates || {
+      system: "",
+      next: "",
+      plan: "",
+    };
 
     // 解析任务ID以获取任务上下文
     const [organization_id, task_id] = this.task_id.split("/");

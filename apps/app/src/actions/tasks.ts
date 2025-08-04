@@ -11,6 +11,9 @@ import { mcpServerSchema } from '@/lib/shared/tools';
 import fs from 'fs';
 import path from 'path';
 import type { ToolConfig } from '@repo/agent';
+import { Daytona } from '@daytonaio/sdk';
+import sandboxManager from '@/lib/server/sandbox';
+import { SandboxRunner } from '@/lib/server/sandbox/base';
 
 const AGENT_URL = process.env.AGENT_URL || 'http://localhost:7200';
 
@@ -125,8 +128,9 @@ export const createTask = withUserAuth(async ({ organization, args }: AuthWrappe
     history: history as Chat.ChatCompletionMessageParam[],
   };
 
+  const sandbox = await sandboxManager.create();
   const [error, response] = await to(
-    fetch(`${AGENT_URL}/api/tasks`, {
+    fetch(`${sandbox.getRunnerDomain()}/api/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(body),
@@ -146,7 +150,7 @@ export const createTask = withUserAuth(async ({ organization, args }: AuthWrappe
   await prisma.tasks.update({ where: { id: task.id }, data: { outId: response.taskId, status: 'processing' } });
 
   // Handle event stream in background
-  handleTaskEvents(task.id, response.taskId, organization.id).catch(error => {
+  handleTaskEvents(task.id, response.taskId, organization.id, sandbox).catch(error => {
     console.error('Failed to handle task events:', error);
   });
 
@@ -194,8 +198,8 @@ export const getSharedTask = async ({ taskId }: { taskId: string }) => {
 };
 
 // Handle event stream in background
-async function handleTaskEvents(taskId: string, outId: string, organizationId: string) {
-  const streamResponse = await fetch(`${AGENT_URL}/api/tasks/event?taskId=${outId}`);
+async function handleTaskEvents(taskId: string, outId: string, organizationId: string, sandbox: SandboxRunner) {
+  const streamResponse = await fetch(`${sandbox.getRunnerDomain()}/api/tasks/event?taskId=${outId}`);
   const reader = streamResponse.body?.getReader();
   if (!reader) throw new Error('Failed to get response stream');
 
@@ -250,7 +254,7 @@ async function handleTaskEvents(taskId: string, outId: string, organizationId: s
               where: { id: taskId },
               data: { status: 'completed' },
             });
-            return;
+            break;
           }
           if (type === 'agent:lifecycle:terminating') {
             await prisma.tasks.update({
@@ -263,7 +267,7 @@ async function handleTaskEvents(taskId: string, outId: string, organizationId: s
               where: { id: taskId },
               data: { status: 'terminated' },
             });
-            return;
+            break;
           }
         } catch (error) {
           console.error('Failed to process message:', error);
@@ -273,7 +277,9 @@ async function handleTaskEvents(taskId: string, outId: string, organizationId: s
       if (done) break;
     }
   } finally {
+    console.log('xxxxxxxxx done');
     reader.releaseLock();
+    await sandboxManager.delete(sandbox.id);
   }
 }
 

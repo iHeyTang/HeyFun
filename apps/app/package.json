@@ -10,9 +10,8 @@
     "generate-keys": "ts-node --project scripts/tsconfig.json scripts/generate-keys.ts"
   },
   "dependencies": {
-    "@repo/agent": "*",
-    "@repo/llm": "*",
     "@anthropic-ai/sdk": "^0.57.0",
+    "@daytonaio/sdk": "^0.25.4",
     "@hookform/resolvers": "^4.1.3",
     "@prisma/client": "^6.5.0",
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -31,6 +30,8 @@
     "@radix-ui/react-switch": "^1.2.5",
     "@radix-ui/react-tabs": "^1.1.3",
     "@radix-ui/react-tooltip": "^1.1.8",
+    "@repo/agent": "*",
+    "@repo/llm": "*",
     "@types/bcrypt": "^5.0.2",
     "@types/ws": "^8.18.0",
     "archiver": "^7.0.1",

@@ -93,7 +93,7 @@ export class AnthropicModel extends BaseModel<z.infer<typeof configSchema>> {
     const systemIndex = messages.findIndex(msg => msg.role === 'system');
     if (systemIndex !== -1) {
       const systemMsg = messages[systemIndex];
-      systemMessage = this.extractTextContent(systemMsg.content);
+      systemMessage = this.extractTextContent(systemMsg?.content || '');
       messages.splice(systemIndex, 1);
     }
 

@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --port 7200",
+    "start:dev": "next dev --turbopack --port 7200",
     "build": "next build",
     "start": "next start",
     "lint": "next lint --max-warnings 0",
