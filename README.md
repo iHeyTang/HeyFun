@@ -8,6 +8,14 @@
 
 Hey! Let's bring a little fun to this world together.
 
+## 项目重构说明
+
+原项目为 Fork [OpenManus](https://github.com/FoundationAgents/OpenManus)，目前已归档至分支 `openmanus` 下。
+当前默认分支 `main` 为使用 `Typescript` 的重构版本。
+
+> 为什么要用 Typescript 重构？
+> 本项目致力于构建一个全栈可定制的 AGI 应用。在 `app layer` 和 `agent layer` 会有大量通用的实现。使用 `Typescript` 可以完成从前端到应用服务到智能体服务的全栈无缝开发。
+
 ## 项目愿景
 
 1. 通用领域全能 AI 助手，为 AI 时代的超级个体和一人公司提供最有力的支持
