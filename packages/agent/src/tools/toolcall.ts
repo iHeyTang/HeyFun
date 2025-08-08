@@ -28,7 +28,9 @@ export class ToolCallContextHelper {
 
   constructor(private agent: BaseAgent) {
     // 初始化工具集合，包含默认工具
-    this.availableTools = new ToolCollection(new TerminateTool(), new FileSystemTool());
+    this.availableTools = new ToolCollection();
+    this.addTool(new TerminateTool());
+    this.addTool(new FileSystemTool());
   }
 
   /**

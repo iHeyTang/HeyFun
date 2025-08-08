@@ -1,6 +1,6 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 
 interface McpClientInfo {
   client: Client;
@@ -13,15 +13,10 @@ export default class McpHost {
     this.mcps = {};
   }
 
-  async addStdioMcp(config: {
-    id: string;
-    command: string;
-    args: string[];
-    env: Record<string, string>;
-  }) {
+  async addStdioMcp(config: { id: string; command: string; args: string[]; env: Record<string, string> }) {
     const mcp = new Client({
       name: config.command,
-      version: "1.0.0",
+      version: '1.0.0',
     });
     const transport = new StdioClientTransport({
       command: config.command,
@@ -34,14 +29,10 @@ export default class McpHost {
     };
   }
 
-  async addSseMcp(config: {
-    id: string;
-    url: string;
-    headers: Record<string, string>;
-  }) {
+  async addSseMcp(config: { id: string; url: string; headers: Record<string, string> }) {
     const mcp = new Client({
       name: config.url,
-      version: "1.0.0",
+      version: '1.0.0',
     });
     const transport = new SSEClientTransport(new URL(config.url), {
       requestInit: {
@@ -63,9 +54,7 @@ export default class McpHost {
   }
 
   async cleanup() {
-    const promises = Object.values(this.mcps).map((clientInfo) =>
-      clientInfo.client.close()
-    );
+    const promises = Object.values(this.mcps).map(clientInfo => clientInfo.client.close());
     await Promise.all(promises);
   }
 }

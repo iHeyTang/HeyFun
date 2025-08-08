@@ -81,7 +81,7 @@ export class FunMax extends ReActAgent {
   public async prepare(): Promise<void> {
     await super.prepare();
 
-    // 切换到任务工作目录
+    // // 切换到任务工作目录
     await this.switchToTaskDirectory();
     const current_dir = process.cwd();
     this.task_context.task_dir = current_dir;

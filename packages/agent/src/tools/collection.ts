@@ -1,5 +1,5 @@
 import type { Chat } from '@repo/llm';
-import type { BaseTool, ToolResult } from '@/tools/types';
+import type { BaseTool, ToolResult } from './types';
 import McpHost from './mcp';
 
 /**
