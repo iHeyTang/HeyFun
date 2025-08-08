@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>HTML Viewer Plugin</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="html-viewer">
+      <div class="viewer-header">
+        <div class="view-mode-tabs">
+          <button class="tab-button active" data-mode="preview">Preview</button>
+          <button class="tab-button" data-mode="source">Source</button>
+        </div>
+      </div>
+      <div class="viewer-content">
+        <div id="preview-mode" class="view-mode active"></div>
+        <div id="source-mode" class="view-mode"></div>
+      </div>
+    </div>
+    <script src="index.js"></script>
+  </body>
+</html>

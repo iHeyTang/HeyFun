@@ -51,7 +51,7 @@ export const FilePreviewContainer: React.FC<FilePreviewContainerProps> = ({ file
     loadPlugin();
   }, [fileContent, fileType, fileName, pluginManager]);
 
-  return <div ref={containerRef} className="plugin-container" />;
+  return <div ref={containerRef} className="h-full" />;
 };
 
 function createPluginAPI(container: HTMLElement): FilePreviewPluginAPI {

@@ -5,6 +5,7 @@ import SyntaxHighlighter from 'react-syntax-highlighter';
 import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 
 const checkJson = (text: string | null) => {
   if (!text) return false;
@@ -24,7 +25,7 @@ export const Markdown: React.FC<{ children: string | null; className?: string }>
     <div className={cn('markdown-body mt-2 rounded-md bg-transparent p-4', className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
+        rehypePlugins={[rehypeRaw, rehypeSanitize]}
         urlTransform={url => url}
         components={{
           a: ({ href, children }) => {

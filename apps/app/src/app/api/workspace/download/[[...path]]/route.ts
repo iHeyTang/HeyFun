@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/server/auth';
 import fs from 'fs';
 import { prisma } from '@/lib/server/prisma';
 import archiver from 'archiver';
+import sandboxManager from '@/lib/server/sandbox';
 
 /**
  * This route is used to download workspace files or directories as zip archives
@@ -12,7 +13,7 @@ import archiver from 'archiver';
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
-    const { path } = await params;
+    const { path = [] } = await params;
     const cookie = request.cookies.get('token');
     if (!cookie) {
       return new NextResponse('Unauthorized', { status: 401 });
@@ -30,26 +31,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const taskId = path[0];
-
-    const task = await prisma.tasks.findUnique({
-      where: { id: taskId, organizationId: organizationUser.organizationId },
-    });
-
-    if (!task) {
-      return new NextResponse('Task not found', { status: 404 });
+    const sandbox = await sandboxManager.findOneById(`daytona-${organizationUser.organizationId}`);
+    if (!sandbox) {
+      return new NextResponse('Sandbox not found', { status: 404 });
     }
-
-    const filePath = `${process.env.WORKSPACE_ROOT_PATH}/${organizationUser.organizationId}/${path.join('/')}`;
-    if (!fs.existsSync(filePath)) {
-      return new NextResponse('File not found', { status: 404 });
-    }
-
-    const stats = fs.statSync(filePath);
+    const filePath = path.join('/');
+    const fileInfo = await sandbox.fs.getFileDetails(filePath);
 
     // If it's a single file, simply return it for download
-    if (!stats.isDirectory()) {
-      const fileBuffer = await fs.promises.readFile(filePath);
+    if (!fileInfo.isDir) {
+      const fileBuffer = await sandbox.fs.downloadFile(filePath);
       const fileName = filePath.split('/').pop() || 'download';
 
       // Encode the filename for Content-Disposition header

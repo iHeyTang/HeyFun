@@ -22,12 +22,12 @@ import { Markdown } from '@/components/block/markdown/markdown';
 
 const pluginManager = new FilePreviewPluginManager();
 
-export const PreviewContent = ({ messages }: { messages: Message[] }) => {
+export const PreviewContent = ({ messages, className }: { messages: Message[]; className?: string }) => {
   const { data } = usePreviewData();
   const { getToolByPrefix } = useAgentTools();
 
   useEffect(() => {
-    const pluginPaths = ['markdown-viewer', 'csv-viewer', 'video-viewer'];
+    const pluginPaths = ['markdown-viewer', 'csv-viewer', 'video-viewer', 'audio-viewer', 'html-viewer'];
     pluginManager.loadAllPlugins(pluginPaths);
   }, []);
 
@@ -43,7 +43,7 @@ export const PreviewContent = ({ messages }: { messages: Message[] }) => {
     const isExecuting = executionStart && !executionComplete;
 
     return (
-      <div className="h-full flex-col overflow-auto">
+      <div className={cn('h-full flex-col overflow-auto', className)}>
         <Popover>
           <PopoverTrigger>
             <Badge className="cursor-pointer font-mono text-xs">
@@ -57,7 +57,7 @@ export const PreviewContent = ({ messages }: { messages: Message[] }) => {
             <code className="text-xs whitespace-nowrap">ID: {executionId}</code>
           </PopoverContent>
         </Popover>
-        <div className="flex-1 space-y-4 p-2">
+        <div className="flex-1 space-y-4 overflow-auto p-2">
           {args && Object.keys(args).length > 0 && (
             <div className="space-y-2">
               <div className="text-muted-foreground text-sm font-medium">Parameters</div>
@@ -78,7 +78,19 @@ export const PreviewContent = ({ messages }: { messages: Message[] }) => {
             <div className="space-y-2">
               <div className="text-muted-foreground text-sm font-medium">Result</div>
               <div className={cn('bg-silver-gradient text-foreground overflow-hidden rounded-md p-2')}>
-                <Markdown className="bg-transparent">
+                <SyntaxHighlighter
+                  showLineNumbers
+                  style={githubGist}
+                  customStyle={{
+                    color: 'inherit',
+                    backgroundColor: 'inherit',
+                    fontSize: '0.75rem',
+                    lineHeight: '1.5',
+                    margin: 0,
+                    borderRadius: 0,
+                    padding: '1rem 0.8rem',
+                  }}
+                >
                   {result.content
                     .map((r, index) => {
                       if (r.type === 'text') {
@@ -98,7 +110,7 @@ export const PreviewContent = ({ messages }: { messages: Message[] }) => {
                       }
                     })
                     .join('\n')}
-                </Markdown>
+                </SyntaxHighlighter>
               </div>
             </div>
           ) : result ? (
@@ -272,7 +284,7 @@ const WorkspacePreview = () => {
 
   if (Array.isArray(workspace)) {
     return (
-      <div className="p-4">
+      <div className="h-full p-4">
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -331,8 +343,8 @@ const WorkspacePreview = () => {
   }
 
   return (
-    <div className="p-4">
-      <Card>
+    <div className="h-full overflow-auto p-4">
+      <Card className="h-full">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -360,8 +372,8 @@ const WorkspacePreview = () => {
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-hidden rounded-md border">
+        <CardContent className="h-full overflow-auto">
+          <div className="h-full rounded-md border">
             {workspace instanceof Blob &&
             (workspace.type.includes('image') || (data?.type === 'workspace' && data.path?.match(/\.(jpg|jpeg|png|gif|bmp|svg|webp)$/i))) ? (
               <Image
@@ -471,7 +483,6 @@ const FileContent = ({ blob, path }: { blob: Blob; path: string }) => {
         lineHeight: '1.5',
         margin: 0,
         borderRadius: 0,
-        maxHeight: '500px',
       }}
     >
       {content}
