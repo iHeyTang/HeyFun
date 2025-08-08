@@ -21,7 +21,7 @@ export const ChatPreview = ({ messages, taskId }: ChatPreviewProps) => {
             variant="outline"
             size="sm"
             className="hover:bg-accent/80 bg-silver-gradient flex items-center gap-1.5"
-            onClick={() => setData({ type: 'workspace', path: `${taskId}` })}
+            onClick={() => setData({ type: 'workspace', path: `/` })}
           >
             <FolderIcon className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">Task Workspace</span>

@@ -1,7 +1,21 @@
-import { Daytona, DaytonaConfig, Sandbox } from '@daytonaio/sdk';
-import { BaseSandboxManager, SandboxAgentEvent, SandboxAgentProxy, SandboxProcess, SandboxRunner } from './base';
+import { Daytona, DaytonaConfig, FileInfo, Match, ReplaceResult, Sandbox } from '@daytonaio/sdk';
+import {
+  BaseSandboxManager,
+  SandboxAgentEvent,
+  SandboxAgentProxy,
+  SandboxFileInfo,
+  SandboxFileMatch,
+  SandboxFilePermissionsParams,
+  SandboxFileReplaceResult,
+  SandboxFileSearchFilesResponse,
+  SandboxFileSystem,
+  SandboxFileUpload,
+  SandboxProcess,
+  SandboxRunner,
+} from './base';
 import { to } from '@/lib/shared/to';
 import { FunMaxConfig } from '@repo/agent';
+import { FileUpload } from '@daytonaio/sdk/src/FileSystem';
 
 class DaytonaSandboxProcess extends SandboxProcess {
   constructor(private sandbox: Sandbox) {
@@ -112,9 +126,69 @@ class DaytonaSandboxAgentProxy extends SandboxAgentProxy {
   }
 }
 
+class DaytonaSandboxFileSystem extends SandboxFileSystem {
+  constructor(private sandbox: Sandbox) {
+    super();
+  }
+
+  async createFolder(path: string, mode: string): Promise<void> {
+    return await this.sandbox.fs.createFolder(path, mode);
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    return await this.sandbox.fs.deleteFile(path);
+  }
+
+  async downloadFile(path: string, timeout?: number): Promise<Buffer> {
+    return await this.sandbox.fs.downloadFile(path, timeout);
+  }
+
+  async findFiles(path: string, pattern: string): Promise<SandboxFileMatch[]> {
+    return await this.sandbox.fs.findFiles(path, pattern);
+  }
+
+  async getFileDetails(path: string): Promise<SandboxFileInfo> {
+    return await this.sandbox.fs.getFileDetails(path);
+  }
+
+  async listFiles(path: string): Promise<SandboxFileInfo[]> {
+    const file = await this.sandbox.fs.listFiles(path);
+    return file;
+  }
+
+  async moveFiles(source: string, destination: string): Promise<void> {
+    return await this.sandbox.fs.moveFiles(source, destination);
+  }
+
+  async replaceInFiles(files: string[], pattern: string, newValue: string): Promise<SandboxFileReplaceResult[]> {
+    return await this.sandbox.fs.replaceInFiles(files, pattern, newValue);
+  }
+
+  async searchFiles(path: string, pattern: string): Promise<SandboxFileSearchFilesResponse> {
+    return await this.sandbox.fs.searchFiles(path, pattern);
+  }
+
+  async setFilePermissions(path: string, permissions: SandboxFilePermissionsParams): Promise<void> {
+    return await this.sandbox.fs.setFilePermissions(path, permissions);
+  }
+
+  async uploadFileFromBuffer(file: Buffer, remotePath: string, timeout?: number): Promise<void> {
+    return await this.sandbox.fs.uploadFile(file, remotePath, timeout);
+  }
+
+  async uploadFileFromLocal(localPath: string, remotePath: string, timeout?: number): Promise<void> {
+    return await this.sandbox.fs.uploadFile(localPath, remotePath, timeout);
+  }
+
+  async uploadFiles(files: SandboxFileUpload[], timeout?: number): Promise<void> {
+    return await this.sandbox.fs.uploadFiles(files, timeout);
+  }
+}
+
 export class DaytonaSandboxRunner extends SandboxRunner {
   public readonly process: SandboxProcess;
   public readonly agent: SandboxAgentProxy;
+  public readonly fs: SandboxFileSystem;
   constructor(
     public readonly id: string,
     private sandbox: Sandbox,
@@ -122,6 +196,7 @@ export class DaytonaSandboxRunner extends SandboxRunner {
     super();
     this.process = new DaytonaSandboxProcess(this.sandbox);
     this.agent = new DaytonaSandboxAgentProxy(this.sandbox);
+    this.fs = new DaytonaSandboxFileSystem(this.sandbox);
   }
 }
 
@@ -147,13 +222,15 @@ export class DaytonaSandboxManager extends BaseSandboxManager {
     return new DaytonaSandboxRunner(id, sandbox);
   }
 
-  async create(): Promise<SandboxRunner> {
+  async create(params: { user: string }): Promise<SandboxRunner> {
     const sandbox = await this.daytona.create({
       snapshot: 'daytona/sandbox:0.4.3',
       public: true,
+      user: params.user,
+      labels: { name: 'Default Sandbox' },
     });
 
-    const id = `daytona-${sandbox.id}`;
+    const id = `daytona-${params.user}`;
     const runner = new DaytonaSandboxRunner(id, sandbox);
     return runner;
   }

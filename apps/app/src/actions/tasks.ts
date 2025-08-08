@@ -126,7 +126,7 @@ export const createTask = withUserAuth(async ({ organization, args }: AuthWrappe
     history: history as Chat.ChatCompletionMessageParam[],
   };
 
-  const sandbox = await sandboxManager.create();
+  const sandbox = await sandboxManager.create({ user: organization.id });
   const outId = await sandbox.agent.createTask(body);
 
   if (!outId) {

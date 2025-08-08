@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { prisma } from '@/lib/server/prisma';
 import crypto from 'crypto';
+import sandboxManager from '@/lib/server/sandbox';
 
 /**
  * This route is used to serve assets for a task.
@@ -12,9 +13,9 @@ import crypto from 'crypto';
  * @param params
  * @returns
  */
-export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
   try {
-    const { path: pathSegments } = await params;
+    const { path: pathSegments = [] } = await params;
     const cookie = request.cookies.get('token');
     if (!cookie) {
       return new NextResponse('Unauthorized', { status: 401 });
@@ -32,33 +33,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const taskId = pathSegments[0];
-
-    const task = await prisma.tasks.findUnique({
-      where: { id: taskId, organizationId: organizationUser.organizationId },
-    });
-
-    if (!task) {
-      return new NextResponse('Task not found', { status: 404 });
+    const sandbox = await sandboxManager.findOneById(`daytona-${organizationUser.organizationId}`);
+    if (!sandbox) {
+      return new NextResponse('Sandbox not found', { status: 404 });
     }
 
-    const filePath = `${process.env.WORKSPACE_ROOT_PATH}/${organizationUser.organizationId}/${pathSegments.join('/')}`;
-    if (!fs.existsSync(filePath)) {
-      return new NextResponse('File not found', { status: 404 });
-    }
+    const fileInfo = await sandbox.fs.getFileDetails(pathSegments.join('/'));
 
-    const stats = fs.statSync(filePath);
-    if (stats.isDirectory()) {
-      const files = await fs.promises.readdir(filePath);
+    if (fileInfo.isDir) {
+      const files = await sandbox.fs.listFiles(pathSegments.join('/'));
       const fileDetails = await Promise.all(
         files.map(async file => {
-          const fullPath = `${filePath}/${file}`;
-          const fileStat = await fs.promises.stat(fullPath);
           return {
-            name: file,
-            isDirectory: fileStat.isDirectory(),
-            size: fileStat.size,
-            modifiedTime: fileStat.mtime.toISOString(),
+            name: file.name,
+            isDirectory: file.isDir,
+            size: file.size,
+            modifiedTime: file.modTime,
           };
         }),
       );
@@ -67,11 +57,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // calculate ETag
-    const fileBuffer = await fs.promises.readFile(filePath);
+    const fileBuffer = await sandbox.fs.downloadFile(pathSegments.join('/'));
     const etag = crypto.createHash('md5').update(fileBuffer).digest('hex');
-
-    // get last modified time
-    const lastModified = stats.mtime.toUTCString();
 
     // check If-None-Match header
     const ifNoneMatch = request.headers.get('if-none-match');
@@ -81,12 +68,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // check If-Modified-Since header
     const ifModifiedSince = request.headers.get('if-modified-since');
-    if (ifModifiedSince && new Date(ifModifiedSince) >= stats.mtime) {
+    if (ifModifiedSince && new Date(ifModifiedSince) >= new Date(fileInfo.modTime)) {
       return new NextResponse(null, { status: 304 });
     }
 
-    const contentType = getContentType(filePath);
-    const fileName = path.basename(filePath);
+    const contentType = getContentType(pathSegments.join('/'));
+    const fileName = path.basename(pathSegments.join('/'));
     const encodedFileName = encodeURIComponent(fileName);
 
     return new NextResponse(fileBuffer, {
@@ -94,7 +81,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         'Content-Type': contentType,
         'Content-Disposition': `inline; filename*=UTF-8''${encodedFileName}`,
         ETag: etag,
-        'Last-Modified': lastModified,
+        'Last-Modified': fileInfo.modTime,
         'Cache-Control': 'private, must-revalidate',
       },
     });

@@ -1,9 +1,23 @@
 import { FunMaxConfig } from '@repo/agent';
-import { BaseSandboxManager, SandboxAgentEvent, SandboxAgentProxy, SandboxProcess, SandboxRunner } from './base';
+import {
+  BaseSandboxManager,
+  SandboxAgentEvent,
+  SandboxAgentProxy,
+  SandboxFileInfo,
+  SandboxFileMatch,
+  SandboxFilePermissionsParams,
+  SandboxFileReplaceResult,
+  SandboxFileSearchFilesResponse,
+  SandboxFileSystem,
+  SandboxFileUpload,
+  SandboxProcess,
+  SandboxRunner,
+} from './base';
 import { spawn, ChildProcess, exec } from 'child_process';
 import { join } from 'path';
 import { promisify } from 'util';
 import { to } from '@/lib/shared/to';
+import fs from 'fs/promises';
 
 const execAsync = promisify(exec);
 
@@ -202,14 +216,148 @@ class LocalSandboxAgentProxy extends SandboxAgentProxy {
   }
 }
 
+class LocalSandboxFileSystem extends SandboxFileSystem {
+  constructor() {
+    super();
+  }
+
+  async createFolder(path: string, mode: string): Promise<void> {
+    const absolutePath = await this.getAbsolutePath(path);
+    await fs.mkdir(absolutePath, { recursive: true });
+    await fs.chmod(absolutePath, parseInt(mode, 8));
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    const absolutePath = await this.getAbsolutePath(path);
+    await fs.rm(absolutePath, { recursive: true });
+  }
+
+  async downloadFile(path: string, timeout?: number): Promise<Buffer> {
+    const absolutePath = await this.getAbsolutePath(path);
+    return await fs.readFile(absolutePath);
+  }
+
+  async findFiles(path: string, pattern: string): Promise<SandboxFileMatch[]> {
+    const matches: SandboxFileMatch[] = [];
+    const absolutePath = await this.getAbsolutePath(path);
+    const files = await fs.readdir(absolutePath);
+    const promises = files.map(async file => {
+      const content = await fs.readFile(join(absolutePath, file));
+      const lines = content.toString().split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]!;
+        if (line.includes(pattern)) {
+          matches.push({ file, line: i + 1, content: line });
+        }
+      }
+    });
+    await Promise.all(promises);
+    return matches;
+  }
+
+  async getFileDetails(path: string): Promise<SandboxFileInfo> {
+    const absolutePath = await this.getAbsolutePath(path);
+    const stats = await fs.stat(absolutePath);
+    return {
+      name: path,
+      size: stats.size,
+      owner: stats.uid.toString(),
+      group: stats.gid.toString(),
+      isDir: stats.isDirectory(),
+      modTime: stats.mtime.toISOString(),
+      mode: stats.mode.toString(8),
+      permissions: stats.mode.toString(8),
+    };
+  }
+
+  async listFiles(path: string): Promise<SandboxFileInfo[]> {
+    const absolutePath = await this.getAbsolutePath(path);
+    const files = await fs.readdir(absolutePath);
+    return Promise.all(
+      files.map(async file => {
+        const stats = await fs.stat(join(absolutePath, file));
+        return {
+          name: file,
+          size: stats.size,
+          owner: stats.uid.toString(),
+          group: stats.gid.toString(),
+          isDir: stats.isDirectory(),
+          modTime: stats.mtime.toISOString(),
+          mode: stats.mode.toString(8),
+          permissions: stats.mode.toString(8),
+        };
+      }),
+    );
+  }
+
+  async moveFiles(source: string, destination: string): Promise<void> {
+    const absoluteSource = await this.getAbsolutePath(source);
+    const absoluteDestination = await this.getAbsolutePath(destination);
+    await fs.rename(absoluteSource, absoluteDestination);
+  }
+
+  async replaceInFiles(files: string[], pattern: string, newValue: string): Promise<SandboxFileReplaceResult[]> {
+    const absoluteFiles = files.map(file => join(process.cwd(), 'workspace', file));
+    const promises = absoluteFiles.map(async file => {
+      const content = await fs.readFile(file, 'utf8');
+      const newContent = content.replace(pattern, newValue);
+      await fs.writeFile(file, newContent);
+    });
+    await Promise.all(promises);
+    return files.map(file => ({ file, success: true }));
+  }
+
+  async searchFiles(path: string, pattern: string): Promise<SandboxFileSearchFilesResponse> {
+    const absolutePath = await this.getAbsolutePath(path);
+    const files = await fs.readdir(absolutePath);
+    return {
+      files: files.filter(file => file.includes(pattern)),
+    };
+  }
+
+  async setFilePermissions(path: string, permissions: SandboxFilePermissionsParams): Promise<void> {
+    const absolutePath = await this.getAbsolutePath(path);
+    await fs.chmod(absolutePath, parseInt(permissions.mode!, 8));
+  }
+
+  async uploadFileFromBuffer(file: Buffer, remotePath: string, timeout?: number): Promise<void> {
+    const absolutePath = await this.getAbsolutePath(remotePath);
+    await fs.writeFile(absolutePath, file);
+  }
+
+  async uploadFileFromLocal(localPath: string, remotePath: string, timeout?: number): Promise<void> {
+    const absolutePath = await this.getAbsolutePath(remotePath);
+    await fs.copyFile(localPath, absolutePath);
+  }
+
+  async uploadFiles(files: SandboxFileUpload[], timeout?: number): Promise<void> {
+    const promises = files.map(async file => {
+      const absolutePath = await this.getAbsolutePath(file.destination);
+      await fs.writeFile(absolutePath, file.source);
+    });
+    await Promise.all(promises);
+  }
+
+  async getAbsolutePath(path: string): Promise<string> {
+    const worksapceRoot = join(process.cwd(), '..', 'agent', 'workspace');
+    const absolutePath = path.startsWith('/') ? path : join(worksapceRoot, path);
+    if (!absolutePath.startsWith(worksapceRoot)) {
+      throw new Error(`Path ${path} is not in workspace root`);
+    }
+    return absolutePath;
+  }
+}
+
 export class LocalSandboxRunner extends SandboxRunner {
   public readonly process: SandboxProcess;
   public readonly agent: SandboxAgentProxy;
+  public readonly fs: SandboxFileSystem;
 
   constructor(public readonly id: string) {
     super();
     this.agent = new LocalSandboxAgentProxy();
     this.process = new LocalSandboxProcess();
+    this.fs = new LocalSandboxFileSystem();
   }
 }
 
@@ -232,13 +380,10 @@ export class LocalSandboxManager extends BaseSandboxManager {
   }
 
   async findOneById(id: string): Promise<SandboxRunner> {
-    if (id === 'local-agent') {
-      return new LocalSandboxRunner(id);
-    }
-    throw new Error(`Sandbox with id ${id} not found`);
+    return new LocalSandboxRunner(id);
   }
 
-  async create(): Promise<SandboxRunner> {
+  async create(params: { user: string }): Promise<SandboxRunner> {
     // 本地模式下，创建就是启动进程
     const runner = new LocalSandboxRunner('local-agent');
     await this.start('local-agent');
