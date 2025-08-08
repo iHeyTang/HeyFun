@@ -1,135 +1,120 @@
-# Turborepo starter
+<p align="center">
+  <img src="assets/logo.png" width="100"/>
+</p>
 
-This Turborepo starter is maintained by the Turborepo core team.
+中文 | [English](README-en.md)
 
-## Using this example
+# 🎉 HeyFun
 
-Run the following command:
+Hey! Let's bring a little fun to this world together.
 
-```sh
-npx create-turbo@latest
+## 项目愿景
+
+1. 通用领域全能 AI 助手，为 AI 时代的超级个体和一人公司提供最有力的支持
+2. 专精领域 AI 智能体的快速开发验证，为垂类 AI Agent 提供最好的效率平台
+
+## 项目演示
+
+1. 通过 MCP 实现网络搜索和访问 Flomo 自动记录笔记
+   https://www.heyfun.ai/share/tasks/cm9k3hmiv00ezo8011k4008qx
+
+2. 通过 MCP 实现 MiniMax 的文字生成图像，进一步通过生成的图像来生成视频
+   https://www.heyfun.ai/share/tasks/cmbnaws9y001xqr01e7miwpme
+
+## 安装指南
+
+1. 克隆仓库：
+
+```bash
+git clone https://github.com/iHeyTang/HeyFun.git
+cd HeyFun
 ```
 
-## What's inside?
+2. 安装 `node` 环境
 
-This Turborepo includes the following packages/apps:
+   方式 1: [推荐] 使用 nvm 包管理器 https://github.com/nvm-sh/nvm
+   方式 2: 前往官方下载 https://nodejs.org/en
+   方式 3: (Windows 系统) 使用 nvm 包管理器 https://github.com/coreybutler/nvm-windows/releases/tag/1.2.2
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+```bash
+# 按照流程安装完毕后，通过命令确认安装成功
+node -v
+# 输出版本号表示安装成功
+# v20.19.0
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+3. 安装 `bun` 包管理器
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+```bash
+# Linux & MacOS
+curl -fsSL https://bun.sh/install | bash
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+# Windows
+powershell -c "irm bun.sh/install.ps1 | iex"
 ```
 
-### Develop
+4. 安装项目依赖
 
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+```bash
+# 安装项目依赖
+bun install
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+5. 进入 `apps/app` 文件夹
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+```bash
+# 如果已经在 web 目录下忽略即可
+cd apps/app
 ```
 
-### Remote Caching
+4. 生成密钥对
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+项目需要一对公钥和私钥用于认证，可以通过以下命令生成（有自行生成证书能力的忽略即可）：
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+```bash
+npm run generate-keys
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+# 这将在 `web/keys` 目录生成：
+# - `private.pem`: 私钥文件
+# - `public.pem`: 公钥文件
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+5. 数据库初始化
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+项目使用 PostgreSQL 作为持久化数据库。可使用 [Docker 容器](https://hub.docker.com/_/postgres) 来启动数据库服务
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+```bash
+# 启动 docker 容器 并自动创建 名为 heyfun 的数据库
+docker run --name heyfun-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=heyfun -d -p 5432:5432 postgres
 ```
 
-## Useful Links
+6. 环境变量配置
 
-Learn more about the power of Turborepo:
+在项目根目录创建 `.env` 文件，配置必要的环境变量，具体参考 `/web/.env.example`
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+```bash
+# 若按照 步骤 5 配置数据库，则数据库连接为
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/heyfun?schema=public"
+```
+
+7. 生成 Prisma 客户端 & 初始化数据库
+
+```bash
+# 若第一次启动项目、重新安装了依赖、schema.prisma 存在更新，需执行此命令更新 Prisma Client
+npx prisma generate
+
+# 若第一次启动项目，需要先初始化数据库，此命令会自动将表结构同步进相应配置的数据库中
+npx prisma db push
+```
+
+## 快速启动
+
+```bash
+bun dev
+```
+
+启动完毕后，打开 `http://localhost:7100` 即可查看
+
+## 致谢
+
+本项目灵感源自 [OpenManus](https://github.com/FoundationAgents/OpenManus) First Hackathon。在 OpenManus 的极客社区中，我不仅获得了前沿的技术交流机会，更在开源协作与创新氛围中收获了宝贵的成长。正是 OpenManus 提供的开放平台和技术支持，让 HeyFun 得以从想法落地为现实。在此，衷心感谢 OpenManus 及其社区对我的启发与帮助，愿我们共同推动 AI 技术的极客探索与无限可能！
