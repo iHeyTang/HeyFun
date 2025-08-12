@@ -78,26 +78,15 @@ export const PreviewContent = ({ messages, className }: { messages: Message[]; c
             <div className="space-y-2">
               <div className="text-muted-foreground text-sm font-medium">Result</div>
               <div className={cn('bg-silver-gradient text-foreground overflow-hidden rounded-md p-2')}>
-                <SyntaxHighlighter
-                  showLineNumbers
-                  style={githubGist}
-                  customStyle={{
-                    color: 'inherit',
-                    backgroundColor: 'inherit',
-                    fontSize: '0.75rem',
-                    lineHeight: '1.5',
-                    margin: 0,
-                    borderRadius: 0,
-                    padding: '1rem 0.8rem',
-                  }}
-                >
+                <Markdown>
                   {result.content
                     .map((r, index) => {
                       if (r.type === 'text') {
                         return r.text;
                       }
                       if (r.type === 'image') {
-                        return `![${tool.toolName} ${tool.functionName} Image ${index}](${getImageUrl(r.data)})`;
+                        const title = r.data.includes('/') ? `<div style="font-size: 10px;">${r.data}</div>` : '';
+                        return `![${tool.toolName} ${tool.functionName} Image ${index}](${getImageUrl(r.data)})\n${title}`;
                       }
                       if (r.type === 'resource') {
                         return `[${r.resource.uri}](${r.resource.uri})`;
@@ -109,30 +98,15 @@ export const PreviewContent = ({ messages, className }: { messages: Message[]; c
                         return <audio src={r.data} controls />;
                       }
                     })
-                    .join('\n')}
-                </SyntaxHighlighter>
+                    .join('\n\n')}
+                </Markdown>
               </div>
             </div>
           ) : result ? (
             <div className="space-y-2">
               <div className="text-muted-foreground text-sm font-medium">Result</div>
               <div className={cn('bg-silver-gradient text-foreground overflow-hidden rounded-md')}>
-                <SyntaxHighlighter
-                  language="json"
-                  showLineNumbers
-                  style={githubGist}
-                  customStyle={{
-                    color: 'inherit',
-                    backgroundColor: 'inherit',
-                    fontSize: '0.75rem',
-                    lineHeight: '1.5',
-                    margin: 0,
-                    borderRadius: 0,
-                    padding: '1rem 0.8rem',
-                  }}
-                >
-                  {typeof result === 'object' ? JSON.stringify(result, null, 2) : result}
-                </SyntaxHighlighter>
+                <Markdown className="text-xs">{typeof result === 'object' ? JSON.stringify(result, null, 2) : result}</Markdown>
               </div>
             </div>
           ) : (

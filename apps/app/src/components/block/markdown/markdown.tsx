@@ -25,7 +25,7 @@ export const Markdown: React.FC<{ children: string | null; className?: string }>
     <div className={cn('markdown-body mt-2 rounded-md bg-transparent p-4', className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw, rehypeSanitize]}
+        rehypePlugins={[rehypeRaw]}
         urlTransform={url => url}
         components={{
           a: ({ href, children }) => {
