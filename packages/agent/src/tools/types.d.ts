@@ -1,6 +1,6 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
-import type { Chat } from '@repo/llm';
+import type { Chat } from '@repo/llm/chat';
 
 /**
  * MCP工具配置接口

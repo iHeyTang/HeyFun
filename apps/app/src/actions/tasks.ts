@@ -1,7 +1,7 @@
 'use server';
 
 import { FunMaxConfig } from '@repo/agent';
-import { Chat } from '@repo/llm';
+import { Chat } from '@repo/llm/chat';
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
 import { prisma } from '@/lib/server/prisma';

@@ -1,4 +1,4 @@
-import type { Chat } from '@repo/llm';
+import type { Chat } from '@repo/llm/chat';
 import { AgentState, type BaseAgent } from '../agent/base';
 import { ToolCallAgentEvents } from '../event/constants';
 import { createMessage } from '../utils/message';

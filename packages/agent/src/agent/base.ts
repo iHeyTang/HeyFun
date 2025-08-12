@@ -1,4 +1,4 @@
-import { Chat, LLMClient, LLMClientConfig } from "@repo/llm";
+import { Chat, LLMClient, LLMClientConfig } from "@repo/llm/chat";
 import type { EventHandler, EventItem } from "../event";
 import { AgentEvent, createEventItem } from "../event";
 import {

@@ -1,4 +1,4 @@
-import type { Chat } from '@repo/llm';
+import type { Chat } from '@repo/llm/chat';
 import type { BaseTool, BaseToolParameters, ToolResult } from '../types';
 
 /**

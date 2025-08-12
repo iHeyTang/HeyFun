@@ -21,7 +21,7 @@ import {
   Jimengt2vS20ProGetResultResponse,
   jimengt2vS20ProParamsSchema,
   Jimengt2vS20ProResponse,
-} from '@/aigc/services/jimeng';
+} from '../../services/jimeng';
 import crypto from 'crypto';
 import fetch from 'node-fetch';
 import qs from 'querystring';

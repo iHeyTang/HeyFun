@@ -2,7 +2,7 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { decryptTextWithPrivateKey, encryptTextWithPublicKey } from '@/lib/server/crypto';
 import { prisma } from '@/lib/server/prisma';
-import { LLMFactory } from '@repo/llm';
+import { LLMFactory } from '@repo/llm/chat';
 import fs from 'fs';
 import path from 'path';
 

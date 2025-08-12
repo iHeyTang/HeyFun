@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { InputPassword } from '@/components/ui/input-passoword';
 import { Switch } from '@/components/ui/switch';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { providerConfigSchemas } from '@repo/llm';
+import { providerConfigSchemas } from '@repo/llm/chat';
 import { Loader2, Save, Wifi, WifiOff } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';

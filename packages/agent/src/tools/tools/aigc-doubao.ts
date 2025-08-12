@@ -1,4 +1,4 @@
-import { DoubaoService } from '../../aigc/services/doubao';
+import { DoubaoService } from '@repo/llm/aigc';
 import { BaseToolParameters, ToolResult } from '../types';
 import { AbstractBaseTool } from './base';
 import { FileSystemTool } from './file-system';

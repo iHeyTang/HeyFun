@@ -1,4 +1,4 @@
-import { WanService } from '../../aigc/services/wan';
+import { WanService } from '@repo/llm/aigc';
 import { BaseToolParameters, ToolResult } from '../types';
 import { AbstractBaseTool } from './base';
 import { FileSystemTool } from './file-system';

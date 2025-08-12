@@ -5,7 +5,7 @@ import { Markdown } from '@/components/block/markdown/markdown';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ProviderModelInfo } from '@repo/llm';
+import { ProviderModelInfo } from '@repo/llm/chat';
 import { Globe, Search, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';

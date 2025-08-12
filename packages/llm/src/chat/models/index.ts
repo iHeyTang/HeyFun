@@ -1,6 +1,6 @@
 import { OpenAIModel } from './openai';
 import { AnthropicModel } from './anthropic';
-import { ModelInstructType } from '../types';
+import { ModelInstructType } from '../../types';
 
 
 type Model = AnthropicModel | OpenAIModel;

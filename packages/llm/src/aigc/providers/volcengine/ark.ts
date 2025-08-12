@@ -7,7 +7,7 @@ import {
   SeedEdit30I2iResponse,
   seedream30T2iParamsSchema,
   Seedream30T2iResponse,
-} from '@/aigc/services/doubao';
+} from '../../services/doubao';
 import z from 'zod';
 
 const VOLCENGINE_ARK_ACCESS_KEY_ID = process.env.VOLCENGINE_ARK_ACCESS_KEY_ID;

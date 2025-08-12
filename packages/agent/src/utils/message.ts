@@ -1,4 +1,4 @@
-import type { Chat } from '@repo/llm';
+import type { Chat } from '@repo/llm/chat';
 
 // 简单的工具函数来创建消息，避免重复代码
 export const createMessage = {

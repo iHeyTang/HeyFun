@@ -2,7 +2,10 @@
   "name": "@repo/llm",
   "version": "0.0.0",
   "private": true,
-  "exports": "./src/index.ts",
+  "exports": {
+    "./chat": "./src/chat/index.ts",
+    "./aigc": "./src/aigc/index.ts"
+  },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit"

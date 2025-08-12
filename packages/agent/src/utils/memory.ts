@@ -1,4 +1,4 @@
-import type { Chat, LLMClient } from '@repo/llm';
+import type { Chat, LLMClient } from '@repo/llm/chat';
 
 export interface MemoryConfig {
   maxMessages?: number;

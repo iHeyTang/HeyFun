@@ -15,7 +15,7 @@ import {
   Kf2vGetResultResponse,
   t2vGetResultParamsSchema,
   T2vGetResultResponse,
-} from '@/aigc/services/wan';
+} from '../../services/wan';
 import { z } from 'zod';
 
 const ALIYUN_DASHSCOPE_API_KEY = process.env.ALIYUN_DASHSCOPE_API_KEY;

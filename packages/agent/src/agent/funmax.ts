@@ -1,4 +1,4 @@
-import { Chat } from '@repo/llm';
+import { Chat } from '@repo/llm/chat';
 import { ToolCallContextHelper } from '../tools/toolcall';
 import type { ToolConfig } from '../tools/types';
 import { createMessage } from '../utils/message';

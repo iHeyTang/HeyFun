@@ -1,4 +1,4 @@
-import { LLMClient } from '@repo/llm';
+import { LLMClient } from '@repo/llm/chat';
 import { BaseToolParameters, ToolResult } from '../types';
 import { AbstractBaseTool } from './base';
 

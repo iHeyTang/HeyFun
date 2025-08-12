@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { ProviderModelInfo } from '@repo/llm';
+import { ProviderModelInfo } from '@repo/llm/chat';
 import { Bot, Check, Search } from 'lucide-react';
 import { useImperativeHandle, useMemo, useState } from 'react';
 import { create } from 'zustand';
