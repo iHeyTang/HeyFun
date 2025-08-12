@@ -1,3 +1,5 @@
+import { resolve } from 'path';
+
 export const getBase64ImageUrl = (base64String: string) => {
   if (!base64String) return '';
   if (base64String.startsWith('data:image')) {
@@ -14,6 +16,9 @@ export const getImageUrl = (path: string) => {
       return `/api${newPath}`;
     }
     return `/api${path}`;
+  }
+  if (path.includes('/')) {
+    return resolve('/api/workspace', path);
   }
   return getBase64ImageUrl(path);
 };
