@@ -12,6 +12,8 @@ interface Seedream30T2iParameters extends BaseToolParameters {
   seed?: number;
   guidance_scale?: number;
   watermark?: boolean;
+  max_wait_time?: number;
+  poll_interval?: number;
   save_directory?: string;
   custom_filename?: string;
 }
@@ -24,6 +26,8 @@ interface SeedEdit30I2iParameters extends BaseToolParameters {
   seed?: number;
   guidance_scale?: number;
   watermark?: boolean;
+  max_wait_time?: number;
+  poll_interval?: number;
   save_directory?: string;
   custom_filename?: string;
 }
@@ -49,9 +53,7 @@ interface DoubaoToolParameters extends BaseToolParameters {
  *
  * 注意：此工具需要配置火山引擎API的访问密钥才能正常工作
  * 环境变量：
- * - VOLC_ACCESSKEY
- * - VOLC_SECRETKEY
- * - VOLC_REGION
+ * - VOLCENGINE_ARK_ACCESS_KEY_ID
  *
  * 特性：
  * - 异步接口自动包装成同步接口
@@ -90,9 +92,9 @@ export class DoubaoTool extends AbstractBaseTool<DoubaoToolParameters> {
 
       // 检查参数结构，确定操作类型
       if (params.seedream_30_t2i) {
-        return await this.executeSeedream30T2i(params.seedream_30_t2i);
+        return await this.executeSeedream30T2iWithPolling(params.seedream_30_t2i);
       } else if (params.seed_edit_30_i2i) {
-        return await this.executeSeedEdit30I2i(params.seed_edit_30_i2i);
+        return await this.executeSeedEdit30I2iWithPolling(params.seed_edit_30_i2i);
       } else if (params.seedance_10_pro) {
         return await this.executeSeedance10ProWithPolling(params.seedance_10_pro);
       } else {
@@ -114,7 +116,7 @@ export class DoubaoTool extends AbstractBaseTool<DoubaoToolParameters> {
    * 通用轮询函数
    */
   private async pollUntilComplete<T>(
-    submitFn: () => Promise<{ id: string }>,
+    submitFn: () => Promise<{ task_id: string }>,
     getResultFn: (taskId: string) => Promise<T>,
     checkStatusFn: (result: T) => 'pending' | 'done' | 'error',
     maxWaitTime: number = 300,
@@ -123,7 +125,7 @@ export class DoubaoTool extends AbstractBaseTool<DoubaoToolParameters> {
     try {
       // 提交任务
       const submitResult = await submitFn();
-      const taskId = submitResult.id;
+      const taskId = submitResult.task_id;
 
       // 开始轮询
       const startTime = Date.now();
@@ -220,116 +222,157 @@ export class DoubaoTool extends AbstractBaseTool<DoubaoToolParameters> {
     }
   }
 
-  private async executeSeedream30T2i(params: Seedream30T2iParameters): Promise<ToolResult> {
-    try {
-      // 调用真实的豆包API
-      const response = await this.doubaoService.seedream30T2i({
-        model: 'doubao-seedream-3-0-t2i-250415',
-        prompt: params.prompt,
-        response_format: params.response_format || 'url',
-        size: params.size || '1024x1024',
-        seed: params.seed || -1,
-        guidance_scale: params.guidance_scale || 2.5,
-        watermark: params.watermark ?? true,
-      });
+  private async executeSeedream30T2iWithPolling(params: Seedream30T2iParameters): Promise<ToolResult> {
+    const maxWaitTime = params.max_wait_time || 300;
+    const pollInterval = params.poll_interval || 5;
 
-      if (response.data && response.data.length > 0) {
-        // 处理响应，自动保存图片
-        const savedFiles: string[] = [];
-        const imageContents: any[] = [];
+    return await this.pollUntilComplete(
+      // 提交任务函数
+      async () => {
+        const response = await this.doubaoService.t2iSubmit({
+          model: 'doubao-seedream-3-0-t2i-250415',
+          prompt: params.prompt,
+          response_format: params.response_format || 'url',
+          size: params.size || '1024x1024',
+          seed: params.seed || -1,
+          guidance_scale: params.guidance_scale || 2.5,
+          watermark: params.watermark ?? true,
+        });
+        return { task_id: response.task_id };
+      },
+      // 获取结果函数
+      async (taskId: string) => {
+        const response = await this.doubaoService.t2iGetResult({
+          model: 'doubao-seedream-3-0-t2i-250415',
+          id: taskId,
+        });
 
-        for (let i = 0; i < response.data.length; i++) {
-          const imageUrl = response.data[i]?.url;
-          if (imageUrl) {
-            const result = await this.downloadAndSaveFromUrl(
-              imageUrl,
-              'seedream_30_t2i',
-              params.prompt,
-              'png',
-              params.save_directory,
-              params.custom_filename,
-            );
-            savedFiles.push(...result.savedFiles);
+        let savedFiles: string[] = [];
+        // 如果任务完成，自动保存图片
+        if (response.status === 'succeeded' && response.data && response.data.length > 0) {
+          for (let i = 0; i < response.data.length; i++) {
+            const imageUrl = response.data[i]?.url;
+            if (imageUrl) {
+              const result = await this.downloadAndSaveFromUrl(
+                imageUrl,
+                'seedream_30_t2i',
+                params.prompt,
+                'png',
+                params.save_directory,
+                params.custom_filename,
+              );
+              savedFiles.push(...result.savedFiles);
+            }
           }
         }
 
         return {
-          content: [
-            { type: 'text', text: `豆包文生图3.0生成成功！` },
-            { type: 'text', text: `提示词: ${params.prompt}` },
-            { type: 'text', text: `生成了 ${response.data.length} 张图片` },
-            ...savedFiles.map(file => ({ type: 'image' as const, data: file, mimeType: '' })),
-          ],
+          status: response.status,
+          data: response.data,
+          saved_files: savedFiles,
+          usage: response.usage,
         };
-      } else {
-        return {
-          content: [{ type: 'text', text: `生成失败：响应数据为空` }],
-          isError: true,
-        };
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      },
+      result => {
+        if (result.status === 'succeeded') {
+          return 'done';
+        } else if (result.status === 'running') {
+          return 'pending';
+        } else if (result.status === 'failed') {
+          return 'error';
+        } else {
+          return 'pending';
+        }
+      },
+      maxWaitTime,
+      pollInterval,
+    ).then(result => {
       return {
-        content: [{ type: 'text', text: `文生图执行失败: ${errorMessage}` }],
-        isError: true,
+        content: [
+          { type: 'text', text: `豆包文生图3.0生成成功！` },
+          { type: 'text', text: `提示词: ${params.prompt}` },
+          { type: 'text', text: `生成了 ${result.data?.length || 0} 张图片` },
+          ...result.saved_files.map(file => ({ type: 'image' as const, data: file, mimeType: '' })),
+        ],
       };
-    }
+    });
   }
 
-  private async executeSeedEdit30I2i(params: SeedEdit30I2iParameters): Promise<ToolResult> {
-    try {
-      // 调用真实的豆包API
-      const response = await this.doubaoService.seedEdit30I2i({
-        model: 'doubao-seededit-3-0-i2i-250628',
-        prompt: params.prompt,
-        image: params.image,
-        response_format: params.response_format || 'url',
-        size: params.size || 'adaptive',
-        seed: params.seed || -1,
-        guidance_scale: params.guidance_scale || 5.5,
-        watermark: params.watermark ?? true,
-      });
+  private async executeSeedEdit30I2iWithPolling(params: SeedEdit30I2iParameters): Promise<ToolResult> {
+    const maxWaitTime = params.max_wait_time || 300;
+    const pollInterval = params.poll_interval || 5;
 
-      if (response.data && response.data.length > 0) {
-        // 处理响应，自动保存图片
-        const savedFiles: string[] = [];
+    return await this.pollUntilComplete(
+      // 提交任务函数
+      async () => {
+        const response = await this.doubaoService.i2iSubmit({
+          model: 'doubao-seededit-3-0-i2i-250628',
+          prompt: params.prompt,
+          image: params.image,
+          response_format: params.response_format || 'url',
+          size: params.size || 'adaptive',
+          seed: params.seed || -1,
+          guidance_scale: params.guidance_scale || 5.5,
+          watermark: params.watermark ?? true,
+        });
+        return { task_id: response.task_id };
+      },
+      // 获取结果函数
+      async (taskId: string) => {
+        const response = await this.doubaoService.i2iGetResult({
+          model: 'doubao-seededit-3-0-i2i-250628',
+          id: taskId,
+        });
 
-        for (let i = 0; i < response.data.length; i++) {
-          const imageUrl = response.data[i]?.url;
-          if (imageUrl) {
-            const result = await this.downloadAndSaveFromUrl(
-              imageUrl,
-              'seed_edit_30_i2i',
-              params.prompt,
-              'png',
-              params.save_directory,
-              params.custom_filename,
-            );
-            savedFiles.push(...result.savedFiles);
+        let savedFiles: string[] = [];
+        // 如果任务完成，自动保存图片
+        if (response.status === 'succeeded' && response.data && response.data.length > 0) {
+          for (let i = 0; i < response.data.length; i++) {
+            const imageUrl = response.data[i]?.url;
+            if (imageUrl) {
+              const result = await this.downloadAndSaveFromUrl(
+                imageUrl,
+                'seed_edit_30_i2i',
+                params.prompt,
+                'png',
+                params.save_directory,
+                params.custom_filename,
+              );
+              savedFiles.push(...result.savedFiles);
+            }
           }
         }
 
         return {
-          content: [
-            { type: 'text', text: `豆包图生图3.0生成成功！` },
-            { type: 'text', text: `提示词: ${params.prompt}` },
-            { type: 'text', text: `生成了 ${response.data.length} 张图片` },
-            ...savedFiles.map(file => ({ type: 'image' as const, data: file, mimeType: '' })),
-          ],
+          status: response.status,
+          data: response.data,
+          saved_files: savedFiles,
+          usage: response.usage,
         };
-      } else {
-        return {
-          content: [{ type: 'text', text: `生成失败：响应数据为空` }],
-          isError: true,
-        };
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      },
+      result => {
+        if (result.status === 'succeeded') {
+          return 'done';
+        } else if (result.status === 'running') {
+          return 'pending';
+        } else if (result.status === 'failed') {
+          return 'error';
+        } else {
+          return 'pending';
+        }
+      },
+      maxWaitTime,
+      pollInterval,
+    ).then(result => {
       return {
-        content: [{ type: 'text', text: `图生图执行失败: ${errorMessage}` }],
-        isError: true,
+        content: [
+          { type: 'text', text: `豆包图生图3.0生成成功！` },
+          { type: 'text', text: `提示词: ${params.prompt}` },
+          { type: 'text', text: `生成了 ${result.data?.length || 0} 张图片` },
+          ...result.saved_files.map(file => ({ type: 'image' as const, data: file, mimeType: '' })),
+        ],
       };
-    }
+    });
   }
 
   private async executeSeedance10ProWithPolling(params: Seedance10ProParameters): Promise<ToolResult> {
@@ -339,17 +382,88 @@ export class DoubaoTool extends AbstractBaseTool<DoubaoToolParameters> {
     return await this.pollUntilComplete(
       // 提交任务函数
       async () => {
-        const response = await this.doubaoService.seedanceSubmit({
-          model: params.model,
-          content: params.content,
-        });
-        return { id: response.id };
+        let response: any;
+
+        if (params.model === 'doubao-seedance-1-0-pro-250528') {
+          // 关键帧生视频（首尾帧）
+          const firstFrameItem = params.content.find(c => c.type === 'image' && c.role === 'first_frame');
+          const lastFrameItem = params.content.find(c => c.type === 'image' && c.role === 'last_frame');
+
+          if (!firstFrameItem || !lastFrameItem || firstFrameItem.type !== 'image' || lastFrameItem.type !== 'image') {
+            throw new Error('关键帧生视频需要提供首帧和尾帧图片URL');
+          }
+
+          response = await this.doubaoService.kf2vSubmit({
+            model: 'doubao-seedance-1-0-pro-250528',
+            prompt: params.content.find(c => c.type === 'text')?.text || '视频生成',
+            first_frame_url: firstFrameItem.image_url.url,
+            last_frame_url: lastFrameItem.image_url.url,
+            resolution: '720p',
+            duration: 5,
+            ratio: '16:9',
+            fps: 24,
+            seed: -1,
+            watermark: true,
+          });
+        } else if (params.model === 'doubao-seedance-1-0-lite-t2v-250428') {
+          // 文生视频
+          response = await this.doubaoService.t2vSubmit({
+            model: 'doubao-seedance-1-0-lite-t2v-250428',
+            prompt: params.content.find(c => c.type === 'text')?.text || '视频生成',
+            resolution: '720p',
+            duration: 5,
+            ratio: '16:9',
+            fps: 24,
+            seed: -1,
+            watermark: true,
+          });
+        } else if (params.model === 'doubao-seedance-1-0-lite-i2v-250428') {
+          // 图生视频（首帧）
+          const firstFrameItem = params.content.find(c => c.type === 'image' && c.role === 'first_frame');
+
+          if (!firstFrameItem || firstFrameItem.type !== 'image') {
+            throw new Error('图生视频需要提供首帧图片URL');
+          }
+
+          response = await this.doubaoService.i2vSubmit({
+            model: 'doubao-seedance-1-0-lite-i2v-250428',
+            prompt: params.content.find(c => c.type === 'text')?.text || '视频生成',
+            image_url: firstFrameItem.image_url.url,
+            resolution: '720p',
+            duration: 5,
+            ratio: '16:9',
+            fps: 24,
+            seed: -1,
+            watermark: true,
+          });
+        } else {
+          throw new Error(`不支持的模型: ${params.model}`);
+        }
+
+        return { task_id: response.id };
       },
       // 获取结果函数
       async (taskId: string) => {
-        const response = await this.doubaoService.seedanceGetResult({
-          id: taskId,
-        });
+        let response: any;
+
+        if (params.model === 'doubao-seedance-1-0-pro-250528') {
+          response = await this.doubaoService.kf2vGetResult({
+            model: 'doubao-seedance-1-0-pro-250528',
+            id: taskId,
+          });
+        } else if (params.model === 'doubao-seedance-1-0-lite-t2v-250428') {
+          response = await this.doubaoService.t2vGetResult({
+            model: 'doubao-seedance-1-0-lite-t2v-250428',
+            id: taskId,
+          });
+        } else if (params.model === 'doubao-seedance-1-0-lite-i2v-250428') {
+          response = await this.doubaoService.i2vGetResult({
+            model: 'doubao-seedance-1-0-lite-i2v-250428',
+            id: taskId,
+          });
+        } else {
+          throw new Error(`不支持的模型: ${params.model}`);
+        }
 
         let savedFiles: string[] = [];
         let message = '';
@@ -416,7 +530,7 @@ export class DoubaoTool extends AbstractBaseTool<DoubaoToolParameters> {
       properties: {
         seedream_30_t2i: {
           type: 'object',
-          description: '豆包文生图3.0参数（同步）',
+          description: '豆包文生图3.0参数（内部轮询）',
           properties: {
             prompt: { type: 'string', description: '提示词描述' },
             response_format: { type: 'string', enum: ['url', 'b64_json'], description: '响应格式', default: 'url' },
@@ -429,6 +543,8 @@ export class DoubaoTool extends AbstractBaseTool<DoubaoToolParameters> {
             seed: { type: 'number', description: '随机种子，-1表示随机', default: -1 },
             guidance_scale: { type: 'number', minimum: 1, maximum: 10, description: '引导强度', default: 2.5 },
             watermark: { type: 'boolean', description: '是否添加水印', default: true },
+            max_wait_time: { type: 'number', description: '最大等待时间（秒）', default: 300 },
+            poll_interval: { type: 'number', description: '轮询间隔（秒）', default: 5 },
             save_directory: { type: 'string', description: '保存目录路径，如果不指定则使用默认目录' },
             custom_filename: { type: 'string', description: '自定义文件名（不包含扩展名），如果不指定则使用默认文件名' },
           },
@@ -436,7 +552,7 @@ export class DoubaoTool extends AbstractBaseTool<DoubaoToolParameters> {
         },
         seed_edit_30_i2i: {
           type: 'object',
-          description: '豆包图生图3.0参数（同步）',
+          description: '豆包图生图3.0参数（内部轮询）',
           properties: {
             prompt: { type: 'string', description: '提示词描述' },
             image: { type: 'string', description: '输入图片的base64编码或URL' },
@@ -445,6 +561,8 @@ export class DoubaoTool extends AbstractBaseTool<DoubaoToolParameters> {
             seed: { type: 'number', description: '随机种子，-1表示随机', default: -1 },
             guidance_scale: { type: 'number', minimum: 1, maximum: 10, description: '引导强度', default: 5.5 },
             watermark: { type: 'boolean', description: '是否添加水印', default: true },
+            max_wait_time: { type: 'number', description: '最大等待时间（秒）', default: 300 },
+            poll_interval: { type: 'number', description: '轮询间隔（秒）', default: 5 },
             save_directory: { type: 'string', description: '保存目录路径，如果不指定则使用默认目录' },
             custom_filename: { type: 'string', description: '自定义文件名（不包含扩展名），如果不指定则使用默认文件名' },
           },

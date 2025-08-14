@@ -3,96 +3,47 @@ import { BaseToolParameters, ToolResult } from '../types';
 import { AbstractBaseTool } from './base';
 import { FileSystemTool } from './file-system';
 import * as path from 'path';
-import * as fs from 'fs/promises';
 
-// 为每个操作定义独立的参数接口
-interface T2iV21Parameters extends BaseToolParameters {
+// 统一的参数接口
+interface JimengBaseParameters extends BaseToolParameters {
   prompt: string;
   seed?: number;
-  width?: number;
-  height?: number;
-  use_pre_llm?: boolean;
-  use_sr?: boolean;
-  return_url?: boolean;
-  logo_info?: {
-    add_logo?: boolean;
-    position?: number;
-    language?: number;
-    opacity?: number;
-    logo_text_content?: string;
-  };
-  save_directory?: string;
-  custom_filename?: string;
-}
-
-interface T2iV30Parameters extends BaseToolParameters {
-  prompt: string;
-  seed?: number;
-  width?: number;
-  height?: number;
-  use_pre_llm?: boolean;
   max_wait_time?: number;
   poll_interval?: number;
   save_directory?: string;
   custom_filename?: string;
 }
 
-interface T2iV31Parameters extends BaseToolParameters {
-  prompt: string;
-  seed?: number;
+interface T2iParameters extends JimengBaseParameters {
+  use_pre_llm?: boolean;
   width?: number;
   height?: number;
-  use_pre_llm?: boolean;
-  max_wait_time?: number;
-  poll_interval?: number;
-  save_directory?: string;
-  custom_filename?: string;
 }
 
-interface I2iV30Parameters extends BaseToolParameters {
-  prompt: string;
-  seed?: number;
-  width?: number;
-  height?: number;
+interface I2iParameters extends JimengBaseParameters {
   scale?: number;
   binary_data_base64?: string[];
   image_url?: string[];
-  max_wait_time?: number;
-  poll_interval?: number;
-  save_directory?: string;
-  custom_filename?: string;
+  width?: number;
+  height?: number;
 }
 
-interface T2vS20ProParameters extends BaseToolParameters {
-  prompt: string;
-  seed?: number;
+interface T2vParameters extends JimengBaseParameters {
   aspect_ratio?: '16:9' | '9:16' | '4:3' | '3:4' | '21:9';
-  max_wait_time?: number;
-  poll_interval?: number;
-  save_directory?: string;
-  custom_filename?: string;
 }
 
-interface I2vS20ProParameters extends BaseToolParameters {
-  prompt: string;
-  seed?: number;
+interface I2vParameters extends JimengBaseParameters {
   aspect_ratio?: '16:9' | '9:16' | '4:3' | '3:4' | '21:9';
   binary_data_base64?: string[];
   image_url?: string[];
-  max_wait_time?: number;
-  poll_interval?: number;
-  save_directory?: string;
-  custom_filename?: string;
 }
 
 // 新的参数结构：使用不同的key来区分不同的操作类型
 interface JimengToolParameters extends BaseToolParameters {
-  t2i_v21?: T2iV21Parameters;
-  t2i_v30?: T2iV30Parameters;
-  t2i_v31?: T2iV31Parameters;
-  i2i_v30?: I2iV30Parameters;
-  t2v_s20_pro?: T2vS20ProParameters;
-  i2v_s20_pro?: I2vS20ProParameters;
+  t2i?: T2iParameters;
+  i2i?: I2iParameters;
+  t2v?: T2vParameters;
+  i2v?: I2vParameters;
 }
 
 /**
@@ -104,6 +55,7 @@ interface JimengToolParameters extends BaseToolParameters {
  * - VOLCENGINE_JIMENG_SECRET_ACCESS_KEY
  *
  * 特性：
+ * - 统一的接口设计，支持t2i、i2i、t2v、i2v四种操作
  * - 异步接口自动包装成同步接口
  * - 内部实现智能轮询
  * - 支持超时和重试机制
@@ -112,7 +64,7 @@ interface JimengToolParameters extends BaseToolParameters {
 export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
   public name = 'jimeng_aigc';
   public description =
-    '即梦AI工具，支持文生图、图生图、文生视频、图生视频等多种AI生成功能。异步任务会自动轮询直到完成，支持超时配置。当结果是二进制数据时会自动保存到本地。';
+    '即梦AI工具，支持文生图(t2i)、图生图(i2i)、文生视频(t2v)、图生视频(i2v)等多种AI生成功能。异步任务会自动轮询直到完成，支持超时配置。当结果是二进制数据时会自动保存到本地。';
 
   private jimengService: JimengService;
   private fileSystemTool: FileSystemTool;
@@ -139,21 +91,17 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
       }
 
       // 检查参数结构，确定操作类型
-      if (params.t2i_v21) {
-        return await this.executeT2iV21(params.t2i_v21);
-      } else if (params.t2i_v30) {
-        return await this.executeT2iV30WithPolling(params.t2i_v30);
-      } else if (params.t2i_v31) {
-        return await this.executeT2iV31WithPolling(params.t2i_v31);
-      } else if (params.i2i_v30) {
-        return await this.executeI2iV30WithPolling(params.i2i_v30);
-      } else if (params.t2v_s20_pro) {
-        return await this.executeT2vS20ProWithPolling(params.t2v_s20_pro);
-      } else if (params.i2v_s20_pro) {
-        return await this.executeI2vS20ProWithPolling(params.i2v_s20_pro);
+      if (params.t2i) {
+        return await this.executeT2i(params.t2i);
+      } else if (params.i2i) {
+        return await this.executeI2i(params.i2i);
+      } else if (params.t2v) {
+        return await this.executeT2v(params.t2v);
+      } else if (params.i2v) {
+        return await this.executeI2v(params.i2v);
       } else {
         return {
-          content: [{ type: 'text', text: '错误：请指定一个操作类型，例如 t2i_v21, t2i_v30, i2i_v30, t2v_s20_pro, i2v_s20_pro' }],
+          content: [{ type: 'text', text: '错误：请指定一个操作类型，例如 t2i, i2i, t2v, i2v' }],
           isError: true,
         };
       }
@@ -336,71 +284,18 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
     }));
   }
 
-  private async executeT2iV21(params: T2iV21Parameters): Promise<ToolResult> {
-    try {
-      // 调用真实的即梦API
-      const response = await this.jimengService.t2iV21({
-        req_key: 'jimeng_high_aes_general_v21_L',
-        prompt: params.prompt,
-        seed: params.seed || -1,
-        width: params.width || 512,
-        height: params.height || 512,
-        use_pre_llm: params.use_pre_llm ?? true,
-        use_sr: params.use_sr ?? true,
-        return_url: params.return_url ?? true,
-        logo_info: {
-          add_logo: params.logo_info?.add_logo ?? false,
-          position: params.logo_info?.position ?? 0,
-          language: params.logo_info?.language ?? 0,
-          opacity: params.logo_info?.opacity ?? 0.3,
-          logo_text_content: params.logo_info?.logo_text_content ?? '',
-        },
-      });
-
-      if (response.status === 10000 && response.data.algorithm_base_resp.status_code === 10000) {
-        // 处理响应，自动保存二进制数据
-        const { savedFiles, message } = await this.saveBase64ToLocal(
-          response.data.binary_data_base64,
-          't2i_v21',
-          params.prompt,
-          'png',
-          params.save_directory,
-          params.custom_filename,
-        );
-
-        return {
-          content: [
-            { type: 'text', text: `文生图2.1生成成功！` },
-            { type: 'text', text: `提示词: ${params.prompt}` },
-            ...savedFiles.map(file => {
-              return { type: 'image' as const, data: file, mimeType: '' };
-            }),
-          ],
-        };
-      } else {
-        return {
-          content: [{ type: 'text', text: `Failed: ${response.message || 'Unknown error'}` }],
-          isError: true,
-        };
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      return {
-        content: [{ type: 'text', text: `Failed: ${errorMessage}` }],
-        isError: true,
-      };
-    }
-  }
-
-  private async executeT2iV30WithPolling(params: T2iV30Parameters): Promise<ToolResult> {
+  /**
+   * 执行文生图操作
+   */
+  private async executeT2i(params: T2iParameters): Promise<ToolResult> {
     const maxWaitTime = params.max_wait_time || 300;
     const pollInterval = params.poll_interval || 5;
 
     return await this.pollUntilComplete(
-      // 提交任务函数
+      // 提交任务函数 - 默认使用v31版本
       async () => {
-        const response = await this.jimengService.t2iV30Submit({
-          req_key: 'jimeng_t2i_v30',
+        const response = await this.jimengService.t2iSubmit({
+          req_key: 'jimeng_t2i_v31',
           prompt: params.prompt,
           seed: params.seed || -1,
           width: params.width || 1328,
@@ -411,8 +306,8 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
       },
       // 获取结果函数
       async (taskId: string) => {
-        const response = await this.jimengService.t2iV30GetResult({
-          req_key: 'jimeng_t2i_v30',
+        const response = await this.jimengService.t2iGetResult({
+          req_key: 'jimeng_t2i_v31',
           task_id: taskId,
           req_json: {
             logo_info: {
@@ -427,19 +322,17 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
         });
 
         let savedFiles: string[] = [];
-        let imageContent: any[] = [];
         // 如果任务完成，自动保存二进制数据
         if (response.data.status === 'done' && response.data.binary_data_base64) {
           const result = await this.saveBase64ToLocal(
             response.data.binary_data_base64,
-            't2i_v30',
+            't2i',
             params.prompt,
             'png',
             params.save_directory,
             params.custom_filename,
           );
           savedFiles = result.savedFiles;
-          imageContent = this.createImageContent(response.data.binary_data_base64, 't2i_v30', 'png');
         }
 
         return {
@@ -447,7 +340,6 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
           image_urls: response.data.image_urls,
           binary_data_base64: response.data.binary_data_base64,
           saved_files: savedFiles,
-          image_content: imageContent,
         };
       },
       result => {
@@ -464,7 +356,7 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
     ).then(result => {
       return {
         content: [
-          { type: 'text', text: `文生图3.0生成成功！` },
+          { type: 'text', text: `文生图生成成功！` },
           { type: 'text', text: `提示词: ${params.prompt}` },
           ...result.saved_files.map(file => ({ type: 'image' as const, data: file, mimeType: '' })),
         ],
@@ -472,87 +364,10 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
     });
   }
 
-  private async executeT2iV31WithPolling(params: T2iV31Parameters): Promise<ToolResult> {
-    const maxWaitTime = params.max_wait_time || 300;
-    const pollInterval = params.poll_interval || 5;
-
-    return await this.pollUntilComplete(
-      // 提交任务函数
-      async () => {
-        const response = await this.jimengService.t2iV31Submit({
-          req_key: 'jimeng_t2i_v31',
-          prompt: params.prompt,
-          seed: params.seed || -1,
-          width: params.width || 1328,
-          height: params.height || 1328,
-          use_pre_llm: params.use_pre_llm ?? true,
-        });
-        return { task_id: response.data.task_id };
-      },
-      // 获取结果函数
-      async (taskId: string) => {
-        const response = await this.jimengService.t2iV31GetResult({
-          req_key: 'jimeng_t2i_v31',
-          task_id: taskId,
-          req_json: {
-            logo_info: {
-              add_logo: false,
-              position: 0,
-              language: 0,
-              opacity: 0.3,
-              logo_text_content: '',
-            },
-            return_url: true,
-          },
-        });
-
-        let savedFiles: string[] = [];
-        let imageContent: any[] = [];
-        // 如果任务完成，自动保存二进制数据
-        if (response.data.status === 'done' && response.data.binary_data_base64) {
-          const result = await this.saveBase64ToLocal(
-            response.data.binary_data_base64,
-            't2i_v31',
-            params.prompt,
-            'png',
-            params.save_directory,
-            params.custom_filename,
-          );
-          savedFiles = result.savedFiles;
-          imageContent = this.createImageContent(response.data.binary_data_base64, 't2i_v31', 'png');
-        }
-
-        return {
-          status: response.data.status,
-          image_urls: response.data.image_urls,
-          binary_data_base64: response.data.binary_data_base64,
-          saved_files: savedFiles,
-          image_content: imageContent,
-        };
-      },
-      result => {
-        if (result.status === 'done') {
-          return 'done';
-        } else if (result.status === 'in_queue' || result.status === 'generating') {
-          return 'pending';
-        } else {
-          return 'error';
-        }
-      },
-      maxWaitTime,
-      pollInterval,
-    ).then(result => {
-      return {
-        content: [
-          { type: 'text', text: `文生图3.1生成成功！` },
-          { type: 'text', text: `提示词: ${params.prompt}` },
-          ...result.saved_files.map(file => ({ type: 'image' as const, data: file, mimeType: '' })),
-        ],
-      };
-    });
-  }
-
-  private async executeI2iV30WithPolling(params: I2iV30Parameters): Promise<ToolResult> {
+  /**
+   * 执行图生图操作
+   */
+  private async executeI2i(params: I2iParameters): Promise<ToolResult> {
     if (!params.binary_data_base64 && !params.image_url) {
       return {
         content: [{ type: 'text', text: '错误：图生图需要提供 binary_data_base64 或 image_url 参数' }],
@@ -566,7 +381,7 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
     return await this.pollUntilComplete(
       // 提交任务函数
       async () => {
-        const response = await this.jimengService.i2iV30Submit({
+        const response = await this.jimengService.i2iSubmit({
           req_key: 'jimeng_i2i_v30',
           prompt: params.prompt,
           seed: params.seed || -1,
@@ -580,7 +395,7 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
       },
       // 获取结果函数
       async (taskId: string) => {
-        const response = await this.jimengService.i2iV30GetResult({
+        const response = await this.jimengService.i2iGetResult({
           req_key: 'jimeng_i2i_v30',
           task_id: taskId,
           req_json: {
@@ -596,19 +411,17 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
         });
 
         let savedFiles: string[] = [];
-        let imageContent: any[] = [];
         // 如果任务完成，自动保存二进制数据
         if (response.data.status === 'done' && response.data.binary_data_base64) {
           const result = await this.saveBase64ToLocal(
             response.data.binary_data_base64,
-            'i2i_v30',
+            'i2i',
             params.prompt,
             'png',
             params.save_directory,
             params.custom_filename,
           );
           savedFiles = result.savedFiles;
-          imageContent = this.createImageContent(response.data.binary_data_base64, 'i2i_v30', 'png');
         }
 
         return {
@@ -616,7 +429,6 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
           image_urls: response.data.image_urls,
           binary_data_base64: response.data.binary_data_base64,
           saved_files: savedFiles,
-          image_content: imageContent,
         };
       },
       result => {
@@ -633,7 +445,7 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
     ).then(result => {
       return {
         content: [
-          { type: 'text', text: `图生图3.0生成成功！` },
+          { type: 'text', text: `图生图生成成功！` },
           { type: 'text', text: `提示词: ${params.prompt}` },
           ...result.saved_files.map(file => ({ type: 'image' as const, data: file, mimeType: '' })),
         ],
@@ -641,14 +453,17 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
     });
   }
 
-  private async executeT2vS20ProWithPolling(params: T2vS20ProParameters): Promise<ToolResult> {
+  /**
+   * 执行文生视频操作
+   */
+  private async executeT2v(params: T2vParameters): Promise<ToolResult> {
     const maxWaitTime = params.max_wait_time || 600; // 视频生成可能需要更长时间
     const pollInterval = params.poll_interval || 10; // 视频生成轮询间隔可以更长
 
     return await this.pollUntilComplete(
       // 提交任务函数
       async () => {
-        const response = await this.jimengService.t2vS20Pro({
+        const response = await this.jimengService.t2vSubmit({
           req_key: 'jimeng_vgfm_t2v_l20',
           prompt: params.prompt,
           seed: params.seed || -1,
@@ -658,27 +473,26 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
       },
       // 获取结果函数
       async (taskId: string) => {
-        const response = await this.jimengService.t2vS20ProGetResult({
+        const response = await this.jimengService.t2vGetResult({
           req_key: 'jimeng_vgfm_t2v_l20',
           task_id: taskId,
         });
 
         let savedFiles: string[] = [];
-        let imageContent: any[] = [];
+        let videoContent: any[] = [];
         // 如果任务完成，尝试下载视频并保存到本地
         if (response.data.status === 10000 && response.data.video_url) {
           try {
             const result = await this.downloadAndSaveFromUrl(
               response.data.video_url,
-              't2v_s20_pro',
+              't2v',
               params.prompt,
               'mp4',
               params.save_directory,
               params.custom_filename,
             );
             savedFiles = result.savedFiles;
-            // 为视频创建特殊的content，包含下载链接
-            imageContent = [
+            videoContent = [
               {
                 type: 'text',
                 text: `视频生成完成！\n视频URL: ${response.data.video_url}\n${result.message}`,
@@ -686,7 +500,7 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
             ];
           } catch (error) {
             console.warn('下载视频失败:', error);
-            imageContent = [
+            videoContent = [
               {
                 type: 'text',
                 text: `视频生成完成！\n视频URL: ${response.data.video_url}\n⚠️ 下载视频失败: ${error instanceof Error ? error.message : '未知错误'}`,
@@ -699,7 +513,7 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
           status: response.data.status === 10000 ? 'done' : 'generating',
           video_url: response.data.video_url,
           saved_files: savedFiles,
-          image_content: imageContent,
+          video_content: videoContent,
         };
       },
       result => {
@@ -716,7 +530,7 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
     ).then(result => {
       return {
         content: [
-          { type: 'text', text: `文生视频S2.0Pro生成成功！` },
+          { type: 'text', text: `文生视频生成成功！` },
           { type: 'text', text: `提示词: ${params.prompt}` },
           ...result.saved_files.map(file => ({ type: 'image' as const, data: file, mimeType: '' })),
         ],
@@ -724,7 +538,10 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
     });
   }
 
-  private async executeI2vS20ProWithPolling(params: I2vS20ProParameters): Promise<ToolResult> {
+  /**
+   * 执行图生视频操作
+   */
+  private async executeI2v(params: I2vParameters): Promise<ToolResult> {
     if (!params.binary_data_base64 && !params.image_url) {
       return {
         content: [{ type: 'text', text: '错误：图生视频需要提供 binary_data_base64 或 image_url 参数' }],
@@ -738,7 +555,7 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
     return await this.pollUntilComplete(
       // 提交任务函数
       async () => {
-        const response = await this.jimengService.i2vS20Pro({
+        const response = await this.jimengService.i2vSubmit({
           req_key: 'jimeng_vgfm_i2v_l20',
           prompt: params.prompt,
           seed: params.seed || -1,
@@ -750,27 +567,26 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
       },
       // 获取结果函数
       async (taskId: string) => {
-        const response = await this.jimengService.i2vS20ProGetResult({
+        const response = await this.jimengService.i2vGetResult({
           req_key: 'jimeng_vgfm_i2v_l20',
           task_id: taskId,
         });
 
         let savedFiles: string[] = [];
-        let imageContent: any[] = [];
+        let videoContent: any[] = [];
         // 如果任务完成，尝试下载视频并保存到本地
         if (response.data.status === 10000 && response.data.video_url) {
           try {
             const result = await this.downloadAndSaveFromUrl(
               response.data.video_url,
-              'i2v_s20_pro',
+              'i2v',
               params.prompt,
               'mp4',
               params.save_directory,
               params.custom_filename,
             );
             savedFiles = result.savedFiles;
-            // 为视频创建特殊的content，包含下载链接
-            imageContent = [
+            videoContent = [
               {
                 type: 'text',
                 text: `视频生成完成！\n视频URL: ${response.data.video_url}\n${result.message}`,
@@ -778,7 +594,7 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
             ];
           } catch (error) {
             console.warn('下载视频失败:', error);
-            imageContent = [
+            videoContent = [
               {
                 type: 'text',
                 text: `视频生成完成！\n视频URL: ${response.data.video_url}\n⚠️ 下载视频失败: ${error instanceof Error ? error.message : '未知错误'}`,
@@ -791,7 +607,7 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
           status: response.data.status === 10000 ? 'done' : 'generating',
           video_url: response.data.video_url,
           saved_files: savedFiles,
-          image_content: imageContent,
+          video_content: videoContent,
         };
       },
       result => {
@@ -808,7 +624,7 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
     ).then(result => {
       return {
         content: [
-          { type: 'text', text: `图生视频S2.0Pro生成成功！` },
+          { type: 'text', text: `图生视频生成成功！` },
           { type: 'text', text: `提示词: ${params.prompt}` },
           ...result.saved_files.map(file => ({ type: 'image' as const, data: file, mimeType: '' })),
         ],
@@ -821,36 +637,9 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
       type: 'object',
       description: '即梦AI工具参数',
       properties: {
-        t2i_v21: {
+        t2i: {
           type: 'object',
-          description: '文生图2.1参数（同步）',
-          properties: {
-            prompt: { type: 'string', description: '提示词描述' },
-            seed: { type: 'number', description: '随机种子，-1表示随机', default: -1 },
-            width: { type: 'number', description: '图片宽度', minimum: 256, maximum: 768, default: 512 },
-            height: { type: 'number', description: '图片高度', minimum: 256, maximum: 768, default: 512 },
-            use_pre_llm: { type: 'boolean', description: '是否使用预LLM处理', default: true },
-            use_sr: { type: 'boolean', description: '是否使用超分辨率', default: true },
-            return_url: { type: 'boolean', description: '是否返回URL', default: true },
-            logo_info: {
-              type: 'object',
-              description: 'Logo信息配置',
-              properties: {
-                add_logo: { type: 'boolean', default: false },
-                position: { type: 'number', default: 0 },
-                language: { type: 'number', default: 0 },
-                opacity: { type: 'number', default: 0.3 },
-                logo_text_content: { type: 'string', default: '' },
-              },
-            },
-            save_directory: { type: 'string', description: '保存目录路径，如果不指定则使用默认目录' },
-            custom_filename: { type: 'string', description: '自定义文件名（不包含扩展名），如果不指定则使用默认文件名' },
-          },
-          required: ['prompt'],
-        },
-        t2i_v30: {
-          type: 'object',
-          description: '文生图3.0参数（内部轮询）',
+          description: '文生图参数',
           properties: {
             prompt: { type: 'string', description: '提示词描述' },
             seed: { type: 'number', description: '随机种子，-1表示随机', default: -1 },
@@ -864,25 +653,9 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
           },
           required: ['prompt'],
         },
-        t2i_v31: {
+        i2i: {
           type: 'object',
-          description: '文生图3.1参数（内部轮询）',
-          properties: {
-            prompt: { type: 'string', description: '提示词描述' },
-            seed: { type: 'number', description: '随机种子，-1表示随机', default: -1 },
-            width: { type: 'number', description: '图片宽度', minimum: 512, maximum: 2048, default: 1328 },
-            height: { type: 'number', description: '图片高度', minimum: 512, maximum: 2048, default: 1328 },
-            use_pre_llm: { type: 'boolean', description: '是否使用预LLM处理', default: true },
-            max_wait_time: { type: 'number', description: '最大等待时间（秒）', default: 300 },
-            poll_interval: { type: 'number', description: '轮询间隔（秒）', default: 5 },
-            save_directory: { type: 'string', description: '保存目录路径，如果不指定则使用默认目录' },
-            custom_filename: { type: 'string', description: '自定义文件名（不包含扩展名），如果不指定则使用默认文件名' },
-          },
-          required: ['prompt'],
-        },
-        i2i_v30: {
-          type: 'object',
-          description: '图生图3.0参数（内部轮询）',
+          description: '图生图参数',
           properties: {
             prompt: { type: 'string', description: '提示词描述' },
             seed: { type: 'number', description: '随机种子，-1表示随机', default: -1 },
@@ -899,9 +672,9 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
           required: ['prompt'],
           anyOf: [{ required: ['binary_data_base64'] }, { required: ['image_url'] }],
         },
-        t2v_s20_pro: {
+        t2v: {
           type: 'object',
-          description: '文生视频S2.0Pro参数（内部轮询）',
+          description: '文生视频参数',
           properties: {
             prompt: { type: 'string', description: '提示词描述' },
             seed: { type: 'number', description: '随机种子，-1表示随机', default: -1 },
@@ -913,9 +686,9 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
           },
           required: ['prompt'],
         },
-        i2v_s20_pro: {
+        i2v: {
           type: 'object',
-          description: '图生视频S2.0Pro参数（内部轮询）',
+          description: '图生视频参数',
           properties: {
             prompt: { type: 'string', description: '提示词描述' },
             seed: { type: 'number', description: '随机种子，-1表示随机', default: -1 },
@@ -932,14 +705,7 @@ export class JimengTool extends AbstractBaseTool<JimengToolParameters> {
         },
       },
       // 确保至少有一个操作类型被指定
-      anyOf: [
-        { required: ['t2i_v21'] },
-        { required: ['t2i_v30'] },
-        { required: ['t2i_v31'] },
-        { required: ['i2i_v30'] },
-        { required: ['t2v_s20_pro'] },
-        { required: ['i2v_s20_pro'] },
-      ],
+      anyOf: [{ required: ['t2i'] }, { required: ['i2i'] }, { required: ['t2v'] }, { required: ['i2v'] }],
     };
   }
 }

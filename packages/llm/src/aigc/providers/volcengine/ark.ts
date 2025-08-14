@@ -1,16 +1,88 @@
-import {
-  seedance10ProGetResultParamsSchema,
-  Seedance10ProGetResultResponse,
-  seedance10ProSubmitParamsSchema,
-  Seedance10ProSubmitResponse,
-  seedEdit30I2iParamsSchema,
-  SeedEdit30I2iResponse,
-  seedream30T2iParamsSchema,
-  Seedream30T2iResponse,
-} from '../../services/doubao';
 import z from 'zod';
 
 const VOLCENGINE_ARK_ACCESS_KEY_ID = process.env.VOLCENGINE_ARK_ACCESS_KEY_ID;
+
+export const seedEdit30I2iParamsSchema = z.object({
+  model: z.literal('doubao-seededit-3-0-i2i-250628'),
+  prompt: z.string(),
+  image: z.string(),
+  response_format: z.enum(['url', 'b64_json']).default('url'),
+  size: z.literal('adaptive').default('adaptive'),
+  seed: z.number().default(-1),
+  guidance_scale: z.number().min(1).max(10).default(5.5),
+  watermark: z.boolean().default(true),
+});
+
+export interface SeedEdit30I2iResponse {
+  model: 'doubao-seededit-3-0-i2i-250628';
+  created: number;
+  data: [{ url: string }];
+  usage: {
+    generated_images: number;
+    output_tokens: number;
+    total_tokens: number;
+  };
+}
+
+export const seedance10ProSubmitParamsSchema = z.object({
+  model: z.enum(['doubao-seedance-1-0-pro-250528', 'doubao-seedance-1-0-lite-t2v-250428', 'doubao-seedance-1-0-lite-i2v-250428']),
+  /** 模型有文本命令，如 --rs 720p --rt 16:9 --dur 5 --fps 24 --wm true --seed 11 --cf false */
+  content: z.array(
+    z.discriminatedUnion('type', [
+      z.object({ type: z.literal('text'), text: z.string() }),
+      z.object({ type: z.literal('image'), image_url: z.object({ url: z.string() }), role: z.enum(['first_frame', 'last_frame']) }),
+    ]),
+  ),
+  callback_url: z.string().optional(),
+});
+
+export interface Seedance10ProSubmitResponse {
+  id: string;
+}
+
+export const seedance10ProGetResultParamsSchema = z.object({
+  id: z.string(),
+});
+
+export interface Seedance10ProGetResultResponse {
+  id: string;
+  model: 'doubao-seedance-1-0-pro-250528' | 'doubao-seedance-1-0-lite-t2v-250428' | 'doubao-seedance-1-0-lite-i2v-250428';
+  status: 'queued' | 'running' | 'cancelled' | 'succeeded' | 'failed';
+  content: { video_url: string };
+  seed: number;
+  resolution: '720p';
+  duration: number;
+  ratio: string;
+  framespersecond: number;
+  usage: {
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  created_at: number;
+  updated_at: number;
+  error: { code: string; message: string } | null;
+}
+
+export const seedream30T2iParamsSchema = z.object({
+  model: z.literal('doubao-seedream-3-0-t2i-250415'),
+  prompt: z.string(),
+  response_format: z.enum(['url', 'b64_json']).default('url').optional(),
+  size: z.enum(['1024x1024', '864x1152', '1152x864', '1280x720', '720x1280', '832x1248', '1248x832', '1512x648']).default('1024x1024'),
+  seed: z.number().default(-1).optional(),
+  guidance_scale: z.number().min(1).max(10).default(2.5).optional(),
+  watermark: z.boolean().default(true).optional(),
+});
+
+export interface Seedream30T2iResponse {
+  model: 'doubao-seedream-3-0-t2i-250415';
+  created: number;
+  data: { url: string }[];
+  usage: {
+    generated_images: number;
+    output_tokens: number;
+    total_tokens: number;
+  };
+}
 
 export class VolcengineArkService {
   private readonly apiKey: string;

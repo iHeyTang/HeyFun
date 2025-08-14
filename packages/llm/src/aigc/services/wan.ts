@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { DashscopeWanProvider } from '../providers/dashscope/wan';
 
 export const t2iSubmitParamsSchema = z.object({
-  model: z.enum(['wan2.2-t2i-flash', 'wan2.2-t2i-plus', 'wanx2.1-t2i-turbo', 'wanx2.1-t2i-plus', 'wanx2.0-t2i-turbo']),
+  model: z.enum(['wan2.2-t2i-flash', 'wan2.2-t2i-plus', 'wanx2.1-t2i-turbo', 'wanx2.1-t2i-plus', 'wanx2.0-t2i-turbo']).describe('模型'),
   input: z.object({
     prompt: z.string(),
     negative_prompt: z.string().optional(),
@@ -10,16 +10,15 @@ export const t2iSubmitParamsSchema = z.object({
   parameters: z
     .object({
       size: z
-        .string()
-        .transform(val => {
-          const [width, height] = val.split('*').map(Number);
-          return { width, height };
+        .object({
+          width: z.number().int().min(512).max(1440),
+          height: z.number().int().min(512).max(1440),
         })
-        .default('1024*1024'),
-      n: z.number().int().min(1).max(4).default(4),
+        .transform(val => `${val.width}*${val.height}`),
+      n: z.number().int().min(1).max(4).default(4).optional(),
       seed: z.number().int().min(0).max(2147483647).optional(),
-      prompt_extend: z.boolean().default(true),
-      watermark: z.boolean().default(false),
+      prompt_extend: z.boolean().default(true).optional(),
+      watermark: z.boolean().default(false).optional(),
     })
     .optional(),
 });
@@ -46,8 +45,10 @@ export interface T2iGetResultResponse {
     submit_time: string;
     scheduled_time: string;
     end_time: string;
-    results: { orig_prompt: string; actual_prompt: string; url: string }[];
+    results?: { orig_prompt: string; actual_prompt: string; url: string }[];
     task_metrics: { TOTAL: number; SUCCEEDED: number; FAILED: number };
+    code?: string;
+    message?: string;
   };
   usage: {
     image_count: number;
@@ -183,6 +184,8 @@ export interface I2vGetResultResponse {
     video_url: string;
     orig_prompt: string;
     actual_prompt: string;
+    code?: string;
+    message?: string;
   };
   usage: {
     video_duration: number;
@@ -235,6 +238,8 @@ export interface Kf2vGetResultResponse {
     video_url: string;
     orig_prompt: string;
     actual_prompt: string;
+    code?: string;
+    message?: string;
   };
   usage: { video_duration: number; video_ratio: string; video_count: number };
 }
@@ -331,6 +336,8 @@ export interface T2vGetResultResponse {
     video_url: string;
     orig_prompt: string;
     actual_prompt: string;
+    code?: string;
+    message?: string;
   };
   usage: { video_duration: number; video_ratio: string; video_count: number };
 }
@@ -346,6 +353,7 @@ export class WanService {
    * https://bailian.console.aliyun.com/?tab=api#/api/?type=model&url=2862677
    */
   async t2iSubmit(params: z.infer<typeof t2iSubmitParamsSchema>): Promise<T2iSubmitResponse> {
+    console.log('t2iSubmit', params);
     return this.provider.t2iSubmit(params);
   }
 

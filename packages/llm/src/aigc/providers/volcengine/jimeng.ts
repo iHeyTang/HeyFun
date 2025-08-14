@@ -1,27 +1,3 @@
-import {
-  jimengI2iV30GetResultParamsSchema,
-  JimengI2iV30GetResultResponse,
-  jimengI2iV30SubmitParamsSchema,
-  JimengI2iV30SubmitResponse,
-  jimengi2vS20ProGetResultParamsSchema,
-  Jimengi2vS20ProGetResultResponse,
-  jimengi2vS20ProParamsSchema,
-  Jimengi2vS20ProResponse,
-  jimengT2iV21ParamsSchema,
-  JimengT2iV21Response,
-  jimengT2iV30GetResultParamsSchema,
-  JimengT2iV30GetResultResponse,
-  jimengT2iV30SubmitParamsSchema,
-  JimengT2iV30SubmitResponse,
-  jimengT2iV31GetResultParamsSchema,
-  JimengT2iV31GetResultResponse,
-  jimengT2iV31SubmitParamsSchema,
-  JimengT2iV31SubmitResponse,
-  jimengt2vS20ProGetResultParamsSchema,
-  Jimengt2vS20ProGetResultResponse,
-  jimengt2vS20ProParamsSchema,
-  Jimengt2vS20ProResponse,
-} from '../../services/jimeng';
 import crypto from 'crypto';
 import fetch from 'node-fetch';
 import qs from 'querystring';
@@ -29,6 +5,335 @@ import { z } from 'zod';
 
 const VOLCENGINE_JIMENG_ACCESS_KEY_ID = process.env.VOLCENGINE_JIMENG_ACCESS_KEY_ID;
 const VOLCENGINE_JIMENG_SECRET_ACCESS_KEY = process.env.VOLCENGINE_JIMENG_SECRET_ACCESS_KEY;
+
+/**
+ * 即梦文生图2.1
+ */
+export const jimengT2iV21ParamsSchema = z.object({
+  req_key: z.literal('jimeng_high_aes_general_v21_L'),
+  prompt: z.string(),
+  seed: z.number().default(-1),
+  width: z.number().min(256).max(768).default(512),
+  height: z.number().min(256).max(768).default(512),
+  use_pre_llm: z.boolean().default(true),
+  use_sr: z.boolean().default(true),
+  return_url: z.boolean().default(true),
+  logo_info: z.object({
+    add_logo: z.boolean().default(false),
+    position: z.number().default(0),
+    language: z.number().default(0),
+    opacity: z.number().default(0.3),
+    logo_text_content: z.string().default(''),
+  }),
+});
+
+export interface JimengT2iV21Response {
+  code: number;
+  data: {
+    algorithm_base_resp: {
+      status_code: number;
+      status_message: string;
+    };
+    binary_data_base64: [];
+    image_urls: string[];
+    infer_ctx: {
+      algorithm_key: string;
+      app_key: string;
+      created_at: string;
+      generate_id: string;
+      log_id: string;
+      params: {
+        app_id: string;
+        aspect_ratio: string;
+        common_params: string;
+        ddim_steps: number;
+        edit_session_id: string;
+        fps: number;
+        frames: number;
+        group_name: string;
+        height: number;
+        input_image_url: string;
+        is_only_sr: boolean;
+        is_pe: boolean;
+        llm_result: string;
+        media_source: string;
+        n_samples: number;
+        negative_prompt: string;
+        ori_prompt: string;
+        origin_request_id: string;
+        output_height: number;
+        output_width: number;
+        pe_result: string;
+        predict_tags_result: string;
+        rephraser_result: string;
+        req_key: string;
+        rescale: number;
+        resolution: string;
+        scale: number;
+        seed: number;
+        shift: number;
+        sr_img2img_fix_steps: number;
+        sr_scale: number;
+        sr_strength: number;
+        sr_upscaler: string;
+        steps: number;
+        strength: number;
+        trace_id: string;
+        translate_negative_prompt: string;
+        translate_prompt: string;
+        use_pre_llm: boolean;
+        use_prompt_aug: boolean;
+        use_sr: boolean;
+        version_id: string;
+        video_url: string;
+        vlm_edit: string;
+        vlm_input: string;
+        vlm_output: string;
+        width: number;
+      };
+      request_id: string;
+      session_id: string;
+      time_stamp: string;
+    };
+    llm_result: string;
+    pe_result: string;
+    predict_tags_result: string;
+    rephraser_result: string;
+    request_id: string;
+    vlm_result: string;
+  };
+  message: string;
+  request_id: string;
+  status: number;
+  time_elapsed: string;
+}
+
+/**
+ * 即梦文生图3.0
+ */
+export const jimengT2iV30SubmitParamsSchema = z.object({
+  req_key: z.literal('jimeng_t2i_v30'),
+  prompt: z.string(),
+  use_pre_llm: z.boolean().default(true),
+  seed: z.number().default(-1),
+  width: z.number().min(512).max(2048).default(1328),
+  height: z.number().min(512).max(2048).default(1328),
+});
+
+export interface JimengT2iV30SubmitResponse {
+  code: number;
+  data: {
+    task_id: string;
+  };
+  message: string;
+  request_id: string;
+  status: number;
+  time_elapsed: string;
+}
+
+/**
+ * {
+ *   logo_info?: {
+ *     add_logo?: boolean;
+ *     position?: number;
+ *     language?: number;
+ *     opacity?: number;
+ *     logo_text_content?: string;
+ *   };
+ *   return_url?: boolean;
+ * }
+ * @param val
+ * @returns
+ */
+const reqJsonSchema = z.object({
+  logo_info: z
+    .object({
+      add_logo: z.boolean().optional(),
+      position: z.number().optional(),
+      language: z.number().optional(),
+      opacity: z.number().optional(),
+      logo_text_content: z.string().optional(),
+    })
+    .optional(),
+  return_url: z.boolean().optional(),
+});
+
+export const jimengT2iV30GetResultParamsSchema = z.object({
+  req_key: z.literal('jimeng_t2i_v30'),
+  task_id: z.string(),
+  req_json: reqJsonSchema.transform<string>(val => JSON.stringify(val)),
+});
+
+export interface JimengT2iV30GetResultResponse {
+  code: number;
+  data: {
+    binary_data_base64: string[];
+    image_urls: string[];
+    status: 'in_queue' | 'generating' | 'done' | 'not_found' | 'expired';
+  };
+  message: string;
+  request_id: string;
+  status: number;
+  time_elapsed: string;
+}
+
+/**
+ * 即梦文生图3.1
+ */
+export const jimengT2iV31SubmitParamsSchema = z.object({
+  req_key: z.literal('jimeng_t2i_v31'),
+  prompt: z.string(),
+  use_pre_llm: z.boolean().default(true),
+  seed: z.number().default(-1),
+  width: z.number().min(512).max(2048).default(1328),
+  height: z.number().min(512).max(2048).default(1328),
+});
+
+export interface JimengT2iV31SubmitResponse {
+  code: number;
+  data: {
+    task_id: string;
+  };
+  message: string;
+  request_id: string;
+  status: number;
+  time_elapsed: string;
+}
+
+export const jimengT2iV31GetResultParamsSchema = z.object({
+  req_key: z.literal('jimeng_t2i_v31'),
+  task_id: z.string(),
+  req_json: reqJsonSchema.transform<string>(val => JSON.stringify(val)),
+});
+
+export interface JimengT2iV31GetResultResponse {
+  code: number;
+  data: {
+    binary_data_base64: string[];
+    image_urls: string[];
+    status: 'in_queue' | 'generating' | 'done' | 'not_found' | 'expired';
+  };
+  message: string;
+  request_id: string;
+  status: number;
+  time_elapsed: string;
+}
+
+/**
+ * 即梦图生图3.0
+ */
+export const jimengI2iV30SubmitParamsSchema = z.object({
+  req_key: z.literal('jimeng_i2i_v30'),
+  binary_data_base64: z.array(z.string()).optional(),
+  image_url: z.array(z.string()).optional(),
+  prompt: z.string(),
+  seed: z.number().default(-1),
+  scale: z.number().min(0).max(1).default(0.5),
+  width: z.number().min(512).max(2048).default(1328),
+  height: z.number().min(512).max(2048).default(1328),
+});
+
+export interface JimengI2iV30SubmitResponse {
+  code: number;
+  data: {
+    task_id: string;
+  };
+  message: string;
+  request_id: string;
+  status: number;
+  time_elapsed: string;
+}
+
+export const jimengI2iV30GetResultParamsSchema = z.object({
+  req_key: z.literal('jimeng_i2i_v30'),
+  task_id: z.string(),
+  req_json: reqJsonSchema.transform<string>(val => JSON.stringify(val)),
+});
+
+export interface JimengI2iV30GetResultResponse {
+  code: number;
+  data: {
+    binary_data_base64: string[];
+    image_urls: string[];
+    status: 'in_queue' | 'generating' | 'done' | 'not_found' | 'expired';
+  };
+  message: string;
+  request_id: string;
+  status: number;
+  time_elapsed: string;
+}
+
+export const jimengt2vS20ProParamsSchema = z.object({
+  req_key: z.literal('jimeng_vgfm_t2v_l20'),
+  prompt: z.string(),
+  seed: z.number().default(-1),
+  aspect_ratio: z.enum(['16:9', '9:16', '4:3', '3:4', '21:9']).default('16:9'),
+});
+
+export interface Jimengt2vS20ProResponse {
+  code: number;
+  data: {
+    task_id: string;
+  };
+  message: string;
+  request_id: string;
+  status: number;
+  time_elapsed: string;
+}
+
+export const jimengt2vS20ProGetResultParamsSchema = z.object({
+  req_key: z.literal('jimeng_vgfm_t2v_l20'),
+  task_id: z.string(),
+});
+
+export interface Jimengt2vS20ProGetResultResponse {
+  code: number;
+  data: {
+    status: 'in_queue' | 'generating' | 'done' | 'not_found' | 'expired';
+    video_url: string;
+  };
+  message: string;
+  request_id: string;
+  status: number;
+  time_elapsed: string;
+}
+
+export const jimengi2vS20ProParamsSchema = z.object({
+  req_key: z.literal('jimeng_vgfm_i2v_l20'),
+  binary_data_base64: z.array(z.string()).optional(),
+  image_urls: z.array(z.string()).optional(),
+  prompt: z.string(),
+  seed: z.number().default(-1),
+  aspect_ratio: z.enum(['16:9', '9:16', '4:3', '3:4', '21:9']).default('16:9'),
+});
+
+export interface Jimengi2vS20ProResponse {
+  code: number;
+  data: {
+    task_id: string;
+  };
+  message: string;
+  request_id: string;
+  status: number;
+  time_elapsed: string;
+}
+
+export const jimengi2vS20ProGetResultParamsSchema = z.object({
+  req_key: z.literal('jimeng_vgfm_i2v_l20'),
+  task_id: z.string(),
+});
+
+export interface Jimengi2vS20ProGetResultResponse {
+  code: number;
+  data: {
+    status: 'in_queue' | 'generating' | 'done' | 'not_found' | 'expired';
+    video_url: string;
+  };
+  message: string;
+  request_id: string;
+  status: number;
+  time_elapsed: string;
+}
 
 export class VolcengineJimeng {
   public readonly homePage = 'https://jimeng.jianying.com/';
@@ -310,7 +615,7 @@ export class Signer {
   async doRequest(params: RequestParams) {
     // 计算body的哈希值
     const bodySha = this.hash(params.body);
-    
+
     const signParams: SignParams = {
       headers: {
         // x-date header 是必传的

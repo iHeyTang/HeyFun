@@ -261,3 +261,30 @@ model ToolSchemas {
   @@index([name])
   @@index([createdAt])
 }
+
+model PaintboardTasks {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+  
+  // 任务基本信息
+  service        String   // 服务提供商：wan, doubao, jimeng
+  model          String   // 模型名称
+  generationType String   // 生成类型：text-to-image, image-to-image, text-to-video, image-to-video, keyframe-to-video
+  status         String   @default("pending") // 任务状态：pending, processing, completed, failed
+  
+  // 任务参数和结果
+  params         Json     // 任务参数
+  taskId         String?  // 外部服务返回的任务ID
+  results        Json     @default("[]") // 结果数组，包含文件路径等信息
+  
+  // 错误信息
+  error          String?  // 错误信息
+  
+  // 索引
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([createdAt])
+  @@index([service, model])
+}

@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tasks } from '@prisma/client';
-import { LogOutIcon, MessageSquare, SettingsIcon } from 'lucide-react';
+import { LogOutIcon, MessageSquare, Palette, SettingsIcon } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { create } from 'zustand';
@@ -20,6 +20,11 @@ const navItems = [
     icon: MessageSquare,
     label: 'Tasks',
     path: '/tasks',
+  },
+  {
+    icon: Palette,
+    label: 'Paintboard',
+    path: '/paintboard',
   },
 ];
 
