@@ -8,6 +8,12 @@
 
 Hey! Let's bring a little fun to this world together.
 
+<img src="assets/screenshots/tasks.png" width="1000"/>
+<img src="assets/screenshots/settings-models.png" width="1000"/>
+<img src="assets/screenshots/settings-aigc.png" width="1000"/>
+
+**当前项目非常不稳定，且暂时没有整理好全部的quick start，依靠自己想启动体验可能比较困难，如果有任何感兴趣的朋友欢迎随时交流～**
+
 ## 项目重构说明
 
 原项目为 Fork [OpenManus](https://github.com/FoundationAgents/OpenManus)，目前已归档至分支 `openmanus` 下。
@@ -20,14 +26,6 @@ Hey! Let's bring a little fun to this world together.
 
 1. 通用领域全能 AI 助手，为 AI 时代的超级个体和一人公司提供最有力的支持
 2. 专精领域 AI 智能体的快速开发验证，为垂类 AI Agent 提供最好的效率平台
-
-## 项目演示
-
-1. 通过 MCP 实现网络搜索和访问 Flomo 自动记录笔记
-   https://www.heyfun.ai/share/tasks/cm9k3hmiv00ezo8011k4008qx
-
-2. 通过 MCP 实现 MiniMax 的文字生成图像，进一步通过生成的图像来生成视频
-   https://www.heyfun.ai/share/tasks/cmbnaws9y001xqr01e7miwpme
 
 ## 安装指南
 
