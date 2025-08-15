@@ -31,7 +31,7 @@ export interface IGenerationAdapter {
   ): Promise<GenerationTaskResponse>;
 
   // 获取任务结果
-  getTaskResult(generationType: string, taskId: string): Promise<GenerationTaskResult>;
+  getTaskResult(params: { generationType: string; model: string; taskId: string }): Promise<GenerationTaskResult>;
 }
 
 // 基础适配器抽象类
@@ -55,7 +55,7 @@ export abstract class BaseGenerationAdapter implements IGenerationAdapter {
     generationType: GenerationType,
     params: TextToImageParams | ImageToImageParams | TextToVideoParams | ImageToVideoParams | KeyframeToVideoParams,
   ): Promise<GenerationTaskResponse>;
-  abstract getTaskResult(generationType: string, taskId: string): Promise<GenerationTaskResult>;
+  abstract getTaskResult(params: { generationType: string; model: string; taskId: string }): Promise<GenerationTaskResult>;
 
   // 通用错误处理方法
   protected handleError(error: unknown, operation: string): GenerationTaskResponse {

@@ -40,30 +40,15 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
     const models: Record<GenerationType, { model: string; displayName: string; description?: string; parameterLimits?: ModelParameterLimits }[]> = {
       'text-to-image': [
         {
-          model: 'doubao-v1.5',
-          displayName: '豆包 V1.5',
-          description: '高质量文生图模型',
+          model: 'doubao-seedream-3-0-t2i-250415',
+          displayName: 'Doubao-Seedream-3.0-t2i',
+          description: '影视质感，文字更准，直出 2K 高清图',
           parameterLimits: {
             canvasSize: {
-              minWidth: 256,
+              minWidth: 512,
               maxWidth: 2048,
-              minHeight: 256,
+              minHeight: 512,
               maxHeight: 2048,
-              step: 8,
-              aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4', '2:3', '3:2'],
-            },
-          },
-        },
-        {
-          model: 'doubao-v1.0',
-          displayName: '豆包 V1.0',
-          description: '基础文生图模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 256,
-              maxWidth: 1024,
-              minHeight: 256,
-              maxHeight: 1024,
               step: 64,
               aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
             },
@@ -72,9 +57,9 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
       ],
       'image-to-image': [
         {
-          model: 'doubao-i2i-v1.5',
-          displayName: '豆包 I2I V1.5',
-          description: '高质量图生图模型',
+          model: 'doubao-seededit-3-0-i2i-250628',
+          displayName: 'Doubao-SeedEdit-3.0-i2i',
+          description: '准确遵循编辑指令，有效保留图像内容',
           parameterLimits: {
             canvasSize: {
               minWidth: 256,
@@ -90,8 +75,8 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
       'text-to-video': [
         {
           model: 'doubao-seedance-1-0-lite-t2v-250428',
-          displayName: '豆包 T2V Lite',
-          description: '高质量文生视频模型',
+          displayName: 'Doubao-Seedance-1.0-lite-t2v',
+          description: '精准响应，性价比高',
           parameterLimits: {
             canvasSize: {
               minWidth: 512,
@@ -106,8 +91,8 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
         },
         {
           model: 'doubao-seedance-1-0-pro-250528',
-          displayName: '豆包 T2V Pro',
-          description: '高质量文生视频模型',
+          displayName: 'Doubao-Seedance-1.0-pro',
+          description: '全面强大，独具多镜头叙事能力',
           parameterLimits: {
             canvasSize: {
               minWidth: 512,
@@ -124,8 +109,8 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
       'image-to-video': [
         {
           model: 'doubao-seedance-1-0-lite-i2v-250428',
-          displayName: '豆包 I2V Lite',
-          description: '高质量图生视频模型',
+          displayName: 'Doubao-Seedance-1.0-lite-i2v',
+          description: '支持首尾帧，精准响应，性价比高',
           parameterLimits: {
             canvasSize: {
               minWidth: 512,
@@ -140,8 +125,8 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
         },
         {
           model: 'doubao-seedance-1-0-pro-250528',
-          displayName: '豆包 I2V Pro',
-          description: '高质量图生视频模型',
+          displayName: 'Doubao-Seedance-1.0-pro',
+          description: '全面强大，独具多镜头叙事能力',
           parameterLimits: {
             canvasSize: {
               minWidth: 512,
@@ -158,8 +143,8 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
       'keyframe-to-video': [
         {
           model: 'doubao-seedance-1-0-lite-i2v-250428',
-          displayName: '豆包 I2V Lite',
-          description: '高质量首尾帧生视频模型',
+          displayName: 'Doubao-Seedance-1.0-lite-i2v',
+          description: '支持首尾帧，精准响应，性价比高',
           parameterLimits: {
             canvasSize: {
               minWidth: 512,
@@ -292,11 +277,12 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
     }
   }
 
-  async getTaskResult(generationType: string, taskId: string): Promise<GenerationTaskResult> {
+  async getTaskResult(params: { generationType: string; model: string; taskId: string }): Promise<GenerationTaskResult> {
+    const { generationType, model, taskId } = params;
     try {
       switch (generationType) {
         case 'text-to-image': {
-          const parsed = t2iGetResultParamsSchema.safeParse({ task_id: taskId });
+          const parsed = t2iGetResultParamsSchema.safeParse({ task_id: taskId, model: model });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
           }
@@ -310,7 +296,7 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
           };
         }
         case 'image-to-image': {
-          const parsed = i2iGetResultParamsSchema.safeParse({ task_id: taskId });
+          const parsed = i2iGetResultParamsSchema.safeParse({ task_id: taskId, model: model });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
           }
@@ -324,7 +310,7 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
           };
         }
         case 'text-to-video': {
-          const parsed = t2vGetResultParamsSchema.safeParse({ task_id: taskId });
+          const parsed = t2vGetResultParamsSchema.safeParse({ task_id: taskId, model: model });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
           }
@@ -339,7 +325,7 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
           };
         }
         case 'image-to-video': {
-          const parsed = i2vGetResultParamsSchema.safeParse({ task_id: taskId });
+          const parsed = i2vGetResultParamsSchema.safeParse({ task_id: taskId, model: model });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
           }

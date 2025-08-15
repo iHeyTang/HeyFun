@@ -380,7 +380,8 @@ export class WanAdapter extends BaseGenerationAdapter {
     }
   }
 
-  async getTaskResult(generationType: string, taskId: string): Promise<GenerationTaskResult> {
+  async getTaskResult(params: { generationType: string; model: string; taskId: string }): Promise<GenerationTaskResult> {
+    const { generationType, model, taskId } = params;
     try {
       switch (generationType) {
         case 'text-to-image': {

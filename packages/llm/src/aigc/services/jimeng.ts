@@ -31,18 +31,20 @@ export interface T2iSubmitResponse {
   time_elapsed: string;
 }
 
-const reqJsonSchema = z.object({
-  logo_info: z
-    .object({
-      add_logo: z.boolean().optional(),
-      position: z.number().optional(),
-      language: z.number().optional(),
-      opacity: z.number().optional(),
-      logo_text_content: z.string().optional(),
-    })
-    .optional(),
-  return_url: z.boolean().optional(),
-});
+const reqJsonSchema = z
+  .object({
+    logo_info: z
+      .object({
+        add_logo: z.boolean().optional(),
+        position: z.number().optional(),
+        language: z.number().optional(),
+        opacity: z.number().optional(),
+        logo_text_content: z.string().optional(),
+      })
+      .optional(),
+    return_url: z.boolean().optional(),
+  })
+  .optional();
 
 export const t2iGetResultParamsSchema = z.discriminatedUnion('req_key', [
   z.object({

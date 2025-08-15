@@ -145,18 +145,20 @@ export interface JimengT2iV30SubmitResponse {
  * @param val
  * @returns
  */
-const reqJsonSchema = z.object({
-  logo_info: z
-    .object({
-      add_logo: z.boolean().optional(),
-      position: z.number().optional(),
-      language: z.number().optional(),
-      opacity: z.number().optional(),
-      logo_text_content: z.string().optional(),
-    })
-    .optional(),
-  return_url: z.boolean().optional(),
-});
+const reqJsonSchema = z
+  .object({
+    logo_info: z
+      .object({
+        add_logo: z.boolean().optional(),
+        position: z.number().optional(),
+        language: z.number().optional(),
+        opacity: z.number().optional(),
+        logo_text_content: z.string().optional(),
+      })
+      .optional(),
+    return_url: z.boolean().optional(),
+  })
+  .optional();
 
 export const jimengT2iV30GetResultParamsSchema = z.object({
   req_key: z.literal('jimeng_t2i_v30'),
@@ -168,7 +170,7 @@ export interface JimengT2iV30GetResultResponse {
   code: number;
   data: {
     binary_data_base64: string[];
-    image_urls: string[];
+    image_urls?: string[];
     status: 'in_queue' | 'generating' | 'done' | 'not_found' | 'expired';
   };
   message: string;
@@ -210,7 +212,7 @@ export interface JimengT2iV31GetResultResponse {
   code: number;
   data: {
     binary_data_base64: string[];
-    image_urls: string[];
+    image_urls?: string[];
     status: 'in_queue' | 'generating' | 'done' | 'not_found' | 'expired';
   };
   message: string;
@@ -254,7 +256,7 @@ export interface JimengI2iV30GetResultResponse {
   code: number;
   data: {
     binary_data_base64: string[];
-    image_urls: string[];
+    image_urls?: string[];
     status: 'in_queue' | 'generating' | 'done' | 'not_found' | 'expired';
   };
   message: string;

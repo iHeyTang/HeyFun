@@ -40,21 +40,6 @@ export class JimengAdapter extends BaseGenerationAdapter {
     const models: Record<GenerationType, { model: string; displayName: string; description?: string; parameterLimits?: ModelParameterLimits }[]> = {
       'text-to-image': [
         {
-          model: 'jimeng_high_aes_general_v21_L',
-          displayName: '即梦 文生图 2.1',
-          description: '高质量文生图模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
-            },
-          },
-        },
-        {
           model: 'jimeng_t2i_v30',
           displayName: '即梦 文生图 3.0',
           description: '高质量文生图模型',
@@ -251,39 +236,41 @@ export class JimengAdapter extends BaseGenerationAdapter {
     }
   }
 
-  async getTaskResult(generationType: string, taskId: string): Promise<GenerationTaskResult> {
+  async getTaskResult(params: { generationType: string; model: string; taskId: string }): Promise<GenerationTaskResult> {
+    const { generationType, model, taskId } = params;
     try {
       switch (generationType) {
         case 'text-to-image': {
-          const parsed = t2iGetResultParamsSchema.safeParse({ task_id: taskId });
+          const parsed = t2iGetResultParamsSchema.safeParse({ task_id: taskId, req_key: model, req_json: { return_url: true } });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
           }
           const result = await this.jimengService.t2iGetResult(parsed.data);
+          console.log('result', result);
           return {
             status: this.getStatus(result.data.status),
-            data: result.data.image_urls.map(url => ({ url, type: 'image' })),
+            data: result.data.image_urls?.map(url => ({ url, type: 'image' })) || [],
             usage: {
-              image_count: result.data.image_urls.length,
+              image_count: result.data.image_urls?.length || 0,
             },
           };
         }
         case 'image-to-image': {
-          const parsed = i2iGetResultParamsSchema.safeParse({ task_id: taskId });
+          const parsed = i2iGetResultParamsSchema.safeParse({ task_id: taskId, req_key: model, req_json: { return_url: true } });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
           }
           const result = await this.jimengService.i2iGetResult(parsed.data);
           return {
             status: this.getStatus(result.data.status),
-            data: result.data.image_urls.map(url => ({ url, type: 'image' })),
+            data: result.data.image_urls?.map(url => ({ url, type: 'image' })) || [],
             usage: {
-              image_count: result.data.image_urls.length,
+              image_count: result.data.image_urls?.length || 0,
             },
           };
         }
         case 'text-to-video': {
-          const parsed = t2vGetResultParamsSchema.safeParse({ task_id: taskId });
+          const parsed = t2vGetResultParamsSchema.safeParse({ task_id: taskId, req_key: model, req_json: { return_url: true } });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
           }
@@ -298,7 +285,7 @@ export class JimengAdapter extends BaseGenerationAdapter {
           };
         }
         case 'image-to-video': {
-          const parsed = i2vGetResultParamsSchema.safeParse({ task_id: taskId });
+          const parsed = i2vGetResultParamsSchema.safeParse({ task_id: taskId, req_key: model, req_json: { return_url: true } });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
           }

@@ -113,13 +113,14 @@ export class AdapterManager {
   }
 
   // 获取任务结果
-  public async getTaskResult(service: string, generationType: string, taskId: string): Promise<GenerationTaskResult> {
+  public async getTaskResult(params: { generationType: string; service: string; model: string; taskId: string }): Promise<GenerationTaskResult> {
+    const { generationType, service, model, taskId } = params;
     const adapter = this.adapters.get(service);
     if (!adapter) {
       throw new Error(`不支持的服务: ${service}`);
     }
 
-    return await adapter.getTaskResult(generationType, taskId);
+    return await adapter.getTaskResult({ generationType, model, taskId });
   }
 
   // 添加新的适配器（用于扩展）

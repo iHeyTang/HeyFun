@@ -284,7 +284,11 @@ export const getPaintboardTask = withUserAuth(async ({ args }: AuthWrapperContex
 });
 
 // 下载文件到sandbox并保存路径
-async function downloadAndSaveToSandbox(url: string, filename: string, organizationId: string): Promise<{ localPath: string; size: number; fileType: string }> {
+async function downloadAndSaveToSandbox(
+  url: string,
+  filename: string,
+  organizationId: string,
+): Promise<{ localPath: string; size: number; fileType: string }> {
   try {
     // 获取或创建sandbox
     const sandboxes = await sandboxManager.list();
@@ -310,16 +314,16 @@ async function downloadAndSaveToSandbox(url: string, filename: string, organizat
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());
-    
+
     // 识别文件类型
     const fileType = identifyFileType(buffer, filename);
-    
+
     // 生成基于时间的文件名：时间戳_随机码.扩展名
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5); // 格式：2024-01-15T10-30-45
     const randomCode = nanoid(8); // 8位随机码
     const extension = getFileExtension(fileType);
     const uniqueFilename = `${timestamp}_${randomCode}${extension}`;
-    
+
     const filePath = join(paintboardDir, uniqueFilename);
     await sandbox.fs.uploadFileFromBuffer(buffer, filePath);
 
@@ -338,47 +342,46 @@ async function downloadAndSaveToSandbox(url: string, filename: string, organizat
 function identifyFileType(buffer: Buffer, originalFilename: string): string {
   // 检查文件魔数（文件头）来识别文件类型
   const header = buffer.slice(0, 16);
-  
+
   // 图片格式
-  if (header.slice(0, 3).equals(Buffer.from([0xFF, 0xD8, 0xFF]))) {
+  if (header.slice(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))) {
     return 'image/jpeg';
   }
-  if (header.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
+  if (header.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
     return 'image/png';
   }
-  if (header.slice(0, 6).equals(Buffer.from([0x47, 0x49, 0x46, 0x38, 0x37, 0x61])) || 
-      header.slice(0, 6).equals(Buffer.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]))) {
+  if (
+    header.slice(0, 6).equals(Buffer.from([0x47, 0x49, 0x46, 0x38, 0x37, 0x61])) ||
+    header.slice(0, 6).equals(Buffer.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]))
+  ) {
     return 'image/gif';
   }
-  if (header.slice(0, 4).equals(Buffer.from([0x52, 0x49, 0x46, 0x46])) && 
-      header.slice(8, 12).equals(Buffer.from([0x57, 0x45, 0x42, 0x50]))) {
+  if (header.slice(0, 4).equals(Buffer.from([0x52, 0x49, 0x46, 0x46])) && header.slice(8, 12).equals(Buffer.from([0x57, 0x45, 0x42, 0x50]))) {
     return 'image/webp';
   }
-  
+
   // 视频格式
-  if (header.slice(0, 4).equals(Buffer.from([0x00, 0x00, 0x00, 0x18])) && 
-      header.slice(4, 8).equals(Buffer.from([0x66, 0x74, 0x79, 0x70]))) {
+  if (header.slice(0, 4).equals(Buffer.from([0x00, 0x00, 0x00, 0x18])) && header.slice(4, 8).equals(Buffer.from([0x66, 0x74, 0x79, 0x70]))) {
     return 'video/mp4';
   }
-  if (header.slice(0, 4).equals(Buffer.from([0x1A, 0x45, 0xDF, 0xA3]))) {
+  if (header.slice(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]))) {
     return 'video/webm';
   }
-  if (header.slice(0, 3).equals(Buffer.from([0x00, 0x00, 0x01, 0xB3]))) {
+  if (header.slice(0, 3).equals(Buffer.from([0x00, 0x00, 0x01, 0xb3]))) {
     return 'video/mpeg';
   }
-  
+
   // 音频格式
   if (header.slice(0, 3).equals(Buffer.from([0x49, 0x44, 0x33]))) {
     return 'audio/mpeg';
   }
-  if (header.slice(0, 4).equals(Buffer.from([0x4F, 0x67, 0x67, 0x53]))) {
+  if (header.slice(0, 4).equals(Buffer.from([0x4f, 0x67, 0x67, 0x53]))) {
     return 'audio/ogg';
   }
-  if (header.slice(0, 4).equals(Buffer.from([0x52, 0x49, 0x46, 0x46])) && 
-      header.slice(8, 12).equals(Buffer.from([0x57, 0x41, 0x56, 0x45]))) {
+  if (header.slice(0, 4).equals(Buffer.from([0x52, 0x49, 0x46, 0x46])) && header.slice(8, 12).equals(Buffer.from([0x57, 0x41, 0x56, 0x45]))) {
     return 'audio/wav';
   }
-  
+
   // 如果无法通过魔数识别，尝试从原始文件名推断
   const lowerFilename = originalFilename.toLowerCase();
   if (lowerFilename.endsWith('.jpg') || lowerFilename.endsWith('.jpeg')) {
@@ -408,7 +411,7 @@ function identifyFileType(buffer: Buffer, originalFilename: string): string {
   if (lowerFilename.endsWith('.wav')) {
     return 'audio/wav';
   }
-  
+
   // 默认返回通用二进制类型
   return 'application/octet-stream';
 }
@@ -474,7 +477,7 @@ export const processPaintboardTaskResult = withUserAuth(
 
           // 使用统一接口获取任务结果
           const manager = AdapterManager.getInstance();
-          const result = await manager.getTaskResult(service, generationType, externalTaskId);
+          const result = await manager.getTaskResult({ generationType, service, model, taskId: externalTaskId });
           console.log('result', result);
 
           // 检查任务是否完成
