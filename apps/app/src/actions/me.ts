@@ -30,7 +30,6 @@ export const modifyPassword = withUserAuth(async ({ user, args }: AuthWrapperCon
     where: { id: user.id },
     data: {
       password: newHashedPassword,
-      isFirstLogin: false,
     },
   });
 

@@ -1,6 +1,6 @@
 import { Organizations } from '@prisma/client';
-import { cookies } from 'next/headers';
-import { AuthUser, verifyToken } from './auth';
+import { headers } from 'next/headers';
+import { auth, AuthUser } from './auth';
 import { prisma } from './prisma';
 import { to } from '../shared/to';
 
@@ -28,36 +28,30 @@ export function withUserAuth<T = unknown, R = unknown>(fn: AuthWrapped<T, R>): A
 
     const [error, result] = await to(
       (async () => {
-        const cookieStore = await cookies();
-        const token = cookieStore.get('token')?.value;
-
-        if (!token) {
+        const session = await auth.api.getSession({
+          headers: await headers(),
+        });
+        if (!session) {
           throw new Error('Unauthorized access');
         }
 
-        const user = await verifyToken(token);
-        const organizationUser = await prisma.organizationUsers.findMany({
-          where: { userId: user.id },
-        });
-
-        if (organizationUser.length === 0) {
-          throw new Error('User is not associated with any organization');
-        }
-
-        if (organizationUser.length > 1) {
-          throw new Error('User is associated with multiple organizations');
-        }
-
-        const organization = await prisma.organizations.findUnique({
-          where: { id: organizationUser[0].organizationId },
+        const organization = await prisma.organizations.findFirst({
+          where: { ownerId: session.user.id, personal: true },
         });
 
         if (!organization) {
           throw new Error('Organization not found');
         }
 
-        return { user, organization };
-      })()
+        return {
+          user: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          organization,
+        };
+      })(),
     );
 
     if (error) {

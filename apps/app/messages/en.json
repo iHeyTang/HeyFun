@@ -1,8 +1,8 @@
 {
   "common": {
     "welcome": "Welcome",
-    "login": "Login",
-    "logout": "Logout",
+    "signin": "Sign in",
+    "signout": "Sign out",
     "settings": "Settings",
     "language": "Language"
   },

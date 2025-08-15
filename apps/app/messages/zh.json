@@ -1,8 +1,8 @@
 {
   "common": {
     "welcome": "欢迎",
-    "login": "登录",
-    "logout": "退出",
+    "signin": "登录",
+    "signout": "退出",
     "settings": "设置",
     "language": "语言"
   },

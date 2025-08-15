@@ -20,7 +20,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,18 +31,15 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+        throw new Error(data.error || 'Signin failed');
       }
 
-      // Save token to cookie
-      document.cookie = `token=${data.token}; path=/`;
-
-      toast.success('Login successful', {
+      toast.success('Signin successful', {
         description: 'Redirecting to home page...',
       });
-      router.push('/'); // Redirect to home page after successful login
+      router.push('/'); // Redirect to home page after successful signin
     } catch (error) {
-      toast.error('Login failed', {
+      toast.error('Signin failed', {
         description: error instanceof Error ? error.message : 'Authentication failed',
       });
     } finally {

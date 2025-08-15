@@ -11,14 +11,7 @@ import Link from 'next/link';
 
 export default function SignupPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    name: '',
-    organizationName: '',
-    inviteCode: '',
-  });
+  const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '', name: '' });
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,7 +44,7 @@ export default function SignupPage() {
       toast.success('Registration successful', {
         description: 'Please sign in with your credentials',
       });
-      router.push('/login');
+      router.push('/signin');
     } catch (error) {
       toast.error('Registration failed', {
         description: error instanceof Error ? error.message : 'Please try again',
@@ -77,6 +70,18 @@ export default function SignupPage() {
             <CardDescription className="text-center text-base">Create your HeyFun account</CardDescription>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Input
+                name="name"
+                type="text"
+                placeholder="Name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                className="h-11"
+              />
+            </div>
             <div>
               <Input
                 name="email"
@@ -113,50 +118,13 @@ export default function SignupPage() {
                 className="h-11"
               />
             </div>
-            <div>
-              <Input
-                name="name"
-                type="text"
-                placeholder="Name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-                className="h-11"
-              />
-            </div>
-            <div>
-              <Input
-                name="organizationName"
-                type="text"
-                placeholder="Organization Name"
-                value={formData.organizationName}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-                className="h-11"
-              />
-            </div>
-            {process.env.NEXT_PUBLIC_NEED_INVITE_CODE === 'true' && (
-              <div>
-                <Input
-                  name="inviteCode"
-                  type="text"
-                  placeholder="Invite Code"
-                  value={formData.inviteCode}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                  className="h-11"
-                />
-              </div>
-            )}
+
             <Button type="submit" className="h-11 w-full text-base font-medium" disabled={isLoading}>
               {isLoading ? 'Creating Account...' : 'Create Account'}
             </Button>
             <div className="text-muted-foreground text-center text-sm">
               Already have an account?{' '}
-              <Link href="/login" className="text-primary hover:underline">
+              <Link href="/signin" className="text-primary hover:underline">
                 Sign in
               </Link>
             </div>

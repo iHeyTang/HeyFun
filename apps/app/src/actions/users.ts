@@ -25,7 +25,7 @@ export const createUser = withUserAuth(async ({ organization, args }: AuthWrappe
     const hashedPassword = hashPassword(password);
 
     const newUser = await tx.users.create({
-      data: { email, name, password: hashedPassword, isFirstLogin: true },
+      data: { email, name, password: hashedPassword },
     });
 
     await tx.organizationUsers.create({

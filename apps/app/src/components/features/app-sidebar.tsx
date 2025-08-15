@@ -53,17 +53,19 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname !== '/login' && pathname !== '/register') {
+    if (pathname !== '/signin' && pathname !== '/signup') {
       refreshMe();
     }
   }, []);
 
-  const handleLogout = () => {
-    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
-    router.push('/login');
+  const handleSignout = async () => {
+    await fetch('/api/auth/signout', {
+      method: 'POST',
+    });
+    router.push('/signin');
   };
 
-  if (pathname === '/login' || pathname === '/register') {
+  if (pathname === '/signin' || pathname === '/signup') {
     return null;
   }
 
@@ -110,9 +112,9 @@ export function AppSidebar() {
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-[200px]">
-            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer py-2.5">
+            <DropdownMenuItem onClick={handleSignout} className="cursor-pointer py-2.5">
               <LogOutIcon className="mr-2 h-4 w-4" />
-              <span>Logout</span>
+              <span>Sign out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
