@@ -18,12 +18,14 @@ import {
 } from '../../services/wan';
 import { z } from 'zod';
 
-const ALIYUN_DASHSCOPE_API_KEY = process.env.ALIYUN_DASHSCOPE_API_KEY;
+export const dashscopeWanServiceConfigSchema = z.object({
+  apiKey: z.string(),
+});
 
 export class DashscopeWanProvider {
   private apiKey: string;
-  constructor() {
-    this.apiKey = ALIYUN_DASHSCOPE_API_KEY!;
+  constructor(config: z.infer<typeof dashscopeWanServiceConfigSchema>) {
+    this.apiKey = config.apiKey;
   }
 
   /**

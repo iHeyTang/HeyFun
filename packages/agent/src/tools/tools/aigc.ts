@@ -1,8 +1,9 @@
-import { WanService } from '@repo/llm/aigc';
+import { AdapterManager, aigcProviderConfigSchema } from '@repo/llm/aigc';
 import { BaseToolParameters, ToolResult } from '../types';
 import { AbstractBaseTool } from './base';
 import { FileSystemTool } from './file-system';
 import * as path from 'path';
+import z from 'zod';
 
 // 为每个操作定义独立的参数接口
 interface T2iParameters extends BaseToolParameters {
@@ -77,47 +78,28 @@ interface WanToolParameters extends BaseToolParameters {
 }
 
 /**
- * 万相AI工具 - 支持文生图、图生视频、文生视频、关键帧生视频等功能
- *
- * 注意：此工具需要配置阿里云百炼API的访问密钥才能正常工作
- * 环境变量：
- * - DASHSCOPE_API_KEY
- *
  * 特性：
  * - 异步接口自动包装成同步接口
  * - 内部实现智能轮询
  * - 支持超时和重试机制
  * - 自动保存结果到本地
  */
-export class WanTool extends AbstractBaseTool<WanToolParameters> {
-  public name = 'wan_aigc';
+export class AigcTool extends AbstractBaseTool<WanToolParameters> {
+  public name = 'aigc';
   public description =
     '万相AI工具，支持文生图、图生视频、文生视频、关键帧生视频等多种AI生成功能。异步任务会自动轮询直到完成，支持超时配置。结果会自动保存到本地。';
 
-  private wanService: WanService;
   private fileSystemTool: FileSystemTool;
+  private adapterManager: AdapterManager;
 
-  constructor() {
+  constructor(config: z.infer<typeof aigcProviderConfigSchema>) {
     super();
-    this.wanService = new WanService();
+    this.adapterManager = AdapterManager.getInstance(config);
     this.fileSystemTool = new FileSystemTool();
   }
 
   async execute(params: WanToolParameters): Promise<ToolResult> {
     try {
-      // 检查环境变量配置
-      if (!process.env.ALIYUN_DASHSCOPE_API_KEY) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: '错误：万相AI工具未配置。请设置环境变量 ALIYUN_DASHSCOPE_API_KEY',
-            },
-          ],
-          isError: true,
-        };
-      }
-
       // 检查参数结构，确定操作类型
       if (params.t2i) {
         return await this.executeT2iWithPolling(params.t2i);
@@ -259,36 +241,34 @@ export class WanTool extends AbstractBaseTool<WanToolParameters> {
     return await this.pollUntilComplete(
       // 提交任务函数
       async () => {
-        const response = await this.wanService.t2iSubmit({
-          model: params.model,
-          input: {
+        const response = await this.adapterManager.submitGenerationTask(
+          'wan', // service
+          params.model,
+          'text-to-image', // generationType
+          {
             prompt: params.prompt,
-            negative_prompt: params.negative_prompt,
+            canvasSize: this.parseSizeString(params.size || '1024*1024'),
           },
-          parameters: {
-            size: (params.size || '1024*1024') as any,
-            n: params.n || 4,
-            seed: params.seed,
-            prompt_extend: params.prompt_extend ?? true,
-            watermark: params.watermark ?? false,
-          },
-        });
-        if (response.code) {
-          throw new Error(`万相文生图生成失败: ${response.message}`);
+        );
+        if (!response.success) {
+          throw new Error(`万相文生图生成失败: ${response.error}`);
         }
-        return { task_id: response.output.task_id };
+        return { task_id: response.taskId! };
       },
       // 获取结果函数
       async (taskId: string) => {
-        const response = await this.wanService.t2iGetResult({
-          task_id: taskId,
+        const response = await this.adapterManager.getTaskResult({
+          generationType: 'text-to-image',
+          service: 'wan',
+          model: params.model,
+          taskId: taskId,
         });
 
         let savedFiles: string[] = [];
         // 如果任务完成，自动保存图片
-        if (response.output.task_status === 'SUCCEEDED' && response.output.results) {
-          for (let i = 0; i < response.output.results.length; i++) {
-            const imageUrl = response.output.results[i]?.url;
+        if (response.status === 'completed' && response.data) {
+          for (let i = 0; i < response.data.length; i++) {
+            const imageUrl = response.data[i]?.url;
             if (imageUrl) {
               const result = await this.downloadAndSaveFromUrl(imageUrl, 't2i', params.prompt, 'png', params.save_directory, params.custom_filename);
               savedFiles.push(...result.savedFiles);
@@ -297,18 +277,18 @@ export class WanTool extends AbstractBaseTool<WanToolParameters> {
         }
 
         return {
-          status: response.output.task_status,
-          results: response.output.results,
+          status: response.status,
+          results: response.data,
           saved_files: savedFiles,
           usage: response.usage,
         };
       },
       result => {
-        if (result.status === 'SUCCEEDED') {
+        if (result.status === 'completed') {
           return 'done';
-        } else if (result.status === 'PENDING' || result.status === 'RUNNING') {
+        } else if (result.status === 'pending' || result.status === 'processing') {
           return 'pending';
-        } else if (result.status === 'FAILED' || result.status === 'CANCELED') {
+        } else if (result.status === 'failed' || result.status === 'cancelled') {
           return 'error';
         } else {
           return 'pending';
@@ -336,67 +316,69 @@ export class WanTool extends AbstractBaseTool<WanToolParameters> {
     return await this.pollUntilComplete(
       // 提交任务函数
       async () => {
-        const response = await this.wanService.i2vSubmit({
-          model: params.model,
-          input: {
-            prompt: params.prompt,
-            negative_prompt: params.negative_prompt,
-            image_url: params.image_url,
+        const response = await this.adapterManager.submitGenerationTask(
+          'wan', // service
+          params.model,
+          'image-to-video', // generationType
+          {
+            prompt: params.prompt || '图生视频',
+            referenceImage: params.image_url,
+            canvasSize: this.parseSizeString(params.resolution || '720P'),
+            duration: params.duration ?? 5,
           },
-          parameters: {
-            resolution: params.resolution,
-            duration: params.duration,
-            prompt_extend: params.prompt_extend ?? true,
-            seed: params.seed,
-            watermark: params.watermark ?? false,
-          },
-        });
-        if (response.code) {
-          throw new Error(`万相图生视频任务提交失败: ${response.message}`);
+        );
+        if (!response.success) {
+          throw new Error(`万相图生视频任务提交失败: ${response.error}`);
         }
-        return { task_id: response.output.task_id };
+        return { task_id: response.taskId! };
       },
       // 获取结果函数
       async (taskId: string) => {
-        const response = await this.wanService.i2vGetResult({
-          task_id: taskId,
+        const response = await this.adapterManager.getTaskResult({
+          generationType: 'image-to-video',
+          service: 'wan',
+          model: params.model,
+          taskId: taskId,
         });
 
         let savedFiles: string[] = [];
         let message = '';
         // 如果任务完成，尝试下载视频并保存到本地
-        if (response.output.task_status === 'SUCCEEDED' && response.output.video_url) {
-          try {
-            const result = await this.downloadAndSaveFromUrl(
-              response.output.video_url,
-              'i2v',
-              params.prompt || '图生视频',
-              'mp4',
-              params.save_directory,
-              params.custom_filename,
-            );
-            savedFiles = result.savedFiles;
-            message = result.message;
-          } catch (error) {
-            console.warn('下载视频失败:', error);
-            message = `\n⚠️ 下载视频失败: ${error instanceof Error ? error.message : '未知错误'}`;
+        if (response.status === 'completed' && response.data && response.data.length > 0) {
+          const videoUrl = response.data[0]?.url;
+          if (videoUrl) {
+            try {
+              const result = await this.downloadAndSaveFromUrl(
+                videoUrl,
+                'i2v',
+                params.prompt || '图生视频',
+                'mp4',
+                params.save_directory,
+                params.custom_filename,
+              );
+              savedFiles = result.savedFiles;
+              message = result.message;
+            } catch (error) {
+              console.warn('下载视频失败:', error);
+              message = `\n⚠️ 下载视频失败: ${error instanceof Error ? error.message : '未知错误'}`;
+            }
           }
         }
 
         return {
-          status: response.output.task_status,
-          video_url: response.output.video_url,
+          status: response.status,
+          video_url: response.data?.[0]?.url,
           saved_files: savedFiles,
           message: message,
           usage: response.usage,
         };
       },
       result => {
-        if (result.status === 'SUCCEEDED') {
+        if (result.status === 'completed') {
           return 'done';
-        } else if (result.status === 'PENDING' || result.status === 'RUNNING') {
+        } else if (result.status === 'pending' || result.status === 'processing') {
           return 'pending';
-        } else if (result.status === 'FAILED' || result.status === 'CANCELED') {
+        } else if (result.status === 'failed' || result.status === 'cancelled') {
           return 'error';
         } else {
           return 'pending';
@@ -425,66 +407,68 @@ export class WanTool extends AbstractBaseTool<WanToolParameters> {
     return await this.pollUntilComplete(
       // 提交任务函数
       async () => {
-        const response = await this.wanService.t2vSubmit({
-          model: params.model,
-          input: {
-            prompt: params.prompt,
-            negative_prompt: params.negative_prompt,
+        const response = await this.adapterManager.submitGenerationTask(
+          'wan', // service
+          params.model,
+          'text-to-video', // generationType
+          {
+            prompt: params.prompt || '文生视频',
+            canvasSize: this.parseSizeString(params.size || '1920*1080'),
+            duration: params.duration ?? 5,
           },
-          parameters: {
-            size: params.size,
-            duration: params.duration,
-            prompt_extend: params.prompt_extend ?? true,
-            seed: params.seed,
-            watermark: params.watermark ?? false,
-          },
-        });
-        if (response.code) {
-          throw new Error(`万相文生视频任务提交失败: ${response.message}`);
+        );
+        if (!response.success) {
+          throw new Error(`万相文生视频任务提交失败: ${response.error}`);
         }
-        return { task_id: response.output.task_id };
+        return { task_id: response.taskId! };
       },
       // 获取结果函数
       async (taskId: string) => {
-        const response = await this.wanService.t2vGetResult({
-          task_id: taskId,
+        const response = await this.adapterManager.getTaskResult({
+          generationType: 'text-to-video',
+          service: 'wan',
+          model: params.model,
+          taskId: taskId,
         });
 
         let savedFiles: string[] = [];
         let message = '';
         // 如果任务完成，尝试下载视频并保存到本地
-        if (response.output.task_status === 'SUCCEEDED' && response.output.video_url) {
-          try {
-            const result = await this.downloadAndSaveFromUrl(
-              response.output.video_url,
-              't2v',
-              params.prompt || '文生视频',
-              'mp4',
-              params.save_directory,
-              params.custom_filename,
-            );
-            savedFiles = result.savedFiles;
-            message = result.message;
-          } catch (error) {
-            console.warn('下载视频失败:', error);
-            message = `\n⚠️ 下载视频失败: ${error instanceof Error ? error.message : '未知错误'}`;
+        if (response.status === 'completed' && response.data && response.data.length > 0) {
+          const videoUrl = response.data[0]?.url;
+          if (videoUrl) {
+            try {
+              const result = await this.downloadAndSaveFromUrl(
+                videoUrl,
+                't2v',
+                params.prompt || '文生视频',
+                'mp4',
+                params.save_directory,
+                params.custom_filename,
+              );
+              savedFiles = result.savedFiles;
+              message = result.message;
+            } catch (error) {
+              console.warn('下载视频失败:', error);
+              message = `\n⚠️ 下载视频失败: ${error instanceof Error ? error.message : '未知错误'}`;
+            }
           }
         }
 
         return {
-          status: response.output.task_status,
-          video_url: response.output.video_url,
+          status: response.status,
+          video_url: response.data?.[0]?.url,
           saved_files: savedFiles,
           message: message,
           usage: response.usage,
         };
       },
       result => {
-        if (result.status === 'SUCCEEDED') {
+        if (result.status === 'completed') {
           return 'done';
-        } else if (result.status === 'PENDING' || result.status === 'RUNNING') {
+        } else if (result.status === 'pending' || result.status === 'processing') {
           return 'pending';
-        } else if (result.status === 'FAILED' || result.status === 'CANCELED') {
+        } else if (result.status === 'failed' || result.status === 'cancelled') {
           return 'error';
         } else {
           return 'pending';
@@ -513,68 +497,70 @@ export class WanTool extends AbstractBaseTool<WanToolParameters> {
     return await this.pollUntilComplete(
       // 提交任务函数
       async () => {
-        const response = await this.wanService.kf2vSubmit({
-          model: params.model,
-          input: {
-            prompt: params.prompt,
-            negative_prompt: params.negative_prompt,
-            first_frame_url: params.first_frame_url,
-            last_frame_url: params.last_frame_url,
+        const response = await this.adapterManager.submitGenerationTask(
+          'wan', // service
+          params.model,
+          'keyframe-to-video', // generationType
+          {
+            prompt: params.prompt || '关键帧生视频',
+            firstFrame: params.first_frame_url,
+            lastFrame: params.last_frame_url,
+            canvasSize: this.parseSizeString(params.resolution || '720P'),
+            duration: params.duration ?? 5,
           },
-          parameters: {
-            resolution: params.resolution,
-            duration: params.duration,
-            prompt_extend: params.prompt_extend ?? true,
-            seed: params.seed,
-            watermark: params.watermark ?? false,
-          },
-        });
-        if (response.code) {
-          throw new Error(`万相关键帧生视频任务提交失败: ${response.message}`);
+        );
+        if (!response.success) {
+          throw new Error(`万相关键帧生视频任务提交失败: ${response.error}`);
         }
-        return { task_id: response.output.task_id };
+        return { task_id: response.taskId! };
       },
       // 获取结果函数
       async (taskId: string) => {
-        const response = await this.wanService.kf2vGetResult({
-          task_id: taskId,
+        const response = await this.adapterManager.getTaskResult({
+          generationType: 'keyframe-to-video',
+          service: 'wan',
+          model: params.model,
+          taskId: taskId,
         });
 
         let savedFiles: string[] = [];
         let message = '';
         // 如果任务完成，尝试下载视频并保存到本地
-        if (response.output.task_status === 'SUCCEEDED' && response.output.video_url) {
-          try {
-            const result = await this.downloadAndSaveFromUrl(
-              response.output.video_url,
-              'kf2v',
-              params.prompt || '关键帧生视频',
-              'mp4',
-              params.save_directory,
-              params.custom_filename,
-            );
-            savedFiles = result.savedFiles;
-            message = result.message;
-          } catch (error) {
-            console.warn('下载视频失败:', error);
-            message = `\n⚠️ 下载视频失败: ${error instanceof Error ? error.message : '未知错误'}`;
+        if (response.status === 'completed' && response.data && response.data.length > 0) {
+          const videoUrl = response.data[0]?.url;
+          if (videoUrl) {
+            try {
+              const result = await this.downloadAndSaveFromUrl(
+                videoUrl,
+                'kf2v',
+                params.prompt || '关键帧生视频',
+                'mp4',
+                params.save_directory,
+                params.custom_filename,
+              );
+              savedFiles = result.savedFiles;
+              message = result.message;
+            } catch (error) {
+              console.warn('下载视频失败:', error);
+              message = `\n⚠️ 下载视频失败: ${error instanceof Error ? error.message : '未知错误'}`;
+            }
           }
         }
 
         return {
-          status: response.output.task_status,
-          video_url: response.output.video_url,
+          status: response.status,
+          video_url: response.data?.[0]?.url,
           saved_files: savedFiles,
           message: message,
           usage: response.usage,
         };
       },
       result => {
-        if (result.status === 'SUCCEEDED') {
+        if (result.status === 'completed') {
           return 'done';
-        } else if (result.status === 'PENDING' || result.status === 'RUNNING') {
+        } else if (result.status === 'pending' || result.status === 'processing') {
           return 'pending';
-        } else if (result.status === 'FAILED' || result.status === 'CANCELED') {
+        } else if (result.status === 'failed' || result.status === 'cancelled') {
           return 'error';
         } else {
           return 'pending';
@@ -594,6 +580,31 @@ export class WanTool extends AbstractBaseTool<WanToolParameters> {
         ],
       };
     });
+  }
+
+  /**
+   * 解析尺寸字符串为 CanvasSize 对象
+   */
+  private parseSizeString(sizeStr: string): { width: number; height: number } {
+    if (sizeStr.includes('*')) {
+      const parts = sizeStr.split('*');
+      if (parts.length === 2) {
+        const width = parseInt(parts[0] || '1024', 10);
+        const height = parseInt(parts[1] || '1024', 10);
+        if (!isNaN(width) && !isNaN(height)) {
+          return { width, height };
+        }
+      }
+    }
+
+    // 处理分辨率格式
+    const resolutionMap: Record<string, { width: number; height: number }> = {
+      '480P': { width: 832, height: 480 },
+      '720P': { width: 1280, height: 720 },
+      '1080P': { width: 1920, height: 1080 },
+    };
+
+    return resolutionMap[sizeStr] || { width: 1024, height: 1024 };
   }
 
   protected getParametersSchema(): any {

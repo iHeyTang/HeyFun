@@ -36,6 +36,11 @@ const nextConfig: NextConfig = {
         destination: '/settings/llm/deepseek',
         permanent: true,
       },
+      {
+        source: '/settings/aigc',
+        destination: '/settings/aigc/doubao',
+        permanent: true,
+      },
     ];
   },
   async headers() {

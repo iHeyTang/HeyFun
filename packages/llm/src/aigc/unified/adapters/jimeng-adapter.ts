@@ -7,8 +7,8 @@ import {
   ImageToVideoParams,
   KeyframeToVideoParams,
   GenerationTaskResponse,
-  ModelParameterLimits,
   GenerationTaskResult,
+  ModelInfo,
 } from '../../types';
 import {
   JimengService,
@@ -21,112 +21,61 @@ import {
   t2vGetResultParamsSchema,
   i2vGetResultParamsSchema,
 } from '../../services/jimeng';
+import { volcengineJimengServiceConfigSchema } from '../../providers/volcengine/jimeng';
+import z from 'zod';
 
 export class JimengAdapter extends BaseGenerationAdapter {
   private jimengService: JimengService;
 
-  constructor() {
+  constructor(config?: z.infer<typeof volcengineJimengServiceConfigSchema>) {
     super('jimeng');
-    this.jimengService = new JimengService();
+    this.jimengService = new JimengService(config ?? { accessKeyId: '', secretAccessKey: '' });
   }
 
-  getSupportedGenerationTypes(): GenerationType[] {
-    return ['text-to-image', 'image-to-image', 'text-to-video', 'image-to-video'];
-  }
-
-  async getModels(
-    generationType: GenerationType,
-  ): Promise<{ model: string; displayName: string; description?: string; parameterLimits?: ModelParameterLimits }[]> {
-    const models: Record<GenerationType, { model: string; displayName: string; description?: string; parameterLimits?: ModelParameterLimits }[]> = {
-      'text-to-image': [
-        {
-          model: 'jimeng_t2i_v30',
-          displayName: '即梦 文生图 3.0',
-          description: '高质量文生图模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
-            },
-          },
+  async getModels(): Promise<Record<string, ModelInfo>> {
+    const modelMap: Record<string, ModelInfo> = {
+      jimeng_t2i_v30: {
+        displayName: '即梦 文生图 3.0',
+        description: '高质量文生图模型',
+        parameterLimits: {
+          generationType: ['text-to-image'],
+          aspectRatio: ['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1', '21:9'],
         },
-        {
-          model: 'jimeng_t2i_v31',
-          displayName: '即梦 文生图 3.1',
-          description: '高质量文生图模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
-            },
-          },
+      },
+      jimeng_t2i_v31: {
+        displayName: '即梦 文生图 3.1',
+        description: '高质量文生图模型',
+        parameterLimits: {
+          generationType: ['text-to-image'],
+          aspectRatio: ['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1', '21:9'],
         },
-      ],
-      'image-to-image': [
-        {
-          model: 'jimeng_i2i_v30',
-          displayName: '即梦 图生图 3.0',
-          description: '高质量图生图模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
-            },
-          },
+      },
+      jimeng_i2i_v30: {
+        displayName: '即梦 图生图 3.0',
+        description: '高质量图生图模型',
+        parameterLimits: {
+          generationType: ['image-to-image'],
+          aspectRatio: ['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1', '21:9'],
         },
-      ],
-      'text-to-video': [
-        {
-          model: 'jimeng_vgfm_t2v_l20',
-          displayName: '即梦 文生视频 S2.0 Pro',
-          description: '专业文生视频模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['16:9', '9:16', '4:3', '3:4', '21:9'],
-            },
-          },
+      },
+      jimeng_vgfm_t2v_l20: {
+        displayName: '即梦 文生视频 S2.0 Pro',
+        description: '专业文生视频模型',
+        parameterLimits: {
+          generationType: ['text-to-video'],
+          aspectRatio: ['16:9', '9:16', '4:3', '3:4', '21:9'],
         },
-      ],
-      'image-to-video': [
-        {
-          model: 'jimeng_vgfm_i2v_l20',
-          displayName: '即梦 图生视频 S2.0 Pro',
-          description: '专业图生视频模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['16:9', '9:16', '4:3', '3:4', '21:9'],
-            },
-          },
+      },
+      jimeng_vgfm_i2v_l20: {
+        displayName: '即梦 图生视频 S2.0 Pro',
+        description: '专业图生视频模型',
+        parameterLimits: {
+          generationType: ['image-to-video'],
+          aspectRatio: [],
         },
-      ],
-      'keyframe-to-video': [
-        // 即梦暂时没有首尾帧生视频模型
-      ],
+      },
     };
-
-    return models[generationType] || [];
+    return modelMap;
   }
 
   async submitTask(
@@ -141,12 +90,13 @@ export class JimengAdapter extends BaseGenerationAdapter {
       switch (generationType) {
         case 'text-to-image': {
           const t2iParams = params as TextToImageParams;
+          const size = this.convertAspectRatioToImageSize(model, t2iParams.aspectRatio);
           const parsed = t2iSubmitParamsSchema.safeParse({
             req_key: model as 'jimeng_t2i_v30' | 'jimeng_t2i_v31',
             prompt: t2iParams.prompt,
             seed: -1, // 使用默认种子
-            width: t2iParams.canvasSize.width,
-            height: t2iParams.canvasSize.height,
+            width: size?.width,
+            height: size?.height,
             use_pre_llm: true, // 使用预训练LLM
           });
           if (!parsed.success) {
@@ -162,12 +112,13 @@ export class JimengAdapter extends BaseGenerationAdapter {
 
         case 'image-to-image': {
           const i2iParams = params as ImageToImageParams;
+          const size = this.convertAspectRatioToImageSize(model, i2iParams.aspectRatio);
           const parsed = i2iSubmitParamsSchema.safeParse({
             req_key: 'jimeng_i2i_v30',
             prompt: i2iParams.prompt,
             seed: -1, // 使用默认种子
-            width: i2iParams.canvasSize.width,
-            height: i2iParams.canvasSize.height,
+            width: size?.width,
+            height: size?.height,
             scale: 0.5, // 默认缩放比例
             binary_data_base64: [i2iParams.referenceImage],
             image_url: [i2iParams.referenceImage],
@@ -189,7 +140,7 @@ export class JimengAdapter extends BaseGenerationAdapter {
             req_key: 'jimeng_vgfm_t2v_l20',
             prompt: t2vParams.prompt,
             seed: -1, // 使用默认种子
-            aspect_ratio: this.getAspectRatio(t2vParams.canvasSize),
+            aspect_ratio: t2vParams.aspectRatio,
           });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
@@ -208,7 +159,7 @@ export class JimengAdapter extends BaseGenerationAdapter {
             req_key: 'jimeng_vgfm_i2v_l20',
             prompt: i2vParams.prompt,
             seed: -1, // 使用默认种子
-            aspect_ratio: this.getAspectRatio(i2vParams.canvasSize),
+            aspect_ratio: i2vParams.aspectRatio,
             binary_data_base64: [i2vParams.referenceImage],
             image_urls: [i2vParams.referenceImage],
           });
@@ -311,17 +262,6 @@ export class JimengAdapter extends BaseGenerationAdapter {
     }
   }
 
-  // 根据画幅大小计算宽高比
-  private getAspectRatio(canvasSize: { width: number; height: number }): '16:9' | '9:16' | '4:3' | '3:4' | '21:9' {
-    const ratio = canvasSize.width / canvasSize.height;
-    if (Math.abs(ratio - 16 / 9) < 0.1) return '16:9';
-    if (Math.abs(ratio - 4 / 3) < 0.1) return '4:3';
-    if (Math.abs(ratio - 1 / 1) < 0.1) return '16:9'; // 1:1 映射到 16:9
-    if (Math.abs(ratio - 9 / 16) < 0.1) return '9:16';
-    if (Math.abs(ratio - 21 / 9) < 0.1) return '21:9';
-    return '16:9'; // 默认宽高比
-  }
-
   private getStatus(status: 'in_queue' | 'generating' | 'done' | 'not_found' | 'expired'): 'pending' | 'processing' | 'completed' | 'failed' {
     switch (status) {
       case 'in_queue':
@@ -336,6 +276,38 @@ export class JimengAdapter extends BaseGenerationAdapter {
         return 'failed';
       default:
         return 'failed';
+    }
+  }
+
+  /**
+   *
+   * 暂时只接入1k标清
+   * 1328 * 1328（1:1）
+   * 1472 * 1104 （4:3）
+   * 1584 * 1056（3:2）
+   * 1664 * 936（16:9）
+   * 2016 * 864（21:9）
+   * @see https://www.volcengine.com/docs/85621/1616429
+   * @see https://www.volcengine.com/docs/85621/1756900
+   *
+   * @param model 模型名称
+   * @param aspectRatio 宽高比
+   * @returns 尺寸
+   */
+  private convertAspectRatioToImageSize(model: string, aspectRatio: string): { width: number; height: number } | undefined {
+    switch (aspectRatio) {
+      case '1:1':
+        return { width: 1328, height: 1328 };
+      case '4:3':
+        return { width: 1472, height: 1104 };
+      case '3:2':
+        return { width: 1584, height: 1056 };
+      case '16:9':
+        return { width: 1664, height: 936 };
+      case '21:9':
+        return { width: 2016, height: 864 };
+      default:
+        return undefined;
     }
   }
 }

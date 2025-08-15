@@ -137,6 +137,20 @@ model ModelProviderConfigs {
   @@index([provider])
 }
 
+model AigcProviderConfigs {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+  provider       String
+  // config is a encrypted string, it contains the config for the provider. each provider has its own config schema.
+  config         String   @db.Text
+
+  @@unique([organizationId, provider])
+  @@index([organizationId])
+  @@index([provider])
+}
+
 model Agents {
   id             String   @id @default(cuid())
   name           String

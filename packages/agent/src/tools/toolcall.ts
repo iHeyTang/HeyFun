@@ -4,9 +4,6 @@ import { ToolCallAgentEvents } from '../event/constants';
 import { createMessage } from '../utils/message';
 import { to } from '../utils/to';
 import { ToolCollection } from './collection';
-import { DoubaoTool } from './tools/aigc-doubao';
-import { JimengTool } from './tools/aigc-jimeng';
-import { WanTool } from './tools/aigc-wan';
 import { FileSystemTool } from './tools/file-system';
 import { TerminateTool } from './tools/terminate';
 import type { BaseTool } from './types';
@@ -34,9 +31,6 @@ export class ToolCallContextHelper {
     this.availableTools = new ToolCollection();
     this.addTool(new TerminateTool());
     this.addTool(new FileSystemTool());
-    this.addTool(new JimengTool());
-    this.addTool(new WanTool());
-    this.addTool(new DoubaoTool());
   }
 
   /**

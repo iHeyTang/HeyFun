@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { VolcengineArkService } from '../providers/volcengine/ark';
+import { VolcengineArkService, volcengineArkServiceConfigSchema } from '../providers/volcengine/ark';
 import { ToAsyncTaskManager } from '../../utils/to-async-task';
 
 // 文生图参数
@@ -234,8 +234,8 @@ const doubaoSeedEdit30I2iAsyncTaskManager = new ToAsyncTaskManager<Awaited<Retur
 export class DoubaoService {
   private readonly arkService: VolcengineArkService;
 
-  constructor() {
-    this.arkService = new VolcengineArkService();
+  constructor(config: z.infer<typeof volcengineArkServiceConfigSchema>) {
+    this.arkService = new VolcengineArkService(config);
   }
 
   /**

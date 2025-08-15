@@ -57,6 +57,7 @@
     },
     "sidebar": {
       "models": "模型",
+      "aigc": "画板",
       "preferences": "偏好设置"
     }
   }

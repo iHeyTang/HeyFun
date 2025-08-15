@@ -1,12 +1,6 @@
 // 生成类型枚举
 export type GenerationType = 'text-to-image' | 'image-to-image' | 'text-to-video' | 'image-to-video' | 'keyframe-to-video';
 
-// 画幅大小接口
-export interface CanvasSize {
-  width: number;
-  height: number;
-}
-
 // 画幅大小限制
 export interface CanvasSizeLimits {
   minWidth: number;
@@ -19,8 +13,21 @@ export interface CanvasSizeLimits {
 
 // 模型参数限制
 export interface ModelParameterLimits {
-  canvasSize: CanvasSizeLimits;
+  generationType: GenerationType[];
+  aspectRatio?: string[];
   duration?: number[];
+}
+
+export interface ModelInfo {
+  displayName: string;
+  description?: string;
+  parameterLimits?: ModelParameterLimits;
+}
+
+// 服务模型信息
+export interface ServiceModel extends ModelInfo {
+  service: string;
+  model: string;
 }
 
 // 基础生成参数接口
@@ -30,25 +37,25 @@ export interface BaseGenerationParams {
 
 // 文生图参数
 export interface TextToImageParams extends BaseGenerationParams {
-  canvasSize: CanvasSize;
+  aspectRatio: string;
 }
 
 // 图生图参数
 export interface ImageToImageParams extends BaseGenerationParams {
   referenceImage: string; // 参考图（base64或URL）
-  canvasSize: CanvasSize;
+  aspectRatio: string;
 }
 
 // 文生视频参数
 export interface TextToVideoParams extends BaseGenerationParams {
-  canvasSize: CanvasSize;
+  aspectRatio: string;
   duration: number; // 时长（秒）
 }
 
 // 图生视频参数
 export interface ImageToVideoParams extends BaseGenerationParams {
   referenceImage: string; // 参考图（base64或URL）
-  canvasSize: CanvasSize;
+  aspectRatio: string;
   duration: number; // 时长（秒）
 }
 
@@ -56,18 +63,8 @@ export interface ImageToVideoParams extends BaseGenerationParams {
 export interface KeyframeToVideoParams extends BaseGenerationParams {
   firstFrame: string; // 首帧（base64或URL）
   lastFrame: string; // 尾帧（base64或URL）
-  canvasSize: CanvasSize;
+  aspectRatio: string;
   duration: number; // 时长（秒）
-}
-
-// 服务模型信息
-export interface ServiceModel {
-  service: string;
-  model: string;
-  displayName: string;
-  generationType: GenerationType;
-  description?: string;
-  parameterLimits?: ModelParameterLimits; // 模型参数限制
 }
 
 // 生成任务请求

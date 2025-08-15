@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { VolcengineJimeng } from '../providers/volcengine/jimeng';
+import { VolcengineJimeng, volcengineJimengServiceConfigSchema } from '../providers/volcengine/jimeng';
 
 export const t2iSubmitParamsSchema = z.discriminatedUnion('req_key', [
   z.object({
@@ -190,8 +190,8 @@ export interface I2vGetResultResponse {
 export class JimengService {
   private readonly volcengineJimeng: VolcengineJimeng;
 
-  constructor() {
-    this.volcengineJimeng = new VolcengineJimeng();
+  constructor(config: z.infer<typeof volcengineJimengServiceConfigSchema>) {
+    this.volcengineJimeng = new VolcengineJimeng(config);
   }
 
   async t2iSubmit(params: z.infer<typeof t2iSubmitParamsSchema>) {

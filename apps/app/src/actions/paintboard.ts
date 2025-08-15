@@ -1,14 +1,16 @@
 'use server';
 
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
-import { AdapterManager } from '@repo/llm/aigc';
+import { AdapterManager, aigcProviderConfigSchema } from '@repo/llm/aigc';
 import type { GenerationType } from '@repo/llm/aigc';
 import z from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { prisma } from '@/lib/server/prisma';
 import sandboxManager from '@/lib/server/sandbox';
 import { nanoid } from 'nanoid';
-import { join } from 'path';
+import path, { join } from 'path';
+import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
+import fs from 'fs';
 
 // 任务状态枚举
 export enum PaintboardTaskStatus {
@@ -29,17 +31,40 @@ export interface PaintboardResult {
   createdAt: string;
 }
 
+const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
+
 // 根据生成类型获取对应的模型
-export const getModelsByGenerationType = withUserAuth(async ({ args }: AuthWrapperContext<{ generationType: GenerationType }>) => {
+export const getModelsByGenerationType = withUserAuth(async ({ args, organization }: AuthWrapperContext<{ generationType: GenerationType }>) => {
+  const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: organization.id } });
+  const configMap = aigcProviderConfigSchema.parse(
+    configs.reduce(
+      (acc, config) => {
+        acc[config.provider] = decryptTextWithPrivateKey(config.config, privateKey);
+        return acc;
+      },
+      {} as Record<string, any>,
+    ),
+  );
+
   const { generationType } = args;
-  const manager = AdapterManager.getInstance();
+  const manager = AdapterManager.getInstance(configMap);
   const models = await manager.getModelsByGenerationType(generationType);
   return models;
 });
 
 // 获取所有服务模型信息
-export const getAllServiceModels = withUserAuth(async ({}: AuthWrapperContext<{}>) => {
-  const manager = AdapterManager.getInstance();
+export const getAllServiceModels = withUserAuth(async ({ organization }: AuthWrapperContext<{}>) => {
+  const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: organization.id } });
+  const configMap = aigcProviderConfigSchema.parse(
+    configs.reduce(
+      (acc, config) => {
+        acc[config.provider] = decryptTextWithPrivateKey(config.config, privateKey);
+        return acc;
+      },
+      {} as Record<string, any>,
+    ),
+  );
+  const manager = AdapterManager.getInstance(configMap);
   const models = await manager.getAllServiceModels();
   return models;
 });
@@ -471,12 +496,23 @@ export const processPaintboardTaskResult = withUserAuth(
       // 轮询逻辑
       let retryCount = 0;
 
+      const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: organization.id } });
+      const configMap = aigcProviderConfigSchema.parse(
+        configs.reduce(
+          (acc, config) => {
+            acc[config.provider] = decryptTextWithPrivateKey(config.config, privateKey);
+            return acc;
+          },
+          {} as Record<string, any>,
+        ),
+      );
+      const manager = AdapterManager.getInstance(configMap);
+
       while (retryCount < maxRetries) {
         try {
           console.log(`Polling task ${taskId}, attempt ${retryCount + 1}/${maxRetries}`);
 
           // 使用统一接口获取任务结果
-          const manager = AdapterManager.getInstance();
           const result = await manager.getTaskResult({ generationType, service, model, taskId: externalTaskId });
           console.log('result', result);
 
@@ -633,7 +669,17 @@ export const submitGenerationTask = withUserAuth(
       const taskId = taskRecord.data.id;
 
       // 2. 使用统一接口提交任务到外部服务
-      const manager = AdapterManager.getInstance();
+      const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: organization.id } });
+      const configMap = aigcProviderConfigSchema.parse(
+        configs.reduce(
+          (acc, config) => {
+            acc[config.provider] = decryptTextWithPrivateKey(config.config, privateKey);
+            return acc;
+          },
+          {} as Record<string, any>,
+        ),
+      );
+      const manager = AdapterManager.getInstance(configMap);
       const result = await manager.submitGenerationTask(service, model, generationType, params);
 
       // 3. 检查提交结果并更新数据库

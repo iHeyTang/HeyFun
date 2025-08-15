@@ -4,27 +4,37 @@ import { DoubaoAdapter } from './adapters/doubao-adapter';
 import { JimengAdapter } from './adapters/jimeng-adapter';
 import { GenerationTaskResponse, GenerationTaskResult, GenerationType, ServiceModel } from '../types';
 import { TextToImageParams, ImageToImageParams, TextToVideoParams, ImageToVideoParams, KeyframeToVideoParams } from '../types';
+import z from 'zod';
+import { volcengineArkServiceConfigSchema } from '../providers/volcengine/ark';
+import { volcengineJimengServiceConfigSchema } from '../providers/volcengine/jimeng';
+import { dashscopeWanServiceConfigSchema } from '../providers/dashscope/wan';
+
+export const aigcProviderConfigSchema = z.object({
+  doubao: volcengineArkServiceConfigSchema.optional(),
+  jimeng: volcengineJimengServiceConfigSchema.optional(),
+  wan: dashscopeWanServiceConfigSchema.optional(),
+});
 
 export class AdapterManager {
   private static instance: AdapterManager;
   private adapters: Map<string, BaseGenerationAdapter> = new Map();
 
-  private constructor() {
-    this.initializeAdapters();
+  private constructor(config: z.infer<typeof aigcProviderConfigSchema>) {
+    this.initializeAdapters(config);
   }
 
-  public static getInstance(): AdapterManager {
+  public static getInstance(config: z.infer<typeof aigcProviderConfigSchema>): AdapterManager {
     if (!AdapterManager.instance) {
-      AdapterManager.instance = new AdapterManager();
+      AdapterManager.instance = new AdapterManager(config);
     }
     return AdapterManager.instance;
   }
 
-  private initializeAdapters(): void {
+  private initializeAdapters(config: z.infer<typeof aigcProviderConfigSchema>): void {
     // 注册所有适配器
-    this.adapters.set('wan', new WanAdapter());
-    this.adapters.set('doubao', new DoubaoAdapter());
-    this.adapters.set('jimeng', new JimengAdapter());
+    this.adapters.set('wan', new WanAdapter(config.wan));
+    this.adapters.set('doubao', new DoubaoAdapter(config.doubao));
+    this.adapters.set('jimeng', new JimengAdapter(config.jimeng));
   }
 
   // 获取所有可用的服务
@@ -39,31 +49,19 @@ export class AdapterManager {
 
   // 获取所有服务模型信息
   public async getAllServiceModels(): Promise<ServiceModel[]> {
-    const allModels: ServiceModel[] = [];
+    const models: ServiceModel[] = [];
 
     for (const [serviceName, adapter] of this.adapters) {
-      const supportedTypes = adapter.getSupportedGenerationTypes();
-
-      for (const generationType of supportedTypes) {
-        try {
-          const models = await adapter.getModels(generationType);
-          models.forEach(model => {
-            allModels.push({
-              service: serviceName,
-              model: model.model,
-              displayName: model.displayName,
-              generationType,
-              description: model.description,
-              parameterLimits: model.parameterLimits,
-            });
-          });
-        } catch (error) {
-          console.error(`获取 ${serviceName} 服务的 ${generationType} 模型失败:`, error);
-        }
-      }
+      const adpterModels = await adapter.getModels();
+      models.push(
+        ...Object.keys(adpterModels).map(model => {
+          const modelInfo = adpterModels[model]!;
+          return { service: serviceName, model: model, ...modelInfo };
+        }),
+      );
     }
 
-    return allModels;
+    return models;
   }
 
   // 根据生成类型获取对应的模型
@@ -71,25 +69,19 @@ export class AdapterManager {
     const models: ServiceModel[] = [];
 
     for (const [serviceName, adapter] of this.adapters) {
-      if (adapter.getSupportedGenerationTypes().includes(generationType)) {
-        try {
-          const serviceModels = await adapter.getModels(generationType);
-          serviceModels.forEach(model => {
-            models.push({
-              service: serviceName,
-              model: model.model,
-              displayName: model.displayName,
-              generationType,
-              description: model.description,
-              parameterLimits: model.parameterLimits,
-            });
-          });
-        } catch (error) {
-          console.error(`获取 ${serviceName} 服务的 ${generationType} 模型失败:`, error);
-        }
-      }
+      const adpterModels = await adapter.getModels();
+      models.push(
+        ...(Object.keys(adpterModels)
+          .map(model => {
+            const modelInfo = adpterModels[model]!;
+            if (!modelInfo.parameterLimits?.generationType?.includes(generationType)) {
+              return null;
+            }
+            return { service: serviceName, model: model, ...modelInfo };
+          })
+          .filter(Boolean) as ServiceModel[]),
+      );
     }
-
     return models;
   }
 
@@ -103,10 +95,6 @@ export class AdapterManager {
     const adapter = this.adapters.get(service);
     if (!adapter) {
       throw new Error(`不支持的服务: ${service}`);
-    }
-
-    if (!adapter.getSupportedGenerationTypes().includes(generationType)) {
-      throw new Error(`服务 ${service} 不支持生成类型: ${generationType}`);
     }
 
     return await adapter.submitTask(model, generationType, params);

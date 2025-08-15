@@ -7,8 +7,8 @@ import {
   ImageToVideoParams,
   KeyframeToVideoParams,
   GenerationTaskResponse,
-  ModelParameterLimits,
   GenerationTaskResult,
+  ModelInfo,
 } from '../../types';
 import {
   DoubaoService,
@@ -21,146 +21,61 @@ import {
   t2vGetResultParamsSchema,
   i2vGetResultParamsSchema,
 } from '../../services/doubao';
+import { volcengineArkServiceConfigSchema } from '../../providers/volcengine/ark';
+import z from 'zod';
 
 export class DoubaoAdapter extends BaseGenerationAdapter {
   private doubaoService: DoubaoService;
 
-  constructor() {
+  constructor(config?: z.infer<typeof volcengineArkServiceConfigSchema>) {
     super('doubao');
-    this.doubaoService = new DoubaoService();
+    this.doubaoService = new DoubaoService(config ?? { apiKey: '' });
   }
 
-  getSupportedGenerationTypes(): GenerationType[] {
-    return ['text-to-image', 'image-to-image', 'text-to-video', 'image-to-video', 'keyframe-to-video'];
-  }
-
-  async getModels(
-    generationType: GenerationType,
-  ): Promise<{ model: string; displayName: string; description?: string; parameterLimits?: ModelParameterLimits }[]> {
-    const models: Record<GenerationType, { model: string; displayName: string; description?: string; parameterLimits?: ModelParameterLimits }[]> = {
-      'text-to-image': [
-        {
-          model: 'doubao-seedream-3-0-t2i-250415',
-          displayName: 'Doubao-Seedream-3.0-t2i',
-          description: '影视质感，文字更准，直出 2K 高清图',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 2048,
-              minHeight: 512,
-              maxHeight: 2048,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
-            },
-          },
+  async getModels(): Promise<Record<string, ModelInfo>> {
+    const modelMap: Record<string, ModelInfo> = {
+      'doubao-seedream-3-0-t2i-250415': {
+        displayName: 'Doubao-Seedream-3.0-t2i',
+        description: '影视质感，文字更准，直出 2K 高清图',
+        parameterLimits: {
+          aspectRatio: ['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9'],
+          generationType: ['text-to-image'],
         },
-      ],
-      'image-to-image': [
-        {
-          model: 'doubao-seededit-3-0-i2i-250628',
-          displayName: 'Doubao-SeedEdit-3.0-i2i',
-          description: '准确遵循编辑指令，有效保留图像内容',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 256,
-              maxWidth: 2048,
-              minHeight: 256,
-              maxHeight: 2048,
-              step: 8,
-              aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
-            },
-          },
+      },
+      'doubao-seededit-3-0-i2i-250628': {
+        displayName: 'Doubao-Seededit-3.0-i2i',
+        description: '准确遵循编辑指令，有效保留图像内容',
+        parameterLimits: {
+          generationType: ['image-to-image'],
+          aspectRatio: [],
         },
-      ],
-      'text-to-video': [
-        {
-          model: 'doubao-seedance-1-0-lite-t2v-250428',
-          displayName: 'Doubao-Seedance-1.0-lite-t2v',
-          description: '精准响应，性价比高',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['16:9', '9:16', '4:3', '3:4'],
-            },
-            duration: [5, 10],
-          },
+      },
+      'doubao-seedance-1-0-lite-t2v-250428': {
+        displayName: 'Doubao-Seedance-1.0-lite-t2v',
+        description: '精准响应，性价比高',
+        parameterLimits: {
+          generationType: ['text-to-video'],
+          aspectRatio: ['16:9', '9:16', '4:3', '3:4', '1:1', '21:9'],
         },
-        {
-          model: 'doubao-seedance-1-0-pro-250528',
-          displayName: 'Doubao-Seedance-1.0-pro',
-          description: '全面强大，独具多镜头叙事能力',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['16:9', '9:16', '4:3', '3:4'],
-            },
-            duration: [5, 10],
-          },
+      },
+      'doubao-seedance-1-0-pro-250528': {
+        displayName: 'Doubao-Seedance-1.0-pro',
+        description: '全面强大，独具多镜头叙事能力',
+        parameterLimits: {
+          generationType: ['text-to-video', 'image-to-video'],
+          aspectRatio: ['16:9', '9:16', '4:3', '3:4', '1:1', '21:9'],
         },
-      ],
-      'image-to-video': [
-        {
-          model: 'doubao-seedance-1-0-lite-i2v-250428',
-          displayName: 'Doubao-Seedance-1.0-lite-i2v',
-          description: '支持首尾帧，精准响应，性价比高',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['16:9', '9:16', '4:3', '3:4'],
-            },
-            duration: [5, 10],
-          },
+      },
+      'doubao-seedance-1-0-lite-i2v-250428': {
+        displayName: 'Doubao-Seedance-1.0-lite-i2v',
+        description: '支持首尾帧，精准响应，性价比高',
+        parameterLimits: {
+          generationType: ['image-to-video', 'keyframe-to-video'],
+          aspectRatio: [],
         },
-        {
-          model: 'doubao-seedance-1-0-pro-250528',
-          displayName: 'Doubao-Seedance-1.0-pro',
-          description: '全面强大，独具多镜头叙事能力',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['16:9', '9:16', '4:3', '3:4'],
-            },
-            duration: [5, 10],
-          },
-        },
-      ],
-      'keyframe-to-video': [
-        {
-          model: 'doubao-seedance-1-0-lite-i2v-250428',
-          displayName: 'Doubao-Seedance-1.0-lite-i2v',
-          description: '支持首尾帧，精准响应，性价比高',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['16:9', '9:16', '4:3', '3:4'],
-            },
-            duration: [5, 10],
-          },
-        },
-      ],
+      },
     };
-
-    return models[generationType] || [];
+    return modelMap;
   }
 
   async submitTask(
@@ -178,10 +93,11 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
             throw new Error('不支持的模型');
           }
           const t2iParams = params as TextToImageParams;
+          const size = this.convertAspectRatioToImageSize(model, t2iParams.aspectRatio);
           const parsed = t2iSubmitParamsSchema.safeParse({
             model: model,
             prompt: t2iParams.prompt,
-            size: `${t2iParams.canvasSize.width}x${t2iParams.canvasSize.height}`,
+            size: size,
           });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
@@ -223,7 +139,7 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
             model: 'doubao-seedance-1-0-lite-t2v-250428',
             prompt: t2vParams.prompt,
             duration: t2vParams.duration,
-            ratio: this.getAspectRatio(t2vParams.canvasSize),
+            ratio: 'adaptive',
             seed: -1,
             watermark: true,
             resolution: '720p',
@@ -247,7 +163,7 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
             prompt: i2vParams.prompt,
             image_url: i2vParams.referenceImage,
             duration: i2vParams.duration,
-            ratio: this.getAspectRatio(i2vParams.canvasSize),
+            ratio: 'adaptive',
             seed: -1,
             watermark: true,
             resolution: '720p',
@@ -375,6 +291,44 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
         return 'failed';
       default:
         return 'failed';
+    }
+  }
+
+  /**
+   * 1024x1024 （1:1）
+   * 864x1152 （3:4）
+   * 1152x864 （4:3）
+   * 1280x720 （16:9）
+   * 720x1280 （9:16）
+   * 832x1248 （2:3）
+   * 1248x832 （3:2）
+   * 1512x648 （21:9）
+   *
+   * @see https://www.volcengine.com/docs/82379/1541523
+   * @param model
+   * @param aspectRatio
+   * @returns
+   */
+  private convertAspectRatioToImageSize(model: string, aspectRatio: string): `${number}x${number}` | undefined {
+    switch (aspectRatio) {
+      case '1:1':
+        return '1024x1024';
+      case '4:3':
+        return '1152x864';
+      case '3:4':
+        return '864x1152';
+      case '16:9':
+        return '1280x720';
+      case '9:16':
+        return '720x1280';
+      case '2:3':
+        return '832x1248';
+      case '3:2':
+        return '1248x832';
+      case '21:9':
+        return '1512x648';
+      default:
+        return undefined;
     }
   }
 }

@@ -1,7 +1,5 @@
 import z from 'zod';
 
-const VOLCENGINE_ARK_ACCESS_KEY_ID = process.env.VOLCENGINE_ARK_ACCESS_KEY_ID;
-
 export const seedEdit30I2iParamsSchema = z.object({
   model: z.literal('doubao-seededit-3-0-i2i-250628'),
   prompt: z.string(),
@@ -84,11 +82,15 @@ export interface Seedream30T2iResponse {
   };
 }
 
+export const volcengineArkServiceConfigSchema = z.object({
+  apiKey: z.string(),
+});
+
 export class VolcengineArkService {
   private readonly apiKey: string;
 
-  constructor() {
-    this.apiKey = VOLCENGINE_ARK_ACCESS_KEY_ID!;
+  constructor(config: z.infer<typeof volcengineArkServiceConfigSchema>) {
+    this.apiKey = config.apiKey;
   }
 
   /**

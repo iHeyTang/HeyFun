@@ -1,7 +1,6 @@
 // 统一AI生成服务接口
-export { AdapterManager } from './adapter-manager';
+export { AdapterManager, aigcProviderConfigSchema } from './adapter-manager';
 export { BaseGenerationAdapter } from './core/base-adapter';
-export type { IGenerationAdapter } from './core/base-adapter';
 export { WanAdapter } from './adapters/wan-adapter';
 export { DoubaoAdapter } from './adapters/doubao-adapter';
 export { JimengAdapter } from './adapters/jimeng-adapter';

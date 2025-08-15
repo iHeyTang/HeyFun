@@ -4,7 +4,6 @@ export { UnifiedGenerationForm } from './generation-form';
 // 类型导出
 export type {
   GenerationType,
-  CanvasSize,
   BaseGenerationParams,
   TextToImageParams,
   ImageToImageParams,

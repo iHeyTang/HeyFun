@@ -3,7 +3,6 @@ export { AbstractBaseTool } from "./tools/base";
 export { CreateChatCompletionTool } from "./tools/create-chat-completion";
 export { TerminateTool } from "./tools/terminate";
 export { FileSystemTool } from "./tools/file-system";
-export { JimengTool } from "./tools/aigc-jimeng";
 
 // 工具集合管理
 export { ToolCollection } from "./collection";

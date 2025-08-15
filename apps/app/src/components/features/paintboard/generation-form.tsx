@@ -29,10 +29,7 @@ const createFormSchema = () => {
     generationType: z.enum(['text-to-image', 'image-to-image', 'text-to-video', 'image-to-video', 'keyframe-to-video']),
     serviceModel: z.string().min(1, 'Please select AI service and model'),
     prompt: z.string().min(1, 'Please enter prompt'),
-    canvasSize: z.object({
-      width: z.number().min(1, 'Width must be greater than 0'),
-      height: z.number().min(1, 'Height must be greater than 0'),
-    }),
+    aspectRatio: z.string().min(1, 'Please select aspect ratio'),
     // Video related parameters
     duration: z.number().optional(),
     referenceImage: z.string().optional(),
@@ -53,7 +50,6 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
   const [selectedGenerationType, setSelectedGenerationType] = useState<GenerationType>('text-to-image');
   const [availableModels, setAvailableModels] = useState<ServiceModel[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedCanvasSize, setSelectedCanvasSize] = useState<string>('');
   const [selectedDuration, setSelectedDuration] = useState<number>(5);
   const form = useForm<FormData>({
     resolver: zodResolver(createFormSchema()),
@@ -61,19 +57,20 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
       generationType: 'text-to-image',
       serviceModel: '',
       prompt: '',
-      canvasSize: { width: 1024, height: 1024 },
+      aspectRatio: '',
       duration: 5,
     },
   });
 
   const watchedServiceModel = form.watch('serviceModel');
+  const watchedAspectRatio = form.watch('aspectRatio');
   const selectedServiceModel = useMemo(() => {
     return availableModels.find(model => `${model.service}:${model.model}` === watchedServiceModel);
   }, [availableModels, watchedServiceModel]);
 
   const groupedModels = useMemo(() => {
     return availableModels
-      .filter(model => model.generationType === selectedGenerationType)
+      .filter(model => model.parameterLimits?.generationType?.includes(selectedGenerationType))
       .reduce(
         (acc, model) => {
           acc[model.service] = [...(acc[model.service] || []), model];
@@ -105,7 +102,6 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
     };
 
     form.reset(defaultValues);
-    setSelectedCanvasSize('');
     setSelectedDuration(5);
   }, [form, selectedGenerationType]);
 
@@ -151,31 +147,8 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
   };
 
   const handleCanvasSizeChange = (ratio: string) => {
-    if (!selectedServiceModel?.parameterLimits?.canvasSize) return;
-
-    const parts = ratio.split(':');
-    if (parts.length !== 2) return;
-
-    const wStr = parts[0];
-    const hStr = parts[1];
-
-    if (!wStr || !hStr) return;
-
-    const w = parseInt(wStr, 10);
-    const h = parseInt(hStr, 10);
-
-    if (isNaN(w) || isNaN(h)) return;
-
-    const size = { width: w * 64, height: h * 64 };
-
-    // Ensure within model limits
-    if (
-      size.width <= selectedServiceModel?.parameterLimits?.canvasSize.maxWidth &&
-      size.height <= selectedServiceModel?.parameterLimits?.canvasSize.maxHeight
-    ) {
-      form.setValue('canvasSize', size);
-      setSelectedCanvasSize(ratio);
-    }
+    if (!selectedServiceModel?.parameterLimits?.aspectRatio?.length) return;
+    form.setValue('aspectRatio', ratio);
   };
 
   const handleDurationChange = (duration: string) => {
@@ -187,40 +160,20 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
   };
 
   const renderCanvasSizeInputs = () => {
-    if (!selectedServiceModel?.parameterLimits?.canvasSize) return null;
-
-    const { canvasSize } = selectedServiceModel.parameterLimits;
-
+    if (!selectedServiceModel?.parameterLimits?.aspectRatio?.length) return null;
+    const { aspectRatio } = selectedServiceModel.parameterLimits;
     return (
       <div className="space-y-4">
         <Label>Canvas Size</Label>
         {/* Preset aspect ratios */}
-        {canvasSize.aspectRatio && canvasSize.aspectRatio.length > 0 && (
-          <ToggleGroup type="single" value={selectedCanvasSize} onValueChange={handleCanvasSizeChange} variant="outline">
-            {canvasSize.aspectRatio.map((ratio: string) => {
-              const parts = ratio.split(':');
-              if (parts.length !== 2) return null;
-
-              const wStr = parts[0];
-              const hStr = parts[1];
-
-              if (!wStr || !hStr) return null;
-
-              const w = parseInt(wStr, 10);
-              const h = parseInt(hStr, 10);
-
-              if (isNaN(w) || isNaN(h)) return null;
-
-              const size = { width: w * 64, height: h * 64 };
-              // Ensure within model limits
-              if (size.width <= canvasSize.maxWidth && size.height <= canvasSize.maxHeight) {
-                return (
-                  <ToggleGroupItem key={ratio} value={ratio} className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground w-16">
-                    {ratio}
-                  </ToggleGroupItem>
-                );
-              }
-              return null;
+        {aspectRatio && aspectRatio.length > 0 && (
+          <ToggleGroup type="single" value={watchedAspectRatio} onValueChange={handleCanvasSizeChange} variant="outline">
+            {aspectRatio.map((ratio: string) => {
+              return (
+                <ToggleGroupItem key={ratio} value={ratio} className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground w-16">
+                  {ratio}
+                </ToggleGroupItem>
+              );
             })}
           </ToggleGroup>
         )}

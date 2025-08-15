@@ -1,7 +1,6 @@
 // 类型定义
 export type {
   GenerationType,
-  CanvasSize,
   BaseGenerationParams,
   TextToImageParams,
   ImageToImageParams,
@@ -16,14 +15,12 @@ export type {
 } from './types';
 
 // 统一接口和适配器
-export { 
-  BaseGenerationAdapter, 
-  WanAdapter, 
-  DoubaoAdapter, 
-  JimengAdapter, 
-  AdapterManager
-} from './unified';
-export type { IGenerationAdapter } from './unified';
+export { BaseGenerationAdapter, WanAdapter, DoubaoAdapter, JimengAdapter, AdapterManager, aigcProviderConfigSchema } from './unified';
+
+// 配置schema导出
+export { volcengineArkServiceConfigSchema } from './providers/volcengine/ark';
+export { volcengineJimengServiceConfigSchema } from './providers/volcengine/jimeng';
+export { dashscopeWanServiceConfigSchema } from './providers/dashscope/wan';
 
 // 原有服务导出
 export { DoubaoService } from './services/doubao';

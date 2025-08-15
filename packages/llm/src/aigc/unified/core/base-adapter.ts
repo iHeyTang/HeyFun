@@ -7,21 +7,16 @@ import {
   KeyframeToVideoParams,
   GenerationTaskResponse,
   GenerationTaskResult,
-  ModelParameterLimits,
+  ModelInfo,
 } from '../../types';
 
 // 服务适配器基础接口
-export interface IGenerationAdapter {
+interface IGenerationAdapter {
   // 获取服务名称
   getServiceName(): string;
 
-  // 获取支持的生成类型
-  getSupportedGenerationTypes(): GenerationType[];
-
   // 获取模型列表
-  getModels(
-    generationType: GenerationType,
-  ): Promise<{ model: string; displayName: string; description?: string; parameterLimits?: ModelParameterLimits }[]>;
+  getModels(): Promise<Record<string, ModelInfo>>;
 
   // 提交生成任务
   submitTask(
@@ -46,15 +41,14 @@ export abstract class BaseGenerationAdapter implements IGenerationAdapter {
     return this.serviceName;
   }
 
-  abstract getSupportedGenerationTypes(): GenerationType[];
-  abstract getModels(
-    generationType: GenerationType,
-  ): Promise<{ model: string; displayName: string; description?: string; parameterLimits?: ModelParameterLimits }[]>;
+  abstract getModels(): Promise<Record<string, ModelInfo>>;
+
   abstract submitTask(
     model: string,
     generationType: GenerationType,
     params: TextToImageParams | ImageToImageParams | TextToVideoParams | ImageToVideoParams | KeyframeToVideoParams,
   ): Promise<GenerationTaskResponse>;
+
   abstract getTaskResult(params: { generationType: string; model: string; taskId: string }): Promise<GenerationTaskResult>;
 
   // 通用错误处理方法

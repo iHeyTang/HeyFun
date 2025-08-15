@@ -337,12 +337,17 @@ export interface Jimengi2vS20ProGetResultResponse {
   time_elapsed: string;
 }
 
+export const volcengineJimengServiceConfigSchema = z.object({
+  accessKeyId: z.string(),
+  secretAccessKey: z.string(),
+});
+
 export class VolcengineJimeng {
   public readonly homePage = 'https://jimeng.jianying.com/';
   private readonly signer: Signer;
 
-  constructor() {
-    this.signer = new Signer(VOLCENGINE_JIMENG_ACCESS_KEY_ID!, VOLCENGINE_JIMENG_SECRET_ACCESS_KEY!, 'cv', 'cn-north-1');
+  constructor(config: z.infer<typeof volcengineJimengServiceConfigSchema>) {
+    this.signer = new Signer(config.accessKeyId, config.secretAccessKey, 'cv', 'cn-north-1');
   }
 
   /**

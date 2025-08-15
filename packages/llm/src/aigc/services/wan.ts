@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DashscopeWanProvider } from '../providers/dashscope/wan';
+import { DashscopeWanProvider, dashscopeWanServiceConfigSchema } from '../providers/dashscope/wan';
 
 export const t2iSubmitParamsSchema = z.object({
   model: z.enum(['wan2.2-t2i-flash', 'wan2.2-t2i-plus', 'wanx2.1-t2i-turbo', 'wanx2.1-t2i-plus', 'wanx2.0-t2i-turbo']).describe('模型'),
@@ -344,8 +344,8 @@ export interface T2vGetResultResponse {
 
 export class WanService {
   private provider: DashscopeWanProvider;
-  constructor() {
-    this.provider = new DashscopeWanProvider();
+  constructor(config: z.infer<typeof dashscopeWanServiceConfigSchema>) {
+    this.provider = new DashscopeWanProvider(config);
   }
 
   /**

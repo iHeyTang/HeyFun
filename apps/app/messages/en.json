@@ -57,6 +57,7 @@
     },
     "sidebar": {
       "models": "Models",
+      "aigc": "Paintboard",
       "preferences": "Preferences"
     }
   }

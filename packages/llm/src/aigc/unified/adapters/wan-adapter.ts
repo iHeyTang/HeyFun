@@ -7,9 +7,8 @@ import {
   ImageToVideoParams,
   KeyframeToVideoParams,
   GenerationTaskResponse,
-  ModelParameterLimits,
   GenerationTaskResult,
-  CanvasSize,
+  ModelInfo,
 } from '../../types';
 import {
   WanService,
@@ -22,238 +21,132 @@ import {
   t2vGetResultParamsSchema,
   kf2vGetResultParamsSchema,
 } from '../../services/wan';
+import { dashscopeWanServiceConfigSchema } from '../../providers/dashscope/wan';
+import z from 'zod';
 
 export class WanAdapter extends BaseGenerationAdapter {
   private wanService: WanService;
 
-  constructor() {
+  constructor(config?: z.infer<typeof dashscopeWanServiceConfigSchema>) {
     super('wan');
-    this.wanService = new WanService();
+    this.wanService = new WanService(config ?? { apiKey: '' });
   }
 
-  getSupportedGenerationTypes(): GenerationType[] {
-    return ['text-to-image', 'image-to-video', 'text-to-video', 'keyframe-to-video'];
-  }
-
-  async getModels(
-    generationType: GenerationType,
-  ): Promise<{ model: string; displayName: string; description?: string; parameterLimits?: ModelParameterLimits }[]> {
-    const models: Record<GenerationType, { model: string; displayName: string; description?: string; parameterLimits?: ModelParameterLimits }[]> = {
-      'text-to-image': [
-        {
-          model: 'wan2.2-t2i-flash',
-          displayName: '万相 T2I Flash',
-          description: '快速文生图模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
-            },
-          },
+  async getModels(): Promise<Record<string, ModelInfo>> {
+    const modelMap: Record<string, ModelInfo> = {
+      'wan2.2-t2i-flash': {
+        displayName: '万相 T2I Flash',
+        description: '快速文生图模型',
+        parameterLimits: {
+          generationType: ['text-to-image'],
+          aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
         },
-        {
-          model: 'wan2.2-t2i-plus',
-          displayName: '万相 T2I Plus',
-          description: '高质量文生图模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1536,
-              minHeight: 512,
-              maxHeight: 1536,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
-            },
-          },
+      },
+      'wan2.2-t2i-plus': {
+        displayName: '万相 T2I Plus',
+        description: '高质量文生图模型',
+        parameterLimits: {
+          generationType: ['text-to-image'],
+          aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
         },
-        {
-          model: 'wanx2.1-t2i-turbo',
-          displayName: '万相 2.1 T2I Turbo',
-          description: '快速文生图模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
-            },
-          },
+      },
+      'wanx2.1-t2i-turbo': {
+        displayName: '万相 2.1 T2I Turbo',
+        description: '快速文生图模型',
+        parameterLimits: {
+          generationType: ['text-to-image'],
+          aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
         },
-        {
-          model: 'wanx2.1-t2i-plus',
-          displayName: '万相 2.1 T2I Plus',
-          description: '高质量文生图模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1536,
-              minHeight: 512,
-              maxHeight: 1536,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
-            },
-          },
+      },
+      'wanx2.1-t2i-plus': {
+        displayName: '万相 2.1 T2I Plus',
+        description: '高质量文生图模型',
+        parameterLimits: {
+          generationType: ['text-to-image'],
+          aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
         },
-        {
-          model: 'wanx2.0-t2i-turbo',
-          displayName: '万相 2.0 T2I Turbo',
-          description: '快速文生图模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
-            },
-          },
+      },
+      'wanx2.0-t2i-turbo': {
+        displayName: '万相 2.0 T2I Turbo',
+        description: '快速文生图模型',
+        parameterLimits: {
+          generationType: ['text-to-image'],
+          aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],
         },
-      ],
-      'image-to-image': [], // 万相不支持图生图
-      'image-to-video': [
-        {
-          model: 'wan2.2-i2v-flash',
-          displayName: '万相 I2V Flash',
-          description: '快速图生视频模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '9:16'],
-            },
-            duration: [5],
-          },
+      },
+      'wan2.2-i2v-flash': {
+        displayName: '万相 I2V Flash',
+        description: '快速图生视频模型',
+        parameterLimits: {
+          generationType: ['image-to-video'],
+          aspectRatio: ['1:1', '16:9', '9:16'],
+          duration: [5],
         },
-        {
-          model: 'wan2.2-i2v-plus',
-          displayName: '万相 I2V Plus',
-          description: '高质量图生视频模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '9:16'],
-            },
-            duration: [5],
-          },
+      },
+      'wan2.2-i2v-plus': {
+        displayName: '万相 I2V Plus',
+        description: '高质量图生视频模型',
+        parameterLimits: {
+          generationType: ['image-to-video'],
+          aspectRatio: ['1:1', '16:9', '9:16'],
+          duration: [5],
         },
-        {
-          model: 'wanx2.1-i2v-plus',
-          displayName: '万相 2.1 I2V Plus',
-          description: '高质量图生视频模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '9:16'],
-            },
-            duration: [5],
-          },
+      },
+      'wanx2.1-i2v-plus': {
+        displayName: '万相 2.1 I2V Plus',
+        description: '高质量图生视频模型',
+        parameterLimits: {
+          generationType: ['image-to-video'],
+          aspectRatio: ['1:1', '16:9', '9:16'],
+          duration: [5],
         },
-        {
-          model: 'wanx2.1-i2v-turbo',
-          displayName: '万相 2.1 I2V Turbo',
-          description: '快速图生视频模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '9:16'],
-            },
-            duration: [3, 4, 5],
-          },
+      },
+      'wanx2.1-i2v-turbo': {
+        displayName: '万相 2.1 I2V Turbo',
+        description: '快速图生视频模型',
+        parameterLimits: {
+          generationType: ['image-to-video'],
+          aspectRatio: ['1:1', '16:9', '9:16'],
+          duration: [5],
         },
-      ],
-      'text-to-video': [
-        {
-          model: 'wan2.2-t2v-plus',
-          displayName: '万相 T2V Plus',
-          description: '高质量文生视频模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '9:16'],
-            },
-            duration: [5],
-          },
+      },
+      'wan2.2-t2v-plus': {
+        displayName: '万相 T2V Plus',
+        description: '高质量文生视频模型',
+        parameterLimits: {
+          generationType: ['text-to-video'],
+          aspectRatio: ['1:1', '16:9', '9:16'],
+          duration: [5],
         },
-        {
-          model: 'wanx2.1-t2v-turbo',
-          displayName: '万相 2.1 T2V Turbo',
-          description: '快速文生视频模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '9:16'],
-            },
-            duration: [5],
-          },
+      },
+      'wanx2.1-t2v-turbo': {
+        displayName: '万相 2.1 T2V Turbo',
+        description: '快速文生视频模型',
+        parameterLimits: {
+          generationType: ['text-to-video'],
+          aspectRatio: ['1:1', '16:9', '9:16'],
+          duration: [5],
         },
-        {
-          model: 'wanx2.1-t2v-plus',
-          displayName: '万相 2.1 T2V Plus',
-          description: '高质量文生视频模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '9:16'],
-            },
-            duration: [5],
-          },
+      },
+      'wanx2.1-t2v-plus': {
+        displayName: '万相 2.1 T2V Plus',
+        description: '高质量文生视频模型',
+        parameterLimits: {
+          generationType: ['text-to-video'],
+          aspectRatio: ['1:1', '16:9', '9:16'],
         },
-      ],
-      'keyframe-to-video': [
-        {
-          model: 'wanx2.1-kf2v-plus',
-          displayName: '万相 2.1 首尾帧生视频',
-          description: '首尾帧生视频模型',
-          parameterLimits: {
-            canvasSize: {
-              minWidth: 512,
-              maxWidth: 1024,
-              minHeight: 512,
-              maxHeight: 1024,
-              step: 64,
-              aspectRatio: ['1:1', '16:9', '9:16'],
-            },
-            duration: [5],
-          },
+      },
+      'wanx2.1-kf2v-plus': {
+        displayName: '万相 2.1 首尾帧生视频',
+        description: '首尾帧生视频模型',
+        parameterLimits: {
+          generationType: ['keyframe-to-video'],
+          aspectRatio: ['1:1', '16:9', '9:16'],
         },
-      ],
+      },
     };
 
-    return models[generationType] || [];
+    return modelMap;
   }
 
   async submitTask(
@@ -274,10 +167,7 @@ export class WanAdapter extends BaseGenerationAdapter {
               prompt: t2iParams.prompt,
             },
             parameters: {
-              size: {
-                width: t2iParams.canvasSize.width,
-                height: t2iParams.canvasSize.height,
-              },
+              size: this.convertAspectRatioToImageSize(model, t2iParams.aspectRatio),
               n: 1,
               seed: 0,
               prompt_extend: true,
@@ -295,33 +185,6 @@ export class WanAdapter extends BaseGenerationAdapter {
           };
         }
 
-        case 'image-to-video': {
-          const i2vParams = params as ImageToVideoParams;
-          const parsed = i2vSubmitParamsSchema.safeParse({
-            model: model as 'wan2.2-i2v-flash' | 'wan2.2-i2v-plus' | 'wanx2.1-i2v-plus' | 'wanx2.1-i2v-turbo',
-            input: {
-              prompt: i2vParams.prompt || '',
-              image_url: i2vParams.referenceImage,
-            },
-            parameters: {
-              resolution: this.getResolution(model),
-              duration: i2vParams.duration,
-              prompt_extend: true,
-              seed: 0,
-              watermark: false,
-            },
-          });
-          if (!parsed.success) {
-            throw new Error(parsed.error.message);
-          }
-          const result = await this.wanService.i2vSubmit(parsed.data);
-          return {
-            success: true,
-            taskId: result.output.task_id,
-            data: result,
-          };
-        }
-
         case 'text-to-video': {
           const t2vParams = params as TextToVideoParams;
           const parsed = t2vSubmitParamsSchema.safeParse({
@@ -330,7 +193,7 @@ export class WanAdapter extends BaseGenerationAdapter {
               prompt: t2vParams.prompt,
             },
             parameters: {
-              size: this.getT2VSize(model),
+              size: this.convertAspectRatioToVideoSize(model, t2vParams.aspectRatio),
               duration: t2vParams.duration,
               prompt_extend: true,
               seed: 0,
@@ -348,6 +211,33 @@ export class WanAdapter extends BaseGenerationAdapter {
           };
         }
 
+        case 'image-to-video': {
+          const i2vParams = params as ImageToVideoParams;
+          const parsed = i2vSubmitParamsSchema.safeParse({
+            model: model as 'wan2.2-i2v-flash' | 'wan2.2-i2v-plus' | 'wanx2.1-i2v-plus' | 'wanx2.1-i2v-turbo',
+            input: {
+              prompt: i2vParams.prompt || '',
+              image_url: i2vParams.referenceImage,
+            },
+            parameters: {
+              resolution: undefined,
+              duration: i2vParams.duration,
+              prompt_extend: true,
+              seed: 0,
+              watermark: false,
+            },
+          });
+          if (!parsed.success) {
+            throw new Error(parsed.error.message);
+          }
+          const result = await this.wanService.i2vSubmit(parsed.data);
+          return {
+            success: true,
+            taskId: result.output.task_id,
+            data: result,
+          };
+        }
+
         case 'keyframe-to-video': {
           const kf2vParams = params as KeyframeToVideoParams;
           const parsed = kf2vSubmitParamsSchema.safeParse({
@@ -358,6 +248,7 @@ export class WanAdapter extends BaseGenerationAdapter {
               prompt: kf2vParams.prompt,
             },
             parameters: {
+              resolution: undefined,
               duration: kf2vParams.duration,
             },
           });
@@ -465,30 +356,103 @@ export class WanAdapter extends BaseGenerationAdapter {
     }
   }
 
-  // 根据模型获取支持的分辨率
-  private getResolution(model: string): '480P' | '720P' | '1080P' {
-    switch (model) {
-      case 'wan2.2-i2v-plus':
-        return '1080P';
-      case 'wan2.2-i2v-flash':
-      case 'wanx2.1-i2v-plus':
-      case 'wanx2.1-i2v-turbo':
-        return '720P';
+  /**
+   * 将宽高比转换为尺寸
+   * 图像宽高边长的像素范围为：[512, 1440]，单位像素。可任意组合以设置不同的图像分辨率，最高可达200万像素。
+   * @see https://bailian.console.aliyun.com/?spm=5176.30371578.J_wilqAZEFYRJvCsnM5_P7j.1.e939154aMDld0n&tab=api&scm=20140722.M_10875430.P_126.MO_3931-ID_10875430-MID_10875430-CID_34338-ST_14391-V_1#/api/?type=model&url=2862677
+   *
+   * @param model 模型名称
+   * @param aspectRatio 宽高比
+   * @returns 尺寸
+   */
+  private convertAspectRatioToImageSize(model: string, aspectRatio: string): string | undefined {
+    switch (aspectRatio) {
+      case '9:16':
+        return '1280*1440';
+      case '16:9':
+        return '1440*1280';
+      case '4:3':
+        return '1024*1366';
+      case '3:4':
+        return '1366*1024';
+      case '1:1':
+        return '1024*1024';
       default:
-        return '720P';
+        return undefined;
     }
   }
 
-  // 根据模型获取T2V的尺寸
-  private getT2VSize(model: string): string {
-    switch (model) {
-      case 'wan2.2-t2v-plus':
-        return '1920*1080';
-      case 'wanx2.1-t2v-turbo':
-      case 'wanx2.1-t2v-plus':
-        return '1280*720';
-      default:
-        return '1280*720';
+  /**
+   *
+   * 根据传入的宽高比和对应模型支持的最大resolution，计算出最接近的分辨率
+   *
+   * 用于指定视频分辨率，格式为宽*高。不同模型支持的分辨率如下：
+   * wan2.2-t2v-plus：支持480P和1080P对应的所有分辨率。默认分辨率为1920*1080（1080P）。
+   * wanx2.1-t2v-turbo：支持 480P 和 720P 对应的所有分辨率。默认分辨率为1280*720（720P）。
+   * wanx2.1-t2v-plus：仅支持 720P 对应的所有分辨率。默认分辨率为1280*720（720P）。
+   *
+   * 480P档位：可选的视频分辨率及其对应的视频宽高比为：
+   * 832*480：16:9。
+   * 480*832：9:16。
+   * 624*624：1:1。
+   * 720P档位：可选的视频分辨率及其对应的视频宽高比为：
+   * 1280*720：16:9。
+   * 720*1280：9:16。
+   * 960*960：1:1。
+   * 1088*832：4:3。
+   * 832*1088：3:4。
+   * 1080P档位：可选的视频分辨率及其对应的视频宽高比为：
+   * 1920*1080： 16:9。
+   * 1080*1920： 9:16。
+   * 1440*1440： 1:1。
+   * 1632*1248： 4:3。
+   * 1248*1632： 3:4。
+   *
+   * @see https://bailian.console.aliyun.com/?spm=5176.30371578.J_wilqAZEFYRJvCsnM5_P7j.1.e939154aMDld0n&tab=api&scm=20140722.M_10875430.P_126.MO_3931-ID_10875430-MID_10875430-CID_34338-ST_14391-V_1#/api/?type=model&url=2865250
+   *
+   * @param model 模型名称
+   * @param aspectRatio 宽高比
+   * @returns 分辨率
+   */
+  private convertAspectRatioToVideoSize(model: string, aspectRatio: string): string | undefined {
+    const resolutionMap: Record<string, string> = {
+      'wan2.2-t2v-plus': '1080',
+      'wanx2.1-t2v-turbo': '720',
+      'wanx2.1-t2v-plus': '720',
+    };
+    const resolution = resolutionMap[model];
+    if (!resolution) {
+      return undefined;
     }
+
+    const sizeMap: Record<string, Record<string, string>> = {
+      '9:16': {
+        '1080': '1080*1920',
+        '720': '720*1280',
+        '480': '480*832',
+      },
+      '16:9': {
+        '1080': '1920*1080',
+        '720': '1280*720',
+        '480': '832*480',
+      },
+      '4:3': {
+        '1080': '1632*1248',
+        '720': '1088*832',
+        '480': '624*624',
+      },
+      '3:4': {
+        '1080': '1248*1632',
+        '720': '832*1088',
+        '480': '624*624',
+      },
+      '1:1': {
+        '1080': '1440*1440',
+        '720': '960*960',
+        '480': '624*624',
+      },
+    };
+
+    return sizeMap[aspectRatio]?.[resolution];
   }
 }
