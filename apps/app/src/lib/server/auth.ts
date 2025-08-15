@@ -9,7 +9,7 @@ export interface AuthUser {
   name?: string;
 }
 
-export async function verifyToken(token: string): Promise<AuthUser> {
+export async function verifyToken(): Promise<AuthUser> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
     throw new Error('Invalid token');

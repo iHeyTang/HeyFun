@@ -16,11 +16,7 @@ import sandboxManager from '@/lib/server/sandbox';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
   try {
     const { path: pathSegments = [] } = await params;
-    const cookie = request.cookies.get('token');
-    if (!cookie) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
-    const user = await verifyToken(cookie.value);
+    const user = await verifyToken();
     if (!user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
