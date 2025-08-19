@@ -201,11 +201,11 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
       });
 
       const result = sortedItems
-        .map(item => {
+        .map((item, index) => {
           const icon = item.type === 'directory' ? '📁' : '📄';
           const size = item.type === 'file' ? ` (${this.formatFileSize(item.size)})` : '';
           const date = item.modified.toLocaleDateString();
-          return `${icon} ${item.name}${size} - ${date}`;
+          return `${index + 1}. ${icon} ${item.name}${size} - ${date}`;
         })
         .join('\n');
 
