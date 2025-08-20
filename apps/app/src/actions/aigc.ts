@@ -61,7 +61,7 @@ export const getAigcProviderConfig = withUserAuth(async ({ args, organization }:
     return null;
   }
 
-  const decryptedConfig = decryptTextWithPrivateKey(config.config, privateKey);
+  const decryptedConfig = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
   return decryptedConfig;
 });
 
@@ -116,7 +116,7 @@ export const getAigcProviderModels = withUserAuth(async ({ args, organization }:
   const configMap = aigcProviderConfigSchema.parse(
     configs.reduce(
       (acc, config) => {
-        acc[config.provider] = decryptTextWithPrivateKey(config.config, privateKey);
+        acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
         return acc;
       },
       {} as Record<string, any>,
@@ -141,7 +141,7 @@ export const testAigcProviderConnection = withUserAuth(async ({ args, organizati
     const configMap = aigcProviderConfigSchema.parse(
       configs.reduce(
         (acc, config) => {
-          acc[config.provider] = decryptTextWithPrivateKey(config.config, privateKey);
+          acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
           return acc;
         },
         {} as Record<string, any>,

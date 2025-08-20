@@ -1,10 +1,6 @@
 import crypto from 'crypto';
-import fetch from 'node-fetch';
 import qs from 'querystring';
 import { z } from 'zod';
-
-const VOLCENGINE_JIMENG_ACCESS_KEY_ID = process.env.VOLCENGINE_JIMENG_ACCESS_KEY_ID;
-const VOLCENGINE_JIMENG_SECRET_ACCESS_KEY = process.env.VOLCENGINE_JIMENG_SECRET_ACCESS_KEY;
 
 /**
  * 即梦文生图2.1

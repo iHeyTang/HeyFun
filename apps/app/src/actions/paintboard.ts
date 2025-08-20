@@ -39,7 +39,7 @@ export const getModelsByGenerationType = withUserAuth(async ({ args, organizatio
   const configMap = aigcProviderConfigSchema.parse(
     configs.reduce(
       (acc, config) => {
-        acc[config.provider] = decryptTextWithPrivateKey(config.config, privateKey);
+        acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
         return acc;
       },
       {} as Record<string, any>,
@@ -58,7 +58,7 @@ export const getAllServiceModels = withUserAuth(async ({ organization }: AuthWra
   const configMap = aigcProviderConfigSchema.parse(
     configs.reduce(
       (acc, config) => {
-        acc[config.provider] = decryptTextWithPrivateKey(config.config, privateKey);
+        acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
         return acc;
       },
       {} as Record<string, any>,
@@ -500,7 +500,7 @@ export const processPaintboardTaskResult = withUserAuth(
       const configMap = aigcProviderConfigSchema.parse(
         configs.reduce(
           (acc, config) => {
-            acc[config.provider] = decryptTextWithPrivateKey(config.config, privateKey);
+            acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
             return acc;
           },
           {} as Record<string, any>,
@@ -673,7 +673,7 @@ export const submitGenerationTask = withUserAuth(
       const configMap = aigcProviderConfigSchema.parse(
         configs.reduce(
           (acc, config) => {
-            acc[config.provider] = decryptTextWithPrivateKey(config.config, privateKey);
+            acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
             return acc;
           },
           {} as Record<string, any>,

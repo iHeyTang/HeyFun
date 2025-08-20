@@ -70,20 +70,43 @@ export abstract class BaseGenerationAdapter implements IGenerationAdapter {
     }
 
     switch (generationType) {
-      case 'text-to-image':
-      case 'image-to-image': {
-        const imageParams = params as TextToImageParams | ImageToImageParams;
-        if (!imageParams.canvasSize || !imageParams.canvasSize.width || !imageParams.canvasSize.height) {
-          throw new Error('画幅大小不能为空');
+      case 'text-to-image': {
+        const imageParams = params as TextToImageParams;
+        if (!imageParams.aspectRatio || imageParams.aspectRatio.trim() === '') {
+          throw new Error('宽高比不能为空');
         }
         break;
       }
 
-      case 'text-to-video':
+      case 'image-to-image': {
+        const imageParams = params as ImageToImageParams;
+        if (!imageParams.aspectRatio || imageParams.aspectRatio.trim() === '') {
+          throw new Error('宽高比不能为空');
+        }
+        if (!imageParams.referenceImage || imageParams.referenceImage.trim() === '') {
+          throw new Error('参考图不能为空');
+        }
+        break;
+      }
+
+      case 'text-to-video': {
+        const videoParams = params as TextToVideoParams;
+        if (!videoParams.aspectRatio || videoParams.aspectRatio.trim() === '') {
+          throw new Error('宽高比不能为空');
+        }
+        if (!videoParams.duration || videoParams.duration <= 0) {
+          throw new Error('时长必须大于0');
+        }
+        break;
+      }
+
       case 'image-to-video': {
-        const videoParams = params as TextToVideoParams | ImageToVideoParams;
-        if (!videoParams.canvasSize || !videoParams.canvasSize.width || !videoParams.canvasSize.height) {
-          throw new Error('画幅大小不能为空');
+        const videoParams = params as ImageToVideoParams;
+        if (!videoParams.aspectRatio || videoParams.aspectRatio.trim() === '') {
+          throw new Error('宽高比不能为空');
+        }
+        if (!videoParams.referenceImage || videoParams.referenceImage.trim() === '') {
+          throw new Error('参考图不能为空');
         }
         if (!videoParams.duration || videoParams.duration <= 0) {
           throw new Error('时长必须大于0');
@@ -93,11 +116,14 @@ export abstract class BaseGenerationAdapter implements IGenerationAdapter {
 
       case 'keyframe-to-video': {
         const keyframeParams = params as KeyframeToVideoParams;
-        if (!keyframeParams.firstFrame || !keyframeParams.lastFrame) {
-          throw new Error('首尾帧不能为空');
+        if (!keyframeParams.firstFrame || keyframeParams.firstFrame.trim() === '') {
+          throw new Error('首帧不能为空');
         }
-        if (!keyframeParams.canvasSize || !keyframeParams.canvasSize.width || !keyframeParams.canvasSize.height) {
-          throw new Error('画幅大小不能为空');
+        if (!keyframeParams.lastFrame || keyframeParams.lastFrame.trim() === '') {
+          throw new Error('尾帧不能为空');
+        }
+        if (!keyframeParams.aspectRatio || keyframeParams.aspectRatio.trim() === '') {
+          throw new Error('宽高比不能为空');
         }
         if (!keyframeParams.duration || keyframeParams.duration <= 0) {
           throw new Error('时长必须大于0');
