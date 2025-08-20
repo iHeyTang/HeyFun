@@ -198,7 +198,7 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
     try {
       switch (generationType) {
         case 'text-to-image': {
-          const parsed = t2iGetResultParamsSchema.safeParse({ task_id: taskId, model: model });
+          const parsed = t2iGetResultParamsSchema.safeParse({ id: taskId, model: model });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
           }
@@ -212,7 +212,7 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
           };
         }
         case 'image-to-image': {
-          const parsed = i2iGetResultParamsSchema.safeParse({ task_id: taskId, model: model });
+          const parsed = i2iGetResultParamsSchema.safeParse({ id: taskId, model: model });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
           }
@@ -226,7 +226,7 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
           };
         }
         case 'text-to-video': {
-          const parsed = t2vGetResultParamsSchema.safeParse({ task_id: taskId, model: model });
+          const parsed = t2vGetResultParamsSchema.safeParse({ id: taskId, model: model });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
           }
@@ -241,7 +241,7 @@ export class DoubaoAdapter extends BaseGenerationAdapter {
           };
         }
         case 'image-to-video': {
-          const parsed = i2vGetResultParamsSchema.safeParse({ task_id: taskId, model: model });
+          const parsed = i2vGetResultParamsSchema.safeParse({ id: taskId, model: model });
           if (!parsed.success) {
             throw new Error(parsed.error.message);
           }
