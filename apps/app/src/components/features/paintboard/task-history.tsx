@@ -6,7 +6,7 @@ import { usePaintboardTasks, type PaintboardTask } from '@/hooks/use-paintboard-
 import { getImageUrl } from '@/lib/browser/image';
 import { formatDate } from 'date-fns';
 import { Check, Clock, Copy, Download } from 'lucide-react';
-import React from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 
 // Check if file is video
 const isVideoFile = (filename: string): boolean => {
@@ -19,8 +19,38 @@ const isImageFile = (filename: string): boolean => {
   return imageExtensions.some(ext => filename.toLowerCase().endsWith(ext));
 };
 
-export function PaintboardTaskHistory() {
-  const { tasks, loading, error, fetchTasks, pollResults, downloadFile, startPolling } = usePaintboardTasks();
+export interface TaskHistoryRef {
+  triggerRefresh: () => Promise<void>;
+}
+
+export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => {
+  const { tasks, loading, error, fetchTasks, pollResults, downloadFile, startPolling, startRealTimePolling, subscribeToRefresh, triggerRefresh } =
+    usePaintboardTasks();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // 暴露给父组件的方法
+  useImperativeHandle(ref, () => ({
+    triggerRefresh,
+  }));
+
+  // 订阅刷新事件
+  useEffect(() => {
+    const unsubscribe = subscribeToRefresh(() => {
+      setRefreshTrigger(prev => prev + 1);
+    });
+    return unsubscribe;
+  }, [subscribeToRefresh]);
+
+  // 检查是否有进行中的任务，如果有则开始实时轮询
+  useEffect(() => {
+    const hasInProgressTasks = tasks.some(
+      task => task.status === 'processing' || task.status === 'pending' || !task.results || task.results.length === 0,
+    );
+
+    if (hasInProgressTasks) {
+      startRealTimePolling();
+    }
+  }, [tasks, startRealTimePolling]);
 
   const handlePollResults = async () => {
     try {
@@ -69,7 +99,7 @@ export function PaintboardTaskHistory() {
     return (
       <div className="p-8 text-center">
         <p className="mb-4 text-red-500">{error}</p>
-        <Button onClick={fetchTasks} variant="outline">
+        <Button onClick={() => fetchTasks()} variant="outline">
           Retry
         </Button>
       </div>
@@ -99,7 +129,9 @@ export function PaintboardTaskHistory() {
       )}
     </div>
   );
-}
+});
+
+PaintboardTaskHistory.displayName = 'PaintboardTaskHistory';
 
 interface TaskCardProps {
   task: PaintboardTask;
@@ -170,8 +202,41 @@ function TaskCard({ task, onDownload }: TaskCardProps) {
           ))}
         </div>
       ) : (
-        <div className="flex h-[160px] w-[300px] items-center justify-center rounded-md border p-3"></div>
+        <LoadingPlaceholder task={task} />
       )}
+    </div>
+  );
+}
+
+// 进行中任务的占位符组件
+interface LoadingPlaceholderProps {
+  task: PaintboardTask;
+}
+
+function LoadingPlaceholder({ task }: LoadingPlaceholderProps) {
+  const aspectRatio = task.params?.aspectRatio || '1:1';
+
+  // 根据宽高比计算尺寸，与ResultCard中的图片尺寸保持一致
+  const getPlaceholderSize = (ratio: string) => {
+    // 使用固定高度192px (h-48)，与ResultCard中的图片高度一致
+    const baseHeight = 192;
+    const parts = ratio.split(':').map(Number);
+    const w = parts[0] || 1;
+    const h = parts[1] || 1;
+    const aspectRatioValue = w / h;
+
+    return { width: baseHeight * aspectRatioValue, height: baseHeight };
+  };
+
+  const size = getPlaceholderSize(aspectRatio);
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-lg border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100"
+      style={{ width: `${size.width}px`, height: `${size.height}px` }}
+    >
+      {/* 渐变银色流动动效 */}
+      <div className="animate-gradient-flow absolute inset-0 bg-gradient-to-r from-gray-200/40 via-gray-300/60 to-gray-200/40" />
     </div>
   );
 }

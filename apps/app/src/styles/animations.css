@@ -83,3 +83,18 @@
   animation: spinning 2s linear infinite;
   display: inline-block;
 }
+
+/* 简洁液体流动动画 */
+@keyframes gradient-flow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-flow {
+  background-size: 200% 200%;
+  animation: gradient-flow 4s ease-in-out infinite;
+}

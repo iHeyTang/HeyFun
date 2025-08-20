@@ -1,13 +1,19 @@
 'use client';
 
 import { UnifiedGenerationForm } from '@/components/features/paintboard/generation-form';
-import { PaintboardTaskHistory } from '@/components/features/paintboard/task-history';
+import { PaintboardTaskHistory, type TaskHistoryRef } from '@/components/features/paintboard/task-history';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { useRef } from 'react';
 
 export default function GeneralGenerationPage() {
-  const handleFormSubmit = (data: unknown) => {
+  const taskHistoryRef = useRef<TaskHistoryRef>(null);
+
+  const handleFormSubmit = async (data: unknown) => {
     console.log('Generation task submitted:', data);
-    // 这里可以添加更多的处理逻辑，比如更新历史记录
+    // 提交成功后立即刷新任务列表
+    if (taskHistoryRef.current) {
+      await taskHistoryRef.current.triggerRefresh();
+    }
   };
 
   return (
@@ -17,7 +23,7 @@ export default function GeneralGenerationPage() {
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel defaultSize={82} minSize={50}>
-        <PaintboardTaskHistory />
+        <PaintboardTaskHistory ref={taskHistoryRef} />
       </ResizablePanel>
     </ResizablePanelGroup>
   );
