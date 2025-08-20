@@ -9,6 +9,7 @@
 Hey! Let's bring a little fun to this world together.
 
 <img src="assets/screenshots/tasks.png" width="1000"/>
+<img src="assets/screenshots/paintboard.png" width="1000"/>
 <img src="assets/screenshots/settings-models.png" width="1000"/>
 <img src="assets/screenshots/settings-aigc.png" width="1000"/>
 
