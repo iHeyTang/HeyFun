@@ -6,7 +6,7 @@ import { useInputModelConfig } from '@/components/features/chat/input/config-mod
 import { useInputToolsConfig } from '@/components/features/chat/input/config-tools';
 import { ChatMessages } from '@/components/features/chat/messages';
 import { ChatPreview } from '@/components/features/chat/preview';
-import { usePreviewData } from '@/components/features/chat/preview/store';
+import { usePreviewData } from '@/components/features/chat/preview/preview-content/workspace-preview';
 import { aggregateMessages } from '@/lib/browser/chat-messages';
 import { Message } from '@/lib/browser/chat-messages/types';
 import { useParams, useRouter } from 'next/navigation';

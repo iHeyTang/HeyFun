@@ -1,9 +1,9 @@
+import { usePreviewData } from '@/components/features/chat/preview/preview-content/workspace-preview';
 import { Badge } from '@/components/ui/badge';
+import useAgentTools from '@/hooks/use-tools';
 import { AggregatedMessage, Message } from '@/lib/browser/chat-messages/types';
 import { getImageUrl } from '@/lib/browser/image';
 import Image from 'next/image';
-import { usePreviewData } from '../../preview/store';
-import useAgentTools from '@/hooks/use-tools';
 
 type ToolCall = {
   id: string;

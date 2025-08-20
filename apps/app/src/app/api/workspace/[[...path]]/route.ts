@@ -39,14 +39,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (fileInfo.isDir) {
       const files = await sandbox.fs.listFiles(pathSegments.join('/'));
       const fileDetails = await Promise.all(
-        files.map(async file => {
-          return {
-            name: file.name,
-            isDirectory: file.isDir,
-            size: file.size,
-            modifiedTime: file.modTime,
-          };
-        }),
+        files
+          .sort((a, b) => {
+            // First sort by type: directories first, then files
+            if (a.isDir !== b.isDir) {
+              return a.isDir ? -1 : 1;
+            }
+            // Within same type, sort by name
+            return a.name.localeCompare(b.name);
+          })
+          .map(async file => {
+            return {
+              name: file.name,
+              isDirectory: file.isDir,
+              size: file.size,
+              modifiedTime: file.modTime,
+            };
+          }),
       );
 
       return NextResponse.json(fileDetails);

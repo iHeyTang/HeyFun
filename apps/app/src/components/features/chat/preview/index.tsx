@@ -3,7 +3,7 @@ import { CardTitle } from '@/components/ui/card';
 import { Message } from '@/lib/browser/chat-messages/types';
 import { FolderIcon } from 'lucide-react';
 import { PreviewContent } from './preview-content';
-import { usePreviewData } from './store';
+import { usePreviewData } from './preview-content/workspace-preview/store';
 
 interface ChatPreviewProps {
   messages: Message[];

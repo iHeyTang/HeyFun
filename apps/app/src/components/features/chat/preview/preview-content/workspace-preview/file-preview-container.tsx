@@ -1,9 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  FilePreviewPluginManager,
-  FilePreviewPluginContext,
-  FilePreviewPluginAPI,
-} from '@/components/features/chat/preview/preview-content/file-preview-plugin-manager';
+import { FilePreviewPluginManager, FilePreviewPluginContext, FilePreviewPluginAPI } from './file-preview-plugin-manager';
 
 interface FilePreviewContainerProps {
   fileContent: string;
