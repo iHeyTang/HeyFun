@@ -1,53 +1,12 @@
-import React from 'react';
-import { usePaintboardTasks, type PaintboardTask } from '@/hooks/use-paintboard-tasks';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Download, RefreshCw, Play, CheckCircle, XCircle, Clock, Info, Eye, EyeOff } from 'lucide-react';
-import { formatDate, formatDistanceToNow } from 'date-fns';
-import { enUS } from 'date-fns/locale';
 import { PaintboardResult } from '@/actions/paintboard';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { usePaintboardTasks, type PaintboardTask } from '@/hooks/use-paintboard-tasks';
 import { getImageUrl } from '@/lib/browser/image';
-
-// Status icon mapping
-const statusIcons = {
-  pending: <Clock className="h-4 w-4" />,
-  processing: <RefreshCw className="h-4 w-4 animate-spin" />,
-  completed: <CheckCircle className="h-4 w-4 text-green-500" />,
-  failed: <XCircle className="h-4 w-4 text-red-500" />,
-};
-
-// Status color mapping
-const statusColors = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  processing: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  failed: 'bg-red-100 text-red-800',
-};
-
-// Service name mapping
-const serviceNames = {
-  wan: 'Wanxiang',
-  doubao: 'Doubao',
-  jimeng: 'Jimeng',
-};
-
-// Generation type mapping
-const generationTypeNames = {
-  'text-to-image': 'Text to Image',
-  'image-to-image': 'Image to Image',
-  'text-to-video': 'Text to Video',
-  'image-to-video': 'Image to Video',
-  'keyframe-to-video': 'Keyframe to Video',
-};
-
-// Check if file is media
-const isMediaFile = (filename: string): boolean => {
-  const mediaExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.avi', '.mov', '.webm'];
-  return mediaExtensions.some(ext => filename.toLowerCase().endsWith(ext));
-};
+import { formatDate } from 'date-fns';
+import { Check, Clock, Copy, Download } from 'lucide-react';
+import React from 'react';
 
 // Check if file is video
 const isVideoFile = (filename: string): boolean => {
@@ -89,9 +48,19 @@ export function PaintboardTaskHistory() {
 
   if (loading && tasks.length === 0) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <RefreshCw className="h-6 w-6 animate-spin" />
-        <span className="ml-2">Loading...</span>
+      <div className="px-6 py-4">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="border-b border-gray-100 py-4 last:border-b-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-16 animate-pulse rounded bg-gray-100"></div>
+                <div className="h-6 w-12 animate-pulse rounded bg-gray-100"></div>
+                <div className="h-6 w-32 animate-pulse rounded bg-gray-100"></div>
+              </div>
+              <div className="h-4 w-24 animate-pulse rounded bg-gray-100"></div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -108,14 +77,24 @@ export function PaintboardTaskHistory() {
   }
 
   return (
-    <div className="h-full space-y-4">
+    <div className="h-full">
       {tasks.length === 0 ? (
-        <div className="py-8 text-center text-gray-500">No task records</div>
+        <div className="flex h-full items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+              <Clock className="h-5 w-5 text-slate-400" />
+            </div>
+            <p className="text-sm font-medium text-slate-600">No task records</p>
+            <p className="mt-1 text-xs text-slate-400">Your generation tasks will appear here</p>
+          </div>
+        </div>
       ) : (
-        <div className="h-full space-y-6 overflow-y-auto p-4">
-          {tasks.map(task => (
-            <TaskCard key={task.id} task={task} onDownload={handleDownload} />
-          ))}
+        <div className="h-full overflow-y-auto">
+          <div className="px-6 py-4">
+            {tasks.map(task => (
+              <TaskCard key={task.id} task={task} onDownload={handleDownload} />
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -128,58 +107,64 @@ interface TaskCardProps {
 }
 
 function TaskCard({ task, onDownload }: TaskCardProps) {
+  const [copied, setCopied] = React.useState(false);
+  const prompt = task.params?.prompt || task.params?.text || '';
+  const ratio = task.params?.aspectRatio;
+  const model = task.model;
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-4 border-b border-gray-100 py-4 last:border-b-0">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <CardTitle className="flex items-baseline gap-2">
-            {serviceNames[task.service as keyof typeof serviceNames]} - {task.model}
-            <span className="text-xs font-normal text-gray-500">{formatDate(new Date(task.createdAt), 'yyyy-MM-dd HH:mm:ss')}</span>
-          </CardTitle>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  <Info className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="space-y-2">
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Task Parameter Details</h4>
-                    <pre>{JSON.stringify(task.params, null, 2)}</pre>
-                  </div>
-                  <p>
-                    <strong>Task ID:</strong> {task.id}
-                  </p>
-                  <p>
-                    <strong>Created At:</strong> {new Date(task.createdAt).toLocaleString('en-US')}
-                  </p>
-                  <p>
-                    <strong>Updated At:</strong> {new Date(task.updatedAt).toLocaleString('en-US')}
-                  </p>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {model && (
+            <Badge variant="secondary" className="bg-gray-100 font-mono text-xs text-gray-700 hover:bg-gray-100">
+              {model}
+            </Badge>
+          )}
+
+          {ratio && (
+            <Badge variant="secondary" className="bg-gray-100 text-xs text-gray-700 hover:bg-gray-100">
+              {ratio}
+            </Badge>
+          )}
+
+          {prompt && (
+            <div className="group relative" onMouseLeave={() => setCopied(false)}>
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <Badge variant="secondary" className="max-w-xs bg-gray-100 text-xs text-gray-700 group-hover:pr-7 hover:bg-gray-100">
+                      <span className="truncate">{prompt}</span>
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-sm">
+                    <p className="text-sm">{prompt}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {copied ? (
+                <Check className="absolute top-[calc(50%+1px)] right-2 h-3 w-3 -translate-y-1/2 text-gray-500 opacity-100" />
+              ) : (
+                <Copy
+                  className="absolute top-[calc(50%+1px)] right-2 h-3 w-3 -translate-y-1/2 cursor-pointer text-gray-500 opacity-0 transition-opacity group-hover:opacity-60 hover:opacity-100"
+                  onClick={e => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(prompt);
+                    setCopied(true);
+                  }}
+                />
+              )}
+            </div>
+          )}
         </div>
-        <Badge className={statusColors[task.status as keyof typeof statusColors]}>
-          {statusIcons[task.status as keyof typeof statusColors]}
-          <span className="ml-1">
-            {task.status === 'pending' && 'Pending'}
-            {task.status === 'processing' && 'Processing'}
-            {task.status === 'completed' && 'Completed'}
-            {task.status === 'failed' && 'Failed'}
-          </span>
-        </Badge>
+
+        <span className="ml-4 flex-shrink-0 text-xs text-gray-500">{formatDate(new Date(task.createdAt), 'yyyy-MM-dd HH:mm:ss')}</span>
       </div>
 
       {task.error ? (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3">
-          <p className="text-sm text-red-700">Error: {task.error}</p>
-        </div>
+        <div className="mt-2 text-xs text-gray-400">{task.error}</div>
       ) : task.results && task.results.length > 0 ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-4">
+        <div className="flex gap-4">
           {task.results.map((result: PaintboardResult) => (
             <ResultCard key={result.id} result={result} onDownload={() => onDownload(result, task.organizationId)} />
           ))}
@@ -202,14 +187,20 @@ function ResultCard({ result, onDownload }: ResultCardProps) {
 
   if (isVideo) {
     return (
-      <video src={result.url} controls className="h-full w-full rounded-lg object-cover">
-        Your browser does not support the video tag.
-      </video>
+      <div className="h-48 overflow-hidden rounded-lg bg-gray-100">
+        <video src={result.url} controls className="h-full w-full object-contain">
+          Your browser does not support the video tag.
+        </video>
+      </div>
     );
   }
 
   if (isImage) {
-    return <img src={getImageUrl(result.localPath)} alt={result.filename} className="h-full w-full rounded-lg object-cover" />;
+    return (
+      <div className="h-48 overflow-hidden rounded-lg bg-gray-100">
+        <img src={getImageUrl(result.localPath)} alt={result.filename} className="h-full object-contain" />
+      </div>
+    );
   }
 
   return (
