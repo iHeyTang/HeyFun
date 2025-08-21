@@ -224,6 +224,7 @@ export class FunMax extends ReActAgent {
       max_steps: this.max_steps,
       current_step: this.current_step,
       remaining_steps: this.max_steps - this.current_step,
+      language: this.language || 'English',
     });
 
     let result = false;

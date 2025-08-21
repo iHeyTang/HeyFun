@@ -58,6 +58,7 @@
     "sidebar": {
       "models": "Models",
       "aigc": "Paintboard",
+      "agents": "Agents",
       "preferences": "Preferences"
     }
   }

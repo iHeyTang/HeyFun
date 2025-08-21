@@ -56,7 +56,15 @@ export const WorkspaceDirectory = ({
         <CardContent>
           <div className="space-y-1">
             {items.length === 0 ? (
-              <div className="text-muted-foreground py-4 text-center">This directory is empty</div>
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <FolderIcon className="h-12 w-12 text-muted-foreground/40 mb-3" />
+                <p className="text-muted-foreground/60 text-sm font-light">
+                  暂无文件
+                </p>
+                <p className="text-muted-foreground/40 text-xs mt-1">
+                  目录为空
+                </p>
+              </div>
             ) : (
               items.map(item => (
                 <div

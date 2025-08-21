@@ -11,7 +11,8 @@ import { createTask } from '@/actions/tasks';
 import { useRecentTasks } from '@/components/features/chat-history-sidebar';
 import { ChatInput } from '@/components/features/chat/input';
 import { useInputToolsConfig } from '@/components/features/chat/input/config-tools';
-import { useInputModelConfig } from '@/components/features/chat/input/config-model';
+import { useModelSelectorStore } from '@/components/features/model-selector';
+import { useAgentSelectorStore } from '@/components/features/agent-selector';
 
 const EmptyState = () => (
   <div className="flex h-full items-center justify-center gap-4 opacity-50">
@@ -29,8 +30,9 @@ export default function ChatPage() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const { refreshTasks } = useRecentTasks();
 
-  const { selectedModel } = useInputModelConfig();
+  const { selectedModel } = useModelSelectorStore('chat-input-model-storage');
   const { enabledTools } = useInputToolsConfig();
+  const { selectedAgent } = useAgentSelectorStore('chat-input-agent-storage')();
 
   useEffect(() => {
     return () => {
@@ -53,6 +55,7 @@ export default function ChatPage() {
     try {
       const res = await createTask({
         taskId: undefined,
+        agentId: selectedAgent?.id,
         modelProvider: selectedModel?.provider || '',
         modelId: selectedModel?.id || '',
         prompt: value.prompt,

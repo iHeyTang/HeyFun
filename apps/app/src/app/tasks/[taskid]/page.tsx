@@ -2,7 +2,7 @@
 
 import { getTask, createTask, terminateTask } from '@/actions/tasks';
 import { ChatInput } from '@/components/features/chat/input';
-import { useInputModelConfig } from '@/components/features/chat/input/config-model';
+import { useModelSelectorStore } from '@/components/features/model-selector';
 import { useInputToolsConfig } from '@/components/features/chat/input/config-tools';
 import { ChatMessages } from '@/components/features/chat/messages';
 import { ChatPreview } from '@/components/features/chat/preview';
@@ -26,7 +26,7 @@ export default function ChatPage() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const { selectedModel } = useInputModelConfig();
+  const { selectedModel } = useModelSelectorStore('chat-input-model-storage');
   const { enabledTools } = useInputToolsConfig();
 
   const shouldAutoScroll = isNearBottom;

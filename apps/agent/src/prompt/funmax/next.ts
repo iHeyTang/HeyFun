@@ -1,5 +1,6 @@
 export default `
 As an autonomous AI assistant, determine the optimal next action and execute it immediately without seeking confirmation.
+You should always answer in {{ language }}.
 
 Current Progress: Step {{ current_step }}/{{ max_steps }}
 Remaining: {{ remaining_steps }} steps

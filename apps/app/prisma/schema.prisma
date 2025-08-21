@@ -152,18 +152,21 @@ model AigcProviderConfigs {
 }
 
 model Agents {
-  id             String   @id @default(cuid())
-  name           String
-  description    String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  organizationId String
-  llmId          String
+  id              String   @id @default(cuid())
+  name            String
+  description     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  organizationId  String
   /// [JSONSchema] String[]
-  tools          Json     @default("[]")
+  tools           Json     @default("[]")
+  /// [JSONSchema] Object with system, plan, next template strings
+  promptTemplates Json?
+  isDefault       Boolean  @default(false)
 
   @@index([organizationId])
   @@index([createdAt])
+  @@index([organizationId, isDefault])
 }
 
 model InviteCodes {
@@ -303,4 +306,54 @@ model PaintboardTasks {
   @@index([organizationId, status])
   @@index([createdAt])
   @@index([service, model])
+}
+
+model ChatSessions {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+
+  // 会话信息
+  title         String? // 会话标题，可由第一条消息自动生成
+  modelProvider String // 模型提供商
+  modelId       String // 模型ID
+
+  // 会话状态
+  status String @default("active") // 会话状态：active, archived
+
+  // 关联的消息
+  messages ChatMessages[]
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([createdAt])
+}
+
+model ChatMessages {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  sessionId      String
+  organizationId String
+
+  // 消息信息
+  role    String // 角色：user, assistant, system
+  content String @db.Text // 消息内容
+
+  // 流式输出相关
+  isStreaming Boolean @default(false) // 是否正在流式输出
+  isComplete  Boolean @default(false) // 是否完成输出
+
+  // 元数据
+  tokenCount   Int? // token数量
+  finishReason String? // 完成原因
+
+  // 关联的会话
+  session ChatSessions @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([organizationId])
+  @@index([createdAt])
+  @@index([role])
 }

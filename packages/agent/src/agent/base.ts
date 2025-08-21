@@ -71,7 +71,7 @@ export abstract class BaseAgent {
     this.task_id = config.task_id;
     this.state = config.state ?? AgentState.IDLE;
     this.should_terminate = config.should_terminate ?? false;
-    this.max_steps = config.max_steps ?? 10;
+    this.max_steps = config.max_steps ?? 100;
     this.current_step = config.current_step ?? 0;
     this.duplicate_threshold = config.duplicate_threshold ?? 2;
     this.enable_event_queue = config.enable_event_queue ?? true;

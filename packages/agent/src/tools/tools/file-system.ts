@@ -4,7 +4,19 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 interface ToolParameters extends BaseToolParameters {
-  operation: 'read' | 'write' | 'delete' | 'create_directory' | 'list' | 'exists' | 'copy' | 'move' | 'read_binary' | 'write_binary' | 'get_info';
+  operation:
+    | 'read'
+    | 'write'
+    | 'delete'
+    | 'create_directory'
+    | 'list'
+    | 'exists'
+    | 'copy'
+    | 'move'
+    | 'read_binary'
+    | 'write_binary'
+    | 'get_info'
+    | 'pwd';
   path: string;
   content?: string;
   encoding?: string;
@@ -45,6 +57,8 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
           return await this.writeBinaryFile(input.path, input.binary_data!);
         case 'get_info':
           return await this.getFileInfo(input.path);
+        case 'pwd':
+          return await this.getCurrentDirectory();
         default:
           return {
             content: [{ type: 'text', text: `Error: Unknown operation '${input.operation}'` }],
@@ -312,6 +326,21 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
+  private async getCurrentDirectory(): Promise<ToolResult> {
+    try {
+      const currentDir = process.cwd();
+      return {
+        content: [{ type: 'text', text: `Current working directory: ${currentDir}` }],
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        content: [{ type: 'text', text: `Error getting current directory: ${errorMessage}` }],
+        error: errorMessage,
+      };
+    }
+  }
+
   private async getFileInfo(filePath: string): Promise<ToolResult> {
     try {
       const stats = await fs.stat(filePath);
@@ -348,7 +377,7 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
       properties: {
         operation: {
           type: 'string',
-          enum: ['read', 'write', 'delete', 'create_directory', 'list', 'exists', 'copy', 'move', 'read_binary', 'write_binary', 'get_info'],
+          enum: ['read', 'write', 'delete', 'create_directory', 'list', 'exists', 'copy', 'move', 'read_binary', 'write_binary', 'get_info', 'pwd'],
           description: 'The file system operation to perform',
         },
         path: {

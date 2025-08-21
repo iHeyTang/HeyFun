@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/server/auth';
-import path from 'path';
-import fs from 'fs';
+import { auth } from '@/lib/server/auth';
 import { prisma } from '@/lib/server/prisma';
-import crypto from 'crypto';
 import sandboxManager from '@/lib/server/sandbox';
+import crypto from 'crypto';
+import { headers } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
+import path from 'path';
 
 /**
  * This route is used to serve assets for a task.
@@ -16,13 +16,13 @@ import sandboxManager from '@/lib/server/sandbox';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
   try {
     const { path: pathSegments = [] } = await params;
-    const user = await verifyToken();
-    if (!user) {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const organizationUser = await prisma.organizationUsers.findFirst({
-      where: { userId: user.id },
+      where: { userId: session.user.id },
       select: { organizationId: true },
     });
     if (!organizationUser) {

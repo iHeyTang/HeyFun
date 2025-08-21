@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tasks } from '@prisma/client';
-import { LogOutIcon, MessageSquare, Palette, SettingsIcon } from 'lucide-react';
+import { LogOutIcon, MessageSquare, Palette, SettingsIcon, MessageCircle, Bot } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { create } from 'zustand';
@@ -18,6 +18,11 @@ import logo from '@/assets/logo.png';
 const navItems = [
   {
     icon: MessageSquare,
+    label: 'Chat',
+    path: '/chat',
+  },
+  {
+    icon: Bot,
     label: 'Tasks',
     path: '/tasks',
   },

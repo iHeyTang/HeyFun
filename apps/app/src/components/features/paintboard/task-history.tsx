@@ -7,6 +7,7 @@ import { getImageUrl } from '@/lib/browser/image';
 import { formatDate } from 'date-fns';
 import { Check, Clock, Copy, Download } from 'lucide-react';
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import { MediaPreview } from './media-preview';
 
 // Check if file is video
 const isVideoFile = (filename: string): boolean => {
@@ -252,19 +253,23 @@ function ResultCard({ result, onDownload }: ResultCardProps) {
 
   if (isVideo) {
     return (
-      <div className="h-48 overflow-hidden rounded-lg bg-gray-100">
-        <video src={result.url} controls className="h-full w-full object-contain">
-          Your browser does not support the video tag.
-        </video>
-      </div>
+      <MediaPreview src={result.url} alt={result.filename} type="video" filename={result.filename} onDownload={onDownload}>
+        <div className="h-48 overflow-hidden rounded-lg bg-black">
+          <video src={result.url} controls className="h-full w-full object-contain">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </MediaPreview>
     );
   }
 
   if (isImage) {
     return (
-      <div className="h-48 overflow-hidden rounded-lg bg-gray-100">
-        <img src={getImageUrl(result.localPath)} alt={result.filename} className="h-full object-contain" />
-      </div>
+      <MediaPreview src={getImageUrl(result.localPath)} alt={result.filename} type="image" filename={result.filename} onDownload={onDownload}>
+        <div className="h-48 overflow-hidden rounded-lg bg-black">
+          <img src={getImageUrl(result.localPath)} alt={result.filename} className="h-full w-full object-contain" />
+        </div>
+      </MediaPreview>
     );
   }
 

@@ -1,20 +1,11 @@
 import { betterAuth } from 'better-auth';
 import { Pool } from 'pg';
 import { nextCookies } from 'better-auth/next-js';
-import { headers } from 'next/headers';
 
 export interface AuthUser {
   id: string;
   email: string;
   name?: string;
-}
-
-export async function verifyToken(): Promise<AuthUser> {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) {
-    throw new Error('Invalid token');
-  }
-  return session.user;
 }
 
 export const auth = betterAuth({

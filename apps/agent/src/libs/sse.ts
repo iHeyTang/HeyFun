@@ -79,7 +79,7 @@ class SSERuntime {
       controller.enqueue(
         new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`)
       );
-      console.log(`[SSE ${taskId}] Event sent:`, event.name);
+      console.debug(`[SSE ${taskId}] Event sent:`, event.name);
       return true;
     } catch (error) {
       console.error(`[SSE ${taskId}] Failed to send event:`, error);

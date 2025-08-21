@@ -28,6 +28,12 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             {t('aigc')}
           </Link>
           <Link
+            href="/settings/agents"
+            className={cn('hover:bg-muted cursor-pointer p-2 text-sm transition-colors', pathname.startsWith('/settings/agents') && 'bg-muted')}
+          >
+            {t('agents')}
+          </Link>
+          <Link
             href="/settings/preferences"
             className={cn('hover:bg-muted cursor-pointer p-2 text-sm transition-colors', pathname === '/settings/preferences' && 'bg-muted')}
           >

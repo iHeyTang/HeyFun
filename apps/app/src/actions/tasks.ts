@@ -40,6 +40,7 @@ export const pageTasks = withUserAuth(async ({ organization, args }: AuthWrapper
 
 type CreateTaskArgs = {
   taskId?: string;
+  agentId?: string;
   modelProvider: string;
   modelId: string;
   prompt: string;
@@ -48,7 +49,7 @@ type CreateTaskArgs = {
   shouldPlan: boolean;
 };
 export const createTask = withUserAuth(async ({ organization, args }: AuthWrapperContext<CreateTaskArgs>) => {
-  const { taskId, modelProvider, modelId, prompt, toolIds, files, shouldPlan } = args;
+  const { taskId, agentId, modelProvider, modelId, prompt, toolIds, files, shouldPlan } = args;
   const crpytedProviderConfig = await prisma.modelProviderConfigs.findFirst({ where: { provider: modelProvider, organizationId: organization.id } });
   if (!crpytedProviderConfig) throw new Error('Model provider not found');
   const providerConfig = crpytedProviderConfig.config ? JSON.parse(decryptTextWithPrivateKey(crpytedProviderConfig.config, privateKey)) : {};
@@ -58,14 +59,34 @@ export const createTask = withUserAuth(async ({ organization, args }: AuthWrappe
     where: { organizationId: organization.id },
   });
 
+  // Get agent configuration if agentId is provided
+  let agent = null;
+  let finalToolIds = toolIds;
+  let promptTemplates = undefined;
+
+  if (agentId) {
+    agent = await prisma.agents.findUnique({
+      where: { id: agentId, organizationId: organization.id },
+    });
+    if (!agent) throw new Error('Agent not found');
+
+    // Use agent's tools if no tools specified
+    if (toolIds.length === 0 && agent.tools) {
+      finalToolIds = agent.tools as string[];
+    }
+
+    // Use agent's prompt templates
+    promptTemplates = agent.promptTemplates;
+  }
+
   // Query tool configurations
   const agentTools = await prisma.agentTools.findMany({
-    where: { organizationId: organization.id, id: { in: toolIds } },
+    where: { organizationId: organization.id, id: { in: finalToolIds } },
     include: { schema: true },
   });
 
   // Build tool list, use configuration if available, otherwise use tool name
-  const processedTools = toolIds.map(tool => {
+  const processedTools = finalToolIds.map(tool => {
     const agentTool = agentTools.find(at => at.id === tool);
     if (agentTool) {
       if (agentTool.source === 'STANDARD' && agentTool.schema) {
@@ -107,10 +128,10 @@ export const createTask = withUserAuth(async ({ organization, args }: AuthWrappe
   });
 
   // Create task or restart task
-  const { task, history } = await createOrFetchTask(organization.id, { taskId, prompt, llmId: modelId, tools: toolIds });
+  const { task, history } = await createOrFetchTask(organization.id, { taskId, prompt, llmId: modelId, tools: finalToolIds });
 
   const body: FunMaxConfig = {
-    name: 'FunMax',
+    name: agent?.name || 'FunMax',
     task_id: `${organization.id}/${task.id}`,
     task_request: prompt,
     language: preferences?.language || 'en',
@@ -124,6 +145,7 @@ export const createTask = withUserAuth(async ({ organization, args }: AuthWrappe
     should_plan: shouldPlan,
     tools: processedTools.filter(tool => tool !== undefined) as ToolConfig[],
     history: history as Chat.ChatCompletionMessageParam[],
+    promptTemplates: promptTemplates,
   };
 
   const sandbox = await sandboxManager.create({ user: organization.id });
