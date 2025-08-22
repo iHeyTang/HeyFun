@@ -13,7 +13,7 @@ import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
 import fs from 'fs';
 
 // 任务状态枚举
-export enum PaintboardTaskStatus {
+enum PaintboardTaskStatus {
   PENDING = 'pending',
   PROCESSING = 'processing',
   COMPLETED = 'completed',
@@ -21,7 +21,7 @@ export enum PaintboardTaskStatus {
 }
 
 // 结果项类型
-export interface PaintboardResult {
+interface PaintboardResult {
   id: string;
   url: string;
   localPath: string;

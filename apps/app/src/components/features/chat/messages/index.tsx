@@ -227,11 +227,7 @@ const LifecycleMessage = ({ message }: { message: AggregatedMessage }) => {
 
 const ChatMessage = ({ message }: { message: AggregatedMessage }) => {
   if (!message.type?.startsWith('agent:lifecycle')) {
-    return (
-      <div className="container mx-auto max-w-4xl">
-        <Markdown>{message.content}</Markdown>
-      </div>
-    );
+    return <Markdown>{message.content}</Markdown>;
   }
 
   return <LifecycleMessage message={message} />;
@@ -239,7 +235,7 @@ const ChatMessage = ({ message }: { message: AggregatedMessage }) => {
 
 export const ChatMessages = ({ messages = [] }: ChatMessageProps) => {
   return (
-    <div className="space-y-4">
+    <div className="h-full space-y-4 overflow-y-auto">
       {messages.map((message, index) => (
         <div key={message.index || index} className="first:pt-0">
           <ChatMessage message={message} />

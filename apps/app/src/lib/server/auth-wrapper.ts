@@ -1,10 +1,8 @@
-import { Organizations } from '@prisma/client';
-import { headers } from 'next/headers';
-import { auth, AuthUser } from './auth';
-import { prisma } from './prisma';
+import { AuthUser } from './clerk-auth';
 import { to } from '../shared/to';
+import { auth, clerkClient, Organization } from '@clerk/nextjs/server';
 
-export type AuthWrapperContext<T> = { user: AuthUser; organization: Organizations; args: T };
+export type AuthWrapperContext<T> = { user: AuthUser; organization: Organization; args: T };
 
 export type AuthWrapped<T, R> = (ctx: AuthWrapperContext<T>) => Promise<R>;
 
@@ -20,24 +18,21 @@ export type AuthWrapper<T, R> = (fn: AuthWrapped<T, R>) => AuthAction<T, R>;
  */
 export function withUserAuth<T = unknown, R = unknown>(fn: AuthWrapped<T, R>): AuthAction<T, R> {
   return async (args: T) => {
-    try {
-    } catch (error) {
-      console.error('Authentication error:', error);
-      throw new Error('Authentication failed');
-    }
-
     const [error, result] = await to(
       (async () => {
-        const session = await auth.api.getSession({
-          headers: await headers(),
-        });
-        if (!session) {
+        const { userId, orgId } = await auth();
+        if (!userId) {
           throw new Error('Unauthorized access');
         }
-
-        const organization = await prisma.organizations.findFirst({
-          where: { ownerId: session.user.id, personal: true },
-        });
+        if (!orgId) {
+          throw new Error('OrganizationId not found');
+        }
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        if (!user) {
+          throw new Error('Unauthorized access');
+        }
+        const organization = await clerk.organizations.getOrganization({ organizationId: orgId });
 
         if (!organization) {
           throw new Error('Organization not found');
@@ -45,9 +40,9 @@ export function withUserAuth<T = unknown, R = unknown>(fn: AuthWrapped<T, R>): A
 
         return {
           user: {
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.name,
+            id: user.id,
+            email: user.emailAddresses[0]?.emailAddress || '',
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || undefined,
           },
           organization,
         };
@@ -55,10 +50,14 @@ export function withUserAuth<T = unknown, R = unknown>(fn: AuthWrapped<T, R>): A
     );
 
     if (error) {
-      throw new Error('Authentication failed: ' + error.message);
+      return { data: undefined, error: error.message };
     }
 
-    const res = await fn({ user: result.user, organization: result.organization, args });
-    return { data: res, error: undefined };
+    try {
+      const res = await fn({ user: result.user, organization: result.organization, args });
+      return { data: res, error: undefined };
+    } catch (error) {
+      return { data: undefined, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
   };
 }

@@ -124,30 +124,28 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex h-screen w-full flex-row justify-between">
-      <div className="flex-1">
-        <div className="relative flex h-screen flex-col">
-          <div
-            ref={messagesContainerRef}
-            className="flex-3/5 space-y-4 overflow-y-auto p-4 pb-60"
-            style={{
-              scrollBehavior: 'smooth',
-              overscrollBehavior: 'contain',
-            }}
-            onScroll={handleScroll}
-          >
-            <ChatMessages messages={aggregateMessages(messages)} />
-          </div>
-          <ChatInput
-            status={isThinking ? 'thinking' : isTerminating ? 'terminating' : 'completed'}
-            onSubmit={handleSubmit}
-            onTerminate={async () => {
-              await terminateTask({ taskId });
-              router.refresh();
-            }}
-            taskId={taskId}
-          />
+    <div className="flex h-full w-full flex-row justify-between">
+      <div className="flex h-full flex-1 flex-col">
+        <div
+          ref={messagesContainerRef}
+          className="h-[calc(100vh-250px)] space-y-4 p-4 pb-0"
+          style={{
+            scrollBehavior: 'smooth',
+            overscrollBehavior: 'contain',
+          }}
+          onScroll={handleScroll}
+        >
+          <ChatMessages messages={aggregateMessages(messages)} />
         </div>
+        <ChatInput
+          status={isThinking ? 'thinking' : isTerminating ? 'terminating' : 'completed'}
+          onSubmit={handleSubmit}
+          onTerminate={async () => {
+            await terminateTask({ taskId });
+            router.refresh();
+          }}
+          taskId={taskId}
+        />
       </div>
       <div className="min-w-[400px] flex-1 items-center justify-center p-2">
         <ChatPreview taskId={taskId} messages={messages} />

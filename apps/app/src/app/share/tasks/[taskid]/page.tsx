@@ -123,9 +123,9 @@ export default function ChatSharePage() {
   }, []);
 
   return (
-    <div className="flex h-screen w-full flex-row justify-between">
+    <div className="flex h-full w-full flex-row justify-between">
       <div className="flex-1">
-        <div className="relative flex h-screen flex-col">
+        <div className="relative flex h-full flex-col">
           <div
             ref={messagesContainerRef}
             className="flex-3/5 space-y-4 overflow-y-auto p-4 pb-60"

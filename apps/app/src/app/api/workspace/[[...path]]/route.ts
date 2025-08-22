@@ -1,8 +1,7 @@
-import { auth } from '@/lib/server/auth';
+import { getCurrentUser } from '@/lib/server/clerk-auth';
 import { prisma } from '@/lib/server/prisma';
 import sandboxManager from '@/lib/server/sandbox';
 import crypto from 'crypto';
-import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 
@@ -16,13 +15,13 @@ import path from 'path';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
   try {
     const { path: pathSegments = [] } = await params;
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const organizationUser = await prisma.organizationUsers.findFirst({
-      where: { userId: session.user.id },
+      where: { userId: user.id },
       select: { organizationId: true },
     });
     if (!organizationUser) {

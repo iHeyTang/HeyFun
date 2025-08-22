@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/server/auth';
+import { getCurrentUser } from '@/lib/server/clerk-auth';
 import { prisma } from '@/lib/server/prisma';
-import { headers } from 'next/headers';
 import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
 import { LLMClient } from '@repo/llm/chat';
 import fs from 'fs';
@@ -138,8 +137,8 @@ async function getAIResponse({ organizationId, sessionId, messageId }: { organiz
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
@@ -152,7 +151,7 @@ export async function POST(req: NextRequest) {
 
     // 获取用户组织信息
     const orgUser = await prisma.organizationUsers.findFirst({
-      where: { userId: session.user.id },
+      where: { userId: user.id },
     });
 
     if (!orgUser) {
