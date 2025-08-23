@@ -237,7 +237,7 @@ export class DaytonaSandboxManager extends BaseSandboxManager {
 
   async create(params: { user: string }): Promise<SandboxRunner> {
     const sandbox = await this.daytona.create({
-      snapshot: 'iheytang/heyfun-agent:dev-12',
+      snapshot: process.env.DAYTONA_SANDBOX_SNAPSHOT,
       user: 'daytona',
       labels: { name: 'Default Sandbox' },
     });
