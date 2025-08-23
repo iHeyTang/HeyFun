@@ -1,7 +1,7 @@
 import { installTool } from '@/actions/tools';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ToolSchemas } from '@prisma/client';
@@ -79,7 +79,10 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
                     name={key}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{value.title || key}</FormLabel>
+                        <FormLabel>
+                          {value.title || key}
+                          {value.description && <FormDescription>{value.description}</FormDescription>}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             type={value.type === 'number' ? 'number' : 'text'}

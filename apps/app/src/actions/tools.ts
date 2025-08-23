@@ -2,6 +2,7 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { encryptTextWithPublicKey } from '@/lib/server/crypto';
 import { prisma } from '@/lib/server/prisma';
+import { readmeFetcher } from '@/lib/server/readme-fetcher';
 import { to } from '@/lib/shared/to';
 import { mcpServerSchema } from '@/lib/shared/tools';
 import Ajv from 'ajv';
@@ -137,3 +138,55 @@ export const registerTool = withUserAuth(
     throw new Error('Deprecated');
   },
 );
+
+export const refreshToolMetadata = withUserAuth(async ({ args }: AuthWrapperContext<{ toolId: string }>) => {
+  const { toolId } = args;
+
+  if (!toolId) {
+    throw new Error('Tool ID is required');
+  }
+
+  // Fetch the tool to ensure it exists
+  const tool = await prisma.toolSchemas.findUnique({
+    where: { id: toolId },
+  });
+
+  if (!tool) {
+    throw new Error('Tool not found');
+  }
+
+  let metadata;
+
+  if (tool.repoUrl?.includes('github.com')) {
+    metadata = await readmeFetcher.fetchGitHubMetadata(tool.repoUrl);
+  } else if (tool.repoUrl?.includes('npmjs.com')) {
+    metadata = await readmeFetcher.fetchNpmMetadata(tool.repoUrl);
+  } else {
+    throw new Error('Unsupported URL type. Only GitHub and npm URLs are supported.');
+  }
+
+  // Update the tool with fetched metadata
+  const updatedTool = await prisma.toolSchemas.update({
+    where: { id: toolId },
+    data: {
+      readme: metadata.readme,
+      logoUrl: metadata.logoUrl,
+      sourceUrl: metadata.stars ? tool.repoUrl : undefined, // Use original URL as source
+      author: metadata.author,
+      version: metadata.version,
+      license: metadata.license,
+      category: metadata.category,
+      tags: metadata.tags || [],
+      capabilities: metadata.capabilities || [],
+      downloads: metadata.downloads,
+      stars: metadata.stars,
+      lastUpdated: metadata.lastUpdated,
+      metadata: {
+        fetchedAt: new Date(),
+        source: tool.repoUrl?.includes('github.com') ? 'github' : 'npm',
+      },
+    },
+  });
+
+  return updatedTool;
+});

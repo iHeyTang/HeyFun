@@ -86,13 +86,22 @@ export function AppSidebar() {
       </div>
 
       <div className="flex flex-col items-center justify-center gap-4 p-4">
-        {bottomNavItems.map(item => (
-          <Link href={item.path}>
-            <Button size="icon" className="h-8 w-8" variant={pathname.startsWith(item.path) ? 'default' : 'ghost'}>
-              <item.icon className="h-4 w-4" />
-            </Button>
-          </Link>
-        ))}
+        <TooltipProvider>
+          {bottomNavItems.map(item => (
+            <Tooltip key={item.path}>
+              <TooltipTrigger asChild>
+                <Link key={item.path} href={item.path}>
+                  <Button size="icon" className="h-8 w-8" variant={pathname.startsWith(item.path) ? 'default' : 'ghost'}>
+                    <item.icon className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{item.label}</p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </TooltipProvider>
       </div>
     </div>
   );

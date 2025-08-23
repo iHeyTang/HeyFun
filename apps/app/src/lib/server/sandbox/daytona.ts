@@ -381,8 +381,11 @@ export class DaytonaSandboxManager extends BaseSandboxManager {
 
   async getOrCreateOneById(id: string): Promise<SandboxRunner> {
     try {
-      const existingSandbox = await this.findOneById(id);
-      return existingSandbox;
+      const sandbox = await this.daytona.findOne({ labels: { id } });
+      if (sandbox.state !== SandboxState.STARTED) {
+        await this.daytona.start(sandbox);
+      }
+      return new DaytonaSandboxRunner(id, sandbox);
     } catch (error) {
       console.error(error instanceof Error ? error.message : error);
       if (error instanceof Error && error.message.includes('No sandbox found with labels')) {

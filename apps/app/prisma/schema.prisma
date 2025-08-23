@@ -222,10 +222,29 @@ model ToolSchemas {
   /// [JSONSchema] HeadersSchema for sse
   headersSchema Json     @default("{}")
 
+  // Enhanced fields for richer display
+  logoUrl      String? // Logo/icon URL
+  sourceUrl    String? // Source/homepage URL (GitHub, npm, etc.)
+  author       String? // Tool author/maintainer
+  version      String? // Current version
+  license      String? // License type
+  category     String? // Tool category (e.g., "development", "productivity", "ai")
+  tags         Json      @default("[]") // [StringList] Tags for categorization
+  /// [JSONSchema] Capabilities/tools provided by this MCP server
+  capabilities Json      @default("[]")
+  downloads    Int? // Download count if available
+  stars        Int? // GitHub stars or similar rating
+  lastUpdated  DateTime? // Last update from source
+  readme       String?   @db.Text // Cached README content
+  /// [JSONSchema] Additional metadata
+  metadata     Json      @default("{}")
+
   AgentTools AgentTools[]
 
   @@index([name])
   @@index([createdAt])
+  @@index([category])
+  @@index([author])
 }
 
 model PaintboardTasks {
