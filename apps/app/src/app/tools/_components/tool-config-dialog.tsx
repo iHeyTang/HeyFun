@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Tools } from '@prisma/client';
+import { ToolSchemas } from '@prisma/client';
 import { JSONSchema } from 'json-schema-to-ts';
 import { forwardRef, useImperativeHandle, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -16,12 +16,12 @@ interface ToolConfigDialogProps {
 }
 
 export interface ToolConfigDialogRef {
-  showConfig: (tool: Tools) => void;
+  showConfig: (tool: ToolSchemas) => void;
 }
 
 export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialogProps>(({ onSuccess }, ref) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [tool, setTool] = useState<Tools>();
+  const [tool, setTool] = useState<ToolSchemas>();
   const [open, setOpen] = useState(false);
 
   useImperativeHandle(ref, () => ({
@@ -138,7 +138,7 @@ const generateZodSchema = (schema: Exclude<JSONSchema, boolean>) => {
   return z.object(zodSchema);
 };
 
-const generateDefaultValues = (schema?: Tools['envSchema']) => {
+const generateDefaultValues = (schema?: ToolSchemas['envSchema']) => {
   const defaultValues: Record<string, any> = {};
   if (!schema?.properties) {
     return defaultValues;

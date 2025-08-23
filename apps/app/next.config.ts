@@ -28,7 +28,12 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/',
-        destination: '/tasks',
+        destination: '/chat',
+        permanent: true,
+      },
+      {
+        source: '/settings',
+        destination: '/settings/llm',
         permanent: true,
       },
       {

@@ -4,13 +4,10 @@ import { pageTasks } from '@/actions/tasks';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tasks } from '@prisma/client';
-import { MessageSquare, Palette, SettingsIcon, Bot, FolderOpen } from 'lucide-react';
+import { MessageSquare, Palette, SettingsIcon, Bot, FolderOpen, BoxIcon } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { create } from 'zustand';
 import Link from 'next/link';
-import Image from 'next/image';
-import logo from '@/assets/logo.png';
-import { SignedIn, UserButton, SignedOut, SignUpButton, SignInButton } from '@clerk/nextjs';
 
 const navItems = [
   {
@@ -32,6 +29,19 @@ const navItems = [
     icon: FolderOpen,
     label: 'Workspace',
     path: '/workspace',
+  },
+];
+
+const bottomNavItems = [
+  {
+    icon: BoxIcon,
+    label: 'Tools',
+    path: '/tools',
+  },
+  {
+    icon: SettingsIcon,
+    label: 'Settings',
+    path: '/settings',
   },
 ];
 
@@ -76,11 +86,13 @@ export function AppSidebar() {
       </div>
 
       <div className="flex flex-col items-center justify-center gap-4 p-4">
-        <Link href="/settings/llm">
-          <Button size="icon" className="h-10 w-10" variant={pathname.startsWith('/settings') ? 'default' : 'ghost'}>
-            <SettingsIcon className="h-4 w-4" />
-          </Button>
-        </Link>
+        {bottomNavItems.map(item => (
+          <Link href={item.path}>
+            <Button size="icon" className="h-8 w-8" variant={pathname.startsWith(item.path) ? 'default' : 'ghost'}>
+              <item.icon className="h-4 w-4" />
+            </Button>
+          </Link>
+        ))}
       </div>
     </div>
   );

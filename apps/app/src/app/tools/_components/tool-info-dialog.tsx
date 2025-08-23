@@ -1,12 +1,12 @@
 import { Markdown } from '@/components/block/markdown/markdown';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tools } from '@prisma/client';
+import { ToolSchemas } from '@prisma/client';
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { ToolConfigDialog, ToolConfigDialogRef } from './tool-config-dialog';
 
 export interface ToolInfoDialogRef {
-  showInfo: (tool: Tools) => void;
+  showInfo: (tool: ToolSchemas) => void;
 }
 
 interface ToolInfoDialogProps {
@@ -15,10 +15,10 @@ interface ToolInfoDialogProps {
 
 export const ToolInfoDialog = forwardRef<ToolInfoDialogRef, ToolInfoDialogProps>((props, ref) => {
   const [open, setOpen] = useState(false);
-  const [tool, setTool] = useState<Tools>();
+  const [tool, setTool] = useState<ToolSchemas>();
   const toolConfigDialogRef = useRef<ToolConfigDialogRef>(null);
   useImperativeHandle(ref, () => ({
-    showInfo: (tool: Tools) => {
+    showInfo: (tool: ToolSchemas) => {
       setTool(tool);
       setOpen(true);
     },
