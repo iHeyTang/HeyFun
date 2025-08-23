@@ -150,7 +150,6 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
 
   const sandbox = await sandboxManager.create({ user: orgId });
   const outId = await sandbox.agent.createTask(body);
-
   if (!outId) {
     await prisma.tasks.update({ where: { id: task.id }, data: { status: 'failed' } });
     throw new Error('Unkown Error');
@@ -158,7 +157,7 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
 
   await prisma.tasks.update({ where: { id: task.id }, data: { outId, status: 'processing' } });
 
-  // Handle event stream in background
+  // Handle event stream in background - completely detached from current request
   handleTaskEvents(task.id, outId, orgId, sandbox).catch(error => {
     console.error('Failed to handle task events:', error);
   });

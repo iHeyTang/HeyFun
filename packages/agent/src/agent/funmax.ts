@@ -1,4 +1,7 @@
 import { Chat } from '@repo/llm/chat';
+import fs from 'fs/promises';
+import os from 'os';
+import path from 'path';
 import { ToolCallContextHelper } from '../tools/toolcall';
 import type { ToolConfig } from '../tools/types';
 import { createMessage } from '../utils/message';
@@ -68,9 +71,13 @@ export class FunMax extends ReActAgent {
     if (!organization_id || !task_id) {
       throw new Error('Invalid task ID');
     }
+
+    // 设置基础工作空间路径，具体任务目录将在 switchToTaskDirectory 中设置
+    const baseWorkspace = process.env.HEYFUN_AGENT_WORKSPACE || 'workspace';
+
     this.task_context = {
       task_id,
-      task_dir: `workspace`,
+      task_dir: baseWorkspace, // 这里只是基础路径，会在 prepare 中被更新为完整路径
       organization_id,
     };
   }
@@ -80,6 +87,17 @@ export class FunMax extends ReActAgent {
    */
   public async prepare(): Promise<void> {
     await super.prepare();
+    // 获取进程用户信息
+    console.log('👤 Process User Info:');
+    console.log(`   User ID: ${process.getuid ? process.getuid() : 'N/A (Windows)'}`);
+    console.log(`   Group ID: ${process.getgid ? process.getgid() : 'N/A (Windows)'}`);
+    console.log(`   Username: ${os.userInfo().username}`);
+    console.log(`   Home Directory: ${os.homedir()}`);
+    console.log(`   Platform: ${os.platform()}`);
+    console.log(`   Architecture: ${os.arch()}`);
+    console.log(`   Node.js Version: ${process.version}`);
+    console.log(`   Process ID: ${process.pid}`);
+    console.log(`   Current Working Directory: ${process.cwd()}`);
 
     // // 切换到任务工作目录
     await this.switchToTaskDirectory();
@@ -125,19 +143,46 @@ export class FunMax extends ReActAgent {
    */
   private async switchToTaskDirectory(): Promise<void> {
     try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
+      // 获取用户主目录
+      const homeDir = os.homedir();
 
-      // 确保任务目录存在
-      console.log(`📁 Switching to task directory: ${this.task_context.task_dir}`);
-      await fs.mkdir(this.task_context.task_dir, { recursive: true });
+      // 构建绝对路径，避免使用相对路径
+      const workspacePath = process.env.HEYFUN_AGENT_WORKSPACE || 'workspace';
+      const absoluteTaskDir = path.isAbsolute(workspacePath)
+        ? path.join(workspacePath, this.task_context.task_id)
+        : path.join(homeDir, workspacePath, this.task_context.task_id);
+
+      // 更新任务目录为绝对路径
+      this.task_context.task_dir = absoluteTaskDir;
+
+      console.log('📁 Current dir', process.cwd());
+      console.log(`📁 Target task directory: ${this.task_context.task_dir}`);
+
+      // 检查目录是否存在，如果不存在则创建
+      try {
+        await fs.access(this.task_context.task_dir);
+        console.log('✅ Task directory already exists');
+      } catch {
+        console.log('📁 Creating task directory...');
+        await fs.mkdir(this.task_context.task_dir, { recursive: true });
+        console.log('✅ Task directory created successfully');
+      }
 
       // 切换到任务目录
       process.chdir(this.task_context.task_dir);
-
       console.log(`📁 Switched to task directory: ${this.task_context.task_dir}`);
     } catch (error) {
       console.error(`❌ Failed to switch to task directory: ${error}`);
+
+      // 提供更详细的错误信息
+      if (error instanceof Error) {
+        if (error.message.includes('EACCES')) {
+          console.error('💡 Permission denied. Check if the process has write access to the target directory.');
+        } else if (error.message.includes('ENOENT')) {
+          console.error('💡 Directory not found. Check if the parent directory exists and is accessible.');
+        }
+      }
+
       throw error;
     }
   }

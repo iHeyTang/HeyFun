@@ -11,8 +11,8 @@ function getSandboxManager(type: SandboxManagerType): SandboxManager {
   }
   if (type === 'daytona') {
     return new DaytonaSandboxManager({
-      apiKey: 'dtn_3333e91bf2eaa4d0948114b6760c62542318b5b7a9544fffd7f95e621e54f591',
-      organizationId: '7aca54ca-f8ec-497d-b46b-7a1c7363ec15',
+      apiKey: process.env.DAYTONA_API_KEY,
+      organizationId: process.env.DAYTONA_ORGANIZATION_ID,
     });
   }
   throw new Error(`Unsupported sandbox manager type: ${type}`);

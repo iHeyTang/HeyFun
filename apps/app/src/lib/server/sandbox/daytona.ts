@@ -31,22 +31,20 @@ class DaytonaSandboxProcess extends SandboxProcess {
   async executeLongTermCommand(params: { id: string; command: string; args: string[]; env: Record<string, string> }): Promise<void> {
     const cmd = `${params.command} ${params.args.join(' ')}`;
     await this.sandbox.process.createSession(params.id);
-    const execute = await this.sandbox.process.executeSessionCommand(params.id, { command: cmd });
-    this.sandbox.process.getSessionCommandLogs(params.id, execute.cmdId!, chunk => {
-      console.log(chunk);
-    });
+    await this.sandbox.process.executeSessionCommand(params.id, { command: cmd, runAsync: true });
   }
 }
 
 class DaytonaSandboxAgentProxy extends SandboxAgentProxy {
+  private link: { url: string; legacyProxyUrl?: string; token: string } | null = null;
+
   constructor(private sandbox: Sandbox) {
     super();
   }
 
   async createTask(params: FunMaxConfig): Promise<string> {
-    const link = await this.getAgentLink();
     const [error, response] = await to(
-      fetch(`${link.url}/api/tasks`, {
+      this.request(`/api/tasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,7 +55,7 @@ class DaytonaSandboxAgentProxy extends SandboxAgentProxy {
         if (res.status >= 200 && res.status < 300) {
           return (await res.json()) as Promise<{ taskId: string }>;
         }
-        throw Error(`Server Error: ${JSON.stringify(await res.json())}`);
+        throw Error(`Server Error of ${res.url}: Status Code ${res.status}; Response: ${await res.text()}`);
       }),
     );
 
@@ -69,16 +67,18 @@ class DaytonaSandboxAgentProxy extends SandboxAgentProxy {
   }
 
   async terminateTask(params: { taskId: string }): Promise<void> {
-    const link = await this.getAgentLink();
-    await fetch(`${link.url}/api/tasks/terminate`, {
+    await this.request(`/api/tasks/terminate`, {
       method: 'POST',
       body: JSON.stringify({ task_id: params.taskId }),
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
     });
   }
 
   async getTaskEventStream(params: { taskId: string }, onEvent: (event: SandboxAgentEvent) => Promise<void>): Promise<void> {
-    const link = await this.getAgentLink();
-    const streamResponse = await fetch(`${link.url}/api/tasks/event?taskId=${params.taskId}`);
+    const streamResponse = await this.request(`/api/tasks/event?taskId=${params.taskId}`, { method: 'GET', keepalive: true }, 300000);
     const reader = streamResponse.body?.getReader();
     if (!reader) throw new Error('Failed to get response stream');
 
@@ -121,8 +121,21 @@ class DaytonaSandboxAgentProxy extends SandboxAgentProxy {
   }
 
   private async getAgentLink() {
-    const previewLink = await this.sandbox.getPreviewLink(7200);
+    if (this.link) {
+      return this.link;
+    }
+    const previewLink = await this.sandbox.getPreviewLink(3000);
+    this.link = previewLink;
     return previewLink;
+  }
+
+  private async request(url: string, options: RequestInit, timeout = 30000) {
+    const link = await this.getAgentLink();
+    return fetch(`${link.legacyProxyUrl || link.url}${url}`, {
+      ...options,
+      headers: { ...options.headers, 'x-daytona-preview-token': link.token },
+      signal: AbortSignal.timeout(timeout),
+    });
   }
 }
 
@@ -224,14 +237,15 @@ export class DaytonaSandboxManager extends BaseSandboxManager {
 
   async create(params: { user: string }): Promise<SandboxRunner> {
     const sandbox = await this.daytona.create({
-      snapshot: 'daytona/sandbox:0.4.3',
-      public: true,
-      user: params.user,
+      snapshot: 'iheytang/heyfun-agent:dev-12',
+      user: 'daytona',
       labels: { name: 'Default Sandbox' },
     });
 
     const id = `daytona-${params.user}`;
     const runner = new DaytonaSandboxRunner(id, sandbox);
+    await sandbox.process.createSession('heyfun-agent');
+    await sandbox.process.executeSessionCommand('heyfun-agent', { command: 'node /heyfun/app/apps/agent/server.js', runAsync: true });
     return runner;
   }
 
