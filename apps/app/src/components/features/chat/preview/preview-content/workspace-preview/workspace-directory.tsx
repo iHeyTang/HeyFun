@@ -1,91 +1,39 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronLeftIcon, DownloadIcon, FileIcon, FolderIcon, HomeIcon, LoaderIcon } from 'lucide-react';
+import { FileIcon, FolderIcon } from 'lucide-react';
 import { WorkspaceItem } from './types';
 
 interface WorkspaceDirectoryProps {
   items: WorkspaceItem[];
   currentPath: string;
-  isRootDirectory: boolean;
-  onItemClick: (item: WorkspaceItem) => void;
-  onBackClick: () => void;
-  onDownload: () => void;
-  isDownloading: boolean;
+  onItemClick: (item: string) => void;
 }
 
-export const WorkspaceDirectory = ({
-  items,
-  currentPath,
-  isRootDirectory,
-  onItemClick,
-  onBackClick,
-  onDownload,
-  isDownloading,
-}: WorkspaceDirectoryProps) => {
-  console.log('items', items);
+export const WorkspaceDirectory = ({ items, currentPath, onItemClick }: WorkspaceDirectoryProps) => {
   return (
-    <div className="h-full p-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+    <div className="h-full">
+      {items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <FolderIcon className="text-muted-foreground/40 mb-3 h-12 w-12" />
+          <p className="text-muted-foreground/60 text-sm font-light">暂无文件</p>
+          <p className="text-muted-foreground/40 mt-1 text-xs">目录为空</p>
+        </div>
+      ) : (
+        items.map(item => (
+          <div
+            key={item.name}
+            className="hover:bg-muted/40 flex cursor-pointer items-center justify-between rounded-md p-2"
+            onClick={() => onItemClick(item.name)}
+          >
             <div className="flex items-center gap-2">
-              {isRootDirectory ? (
-                <HomeIcon className="text-muted-foreground h-4 w-4" />
-              ) : (
-                <Button variant="ghost" size="icon" onClick={onBackClick} className="h-6 w-6" title="Return to parent directory">
-                  <ChevronLeftIcon className="h-4 w-4" />
-                </Button>
-              )}
-              <CardTitle className="text-base">Workspace: {currentPath || 'Root Directory'}</CardTitle>
+              {item.isDirectory ? <FolderIcon className="h-4 w-4 text-gray-500" /> : <FileIcon className="h-4 w-4 text-gray-500" />}
+              <span className="text-sm font-medium">{item.name}</span>
             </div>
-            <Button onClick={onDownload} variant="outline" size="sm" disabled={isDownloading} title="Download current directory">
-              {isDownloading ? (
-                <>
-                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                  Downloading...
-                </>
-              ) : (
-                <>
-                  <DownloadIcon className="mr-2 h-4 w-4" />
-                  Download
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-4">
+              <span className="text-muted-foreground text-xs">{formatFileSize(item.size)}</span>
+              <span className="text-muted-foreground text-xs">{new Date(item.modifiedTime).toLocaleDateString()}</span>
+            </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-1">
-            {items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <FolderIcon className="h-12 w-12 text-muted-foreground/40 mb-3" />
-                <p className="text-muted-foreground/60 text-sm font-light">
-                  暂无文件
-                </p>
-                <p className="text-muted-foreground/40 text-xs mt-1">
-                  目录为空
-                </p>
-              </div>
-            ) : (
-              items.map(item => (
-                <div
-                  key={item.name}
-                  className="hover:bg-muted/40 flex cursor-pointer items-center justify-between rounded-md p-2"
-                  onClick={() => onItemClick(item)}
-                >
-                  <div className="flex items-center gap-2">
-                    {item.isDirectory ? <FolderIcon className="h-4 w-4 text-gray-500" /> : <FileIcon className="h-4 w-4 text-gray-500" />}
-                    <span className="text-sm font-medium">{item.name}</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-muted-foreground text-xs">{formatFileSize(item.size)}</span>
-                    <span className="text-muted-foreground text-xs">{new Date(item.modifiedTime).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        ))
+      )}
     </div>
   );
 };

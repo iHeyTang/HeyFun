@@ -1,12 +1,10 @@
 'use client';
 import { listAgentTools, listToolSchemas } from '@/actions/tools';
-import { Sparkles, Plus } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useRef } from 'react';
 import { ToolInfoDialog, ToolInfoDialogRef } from './tool-info-dialog';
 import { ToolRegisterDialog, ToolRegisterDialogRef } from './tool-register-dialog';
 import { useServerAction } from '@/hooks/use-async';
-import { Button } from '@/components/ui/button';
-import { getMe } from '@/actions/me';
 
 export default function MarketplacePage() {
   const { data: allTools = [], refresh: refreshAllTools } = useServerAction(listToolSchemas, {}, { cache: 'all-tools' });
@@ -14,8 +12,6 @@ export default function MarketplacePage() {
 
   const toolInfoDialogRef = useRef<ToolInfoDialogRef>(null);
   const toolRegisterDialogRef = useRef<ToolRegisterDialogRef>(null);
-
-  const { data: me } = useServerAction(getMe, {});
 
   const handleConfigSuccess = () => {
     refreshAllTools();
@@ -39,12 +35,6 @@ export default function MarketplacePage() {
           </div>
         </div>
         <p className="text-muted-foreground max-w-2xl text-center">Explore and install powerful tools to enhance your productivity</p>
-        {me?.isRoot && (
-          <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={() => toolRegisterDialogRef.current?.showRegister()}>
-            <Plus className="h-4 w-4" />
-            Register Custom Tool
-          </Button>
-        )}
       </div>
 
       {/* Available Tools Section */}

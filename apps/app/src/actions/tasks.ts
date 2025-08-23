@@ -17,19 +17,19 @@ const AGENT_URL = process.env.AGENT_URL || 'http://localhost:7200';
 
 const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
 
-export const getTask = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ taskId: string }>) => {
+export const getTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ taskId: string }>) => {
   const { taskId } = args;
   const task = await prisma.tasks.findUnique({
-    where: { id: taskId, organizationId: organization.id },
+    where: { id: taskId, organizationId: orgId },
     include: { progresses: { orderBy: { index: 'asc' } } },
   });
   return task;
 });
 
-export const pageTasks = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ page: number; pageSize: number }>) => {
+export const pageTasks = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ page: number; pageSize: number }>) => {
   const { page = 1, pageSize = 10 } = args || {};
   const tasks = await prisma.tasks.findMany({
-    where: { organizationId: organization.id },
+    where: { organizationId: orgId },
     skip: (page - 1) * pageSize,
     take: pageSize,
     orderBy: { createdAt: 'desc' },
@@ -48,15 +48,15 @@ type CreateTaskArgs = {
   files: File[];
   shouldPlan: boolean;
 };
-export const createTask = withUserAuth(async ({ organization, args }: AuthWrapperContext<CreateTaskArgs>) => {
+export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<CreateTaskArgs>) => {
   const { taskId, agentId, modelProvider, modelId, prompt, toolIds, files, shouldPlan } = args;
-  const crpytedProviderConfig = await prisma.modelProviderConfigs.findFirst({ where: { provider: modelProvider, organizationId: organization.id } });
+  const crpytedProviderConfig = await prisma.modelProviderConfigs.findFirst({ where: { provider: modelProvider, organizationId: orgId } });
   if (!crpytedProviderConfig) throw new Error('Model provider not found');
   const providerConfig = crpytedProviderConfig.config ? JSON.parse(decryptTextWithPrivateKey(crpytedProviderConfig.config, privateKey)) : {};
   if (!providerConfig) throw new Error('Model provider config not found');
 
   const preferences = await prisma.preferences.findUnique({
-    where: { organizationId: organization.id },
+    where: { organizationId: orgId },
   });
 
   // Get agent configuration if agentId is provided
@@ -66,7 +66,7 @@ export const createTask = withUserAuth(async ({ organization, args }: AuthWrappe
 
   if (agentId) {
     agent = await prisma.agents.findUnique({
-      where: { id: agentId, organizationId: organization.id },
+      where: { id: agentId, organizationId: orgId },
     });
     if (!agent) throw new Error('Agent not found');
 
@@ -81,7 +81,7 @@ export const createTask = withUserAuth(async ({ organization, args }: AuthWrappe
 
   // Query tool configurations
   const agentTools = await prisma.agentTools.findMany({
-    where: { organizationId: organization.id, id: { in: finalToolIds } },
+    where: { organizationId: orgId, id: { in: finalToolIds } },
     include: { schema: true },
   });
 
@@ -128,11 +128,11 @@ export const createTask = withUserAuth(async ({ organization, args }: AuthWrappe
   });
 
   // Create task or restart task
-  const { task, history } = await createOrFetchTask(organization.id, { taskId, prompt, llmId: modelId, tools: finalToolIds });
+  const { task, history } = await createOrFetchTask(orgId, { taskId, prompt, llmId: modelId, tools: finalToolIds });
 
   const body: FunMaxConfig = {
     name: agent?.name || 'FunMax',
-    task_id: `${organization.id}/${task.id}`,
+    task_id: `${orgId}/${task.id}`,
     task_request: prompt,
     language: preferences?.language || 'en',
     llm: {
@@ -148,7 +148,7 @@ export const createTask = withUserAuth(async ({ organization, args }: AuthWrappe
     promptTemplates: promptTemplates,
   };
 
-  const sandbox = await sandboxManager.create({ user: organization.id });
+  const sandbox = await sandboxManager.create({ user: orgId });
   const outId = await sandbox.agent.createTask(body);
 
   if (!outId) {
@@ -159,17 +159,17 @@ export const createTask = withUserAuth(async ({ organization, args }: AuthWrappe
   await prisma.tasks.update({ where: { id: task.id }, data: { outId, status: 'processing' } });
 
   // Handle event stream in background
-  handleTaskEvents(task.id, outId, organization.id, sandbox).catch(error => {
+  handleTaskEvents(task.id, outId, orgId, sandbox).catch(error => {
     console.error('Failed to handle task events:', error);
   });
 
   return { id: task.id, outId };
 });
 
-export const terminateTask = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ taskId: string }>) => {
+export const terminateTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ taskId: string }>) => {
   const { taskId } = args;
 
-  const task = await prisma.tasks.findUnique({ where: { id: taskId, organizationId: organization.id } });
+  const task = await prisma.tasks.findUnique({ where: { id: taskId, organizationId: orgId } });
   if (!task) throw new Error('Task not found');
   if (task.status !== 'processing' && task.status !== 'terminating') {
     return;
@@ -179,17 +179,17 @@ export const terminateTask = withUserAuth(async ({ organization, args }: AuthWra
     fetch(`${AGENT_URL}/tasks/terminate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ task_id: `${organization.id}/${taskId}` }),
+      body: JSON.stringify({ task_id: `${orgId}/${taskId}` }),
     }),
   );
   if (error && error.message !== 'Task not found') throw new Error('Failed to terminate task');
 
-  await prisma.tasks.update({ where: { id: taskId, organizationId: organization.id }, data: { status: 'terminated' } });
+  await prisma.tasks.update({ where: { id: taskId, organizationId: orgId }, data: { status: 'terminated' } });
 });
 
-export const shareTask = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ taskId: string; expiresAt: number }>) => {
+export const shareTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ taskId: string; expiresAt: number }>) => {
   const { taskId, expiresAt } = args;
-  const task = await prisma.tasks.findUnique({ where: { id: taskId, organizationId: organization.id } });
+  const task = await prisma.tasks.findUnique({ where: { id: taskId, organizationId: orgId } });
   if (!task) throw new Error('Task not found');
   await prisma.tasks.update({ where: { id: taskId }, data: { shareExpiresAt: new Date(expiresAt) } });
 });

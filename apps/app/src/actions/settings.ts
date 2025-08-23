@@ -2,26 +2,26 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
 
-export const getPreferences = withUserAuth(async ({ organization }: AuthWrapperContext<{}>) => {
+export const getPreferences = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
   const preferences = await prisma.preferences.findUnique({
-    where: { organizationId: organization.id },
+    where: { organizationId: orgId },
   });
 
   return preferences;
 });
 
-export const updatePreferences = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ language?: string }>) => {
+export const updatePreferences = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ language?: string }>) => {
   const existingPreferences = await prisma.preferences.findUnique({
-    where: { organizationId: organization.id },
+    where: { organizationId: orgId },
   });
 
   if (!existingPreferences) {
     await prisma.preferences.create({
-      data: { organizationId: organization.id, language: args.language },
+      data: { organizationId: orgId, language: args.language },
     });
   } else {
     await prisma.preferences.update({
-      where: { organizationId: organization.id },
+      where: { organizationId: orgId },
       data: { language: args.language },
     });
   }

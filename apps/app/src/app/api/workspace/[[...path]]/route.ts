@@ -1,5 +1,3 @@
-import { getCurrentUser } from '@/lib/server/clerk-auth';
-import { prisma } from '@/lib/server/prisma';
 import sandboxManager from '@/lib/server/sandbox';
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
@@ -7,28 +5,21 @@ import path from 'path';
 
 /**
  * This route is used to serve assets for a task.
- * such like /workspace/[task_id]/[screenshot.png]
  * @param request
  * @param params
  * @returns
  */
-export async function GET(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
+export async function GET(request: NextRequest, { params, orgId }: { params: Promise<{ path?: string[] }>; orgId: string }) {
   try {
     const { path: pathSegments = [] } = await params;
-    const user = await getCurrentUser();
-    if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    const sandboxes = await sandboxManager.list();
+    let sandbox = sandboxes.find(s => s.id === orgId);
+
+    if (!sandbox) {
+      sandbox = await sandboxManager.create({ user: orgId });
+      await sandboxManager.start(sandbox.id);
     }
 
-    const organizationUser = await prisma.organizationUsers.findFirst({
-      where: { userId: user.id },
-      select: { organizationId: true },
-    });
-    if (!organizationUser) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
-
-    const sandbox = await sandboxManager.findOneById(`daytona-${organizationUser.organizationId}`);
     if (!sandbox) {
       return new NextResponse('Sandbox not found', { status: 404 });
     }

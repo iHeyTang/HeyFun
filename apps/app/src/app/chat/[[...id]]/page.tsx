@@ -45,23 +45,6 @@ export default async function ChatPage({ params }: ChatPageProps) {
       }
     }
 
-    if (availableModels.length === 0) {
-      return (
-        <div className="flex h-full items-center justify-center">
-          <div className="space-y-4 text-center">
-            <h2 className="text-xl font-semibold">No Models Available</h2>
-            <p className="text-muted-foreground">
-              Please configure at least one model provider in{' '}
-              <a href="/settings/llm" className="text-primary hover:underline">
-                Settings
-              </a>
-              .
-            </p>
-          </div>
-        </div>
-      );
-    }
-
     // If sessionId exists, try to fetch the session
     let existingSession = null;
     if (sessionId) {

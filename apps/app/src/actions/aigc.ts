@@ -45,13 +45,13 @@ export const getAigcProviderInfo = withUserAuth(async ({ args }: AuthWrapperCont
 });
 
 // 获取AIGC提供商配置
-export const getAigcProviderConfig = withUserAuth(async ({ args, organization }: AuthWrapperContext<{ provider: string }>) => {
+export const getAigcProviderConfig = withUserAuth(async ({ args, orgId }: AuthWrapperContext<{ provider: string }>) => {
   const { provider } = args;
 
   const config = await prisma.aigcProviderConfigs.findUnique({
     where: {
       organizationId_provider: {
-        organizationId: organization.id,
+        organizationId: orgId,
         provider,
       },
     },
@@ -66,7 +66,7 @@ export const getAigcProviderConfig = withUserAuth(async ({ args, organization }:
 });
 
 // 更新AIGC提供商配置
-export const updateAigcProviderConfig = withUserAuth(async ({ args, organization }: AuthWrapperContext<{ provider: string; config: any }>) => {
+export const updateAigcProviderConfig = withUserAuth(async ({ args, orgId }: AuthWrapperContext<{ provider: string; config: any }>) => {
   const { provider, config } = args;
 
   try {
@@ -75,7 +75,7 @@ export const updateAigcProviderConfig = withUserAuth(async ({ args, organization
     await prisma.aigcProviderConfigs.upsert({
       where: {
         organizationId_provider: {
-          organizationId: organization.id,
+          organizationId: orgId,
           provider,
         },
       },
@@ -83,7 +83,7 @@ export const updateAigcProviderConfig = withUserAuth(async ({ args, organization
         config: encryptedConfig,
       },
       create: {
-        organizationId: organization.id,
+        organizationId: orgId,
         provider,
         config: encryptedConfig,
       },
@@ -97,9 +97,9 @@ export const updateAigcProviderConfig = withUserAuth(async ({ args, organization
 });
 
 // 获取AIGC提供商配置列表
-export const getAigcProviderConfigs = withUserAuth(async ({ organization }: AuthWrapperContext<{}>) => {
+export const getAigcProviderConfigs = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
   const configs = await prisma.aigcProviderConfigs.findMany({
-    where: { organizationId: organization.id },
+    where: { organizationId: orgId },
   });
 
   return configs.map(config => ({
@@ -109,10 +109,10 @@ export const getAigcProviderConfigs = withUserAuth(async ({ organization }: Auth
 });
 
 // 获取AIGC提供商支持的模型
-export const getAigcProviderModels = withUserAuth(async ({ args, organization }: AuthWrapperContext<{ provider: string }>) => {
+export const getAigcProviderModels = withUserAuth(async ({ args, orgId }: AuthWrapperContext<{ provider: string }>) => {
   const { provider } = args;
 
-  const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: organization.id } });
+  const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: orgId } });
   const configMap = aigcProviderConfigSchema.parse(
     configs.reduce(
       (acc, config) => {
@@ -133,11 +133,11 @@ export const getAigcProviderModels = withUserAuth(async ({ args, organization }:
 });
 
 // 测试AIGC提供商连接
-export const testAigcProviderConnection = withUserAuth(async ({ args, organization }: AuthWrapperContext<{ provider: string }>) => {
+export const testAigcProviderConnection = withUserAuth(async ({ args, orgId }: AuthWrapperContext<{ provider: string }>) => {
   const { provider } = args;
 
   try {
-    const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: organization.id } });
+    const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: orgId } });
     const configMap = aigcProviderConfigSchema.parse(
       configs.reduce(
         (acc, config) => {

@@ -6,6 +6,8 @@ import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
+import { useAsync } from '@/hooks/use-async';
+import { LoaderIcon } from 'lucide-react';
 
 const checkJson = (text: string | null) => {
   if (!text) return false;
@@ -18,8 +20,26 @@ const checkJson = (text: string | null) => {
   }
 };
 
-export const Markdown: React.FC<{ children: string | null; className?: string }> = ({ children, className }) => {
-  const isJson = checkJson(children);
+export const Markdown: React.FC<{ src?: string; children?: string | null; className?: string }> = ({ src, children, className }) => {
+  const { data: content, isLoading } = useAsync(
+    async () => {
+      if (src) {
+        const response = await fetch(src);
+        return await response.text();
+      }
+      return children;
+    },
+    [],
+    { deps: [src, children] },
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex h-40 items-center justify-center">
+        <LoaderIcon className="text-primary h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className={cn('markdown-body mt-2 rounded-md bg-transparent p-4', className)}>
@@ -54,7 +74,7 @@ export const Markdown: React.FC<{ children: string | null; className?: string }>
           },
         }}
       >
-        {isJson ? `\`\`\`json\n${children}\n\`\`\`` : children}
+        {content}
       </ReactMarkdown>
     </div>
   );

@@ -4,7 +4,7 @@ import { pageTasks } from '@/actions/tasks';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tasks } from '@prisma/client';
-import { MessageSquare, Palette, SettingsIcon, Bot } from 'lucide-react';
+import { MessageSquare, Palette, SettingsIcon, Bot, FolderOpen } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { create } from 'zustand';
 import Link from 'next/link';
@@ -27,6 +27,11 @@ const navItems = [
     icon: Palette,
     label: 'Paintboard',
     path: '/paintboard',
+  },
+  {
+    icon: FolderOpen,
+    label: 'Workspace',
+    path: '/workspace',
   },
 ];
 

@@ -128,7 +128,7 @@ export default function ChatPage() {
       <div className="flex h-full flex-1 flex-col">
         <div
           ref={messagesContainerRef}
-          className="h-[calc(100vh-250px)] space-y-4 p-4 pb-0"
+          className="h-full space-y-4 overflow-y-auto p-4 pb-0"
           style={{
             scrollBehavior: 'smooth',
             overscrollBehavior: 'contain',
@@ -144,10 +144,9 @@ export default function ChatPage() {
             await terminateTask({ taskId });
             router.refresh();
           }}
-          taskId={taskId}
         />
       </div>
-      <div className="min-w-[400px] flex-1 items-center justify-center p-2">
+      <div className="min-w-[400px] flex-1 overflow-hidden p-2">
         <ChatPreview taskId={taskId} messages={messages} />
       </div>
     </div>

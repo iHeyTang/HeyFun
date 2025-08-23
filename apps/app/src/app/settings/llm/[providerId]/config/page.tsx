@@ -39,6 +39,7 @@ export default function ProviderConfigPanel() {
     isChecking: false,
     isConnected: false,
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     getModelProviderInfo({ provider: providerId }).then(p => {
@@ -101,12 +102,22 @@ export default function ProviderConfigPanel() {
       toast.error(validation.error.message);
       return;
     }
-    await updateModelProviderConfig({ provider: providerId, config: data });
 
-    // Auto test connection after saving
-    setTimeout(() => {
-      testConnection(data);
-    }, 500);
+    try {
+      setIsSaving(true);
+      await updateModelProviderConfig({ provider: providerId, config: data });
+      toast.success('Configuration saved successfully');
+
+      // Auto test connection after saving
+      setTimeout(() => {
+        testConnection(data);
+      }, 500);
+    } catch (error) {
+      toast.error('Failed to save configuration');
+      console.error('Failed to save configuration:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -153,9 +164,9 @@ export default function ProviderConfigPanel() {
                 />
               );
             })}
-            <Button type="submit" variant="secondary">
-              <Save className="mr-2 h-5 w-5" />
-              Save
+            <Button type="submit" variant="secondary" disabled={isSaving}>
+              {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+              {isSaving ? 'Saving...' : 'Save'}
             </Button>
           </form>
         </Form>

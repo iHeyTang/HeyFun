@@ -12,12 +12,12 @@ import { z } from 'zod';
 
 const ajv = new Ajv();
 
-export const listAgentTools = withUserAuth(async ({ organization }: AuthWrapperContext<{}>) => {
+export const listAgentTools = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
   // Get organization custom tools
   const tools = await prisma.agentTools
     .findMany({
       where: {
-        organizationId: organization.id,
+        organizationId: orgId,
       },
       include: { schema: { select: { id: true, name: true, description: true } } },
     })
@@ -38,7 +38,7 @@ export const listAgentTools = withUserAuth(async ({ organization }: AuthWrapperC
   return tools;
 });
 
-export const installTool = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ toolId: string; env: Record<string, string> }>) => {
+export const installTool = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ toolId: string; env: Record<string, string> }>) => {
   const publicKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'public.pem'), 'utf8');
   const { toolId, env } = args;
   const tool = await prisma.toolSchemas.findUnique({
@@ -57,19 +57,19 @@ export const installTool = withUserAuth(async ({ organization, args }: AuthWrapp
   }
 
   const existing = await prisma.agentTools.findUnique({
-    where: { schemaId_organizationId: { schemaId: toolId, organizationId: organization.id } },
+    where: { schemaId_organizationId: { schemaId: toolId, organizationId: orgId } },
   });
 
   if (existing) {
     await prisma.agentTools.update({
-      where: { schemaId_organizationId: { schemaId: toolId, organizationId: organization.id } },
+      where: { schemaId_organizationId: { schemaId: toolId, organizationId: orgId } },
       data: { env: encryptTextWithPublicKey(JSON.stringify(env), publicKey) },
     });
   } else {
     await prisma.agentTools.create({
       data: {
         source: 'STANDARD',
-        organizationId: organization.id,
+        organizationId: orgId,
         schemaId: toolId,
         env: encryptTextWithPublicKey(JSON.stringify(env), publicKey),
       },
@@ -77,7 +77,7 @@ export const installTool = withUserAuth(async ({ organization, args }: AuthWrapp
   }
 });
 
-export const installCustomTool = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ name: string; config: string }>) => {
+export const installCustomTool = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ name: string; config: string }>) => {
   const { name, config } = args;
   const [err, json] = await to<z.infer<typeof mcpServerSchema>>(JSON.parse(config));
   if (err) {
@@ -93,7 +93,7 @@ export const installCustomTool = withUserAuth(async ({ organization, args }: Aut
   await prisma.agentTools.create({
     data: {
       source: 'CUSTOM',
-      organizationId: organization.id,
+      organizationId: orgId,
       name,
       customConfig: encryptTextWithPublicKey(config, publicKey),
     },
@@ -102,10 +102,10 @@ export const installCustomTool = withUserAuth(async ({ organization, args }: Aut
   return { message: 'Tool installed successfully' };
 });
 
-export const removeTool = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ toolId: string }>) => {
+export const removeTool = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ toolId: string }>) => {
   const { toolId } = args;
   const tool = await prisma.agentTools.findFirst({
-    where: { id: toolId, organizationId: organization.id },
+    where: { id: toolId, organizationId: orgId },
   });
 
   if (!tool) {
@@ -113,7 +113,7 @@ export const removeTool = withUserAuth(async ({ organization, args }: AuthWrappe
   }
 
   await prisma.agentTools.delete({
-    where: { id: toolId, organizationId: organization.id },
+    where: { id: toolId, organizationId: orgId },
   });
 
   return { message: 'Tool removed successfully' };
@@ -130,30 +130,10 @@ export const listToolSchemas = withUserAuth(async ({}: AuthWrapperContext<{}>) =
 /**
  * register a new tool
  * only root user can register a new tool
+ * @deprecated
  */
 export const registerTool = withUserAuth(
-  async ({
-    user,
-    args: { name, description, repoUrl, command, args, envSchema },
-  }: AuthWrapperContext<{ name: string; description: string; repoUrl?: string; command: string; args: string[]; envSchema: JSONSchema }>) => {
-    const u = await prisma.users.findUnique({ where: { email: user.email } });
-    if (!u) {
-      throw new Error('User not found');
-    }
-    if (u.email !== process.env.ROOT_USER_EMAIL) {
-      throw new Error('Unauthorized');
-    }
-
-    const tool = await prisma.toolSchemas.findUnique({ where: { name } });
-
-    if (tool) {
-      throw new Error('Tool already exists');
-    }
-
-    await prisma.toolSchemas.create({
-      data: { name, description, repoUrl, command, args, envSchema },
-    });
-
-    return { message: 'Tool registered successfully' };
+  async ({}: AuthWrapperContext<{ name: string; description: string; repoUrl?: string; command: string; args: string[]; envSchema: JSONSchema }>) => {
+    throw new Error('Deprecated');
   },
 );

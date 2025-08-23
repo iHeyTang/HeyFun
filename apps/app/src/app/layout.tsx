@@ -12,6 +12,7 @@ import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import Image from 'next/image';
 import logo from '@/assets/logo.png';
+import { cn } from '@/lib/utils';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -28,9 +29,9 @@ export const metadata: Metadata = {
   description: "Hey! Let's bring a little fun to this world together.",
 };
 
-const Header = () => {
+const Header = ({ className }: { className?: string }) => {
   return (
-    <div className="flex h-12 min-h-12 items-center justify-between overflow-hidden border-b p-2">
+    <div className={cn('flex items-center justify-between overflow-hidden border-b p-2', className)}>
       <div className="flex items-center gap-2">
         <Link href="/">
           <div className="from-primary/20 to-primary/5 ml-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border bg-gradient-to-br">
@@ -65,8 +66,8 @@ export default async function RootLayout({
                   </div>
                 ) : (
                   <div className="flex h-full flex-col">
-                    <Header />
-                    <div className="flex h-full w-full flex-1">
+                    <Header className="h-12" />
+                    <div className="flex h-[calc(100vh-48px)] w-full">
                       <AppSidebar />
                       <div className="h-full flex-1 overflow-hidden">{children}</div>
                     </div>

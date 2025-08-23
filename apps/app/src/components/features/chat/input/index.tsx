@@ -8,26 +8,21 @@ import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/di
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useModelProvider } from '@/hooks/use-llm';
 import { getAgents } from '@/actions/agents';
-import { Check, Circle, Paperclip, PauseCircle, Rocket, Send, Share2, Wrench, X, Bot } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Check, Circle, Paperclip, PauseCircle, Send, Wrench, X, Bot } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { InputToolsConfigDialog, InputToolsConfigDialogRef, useInputToolsConfig } from './config-tools';
-import { ShareDialog, ShareDialogRef } from './share-dialog';
 
 interface ChatInputProps {
   status?: 'idle' | 'thinking' | 'terminating' | 'completed';
   onSubmit?: (value: { prompt: string; files: File[]; shouldPlan: boolean }) => Promise<void>;
   onTerminate?: () => Promise<void>;
-  taskId?: string;
 }
 
-export const ChatInput = ({ status = 'idle', onSubmit, onTerminate, taskId }: ChatInputProps) => {
-  const router = useRouter();
+export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toolsConfigDialogRef = useRef<InputToolsConfigDialogRef>(null);
   const modelSelectorRef = useRef<ModelSelectorRef>(null);
   const agentSelectorRef = useRef<AgentSelectorRef>(null);
-  const shareDialogRef = useRef<ShareDialogRef>(null);
   const [shouldPlan, setShouldPlan] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [availableAgents, setAvailableAgents] = useState<AgentInfo[]>([]);
@@ -83,7 +78,6 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate, taskId }: Ch
         ),
         onConfirm: async () => {
           await onTerminate?.();
-          router.refresh();
         },
         buttonText: {
           cancel: 'Cancel',
@@ -101,11 +95,6 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate, taskId }: Ch
     }
   };
 
-  const handleShareClick = () => {
-    if (!taskId) return;
-    shareDialogRef.current?.open(taskId);
-  };
-
   const getPlaceholder = () => {
     switch (status) {
       case 'thinking':
@@ -120,22 +109,7 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate, taskId }: Ch
   };
 
   const renderHeader = () => {
-    if (status === 'idle') return null;
-
-    return (
-      <div className="flex justify-center gap-2">
-        <Button variant="outline" className="flex cursor-pointer items-center gap-2 rounded-full" type="button" onClick={() => router.push('/tasks')}>
-          <Rocket className="h-4 w-4" />
-          <span>New Task</span>
-        </Button>
-        {taskId && status === 'completed' && (
-          <Button variant="outline" className="flex cursor-pointer items-center gap-2 rounded-full" type="button" onClick={handleShareClick}>
-            <Share2 className="h-4 w-4" />
-            <span>Share</span>
-          </Button>
-        )}
-      </div>
-    );
+    return null;
   };
 
   const renderFooter = ({ message }: { message: string; handleSend: () => void | Promise<void>; disabled: boolean }) => (
@@ -235,7 +209,6 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate, taskId }: Ch
         onAgentSelect={handleAgentSelect}
         storageKey="chat-input-agent-storage"
       />
-      <ShareDialog ref={shareDialogRef} />
     </>
   );
 };

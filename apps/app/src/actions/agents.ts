@@ -43,9 +43,9 @@ type UpdateAgentArgs = {
   isDefault?: boolean;
 };
 
-export const getAgents = withUserAuth(async ({ organization }: AuthWrapperContext<{}>) => {
+export const getAgents = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
   const agents = await prisma.agents.findMany({
-    where: { organizationId: organization.id },
+    where: { organizationId: orgId },
     orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
   });
 
@@ -61,13 +61,13 @@ export const getAgents = withUserAuth(async ({ organization }: AuthWrapperContex
   }));
 });
 
-export const createAgent = withUserAuth(async ({ organization, args }: AuthWrapperContext<CreateAgentArgs>) => {
+export const createAgent = withUserAuth(async ({ orgId, args }: AuthWrapperContext<CreateAgentArgs>) => {
   const { name, description, tools, promptTemplates, isDefault = false } = args;
 
   // If this is set as default, unset all other defaults
   if (isDefault) {
     await prisma.agents.updateMany({
-      where: { organizationId: organization.id, isDefault: true },
+      where: { organizationId: orgId, isDefault: true },
       data: { isDefault: false },
     });
   }
@@ -76,7 +76,7 @@ export const createAgent = withUserAuth(async ({ organization, args }: AuthWrapp
     data: {
       name,
       description,
-      organizationId: organization.id,
+      organizationId: orgId,
       tools: tools,
       promptTemplates: promptTemplates,
       isDefault,
@@ -95,12 +95,12 @@ export const createAgent = withUserAuth(async ({ organization, args }: AuthWrapp
   };
 });
 
-export const updateAgent = withUserAuth(async ({ organization, args }: AuthWrapperContext<UpdateAgentArgs>) => {
+export const updateAgent = withUserAuth(async ({ orgId, args }: AuthWrapperContext<UpdateAgentArgs>) => {
   const { id, name, description, tools, promptTemplates, isDefault = false } = args;
 
   // Verify agent belongs to organization
   const existingAgent = await prisma.agents.findUnique({
-    where: { id, organizationId: organization.id },
+    where: { id, organizationId: orgId },
   });
 
   if (!existingAgent) {
@@ -111,7 +111,7 @@ export const updateAgent = withUserAuth(async ({ organization, args }: AuthWrapp
   if (isDefault) {
     await prisma.agents.updateMany({
       where: {
-        organizationId: organization.id,
+        organizationId: orgId,
         isDefault: true,
         id: { not: id },
       },
@@ -142,12 +142,12 @@ export const updateAgent = withUserAuth(async ({ organization, args }: AuthWrapp
   };
 });
 
-export const deleteAgent = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ id: string }>) => {
+export const deleteAgent = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ id: string }>) => {
   const { id } = args;
 
   // Verify agent belongs to organization and is not default
   const existingAgent = await prisma.agents.findUnique({
-    where: { id, organizationId: organization.id },
+    where: { id, organizationId: orgId },
   });
 
   if (!existingAgent) {
@@ -165,11 +165,11 @@ export const deleteAgent = withUserAuth(async ({ organization, args }: AuthWrapp
   return { success: true };
 });
 
-export const getAgent = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ id: string }>) => {
+export const getAgent = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ id: string }>) => {
   const { id } = args;
 
   const agent = await prisma.agents.findUnique({
-    where: { id, organizationId: organization.id },
+    where: { id, organizationId: orgId },
   });
 
   if (!agent) {

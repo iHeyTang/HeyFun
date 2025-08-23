@@ -235,7 +235,7 @@ const ChatMessage = ({ message }: { message: AggregatedMessage }) => {
 
 export const ChatMessages = ({ messages = [] }: ChatMessageProps) => {
   return (
-    <div className="h-full space-y-4 overflow-y-auto">
+    <div className="h-full space-y-4">
       {messages.map((message, index) => (
         <div key={message.index || index} className="first:pt-0">
           <ChatMessage message={message} />

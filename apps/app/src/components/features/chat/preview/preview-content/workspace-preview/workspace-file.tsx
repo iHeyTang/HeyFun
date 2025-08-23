@@ -1,178 +1,50 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAsync } from '@/hooks/use-async';
-import { ChevronLeftIcon, DownloadIcon, HomeIcon, LoaderIcon } from 'lucide-react';
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
-import { FilePreviewContainer } from './file-preview-container';
-import { FilePreviewPluginManager } from './file-preview-plugin-manager';
-
-const pluginManager = new FilePreviewPluginManager();
-
+import { Markdown } from '@/components/block/markdown/markdown';
+import { Syntax } from '@/components/block/syntax';
 interface WorkspaceFileProps {
-  blob: Blob;
   filePath: string;
-  isRootDirectory: boolean;
-  onBackClick: () => void;
-  onDownload: () => void;
-  isDownloading: boolean;
 }
 
-export const WorkspaceFile = ({
-  blob,
-  filePath,
-  isRootDirectory,
-  onBackClick,
-  onDownload,
-  isDownloading,
-}: WorkspaceFileProps) => {
-  useEffect(() => {
-    const pluginPaths = ['markdown-viewer', 'csv-viewer', 'video-viewer', 'audio-viewer', 'html-viewer'];
-    pluginManager.loadAllPlugins(pluginPaths);
-  }, []);
-
+export const WorkspaceFile = ({ filePath }: WorkspaceFileProps) => {
+  const src = filePath.startsWith('/') ? `/api/workspace${filePath}` : `/api/workspace/${filePath}`;
   return (
-    <div className="h-full overflow-auto p-4">
-      <Card className="h-full">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {isRootDirectory ? (
-                <HomeIcon className="text-muted-foreground h-5 w-5" />
-              ) : (
-                <Button variant="ghost" size="icon" onClick={onBackClick} className="h-6 w-6" title="Return to parent directory">
-                  <ChevronLeftIcon className="h-4 w-4" />
-                </Button>
-              )}
-              <CardTitle className="text-base">File: {filePath}</CardTitle>
-            </div>
-            <Button onClick={onDownload} variant="outline" size="sm" disabled={isDownloading} title="Download file">
-              {isDownloading ? (
-                <>
-                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                  Downloading...
-                </>
-              ) : (
-                <>
-                  <DownloadIcon className="mr-2 h-4 w-4" />
-                  Download
-                </>
-              )}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="h-full overflow-auto">
-          <div className="h-full rounded-md border">
-            {blob.type.includes('image') || filePath.match(/\.(jpg|jpeg|png|gif|bmp|svg|webp)$/i) ? (
-              <Image
-                src={URL.createObjectURL(blob)}
-                alt={filePath || 'File preview'}
-                width={800}
-                height={600}
-                className="h-auto w-full object-contain"
-              />
-            ) : (
-              <FileContent blob={blob} path={filePath} />
-            )}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="h-full overflow-auto">
+      <FileContent path={src} />
     </div>
   );
 };
 
-const FileContent = ({ blob, path }: { blob: Blob; path: string }) => {
-  const [isDownloading, setIsDownloading] = useState(false);
-
-  const { data: content, isLoading } = useAsync(
-    async () => {
-      return await blob.text();
-    },
-    [],
-    { deps: [blob] },
-  );
-
-  const handleDownload = () => {
-    setIsDownloading(true);
-    try {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = path.split('/').pop() || 'download';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Download error:', error);
-    } finally {
-      setTimeout(() => {
-        setIsDownloading(false);
-      }, 1000);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex h-40 items-center justify-center">
-        <LoaderIcon className="text-primary h-5 w-5 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!content) {
-    return <div className="text-muted-foreground p-4 text-center">Could not load file content</div>;
-  }
-
-  const fileType = path.split('.').pop()?.toLowerCase() || '';
-  const plugin = pluginManager.getPluginForFileType(fileType);
-  if (plugin) {
-    return (
-      <FilePreviewContainer
-        fileContent={content}
-        fileType={fileType}
-        fileName={path}
-        fileUrl={`/api/workspace/${path}`}
-        pluginManager={pluginManager}
-      />
-    );
-  }
-
-  if (content.length > 100000 || /[\x00-\x08\x0E-\x1F]/.test(content.substring(0, 1000))) {
-    return (
-      <div className="p-4 text-center">
-        <p className="text-muted-foreground mb-2">File is too large or contains binary content</p>
-        <Button onClick={handleDownload} disabled={isDownloading}>
-          {isDownloading ? (
-            <>
-              <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-              Downloading...
-            </>
-          ) : (
-            'Download'
-          )}
-        </Button>
-      </div>
-    );
-  }
-
+const FileContent = ({ path }: { path: string }) => {
   const language = getFileLanguage(path);
-  return (
-    <SyntaxHighlighter
-      language={language}
-      showLineNumbers
-      style={githubGist}
-      customStyle={{
-        fontSize: '0.875rem',
-        lineHeight: '1.5',
-        margin: 0,
-        borderRadius: 0,
-      }}
-    >
-      {content}
-    </SyntaxHighlighter>
-  );
+
+  if (language === 'markdown') {
+    return <Markdown src={path} />;
+  }
+
+  if (language === 'image') {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <img src={path} alt={path} className="h-auto max-h-[80%] w-auto max-w-[80%] rounded-md object-contain" />
+      </div>
+    );
+  }
+
+  if (language === 'video') {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <video src={path} className="h-auto max-h-[80%] w-auto max-w-[80%] rounded-md object-contain" controls />
+      </div>
+    );
+  }
+
+  if (language === 'audio') {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <audio src={path} className="h-20 max-h-[80%] w-full max-w-[80%] rounded-md object-contain" controls />
+      </div>
+    );
+  }
+
+  return <Syntax src={path} />;
 };
 
 const getFileLanguage = (path: string): string => {
@@ -215,6 +87,29 @@ const getFileLanguage = (path: string): string => {
     dockerfile: 'dockerfile',
     'docker-compose': 'yaml',
     csv: 'csv',
+    png: 'image',
+    jpg: 'image',
+    jpeg: 'image',
+    gif: 'image',
+    svg: 'image',
+    webp: 'image',
+    bmp: 'image',
+    webm: 'video',
+    mp4: 'video',
+    avi: 'video',
+    mkv: 'video',
+    wmv: 'video',
+    mov: 'video',
+    m4v: 'video',
+    mpg: 'video',
+    mpeg: 'video',
+    mp3: 'audio',
+    wav: 'audio',
+    aac: 'audio',
+    flac: 'audio',
+    m4a: 'audio',
+    ogg: 'audio',
+    wma: 'audio',
   };
   return languageMap[ext || ''] || 'text';
 };

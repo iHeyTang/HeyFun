@@ -5,13 +5,13 @@ import { prisma } from '@/lib/server/prisma';
 
 // 创建聊天会话
 export const createChatSession = withUserAuth(
-  async ({ organization, args }: AuthWrapperContext<{ modelProvider: string; modelId: string; title?: string }>) => {
+  async ({ orgId, args }: AuthWrapperContext<{ modelProvider: string; modelId: string; title?: string }>) => {
     const { modelProvider, modelId, title } = args;
 
     try {
       const session = await prisma.chatSessions.create({
         data: {
-          organizationId: organization.id,
+          organizationId: orgId,
           modelProvider,
           modelId,
           title: title || null,
@@ -28,13 +28,13 @@ export const createChatSession = withUserAuth(
 );
 
 // 获取用户的聊天会话列表
-export const getChatSessions = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ page?: number; pageSize?: number }>) => {
+export const getChatSessions = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ page?: number; pageSize?: number }>) => {
   const { page = 1, pageSize = 20 } = args || {};
 
   try {
     const sessions = await prisma.chatSessions.findMany({
       where: {
-        organizationId: organization.id,
+        organizationId: orgId,
         status: 'active',
       },
       skip: (page - 1) * pageSize,
@@ -50,7 +50,7 @@ export const getChatSessions = withUserAuth(async ({ organization, args }: AuthW
 
     const total = await prisma.chatSessions.count({
       where: {
-        organizationId: organization.id,
+        organizationId: orgId,
         status: 'active',
       },
     });
@@ -63,14 +63,14 @@ export const getChatSessions = withUserAuth(async ({ organization, args }: AuthW
 });
 
 // 获取特定会话的详细信息和消息
-export const getChatSession = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ sessionId: string }>) => {
+export const getChatSession = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ sessionId: string }>) => {
   const { sessionId } = args;
 
   try {
     const session = await prisma.chatSessions.findUnique({
       where: {
         id: sessionId,
-        organizationId: organization.id,
+        organizationId: orgId,
       },
       include: {
         messages: {
@@ -91,7 +91,7 @@ export const getChatSession = withUserAuth(async ({ organization, args }: AuthWr
 });
 
 // 发送消息并获取AI回复
-export const sendMessage = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ sessionId: string; content: string }>) => {
+export const sendMessage = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ sessionId: string; content: string }>) => {
   const { sessionId, content } = args;
 
   try {
@@ -99,7 +99,7 @@ export const sendMessage = withUserAuth(async ({ organization, args }: AuthWrapp
     const session = await prisma.chatSessions.findUnique({
       where: {
         id: sessionId,
-        organizationId: organization.id,
+        organizationId: orgId,
       },
       include: {
         messages: {
@@ -116,7 +116,7 @@ export const sendMessage = withUserAuth(async ({ organization, args }: AuthWrapp
     const userMessage = await prisma.chatMessages.create({
       data: {
         sessionId,
-        organizationId: organization.id,
+        organizationId: orgId,
         role: 'user',
         content,
         isComplete: true,
@@ -127,7 +127,7 @@ export const sendMessage = withUserAuth(async ({ organization, args }: AuthWrapp
     const aiMessage = await prisma.chatMessages.create({
       data: {
         sessionId,
-        organizationId: organization.id,
+        organizationId: orgId,
         role: 'assistant',
         content: '',
         isStreaming: true,
@@ -160,16 +160,15 @@ export const sendMessage = withUserAuth(async ({ organization, args }: AuthWrapp
   }
 });
 
-
 // 更新会话标题
-export const updateSessionTitle = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ sessionId: string; title: string }>) => {
+export const updateSessionTitle = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ sessionId: string; title: string }>) => {
   const { sessionId, title } = args;
 
   try {
     const session = await prisma.chatSessions.update({
       where: {
         id: sessionId,
-        organizationId: organization.id,
+        organizationId: orgId,
       },
       data: { title },
     });
@@ -182,14 +181,14 @@ export const updateSessionTitle = withUserAuth(async ({ organization, args }: Au
 });
 
 // 删除会话（归档）
-export const deleteSession = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ sessionId: string }>) => {
+export const deleteSession = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ sessionId: string }>) => {
   const { sessionId } = args;
 
   try {
     await prisma.chatSessions.update({
       where: {
         id: sessionId,
-        organizationId: organization.id,
+        organizationId: orgId,
       },
       data: { status: 'archived' },
     });
@@ -202,7 +201,7 @@ export const deleteSession = withUserAuth(async ({ organization, args }: AuthWra
 });
 
 // 删除消息
-export const deleteMessage = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ messageId: string }>) => {
+export const deleteMessage = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ messageId: string }>) => {
   const { messageId } = args;
 
   try {
@@ -210,7 +209,7 @@ export const deleteMessage = withUserAuth(async ({ organization, args }: AuthWra
     const message = await prisma.chatMessages.findUnique({
       where: {
         id: messageId,
-        organizationId: organization.id,
+        organizationId: orgId,
       },
     });
 

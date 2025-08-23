@@ -1,12 +1,13 @@
 import { useAsync } from '@/hooks/use-async';
-import { LoaderIcon } from 'lucide-react';
+import { ChevronRight, FolderOpen, LoaderIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { usePreviewData } from './store';
+import { WorkspaceItem } from './types';
 import { WorkspaceDirectory } from './workspace-directory';
 import { WorkspaceFile } from './workspace-file';
-import { WorkspaceItem } from './types';
-
+import { Badge } from '@/components/ui/badge';
+import { BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 export { usePreviewData } from './store';
 
 export const WorkspacePreview = () => {
@@ -31,10 +32,10 @@ export const WorkspacePreview = () => {
     });
   };
 
-  const handleItemClick = (item: WorkspaceItem) => {
+  const handleItemClick = (item: string) => {
     setData({
       type: 'workspace',
-      path: `${workspacePath}/${item.name}`,
+      path: `${workspacePath}/${item}`,
     });
   };
 
@@ -93,36 +94,36 @@ export const WorkspacePreview = () => {
     );
   }
 
-  if (Array.isArray(workspace)) {
-    return (
-      <WorkspaceDirectory
-        items={workspace}
-        currentPath={data?.type === 'workspace' && data.path ? data.path : ''}
-        isRootDirectory={isRootDirectory}
-        onItemClick={handleItemClick}
-        onBackClick={handleBackClick}
-        onDownload={handleDownload}
-        isDownloading={isDownloading}
-      />
-    );
-  }
-
-  if (workspace instanceof Blob) {
-    return (
-      <WorkspaceFile
-        blob={workspace}
-        filePath={data?.type === 'workspace' ? data.path || '' : ''}
-        isRootDirectory={isRootDirectory}
-        onBackClick={handleBackClick}
-        onDownload={handleDownload}
-        isDownloading={isDownloading}
-      />
-    );
-  }
-
   return (
-    <div className="flex h-full items-center justify-center p-8">
-      <div className="text-muted-foreground">This file type cannot be previewed</div>
+    <div className="flex h-full flex-col overflow-hidden">
+      <Badge className="mb-2 font-mono text-xs">
+        <FolderOpen className="h-3.5 w-3.5" />
+        {workspacePath.split('/').map((item, index) => {
+          const path = workspacePath
+            .split('/')
+            .slice(0, index + 1)
+            .join('/');
+          return (
+            <Fragment key={index}>
+              <div className="flex cursor-pointer items-center gap-1" onClick={() => setData({ type: 'workspace', path: path })}>
+                {item}
+              </div>
+              {index !== workspacePath.split('/').length - 1 && <ChevronRight />}
+            </Fragment>
+          );
+        })}
+      </Badge>
+      <div className="flex-1 overflow-auto">
+        {Array.isArray(workspace) ? (
+          <WorkspaceDirectory
+            items={workspace}
+            currentPath={data?.type === 'workspace' && data.path ? data.path : ''}
+            onItemClick={handleItemClick}
+          />
+        ) : (
+          <WorkspaceFile filePath={data?.type === 'workspace' ? data.path || '' : ''} />
+        )}
+      </div>
     </div>
   );
 };

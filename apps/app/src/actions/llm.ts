@@ -8,7 +8,7 @@ import path from 'path';
 
 const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
 
-export const getModelProviders = withUserAuth(async ({ organization }: AuthWrapperContext<{}>) => {
+export const getModelProviders = withUserAuth(async ({}: AuthWrapperContext<{}>) => {
   const providers = LLMFactory.getAvailableProviders();
   return Object.keys(providers).map(provider => ({
     provider: provider,
@@ -36,9 +36,9 @@ export const getModelProviderModels = withUserAuth(async ({ args }: AuthWrapperC
   return await provider.getModels();
 });
 
-export const getModelProviderConfigs = withUserAuth(async ({ organization }: AuthWrapperContext<{}>) => {
+export const getModelProviderConfigs = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
   const configs = await prisma.modelProviderConfigs.findMany({
-    where: { organizationId: organization.id },
+    where: { organizationId: orgId },
     select: {
       id: true,
       provider: true,
@@ -47,36 +47,36 @@ export const getModelProviderConfigs = withUserAuth(async ({ organization }: Aut
   return configs;
 });
 
-export const getModelProviderConfig = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ provider: string }>) => {
+export const getModelProviderConfig = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ provider: string }>) => {
   const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
   const config = await prisma.modelProviderConfigs.findFirst({
-    where: { organizationId: organization.id, provider: args.provider },
+    where: { organizationId: orgId, provider: args.provider },
   });
   return config ? JSON.parse(decryptTextWithPrivateKey(config.config, privateKey)) : null;
 });
 
-export const updateModelProviderConfig = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ provider: string; config: any }>) => {
+export const updateModelProviderConfig = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ provider: string; config: any }>) => {
   const publicKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'public.pem'), 'utf8');
   const encryptedConfig = args.config ? encryptTextWithPublicKey(JSON.stringify(args.config), publicKey) : '';
 
   const config = await prisma.modelProviderConfigs.findFirst({
-    where: { organizationId: organization.id, provider: args.provider, isDefault: true },
+    where: { organizationId: orgId, provider: args.provider, isDefault: true },
   });
 
   if (!config) {
     await prisma.modelProviderConfigs.create({
-      data: { organizationId: organization.id, provider: args.provider, config: encryptedConfig },
+      data: { organizationId: orgId, provider: args.provider, config: encryptedConfig },
     });
   } else {
-    await prisma.modelProviderConfigs.update({ where: { id: config.id, organizationId: organization.id }, data: { config: encryptedConfig } });
+    await prisma.modelProviderConfigs.update({ where: { id: config.id, organizationId: orgId }, data: { config: encryptedConfig } });
   }
 
   return config;
 });
 
-export const testModelProviderConnection = withUserAuth(async ({ organization, args }: AuthWrapperContext<{ provider: string }>) => {
+export const testModelProviderConnection = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ provider: string }>) => {
   const config = await prisma.modelProviderConfigs.findFirst({
-    where: { organizationId: organization.id, provider: args.provider },
+    where: { organizationId: orgId, provider: args.provider },
   });
   if (!config) {
     return { success: false, error: 'Config not found' };

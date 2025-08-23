@@ -14,6 +14,7 @@ export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadAgents();
@@ -51,6 +52,7 @@ export default function AgentsPage() {
 
   const handleSaveAgent = async (agentData: Partial<Agent>) => {
     try {
+      setIsSaving(true);
       if (editingAgent) {
         await updateAgent({
           id: editingAgent.id,
@@ -73,6 +75,8 @@ export default function AgentsPage() {
       setIsDialogOpen(false);
     } catch (error) {
       console.error('Failed to save agent:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -95,7 +99,7 @@ export default function AgentsPage() {
               <DialogTitle>{editingAgent ? 'Edit Agent' : 'Create New Agent'}</DialogTitle>
               <DialogDescription>Configure your custom agent with specific tools and prompt templates</DialogDescription>
             </DialogHeader>
-            <AgentForm agent={editingAgent} onSave={handleSaveAgent} onCancel={() => setIsDialogOpen(false)} />
+            <AgentForm agent={editingAgent} onSave={handleSaveAgent} onCancel={() => setIsDialogOpen(false)} isSaving={isSaving} />
           </DialogContent>
         </Dialog>
       </div>
@@ -155,9 +159,10 @@ interface AgentFormProps {
   agent?: Agent | null;
   onSave: (agentData: Partial<Agent>) => void;
   onCancel: () => void;
+  isSaving?: boolean;
 }
 
-function AgentForm({ agent, onSave, onCancel }: AgentFormProps) {
+function AgentForm({ agent, onSave, onCancel, isSaving }: AgentFormProps) {
   const [formData, setFormData] = useState({
     name: agent?.name || '',
     description: agent?.description || '',
@@ -256,10 +261,12 @@ function AgentForm({ agent, onSave, onCancel }: AgentFormProps) {
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>
           Cancel
         </Button>
-        <Button type="submit">{agent ? 'Update Agent' : 'Create Agent'}</Button>
+        <Button type="submit" disabled={isSaving}>
+          {isSaving ? 'Saving...' : agent ? 'Update Agent' : 'Create Agent'}
+        </Button>
       </div>
     </form>
   );

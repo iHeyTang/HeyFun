@@ -34,8 +34,8 @@ interface PaintboardResult {
 const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
 
 // 根据生成类型获取对应的模型
-export const getModelsByGenerationType = withUserAuth(async ({ args, organization }: AuthWrapperContext<{ generationType: GenerationType }>) => {
-  const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: organization.id } });
+export const getModelsByGenerationType = withUserAuth(async ({ args, orgId }: AuthWrapperContext<{ generationType: GenerationType }>) => {
+  const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: orgId } });
   const configMap = aigcProviderConfigSchema.parse(
     configs.reduce(
       (acc, config) => {
@@ -53,8 +53,8 @@ export const getModelsByGenerationType = withUserAuth(async ({ args, organizatio
 });
 
 // 获取所有服务模型信息
-export const getAllServiceModels = withUserAuth(async ({ organization }: AuthWrapperContext<{}>) => {
-  const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: organization.id } });
+export const getAllServiceModels = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
+  const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: orgId } });
   const configMap = aigcProviderConfigSchema.parse(
     configs.reduce(
       (acc, config) => {
@@ -183,7 +183,7 @@ export const getModelSchema = withUserAuth(
 export const createPaintboardTask = withUserAuth(
   async ({
     args,
-    organization,
+    orgId,
   }: AuthWrapperContext<{
     service: string;
     model: string;
@@ -195,7 +195,7 @@ export const createPaintboardTask = withUserAuth(
     try {
       const task = await prisma.paintboardTasks.create({
         data: {
-          organizationId: organization.id,
+          organizationId: orgId,
           service,
           model,
           generationType,
@@ -270,11 +270,11 @@ export const updatePaintboardTaskResults = withUserAuth(
 );
 
 // 获取用户的所有画板任务
-export const getUserPaintboardTasks = withUserAuth(async ({ organization }: AuthWrapperContext<{}>) => {
+export const getUserPaintboardTasks = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
   try {
     const tasks = await prisma.paintboardTasks.findMany({
       where: {
-        organizationId: organization.id,
+        organizationId: orgId,
       },
       orderBy: {
         createdAt: 'desc',
@@ -505,7 +505,7 @@ function getFileExtension(fileType: string): string {
 export const processPaintboardTaskResult = withUserAuth(
   async ({
     args,
-    organization,
+    orgId,
   }: AuthWrapperContext<{
     taskId: string;
     service: string;
@@ -532,7 +532,7 @@ export const processPaintboardTaskResult = withUserAuth(
       // 轮询逻辑 - 使用超时时间而不是重试次数
       const startTime = Date.now();
 
-      const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: organization.id } });
+      const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: orgId } });
       const configMap = aigcProviderConfigSchema.parse(
         configs.reduce(
           (acc, config) => {
@@ -563,7 +563,7 @@ export const processPaintboardTaskResult = withUserAuth(
               if (typeof item.url === 'string') {
                 try {
                   const filename = item.url.split('/').pop() || 'generated_file';
-                  const { localPath, size, fileType } = await downloadAndSaveToSandbox(item.url, filename, organization.id);
+                  const { localPath, size, fileType } = await downloadAndSaveToSandbox(item.url, filename, orgId);
 
                   results.push({
                     id: nanoid(),
@@ -680,7 +680,7 @@ export const pollPaintboardTaskResults = withUserAuth(async ({}: AuthWrapperCont
 export const submitGenerationTask = withUserAuth(
   async ({
     args,
-    organization,
+    orgId,
   }: AuthWrapperContext<{
     service: string;
     model: string;
@@ -705,7 +705,7 @@ export const submitGenerationTask = withUserAuth(
       const taskId = taskRecord.data.id;
 
       // 2. 使用统一接口提交任务到外部服务
-      const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: organization.id } });
+      const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: orgId } });
       const configMap = aigcProviderConfigSchema.parse(
         configs.reduce(
           (acc, config) => {
