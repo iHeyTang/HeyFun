@@ -169,7 +169,30 @@ export async function POST(req: NextRequest) {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
+        let heartbeatInterval: NodeJS.Timeout | null = null;
+        
+        // 启动心跳机制
+        const startHeartbeat = () => {
+          heartbeatInterval = setInterval(() => {
+            try {
+              const heartbeatData = `data: ${JSON.stringify({ type: 'heartbeat', timestamp: Date.now() })}\n\n`;
+              controller.enqueue(encoder.encode(heartbeatData));
+            } catch (error) {
+              console.error('Heartbeat error:', error);
+              if (heartbeatInterval) clearInterval(heartbeatInterval);
+            }
+          }, 30000); // 30秒心跳间隔
+        };
+
+        const stopHeartbeat = () => {
+          if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
+          }
+        };
+
         try {
+          startHeartbeat();
           const generator = result.streamGenerator();
 
           for await (const chunk of generator) {
@@ -177,10 +200,12 @@ export async function POST(req: NextRequest) {
             controller.enqueue(encoder.encode(data));
           }
 
+          stopHeartbeat();
           // 发送结束信号
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error) {
+          stopHeartbeat();
           console.error('Stream error:', error);
           const errorData = `data: ${JSON.stringify({ type: 'error', error: (error as Error).message })}\n\n`;
           controller.enqueue(encoder.encode(errorData));

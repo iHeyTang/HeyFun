@@ -383,11 +383,15 @@ export class LocalSandboxManager extends BaseSandboxManager {
     return new LocalSandboxRunner(id);
   }
 
-  async create(params: { user: string }): Promise<SandboxRunner> {
+  async create(id: string): Promise<SandboxRunner> {
     // 本地模式下，创建就是启动进程
     const runner = new LocalSandboxRunner('local-agent');
     await this.start('local-agent');
     return runner;
+  }
+
+  async getOrCreateOneById(id: string): Promise<SandboxRunner> {
+    return this.create(id);
   }
 
   async delete(id: string, timeout?: number): Promise<void> {

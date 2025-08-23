@@ -148,7 +148,7 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
     promptTemplates: promptTemplates,
   };
 
-  const sandbox = await sandboxManager.create({ user: orgId });
+  const sandbox = await sandboxManager.getOrCreateOneById(orgId);
   const outId = await sandbox.agent.createTask(body);
   if (!outId) {
     await prisma.tasks.update({ where: { id: task.id }, data: { status: 'failed' } });

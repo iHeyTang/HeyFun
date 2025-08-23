@@ -320,7 +320,7 @@ async function downloadAndSaveToSandbox(
     let sandbox = sandboxes.find(s => s.id === organizationId);
 
     if (!sandbox) {
-      sandbox = await sandboxManager.create({ user: organizationId });
+      sandbox = await sandboxManager.getOrCreateOneById(organizationId);
       await sandboxManager.start(sandbox.id);
     }
 

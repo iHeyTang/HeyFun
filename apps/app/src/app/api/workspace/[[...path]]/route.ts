@@ -1,3 +1,4 @@
+import { withUserAuthApi } from '@/lib/server/auth-wrapper';
 import sandboxManager from '@/lib/server/sandbox';
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
@@ -9,21 +10,10 @@ import path from 'path';
  * @param params
  * @returns
  */
-export async function GET(request: NextRequest, { params, orgId }: { params: Promise<{ path?: string[] }>; orgId: string }) {
+export const GET = withUserAuthApi<{ path?: string[] }, {}, {}>(async (request: NextRequest, ctx) => {
   try {
-    const { path: pathSegments = [] } = await params;
-    const sandboxes = await sandboxManager.list();
-    let sandbox = sandboxes.find(s => s.id === orgId);
-
-    if (!sandbox) {
-      sandbox = await sandboxManager.create({ user: orgId });
-      await sandboxManager.start(sandbox.id);
-    }
-
-    if (!sandbox) {
-      return new NextResponse('Sandbox not found', { status: 404 });
-    }
-
+    const { path: pathSegments = [] } = ctx.params;
+    const sandbox = await sandboxManager.getOrCreateOneById(ctx.orgId);
     const fileInfo = await sandbox.fs.getFileDetails(pathSegments.join('/'));
 
     if (fileInfo.isDir) {
@@ -84,7 +74,7 @@ export async function GET(request: NextRequest, { params, orgId }: { params: Pro
     console.error('Error serving protected asset:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
-}
+});
 
 function getContentType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();

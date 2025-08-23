@@ -1,6 +1,7 @@
 import { auth, clerkClient, Organization, User } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { AuthUser } from './clerk-auth';
+import { to } from '../shared/to';
 
 export class UnauthorizedError extends Error {
   constructor(message: string) {
@@ -58,7 +59,7 @@ export function withUserAuth<T = unknown, R = unknown>(fn: AuthWrapped<T, R>): A
 }
 
 export type AuthApiWrapperContext<P, Q, B> = BaseAuthWrapper & { query: Q; params: P; body: B };
-export type AuthApiWrapped<P, Q, B, R> = (ctx: AuthApiWrapperContext<P, Q, B>) => Promise<NextResponse<R>>;
+export type AuthApiWrapped<P, Q, B, R> = (request: NextRequest, ctx: AuthApiWrapperContext<P, Q, B>) => Promise<NextResponse<R>>;
 export type AuthApi<P, R> = (request: NextRequest, { params }: { params?: Promise<P> }) => Promise<NextResponse<R>>;
 
 export function withUserAuthApi<P = unknown, Q = unknown, B = unknown, R = unknown>(apiFn: AuthApiWrapped<P, Q, B, R>): AuthApi<P, R> {
@@ -81,11 +82,12 @@ export function withUserAuthApi<P = unknown, Q = unknown, B = unknown, R = unkno
         getCurrentOrg: () => getCurrentOrg(authObj, clerk),
         query: Object.fromEntries(request.nextUrl.searchParams) as Q,
         params: (await params) || ({} as P),
-        body: await request.json(),
+        body: (await to(request.json()))[1] as B,
       };
-      const res = await apiFn(ctx);
+      const res = await apiFn(request, ctx);
       return res;
     } catch (error) {
+      console.error(error);
       if (error instanceof UnauthorizedError) {
         return new NextResponse('Unauthorized', { status: 401 });
       }

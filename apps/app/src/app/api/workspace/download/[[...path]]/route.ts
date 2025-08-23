@@ -1,10 +1,8 @@
-import { getCurrentUser } from '@/lib/server/clerk-auth';
-import { prisma } from '@/lib/server/prisma';
+import { withUserAuthApi } from '@/lib/server/auth-wrapper';
 import sandboxManager from '@/lib/server/sandbox';
 import archiver from 'archiver';
 import fs from 'fs';
 import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
 
 /**
  * This route is used to download workspace files or directories as zip archives
@@ -12,23 +10,10 @@ import path from 'path';
  * @param params
  * @returns
  */
-export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+export const GET = withUserAuthApi<{ path: string[] }, {}, {}>(async (request: NextRequest, ctx) => {
   try {
-    const { path = [] } = await params;
-    const user = await getCurrentUser();
-    if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
-
-    const organizationUser = await prisma.organizationUsers.findFirst({
-      where: { userId: user.id },
-      select: { organizationId: true },
-    });
-    if (!organizationUser) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
-
-    const sandbox = await sandboxManager.findOneById(`daytona-${organizationUser.organizationId}`);
+    const { path = [] } = ctx.params;
+    const sandbox = await sandboxManager.getOrCreateOneById(ctx.orgId);
     if (!sandbox) {
       return new NextResponse('Sandbox not found', { status: 404 });
     }
@@ -123,4 +108,4 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     console.error('Error creating download:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
-}
+});

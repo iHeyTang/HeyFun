@@ -185,7 +185,12 @@ export abstract class BaseSandboxManager {
   /**
    * 创建沙盒
    */
-  abstract create(params: { user: string }): Promise<SandboxRunner>;
+  abstract create(id: string): Promise<SandboxRunner>;
+
+  /**
+   * 根据 key 获取沙盒，若沙盒不存在，则创建一个，保证每个key的沙盒唯一
+   */
+  abstract getOrCreateOneById(id: string): Promise<SandboxRunner>;
 
   /**
    * 删除沙盒
