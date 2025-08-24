@@ -1,7 +1,7 @@
 import { getAigcProviderConfigs, getAigcProviders } from '@/actions/aigc';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Palette } from 'lucide-react';
+import { Palette, Wand2 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -49,9 +49,11 @@ export function AigcProviderSidebar() {
                   <Palette className="h-3 w-3" />
                   <span className="text-sm">{info.displayName}</span>
                 </div>
-                <Badge className="text-xs" variant="secondary">
-                  {providerConfigs.filter(config => config.provider === info.provider).length}
-                </Badge>
+                {providerConfigs.find(config => config.provider === info.provider)?.id && (
+                  <Badge className="text-xs" variant="secondary">
+                    <Wand2 />
+                  </Badge>
+                )}
               </div>
             );
           })}

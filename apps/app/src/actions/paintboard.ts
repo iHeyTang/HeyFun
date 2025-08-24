@@ -21,7 +21,7 @@ enum PaintboardTaskStatus {
 }
 
 // 结果项类型
-interface PaintboardResult {
+export interface PaintboardResult {
   id: string;
   url: string;
   localPath: string;
