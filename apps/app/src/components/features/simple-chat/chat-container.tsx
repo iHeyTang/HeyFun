@@ -87,11 +87,6 @@ export const ChatContainer = ({ availableModels, sessionId, existingSession }: C
       if (newSessionId) {
         // Refresh the sidebar to show the new session
         await refreshSessions();
-
-        // Only navigate if we're not already in a session
-        if (!currentSessionId) {
-          router.push(`/chat/${newSessionId}`);
-        }
       }
 
       return newSessionId;
@@ -215,6 +210,11 @@ export const ChatContainer = ({ availableModels, sessionId, existingSession }: C
             }
           }
         }
+      }
+
+      // Update URL after message is sent successfully (only if we're not already in this session URL)
+      if (!currentSessionId && sessionId) {
+        window.history.replaceState(null, '', `/chat/${sessionId}`);
       }
     } catch (error) {
       console.error('Send message error:', error);

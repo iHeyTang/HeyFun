@@ -27,22 +27,13 @@ export const ChatMessage = ({ role, content, isStreaming = false, timestamp }: C
         </Avatar>
       )}
 
-      <div className={cn('group flex w-full flex-col gap-2', isUser ? 'items-end' : 'items-start')}>
-        <div className={cn('bg-muted max-w-[70%] rounded-lg')}>
-          <div>
+      <div className={cn('group flex w-full flex-col', isUser ? 'items-end' : 'items-start')}>
+        <span className="group-hover:text-muted-foreground text-xs text-transparent transition-all">{timestamp.toLocaleTimeString()}</span>
+        {content && (
+          <div className={cn('bg-muted max-w-[70%] rounded-lg')}>
             <Markdown className="markdown-body">{content}</Markdown>
-            {isStreaming && <span className="ml-1 animate-pulse">▋</span>}
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="group-hover:text-muted-foreground text-xs text-transparent transition-all">{timestamp.toLocaleTimeString()}</span>
-          {isStreaming && (
-            <Badge variant="secondary" className="text-xs">
-              Generating...
-            </Badge>
-          )}
-        </div>
+        )}
       </div>
 
       {isUser && (
