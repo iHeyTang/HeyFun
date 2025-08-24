@@ -1,14 +1,16 @@
 import { ProviderModelInfo } from './base';
+import { BuiltinProvider } from './builtin';
 import { DeepseekProvider } from './deepseek';
 import { OpenRouterProvider } from './openrouter';
 
-export type Provider = OpenRouterProvider | DeepseekProvider;
+export type Provider = BuiltinProvider | OpenRouterProvider | DeepseekProvider;
 export type { ProviderModelInfo as ProviderModel };
 
 /**
  * Provider Registry - Register all available providers here
  */
 const providerClasses = {
+  builtin: BuiltinProvider,
   openrouter: OpenRouterProvider,
   deepseek: DeepseekProvider
 } as const;

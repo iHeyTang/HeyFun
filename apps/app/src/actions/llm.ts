@@ -44,7 +44,7 @@ export const getModelProviderConfigs = withUserAuth(async ({ orgId }: AuthWrappe
       provider: true,
     },
   });
-  return configs;
+  return [{ provider: 'builtin', config: {} }, ...configs];
 });
 
 export const getModelProviderConfig = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ provider: string }>) => {

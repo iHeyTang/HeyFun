@@ -18,7 +18,7 @@ export const ChatMessage = ({ role, content, isStreaming = false, timestamp }: C
   const isUser = role === 'user';
 
   return (
-    <div className={cn('flex gap-3 p-4', isUser ? 'justify-end' : 'justify-start')}>
+    <div className={cn('flex gap-3 px-4 py-1', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
         <Avatar className="h-8 w-8">
           <AvatarFallback className="bg-primary text-primary-foreground">
@@ -29,9 +29,13 @@ export const ChatMessage = ({ role, content, isStreaming = false, timestamp }: C
 
       <div className={cn('group flex w-full flex-col', isUser ? 'items-end' : 'items-start')}>
         <span className="group-hover:text-muted-foreground text-xs text-transparent transition-all">{timestamp.toLocaleTimeString()}</span>
-        {content && (
+        {content ? (
           <div className={cn('bg-muted max-w-[70%] rounded-lg')}>
             <Markdown className="markdown-body">{content}</Markdown>
+          </div>
+        ) : (
+          <div className="bg-muted max-w-[70%] rounded-lg">
+            <Markdown className="w-full">Thinking...</Markdown>
           </div>
         )}
       </div>

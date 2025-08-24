@@ -51,9 +51,7 @@ type CreateTaskArgs = {
 export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<CreateTaskArgs>) => {
   const { taskId, agentId, modelProvider, modelId, prompt, toolIds, files, shouldPlan } = args;
   const crpytedProviderConfig = await prisma.modelProviderConfigs.findFirst({ where: { provider: modelProvider, organizationId: orgId } });
-  if (!crpytedProviderConfig) throw new Error('Model provider not found');
-  const providerConfig = crpytedProviderConfig.config ? JSON.parse(decryptTextWithPrivateKey(crpytedProviderConfig.config, privateKey)) : {};
-  if (!providerConfig) throw new Error('Model provider config not found');
+  const providerConfig = crpytedProviderConfig?.config ? JSON.parse(decryptTextWithPrivateKey(crpytedProviderConfig.config, privateKey)) : {};
 
   const preferences = await prisma.preferences.findUnique({
     where: { organizationId: orgId },
@@ -139,8 +137,8 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
     language: preferences?.language || 'en',
     llm: {
       model: modelId,
-      baseUrl: providerConfig.baseUrl,
-      apiKey: providerConfig.apiKey,
+      baseUrl: providerConfig?.baseUrl,
+      apiKey: providerConfig?.apiKey,
       providerId: modelProvider,
       modelId: modelId,
     },

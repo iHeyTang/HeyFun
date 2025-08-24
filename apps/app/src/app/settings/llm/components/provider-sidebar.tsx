@@ -1,7 +1,7 @@
 import { getModelProviderConfigs, getModelProviders } from '@/actions/llm';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Settings } from 'lucide-react';
+import { Settings, Stars, Wand2 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -10,7 +10,7 @@ export function ProviderSidebar() {
   const router = useRouter();
 
   const [providerInfos, setProviderInfos] = useState<{ provider: string; displayName: string }[]>([]);
-  const [providerConfigs, setProviderConfigs] = useState<{ id: string; provider: string }[]>([]);
+  const [providerConfigs, setProviderConfigs] = useState<{ id?: string; provider: string }[]>([]);
 
   useEffect(() => {
     getModelProviders({}).then(p => {
@@ -49,9 +49,17 @@ export function ProviderSidebar() {
                   <Settings className="h-3 w-3" />
                   <span className="text-sm">{info.displayName}</span>
                 </div>
-                <Badge className="text-xs" variant="secondary">
-                  {providerConfigs.filter(config => config.provider === info.provider).length}
-                </Badge>
+                {info.provider === 'builtin' ? (
+                  <Badge className="text-xs" variant="secondary">
+                    <Stars />
+                  </Badge>
+                ) : (
+                  providerConfigs.find(config => config.provider === info.provider)?.id && (
+                    <Badge className="text-xs" variant="secondary">
+                      <Wand2 />
+                    </Badge>
+                  )
+                )}
               </div>
             );
           })}

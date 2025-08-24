@@ -1,4 +1,4 @@
-import { ModelInstructType } from '../../types';
+import { ModelInstructType } from '../types';
 
 /**
  * Provider Base Class - Defines common interfaces and methods for all LLM providers

@@ -33,20 +33,20 @@ interface ModelSelectorStore {
 export const createModelSelectorStore = (storageKey: string) =>
   create<ModelSelectorStore>()(
     persist(
-      (set) => ({
+      set => ({
         selectedModel: null,
-        setSelectedModel: (model) => {
+        setSelectedModel: model => {
           set({ selectedModel: model });
         },
       }),
       {
         name: storageKey,
         storage: createJSONStorage(() => localStorage),
-        partialize: (state) => ({
+        partialize: state => ({
           selectedModel: state.selectedModel,
         }),
-      }
-    )
+      },
+    ),
   );
 
 export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorProps>(
@@ -61,9 +61,8 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
     }));
 
     const grouped = useMemo(() => {
-      const filtered = availableModels.filter(m => 
-        m.name.toLowerCase().includes(search.toLowerCase()) ||
-        m.provider.toLowerCase().includes(search.toLowerCase())
+      const filtered = availableModels.filter(
+        m => m.name.toLowerCase().includes(search.toLowerCase()) || m.provider.toLowerCase().includes(search.toLowerCase()),
       );
       const group: Record<string, ModelInfo[]> = {};
       filtered.forEach(m => {
@@ -112,9 +111,9 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
 
                 {items.map((model, index) => (
                   <button
-                    key={model.id}
+                    key={`${model.provider}/${model.id}`}
                     className={`hover:bg-muted/50 flex w-full cursor-pointer items-center justify-between px-4 py-2 text-left transition-colors ${
-                      selectedModel?.id === model.id ? 'bg-muted' : ''
+                      selectedModel?.id === model.id && selectedModel?.provider === model.provider ? 'bg-muted' : ''
                     } ${index === items.length - 1 ? 'border-b-0' : ''}`}
                     onClick={() => handleModelSelect(model)}
                   >
@@ -122,7 +121,9 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
                       <Bot className="text-muted-foreground h-4 w-4 flex-shrink-0" />
                       <div className="truncate font-normal">{model.name}</div>
                     </div>
-                    {selectedModel?.id === model.id && <Check className="text-primary ml-2 h-4 w-4 flex-shrink-0" />}
+                    {selectedModel?.id === model.id && selectedModel?.provider === model.provider && (
+                      <Check className="text-primary ml-2 h-4 w-4 flex-shrink-0" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -131,7 +132,7 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
         </DialogContent>
       </Dialog>
     );
-  }
+  },
 );
 
 ModelSelectorDialog.displayName = 'ModelSelectorDialog';

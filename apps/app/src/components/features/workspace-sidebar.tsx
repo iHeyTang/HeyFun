@@ -129,7 +129,11 @@ export function WorkspaceSidebar() {
             )}
             {!node.isDirectory && <div className="w-5" />}
 
-            {node.isDirectory ? <FolderIcon className="mr-2 h-4 w-4 text-blue-500" /> : <FileIcon className="text-muted-foreground mr-2 h-4 w-4" />}
+            {node.isDirectory ? (
+              <FolderIcon className="text-muted-foreground mr-2 h-4 w-4" />
+            ) : (
+              <FileIcon className="text-muted-foreground mr-2 h-4 w-4" />
+            )}
 
             <span className="flex-1 truncate">{node.name}</span>
           </div>

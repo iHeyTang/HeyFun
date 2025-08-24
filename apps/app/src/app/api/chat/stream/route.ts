@@ -39,11 +39,7 @@ async function getAIResponse({ organizationId, sessionId, messageId }: { organiz
       },
     });
 
-    if (!providerConfig) {
-      throw new Error('Model provider config not found');
-    }
-
-    const config = JSON.parse(decryptTextWithPrivateKey(providerConfig.config, privateKey));
+    const config = providerConfig ? JSON.parse(decryptTextWithPrivateKey(providerConfig.config, privateKey)) : {};
 
     // 创建LLM客户端
     const llmClient = new LLMClient({

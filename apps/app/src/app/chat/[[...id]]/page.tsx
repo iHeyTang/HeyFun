@@ -19,11 +19,7 @@ export default async function ChatPage({ params }: ChatPageProps) {
     const configs = configsResult.data ?? [];
 
     // Get available models from configured providers
-    const availableModels: Array<{
-      provider: string;
-      id: string;
-      name: string;
-    }> = [];
+    const availableModels: Array<{ provider: string; id: string; name: string }> = [];
 
     for (const config of configs) {
       try {

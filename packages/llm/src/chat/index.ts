@@ -65,18 +65,49 @@ export class LLMClient {
       throw new Error(`Model not found: ${this.config.modelId}`);
     }
 
-    // 4. 创建model实例，传入provider的配置
-    const model = getModel(targetModel.architecture.instructType, {
-      model: this.config.modelId,
-      apiKey: this.config.apiKey,
-      baseUrl: this.config.baseUrl,
-      ...this.config,
-    });
+    // 4. 特殊处理builtin provider
+    if (this.config.providerId === 'builtin' && 'createModelAdapter' in this.provider) {
+      const builtinProvider = this.provider as any; // BuiltinProvider
+      const runtimeConfig = builtinProvider.getModelRuntimeConfig(this.config.modelId);
+      
+      if (!runtimeConfig) {
+        throw new Error(`No runtime config available for model: ${this.config.modelId}`);
+      }
 
-    if (!model) {
-      throw new Error(`Model not supported: ${targetModel.architecture.instructType}`);
+      // 创建universal model
+      const model = getModel('universal', {
+        model: this.config.modelId,
+        apiKey: runtimeConfig.apiKey,
+        baseUrl: runtimeConfig.baseUrl,
+        adapterType: runtimeConfig.adapterType,
+        ...this.config,
+      });
+
+      if (!model || !('setAdapter' in model)) {
+        throw new Error(`Universal model not supported`);
+      }
+
+      // 设置适配器
+      const adapter = builtinProvider.createModelAdapter(this.config.modelId);
+      if (adapter) {
+        (model as any).setAdapter(adapter);
+      }
+
+      this.model = model;
+    } else {
+      // 4. 创建model实例，传入provider的配置（原有逻辑）
+      const model = getModel(targetModel.architecture.instructType, {
+        model: this.config.modelId,
+        apiKey: this.config.apiKey,
+        baseUrl: this.config.baseUrl,
+        ...this.config,
+      });
+
+      if (!model) {
+        throw new Error(`Model not supported: ${targetModel.architecture.instructType}`);
+      }
+      this.model = model;
     }
-    this.model = model;
   }
 
   /**

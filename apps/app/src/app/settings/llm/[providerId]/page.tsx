@@ -49,12 +49,14 @@ export default function ProviderDetailsPanel({ params }: { params: Promise<{ pro
           <div className="flex flex-1 items-center">
             <h2 className="text-2xl leading-none font-bold">{providerInfo.displayName}</h2>
           </div>
-          <Link href={`/settings/llm/${providerInfo.provider}/config`}>
-            <Button variant="ghost" size="sm">
-              <Settings className="mr-2 h-4 w-4" />
-              Configure Provider
-            </Button>
-          </Link>
+          {providerInfo.provider === 'builtin' ? null : (
+            <Link href={`/settings/llm/${providerInfo.provider}/config`}>
+              <Button variant="ghost" size="sm">
+                <Settings className="mr-2 h-4 w-4" />
+                Configure Provider
+              </Button>
+            </Link>
+          )}
         </div>
         <div className="mt-2">
           <Link href={providerInfo.homepage!} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block" title="Homepage">

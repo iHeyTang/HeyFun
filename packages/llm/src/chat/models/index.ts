@@ -1,9 +1,11 @@
 import { OpenAIModel } from './openai';
 import { AnthropicModel } from './anthropic';
-import { ModelInstructType } from '../../types';
+import { GoogleModel } from './google';
+import { UniversalModel } from './universal';
+import { ModelInstructType } from '../types';
 
 
-type Model = AnthropicModel | OpenAIModel;
+type Model = AnthropicModel | OpenAIModel | GoogleModel | UniversalModel;
 
 /**
  * Model Registry - 注册所有可用的model客户端
@@ -12,6 +14,8 @@ type Model = AnthropicModel | OpenAIModel;
 const modelClasses: Record<ModelInstructType, (new (config: Partial<Model['config']>) => Model)> = {
   anthropic: AnthropicModel,
   openai: OpenAIModel,
+  google: GoogleModel,
+  universal: UniversalModel,
 }
 
 
