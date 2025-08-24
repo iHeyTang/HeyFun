@@ -1,6 +1,7 @@
 import type { Chat } from '@repo/llm/chat';
 import type { BaseTool, ToolResult } from './types';
 import McpHost from './mcp';
+import { AddMcpConfig } from './types';
 
 /**
  * 工具集合实现类
@@ -34,29 +35,13 @@ export class ToolCollection {
     this.toolMap[tool.name] = tool;
   }
 
-  async addMcp(config: {
-    client_id: string;
-    url?: string;
-    command?: string;
-    args?: string[];
-    env?: Record<string, string>;
-    headers?: Record<string, any>;
-  }): Promise<void> {
-    if (config.url) {
-      await this.mcp.addSseMcp({
-        id: config.client_id,
-        url: config.url,
-        headers: config.headers || {},
-      });
-    } else if (config.command) {
-      await this.mcp.addStdioMcp({
-        id: config.client_id,
-        command: config.command,
-        args: config.args || [],
-        env: config.env || {},
-      });
+  async addMcp(config: AddMcpConfig): Promise<void> {
+    if ('url' in config && config.url) {
+      await this.mcp.addSseMcp(config);
+    } else if ('command' in config && config.command) {
+      await this.mcp.addStdioMcp(config);
     }
-    await this.addMcpTools(config.client_id);
+    await this.addMcpTools(config.id);
   }
 
   /**
@@ -145,15 +130,15 @@ export class ToolCollection {
   /**
    * 添加MCP工具
    */
-  private async addMcpTools(client_id: string): Promise<void> {
-    const client = this.mcp.getClient(client_id);
+  private async addMcpTools(id: string): Promise<void> {
+    const client = this.mcp.getClient(id);
     if (!client) {
-      throw new Error(`Client ${client_id} not found`);
+      throw new Error(`Client ${id} not found`);
     }
     const mcpTools = await client.listTools();
     const tools: BaseTool[] = mcpTools.tools
       .map(tool => {
-        const internalName = `${client_id}-${tool.name}`;
+        const internalName = `${id}-${tool.name}`;
 
         if (internalName.length > 64) {
           console.warn(`Tool name length exceeds the limit of 64 characters, this tool will be ignored: ${internalName}`);
@@ -173,7 +158,7 @@ export class ToolCollection {
             };
           },
           execute: async input => {
-            const result = await this.mcp.getClient(client_id)!.callTool({ name: tool.name, arguments: input });
+            const result = await this.mcp.getClient(id)!.callTool({ name: tool.name, arguments: input });
             return result as ToolResult;
           },
         };

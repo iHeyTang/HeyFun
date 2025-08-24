@@ -9,7 +9,7 @@ import { to } from '@/lib/shared/to';
 import { mcpServerSchema } from '@/lib/shared/tools';
 import fs from 'fs';
 import path from 'path';
-import type { ToolConfig } from '@repo/agent';
+import type { AddMcpConfig } from '@repo/agent';
 import sandboxManager from '@/lib/server/sandbox';
 import { SandboxRunner } from '@/lib/server/sandbox/base';
 
@@ -95,9 +95,10 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
         const fullUrl = buildMcpSseFullUrl(agentTool.schema.url, query);
         const headers = agentTool.headers ? JSON.parse(decryptTextWithPrivateKey(agentTool.headers, privateKey)) : {};
 
-        const tool: ToolConfig = {
+        const tool: AddMcpConfig = {
           id: agentTool.id,
           name: agentTool.name || agentTool.schema?.name,
+          version: '',
           command: agentTool.schema?.command,
           args: agentTool.schema?.args || [],
           env: env,
@@ -113,9 +114,10 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
         }
         const server = validationResult.data;
         const fullUrl = buildMcpSseFullUrl(server.url || '', server.query || {});
-        const tool: ToolConfig = {
+        const tool: AddMcpConfig = {
           id: agentTool.id,
           name: agentTool.name || agentTool.id,
+          version: '',
           command: server.command || '',
           args: server.args || [],
           env: server.env || {},
@@ -143,7 +145,7 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
       modelId: modelId,
     },
     should_plan: shouldPlan,
-    tools: processedTools.filter(tool => tool !== undefined) as ToolConfig[],
+    tools: processedTools.filter(tool => tool !== undefined) as AddMcpConfig[],
     history: history as Chat.ChatCompletionMessageParam[],
     promptTemplates: promptTemplates,
   };

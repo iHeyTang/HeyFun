@@ -39,9 +39,15 @@ export const listAgentTools = withUserAuth(async ({ orgId }: AuthWrapperContext<
   return tools;
 });
 
-export const installTool = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ toolId: string; env: Record<string, string> }>) => {
+type ToolConfig = {
+  toolId: string;
+  env: Record<string, any>;
+  query?: Record<string, any>;
+  headers?: Record<string, any>;
+};
+export const installTool = withUserAuth(async ({ orgId, args }: AuthWrapperContext<ToolConfig>) => {
   const publicKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'public.pem'), 'utf8');
-  const { toolId, env } = args;
+  const { toolId, env, query = {}, headers = {} } = args;
   const tool = await prisma.toolSchemas.findUnique({
     where: { id: toolId },
   });
@@ -50,11 +56,29 @@ export const installTool = withUserAuth(async ({ orgId, args }: AuthWrapperConte
     throw new Error('Tool not found');
   }
 
-  const validate = ajv.compile(tool.envSchema);
-  const isValid = validate(env);
+  const validateEnv = ajv.compile(tool.envSchema);
+  const isEnvValid = validateEnv(env);
 
-  if (!isValid) {
-    throw new Error(`Invalid environment variables config: ${JSON.stringify(validate.errors)}`);
+  if (!isEnvValid) {
+    throw new Error(`Invalid environment variables config: ${JSON.stringify(validateEnv.errors)}`);
+  }
+
+  if (tool.querySchema && typeof tool.querySchema === 'object' && Object.keys(query).length > 0) {
+    const validateQuery = ajv.compile(tool.querySchema);
+    const isQueryValid = validateQuery(query);
+
+    if (!isQueryValid) {
+      throw new Error(`Invalid query parameters config: ${JSON.stringify(validateQuery.errors)}`);
+    }
+  }
+
+  if (tool.headersSchema && typeof tool.headersSchema === 'object' && Object.keys(headers).length > 0) {
+    const validateHeaders = ajv.compile(tool.headersSchema);
+    const isHeadersValid = validateHeaders(headers);
+
+    if (!isHeadersValid) {
+      throw new Error(`Invalid headers config: ${JSON.stringify(validateHeaders.errors)}`);
+    }
   }
 
   const existing = await prisma.agentTools.findUnique({
@@ -64,7 +88,11 @@ export const installTool = withUserAuth(async ({ orgId, args }: AuthWrapperConte
   if (existing) {
     await prisma.agentTools.update({
       where: { schemaId_organizationId: { schemaId: toolId, organizationId: orgId } },
-      data: { env: encryptTextWithPublicKey(JSON.stringify(env), publicKey) },
+      data: {
+        env: encryptTextWithPublicKey(JSON.stringify(env), publicKey),
+        query: Object.keys(query).length > 0 ? encryptTextWithPublicKey(JSON.stringify(query), publicKey) : null,
+        headers: Object.keys(headers).length > 0 ? encryptTextWithPublicKey(JSON.stringify(headers), publicKey) : null,
+      },
     });
   } else {
     await prisma.agentTools.create({
@@ -73,6 +101,8 @@ export const installTool = withUserAuth(async ({ orgId, args }: AuthWrapperConte
         organizationId: orgId,
         schemaId: toolId,
         env: encryptTextWithPublicKey(JSON.stringify(env), publicKey),
+        query: Object.keys(query).length > 0 ? encryptTextWithPublicKey(JSON.stringify(query), publicKey) : null,
+        headers: Object.keys(headers).length > 0 ? encryptTextWithPublicKey(JSON.stringify(headers), publicKey) : null,
       },
     });
   }

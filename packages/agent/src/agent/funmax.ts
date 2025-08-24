@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { ToolCallContextHelper } from '../tools/toolcall';
-import type { ToolConfig } from '../tools/types';
+import type { AddMcpConfig } from '../tools/types';
 import { createMessage } from '../utils/message';
 import { renderTemplate } from '../utils/template';
 import { BaseAgentEvents } from './base';
@@ -18,7 +18,7 @@ export interface PromptTemplates {
 export interface FunMaxConfig extends ReActAgentConfig {
   task_request: string;
   language?: string;
-  tools?: ToolConfig[];
+  tools?: AddMcpConfig[];
   history?: Chat.ChatCompletionMessageParam[];
   promptTemplates?: PromptTemplates;
 }
@@ -42,7 +42,7 @@ export class FunMax extends ReActAgent {
 
   // 配置属性
   public readonly language: string;
-  public readonly tools: ToolConfig[];
+  public readonly tools: AddMcpConfig[];
   public readonly task_request: string;
   public readonly history: Chat.ChatCompletionMessageParam[];
   public readonly custom_prompt_templates: PromptTemplates;
@@ -195,14 +195,7 @@ export class FunMax extends ReActAgent {
 
     // 添加系统工具和MCP工具
     for (const tool of this.tools) {
-      await this._tool_call_context_helper.addMcp({
-        client_id: tool.id,
-        url: tool.url,
-        command: tool.command,
-        args: tool.args,
-        env: tool.env,
-        headers: tool.headers,
-      });
+      await this._tool_call_context_helper.addMcp(tool);
     }
   }
 

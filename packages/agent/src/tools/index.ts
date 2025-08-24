@@ -13,5 +13,5 @@ export { ToolCallContextHelper } from "./toolcall";
 // 类型定义
 export type {
   BaseTool,
-  ToolConfig,
+  AddMcpConfig,
 } from "./types";

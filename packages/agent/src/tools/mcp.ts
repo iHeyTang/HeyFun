@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { AddSseMcpConfig, AddStdioMcpConfig } from './types';
 
 interface McpClientInfo {
   client: Client;
@@ -13,10 +14,10 @@ export default class McpHost {
     this.mcps = {};
   }
 
-  async addStdioMcp(config: { id: string; command: string; args: string[]; env: Record<string, string> }) {
+  async addStdioMcp(config: AddStdioMcpConfig) {
     const mcp = new Client({
-      name: config.command,
-      version: '1.0.0',
+      name: config.name,
+      version: config.version,
     });
     const transport = new StdioClientTransport({
       command: config.command,
@@ -29,20 +30,28 @@ export default class McpHost {
     };
   }
 
-  async addSseMcp(config: { id: string; url: string; headers: Record<string, string> }) {
+  async addSseMcp(config: AddSseMcpConfig) {
     const mcp = new Client({
-      name: config.url,
-      version: '1.0.0',
+      name: config.name,
+      version: config.version,
     });
     const transport = new SSEClientTransport(new URL(config.url), {
       requestInit: {
-        headers: config.headers,
+        headers: { 'Content-Type': 'text/event-stream', ...config.headers },
       },
     });
-    await mcp.connect(transport);
-    this.mcps[config.id] = {
-      client: mcp,
-    };
+    try {
+      await mcp.connect(transport, {
+        onprogress: progress => {
+          console.log('mcp progress', config.id, progress);
+        },
+      });
+      this.mcps[config.id] = {
+        client: mcp,
+      };
+    } catch (error) {
+      console.error('mcp connect error', config.id, error);
+    }
   }
 
   getClient(id: string) {

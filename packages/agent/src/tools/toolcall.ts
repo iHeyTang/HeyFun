@@ -6,7 +6,7 @@ import { to } from '../utils/to';
 import { ToolCollection } from './collection';
 import { FileSystemTool } from './tools/file-system';
 import { TerminateTool } from './tools/terminate';
-import type { BaseTool } from './types';
+import type { AddMcpConfig, BaseTool } from './types';
 
 /**
  * 工具调用上下文助手实现
@@ -43,14 +43,7 @@ export class ToolCallContextHelper {
   /**
    * 添加MCP
    */
-  async addMcp(config: {
-    client_id: string;
-    url?: string;
-    command?: string;
-    args?: string[];
-    env?: Record<string, string>;
-    headers?: Record<string, any>;
-  }): Promise<void> {
+  async addMcp(config: AddMcpConfig): Promise<void> {
     await this.availableTools.addMcp(config);
   }
 

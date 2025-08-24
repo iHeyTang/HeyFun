@@ -31,18 +31,33 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
     },
   }));
 
-  const formSchema = generateZodSchema(tool?.envSchema);
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: generateDefaultValues(tool?.envSchema),
+  const envFormSchema = generateZodSchema(tool?.envSchema as any);
+  const queryFormSchema = generateZodSchema(tool?.querySchema as any);
+  const headersFormSchema = generateZodSchema(tool?.headersSchema as any);
+
+  const combinedSchema = z.object({
+    env: envFormSchema,
+    query: queryFormSchema,
+    headers: headersFormSchema,
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const form = useForm<z.infer<typeof combinedSchema>>({
+    resolver: zodResolver(combinedSchema),
+    defaultValues: {
+      env: generateDefaultValues(tool?.envSchema),
+      query: generateDefaultValues(tool?.querySchema),
+      headers: generateDefaultValues(tool?.headersSchema),
+    },
+  });
+
+  const onSubmit = async (values: z.infer<typeof combinedSchema>) => {
     try {
       setIsLoading(true);
       await installTool({
         toolId: tool!.id,
-        env: values,
+        env: values.env,
+        query: values.query,
+        headers: values.headers,
       });
       toast.success('Install success', {
         description: 'Tool config saved',
@@ -70,36 +85,119 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
         </DialogHeader>
         <div className="mt-4 flex-1">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {tool.envSchema.properties &&
-                Object.entries(tool.envSchema.properties).map(([key, value]: [string, any]) => (
-                  <FormField
-                    key={key}
-                    control={form.control}
-                    name={key}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {value.title || key}
-                          {value.description && <FormDescription>{value.description}</FormDescription>}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type={value.type === 'number' ? 'number' : 'text'}
-                            placeholder={value.description}
-                            {...field}
-                            value={field.value ?? (value.type === 'number' ? 0 : '')}
-                            onChange={e => {
-                              const val = value.type === 'number' ? (e.target.value === '' ? 0 : Number(e.target.value)) : e.target.value;
-                              field.onChange(val);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ))}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Environment Configuration */}
+              {tool.envSchema.properties && Object.keys(tool.envSchema.properties).length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-gray-900">Environment Variables</h4>
+                  {Object.entries(tool.envSchema.properties).map(([key, value]: [string, any]) => (
+                    <FormField
+                      key={`env.${key}`}
+                      control={form.control}
+                      name={`env.${key}` as any}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {value.title || key}
+                            {value.description && <FormDescription>{value.description}</FormDescription>}
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type={value.type === 'number' ? 'number' : 'text'}
+                              placeholder={value.description}
+                              {...field}
+                              value={String(field.value ?? (value.type === 'number' ? 0 : ''))}
+                              onChange={e => {
+                                const val = value.type === 'number' ? (e.target.value === '' ? 0 : Number(e.target.value)) : e.target.value;
+                                field.onChange(val);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Query Parameters Configuration */}
+              {tool.querySchema &&
+                typeof tool.querySchema === 'object' &&
+                'properties' in tool.querySchema &&
+                tool.querySchema.properties &&
+                Object.keys(tool.querySchema.properties).length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium text-gray-900">Query Parameters</h4>
+                    {Object.entries(tool.querySchema.properties).map(([key, value]: [string, any]) => (
+                      <FormField
+                        key={`query.${key}`}
+                        control={form.control}
+                        name={`query.${key}` as any}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {value.title || key}
+                              {value.description && <FormDescription>{value.description}</FormDescription>}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type={value.type === 'number' ? 'number' : 'text'}
+                                placeholder={value.description}
+                                {...field}
+                                value={String(field.value ?? (value.type === 'number' ? 0 : ''))}
+                                onChange={e => {
+                                  const val = value.type === 'number' ? (e.target.value === '' ? 0 : Number(e.target.value)) : e.target.value;
+                                  field.onChange(val);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                  </div>
+                )}
+
+              {/* Headers Configuration */}
+              {tool.headersSchema &&
+                typeof tool.headersSchema === 'object' &&
+                'properties' in tool.headersSchema &&
+                tool.headersSchema.properties &&
+                Object.keys(tool.headersSchema.properties).length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium text-gray-900">Headers</h4>
+                    {Object.entries(tool.headersSchema.properties).map(([key, value]: [string, any]) => (
+                      <FormField
+                        key={`headers.${key}`}
+                        control={form.control}
+                        name={`headers.${key}` as any}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {value.title || key}
+                              {value.description && <FormDescription>{value.description}</FormDescription>}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type={value.type === 'number' ? 'number' : 'text'}
+                                placeholder={value.description}
+                                {...field}
+                                value={String(field.value ?? (value.type === 'number' ? 0 : ''))}
+                                onChange={e => {
+                                  const val = value.type === 'number' ? (e.target.value === '' ? 0 : Number(e.target.value)) : e.target.value;
+                                  field.onChange(val);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                  </div>
+                )}
               <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? 'Installing...' : 'Install Tool'}
               </Button>
@@ -111,8 +209,11 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
   );
 });
 
-const generateZodSchema = (schema: Exclude<JSONSchema, boolean>) => {
+const generateZodSchema = (schema: Exclude<JSONSchema, boolean> | undefined) => {
   const zodSchema: Record<string, any> = {};
+  if (!schema || typeof schema === 'boolean') {
+    return z.object({});
+  }
   if (schema?.properties) {
     Object.entries(schema.properties).forEach(([key, value]: [string, any]) => {
       let zodType;
@@ -141,7 +242,7 @@ const generateZodSchema = (schema: Exclude<JSONSchema, boolean>) => {
   return z.object(zodSchema);
 };
 
-const generateDefaultValues = (schema?: ToolSchemas['envSchema']) => {
+const generateDefaultValues = (schema?: any) => {
   const defaultValues: Record<string, any> = {};
   if (!schema?.properties) {
     return defaultValues;

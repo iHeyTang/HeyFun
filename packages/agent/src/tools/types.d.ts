@@ -2,20 +2,24 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import type { Chat } from '@repo/llm/chat';
 
-/**
- * MCP工具配置接口
- */
-export interface ToolConfig {
+export type BaseMcpConfig = {
   id: string;
   name: string;
-  // for stdio
+  version: string;
+};
+
+export type AddStdioMcpConfig = BaseMcpConfig & {
   command: string;
   args: string[];
   env: Record<string, string>;
-  // for sse
+};
+
+export type AddSseMcpConfig = BaseMcpConfig & {
   url: string;
-  headers: Record<string, any>;
-}
+  headers: Record<string, string>;
+};
+
+export type AddMcpConfig = AddStdioMcpConfig | AddSseMcpConfig;
 
 export interface BaseToolParameters {
   [key: string]: unknown;
