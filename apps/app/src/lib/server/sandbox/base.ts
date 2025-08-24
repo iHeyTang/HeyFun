@@ -159,6 +159,8 @@ export abstract class SandboxFileSystem {
   abstract uploadFileFromBuffer(file: Buffer, remotePath: string, timeout?: number): Promise<void>;
   abstract uploadFileFromLocal(localPath: string, remotePath: string, timeout?: number): Promise<void>;
   abstract uploadFiles(files: SandboxFileUpload[], timeout?: number): Promise<void>;
+  abstract getWorkspacePath(): Promise<string>;
+  abstract resolvePath(path: string): Promise<string>;
 }
 
 /**

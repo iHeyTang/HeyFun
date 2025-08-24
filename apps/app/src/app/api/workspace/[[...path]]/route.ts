@@ -6,6 +6,10 @@ import path from 'path';
 
 /**
  * This route is used to serve assets for a task.
+ *
+ * ATTENTION:
+ * 文件路径的处理不得使用任何 node 环境的接口，而是全部通过 sandbox 的接口来处理。 sandbox 的接口会提供相应的
+ * 路径转换功能，确保在不同的沙盒环境（如本地、云端）中都能正确处理路径。
  * @param request
  * @param params
  * @returns
@@ -14,10 +18,11 @@ export const GET = withUserAuthApi<{ path?: string[] }, {}, {}>(async (request: 
   try {
     const { path: pathSegments = [] } = ctx.params;
     const sandbox = await sandboxManager.getOrCreateOneById(ctx.orgId);
-    const fileInfo = await sandbox.fs.getFileDetails(pathSegments.join('/'));
+    const p = await sandbox.fs.resolvePath(pathSegments.join('/'));
+    const fileInfo = await sandbox.fs.getFileDetails(p);
 
     if (fileInfo.isDir) {
-      const files = await sandbox.fs.listFiles(pathSegments.join('/'));
+      const files = await sandbox.fs.listFiles(p);
       const fileDetails = await Promise.all(
         files
           .sort((a, b) => {
@@ -42,7 +47,7 @@ export const GET = withUserAuthApi<{ path?: string[] }, {}, {}>(async (request: 
     }
 
     // calculate ETag
-    const fileBuffer = await sandbox.fs.downloadFile(pathSegments.join('/'));
+    const fileBuffer = await sandbox.fs.downloadFile(fileInfo.name);
     const etag = crypto.createHash('md5').update(fileBuffer).digest('hex');
 
     // check If-None-Match header
@@ -57,9 +62,8 @@ export const GET = withUserAuthApi<{ path?: string[] }, {}, {}>(async (request: 
       return new NextResponse(null, { status: 304 });
     }
 
-    const contentType = getContentType(pathSegments.join('/'));
-    const fileName = path.basename(pathSegments.join('/'));
-    const encodedFileName = encodeURIComponent(fileName);
+    const contentType = getContentType(fileInfo.name);
+    const encodedFileName = encodeURIComponent(fileInfo.name);
 
     return new NextResponse(fileBuffer, {
       headers: {

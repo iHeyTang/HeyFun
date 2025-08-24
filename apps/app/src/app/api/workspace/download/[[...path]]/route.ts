@@ -6,6 +6,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * This route is used to download workspace files or directories as zip archives
+ *
+ * ATTENTION:
+ * 文件路径的处理不得使用任何 node 环境的接口，而是全部通过 sandbox 的接口来处理。 sandbox 的接口会提供相应的
+ * 路径转换功能，确保在不同的沙盒环境（如本地、云端）中都能正确处理路径。
  * @param request
  * @param params
  * @returns

@@ -15,6 +15,7 @@ import {
 } from './base';
 import { to } from '@/lib/shared/to';
 import { FunMaxConfig } from '@repo/agent';
+import path from 'path';
 
 class DaytonaSandboxProcess extends SandboxProcess {
   constructor(private sandbox: Sandbox) {
@@ -209,7 +210,7 @@ class DaytonaSandboxAgentProxy extends SandboxAgentProxy {
     throw lastError;
   }
 
-  private async request(url: string, options: RequestInit, timeout = 30000) {
+  async request(url: string, options: RequestInit, timeout = 30000) {
     let lastError: any;
 
     for (let attempt = 0; attempt <= this.MAX_RETRIES; attempt++) {
@@ -259,68 +260,89 @@ class DaytonaSandboxFileSystem extends SandboxFileSystem {
     super();
   }
 
-  async createFolder(path: string, mode: string): Promise<void> {
-    return await this.sandbox.fs.createFolder(this.buildRemotePath(path), mode);
+  async createFolder(p: string, mode: string): Promise<void> {
+    const workspacePath = await this.getWorkspacePath();
+    return await this.sandbox.fs.createFolder(path.resolve(workspacePath, p), mode);
   }
 
-  async deleteFile(path: string): Promise<void> {
-    return await this.sandbox.fs.deleteFile(this.buildRemotePath(path));
+  async deleteFile(p: string): Promise<void> {
+    const workspacePath = await this.getWorkspacePath();
+    return await this.sandbox.fs.deleteFile(path.resolve(workspacePath, p));
   }
 
-  async downloadFile(path: string, timeout?: number): Promise<Buffer> {
-    return await this.sandbox.fs.downloadFile(this.buildRemotePath(path), timeout);
+  async downloadFile(p: string, timeout?: number): Promise<Buffer> {
+    const workspacePath = await this.getWorkspacePath();
+    return await this.sandbox.fs.downloadFile(path.resolve(workspacePath, p), timeout);
   }
 
-  async findFiles(path: string, pattern: string): Promise<SandboxFileMatch[]> {
-    return await this.sandbox.fs.findFiles(this.buildRemotePath(path), pattern);
+  async findFiles(p: string, pattern: string): Promise<SandboxFileMatch[]> {
+    const workspacePath = await this.getWorkspacePath();
+    return await this.sandbox.fs.findFiles(path.resolve(workspacePath, p), pattern);
   }
 
-  async getFileDetails(path: string): Promise<SandboxFileInfo> {
-    return await this.sandbox.fs.getFileDetails(this.buildRemotePath(path));
+  async getFileDetails(p: string): Promise<SandboxFileInfo> {
+    const workspacePath = await this.getWorkspacePath();
+    return await this.sandbox.fs.getFileDetails(path.resolve(workspacePath, p));
   }
 
-  async listFiles(path: string): Promise<SandboxFileInfo[]> {
-    const file = await this.sandbox.fs.listFiles(this.buildRemotePath(path));
+  async listFiles(p: string): Promise<SandboxFileInfo[]> {
+    const workspacePath = await this.getWorkspacePath();
+    const file = await this.sandbox.fs.listFiles(path.resolve(workspacePath, p));
     return file;
   }
 
   async moveFiles(source: string, destination: string): Promise<void> {
-    return await this.sandbox.fs.moveFiles(this.buildRemotePath(source), this.buildRemotePath(destination));
+    const workspacePath = await this.getWorkspacePath();
+    return await this.sandbox.fs.moveFiles(path.resolve(workspacePath, source), path.resolve(workspacePath, destination));
   }
 
   async replaceInFiles(files: string[], pattern: string, newValue: string): Promise<SandboxFileReplaceResult[]> {
+    const workspacePath = await this.getWorkspacePath();
     return await this.sandbox.fs.replaceInFiles(
-      files.map(file => this.buildRemotePath(file)),
+      files.map(file => path.resolve(workspacePath, file)),
       pattern,
       newValue,
     );
   }
 
-  async searchFiles(path: string, pattern: string): Promise<SandboxFileSearchFilesResponse> {
-    return await this.sandbox.fs.searchFiles(this.buildRemotePath(path), pattern);
+  async searchFiles(p: string, pattern: string): Promise<SandboxFileSearchFilesResponse> {
+    const workspacePath = await this.getWorkspacePath();
+    return await this.sandbox.fs.searchFiles(path.resolve(workspacePath, p), pattern);
   }
 
-  async setFilePermissions(path: string, permissions: SandboxFilePermissionsParams): Promise<void> {
-    return await this.sandbox.fs.setFilePermissions(this.buildRemotePath(path), permissions);
+  async setFilePermissions(p: string, permissions: SandboxFilePermissionsParams): Promise<void> {
+    const workspacePath = await this.getWorkspacePath();
+    return await this.sandbox.fs.setFilePermissions(path.resolve(workspacePath, p), permissions);
   }
 
   async uploadFileFromBuffer(file: Buffer, remotePath: string, timeout?: number): Promise<void> {
-    return await this.sandbox.fs.uploadFile(file, this.buildRemotePath(remotePath), timeout);
+    const workspacePath = await this.getWorkspacePath();
+    return await this.sandbox.fs.uploadFile(file, path.resolve(workspacePath, remotePath), timeout);
   }
 
   async uploadFileFromLocal(localPath: string, remotePath: string, timeout?: number): Promise<void> {
-    return await this.sandbox.fs.uploadFile(localPath, this.buildRemotePath(remotePath), timeout);
+    const workspacePath = await this.getWorkspacePath();
+    return await this.sandbox.fs.uploadFile(localPath, path.resolve(workspacePath, remotePath), timeout);
   }
 
   async uploadFiles(files: SandboxFileUpload[], timeout?: number): Promise<void> {
+    const workspacePath = await this.getWorkspacePath();
     return await this.sandbox.fs.uploadFiles(
-      files.map(file => ({ ...file, destination: this.buildRemotePath(file.destination) })),
+      files.map(file => ({ ...file, destination: path.resolve(workspacePath, file.destination) })),
       timeout,
     );
   }
 
-  private buildRemotePath(path: string): string {
-    return `/heyfun/workspace/${path}`;
+  async getWorkspacePath(): Promise<string> {
+    const agent = new DaytonaSandboxAgentProxy(this.sandbox);
+    const response = await agent.request('/api/workspace', { method: 'GET' }, 3000);
+    const data = await response.json();
+    return data.workspacePath;
+  }
+
+  async resolvePath(p: string): Promise<string> {
+    const workspacePath = await this.getWorkspacePath();
+    return path.resolve(workspacePath, p);
   }
 }
 

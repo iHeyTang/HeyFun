@@ -47,8 +47,6 @@ export abstract class BaseAgent {
   public readonly description?: string;
   public readonly should_plan: boolean;
 
-  public readonly task_id: string;
-
   // Dependencies - 直接使用原生类型
   public llm: LLMClient;
   public memory: Memory;
@@ -68,7 +66,6 @@ export abstract class BaseAgent {
     this.name = config.name;
     this.description = config.description;
     this.should_plan = config.should_plan ?? true;
-    this.task_id = config.task_id;
     this.state = config.state ?? AgentState.IDLE;
     this.should_terminate = config.should_terminate ?? false;
     this.max_steps = config.max_steps ?? 100;
@@ -350,7 +347,6 @@ export abstract class BaseAgent {
    * Request to terminate the current task
    */
   public async terminate(): Promise<void> {
-    console.log(`Terminating task ${this.task_id}`);
     this.should_terminate = true;
     this.emit(BaseAgentEvents.LIFECYCLE_TERMINATING, {});
   }

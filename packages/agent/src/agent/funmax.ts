@@ -24,15 +24,6 @@ export interface FunMaxConfig extends ReActAgentConfig {
 }
 
 /**
- * 任务上下文接口
- */
-export interface TaskContext {
-  task_id: string;
-  task_dir: string;
-  organization_id: string;
-}
-
-/**
  * FunMax - 一个多功能通用代理
  * 可以使用多种工具解决各种任务的通用代理
  */
@@ -47,13 +38,11 @@ export class FunMax extends ReActAgent {
   public readonly history: Chat.ChatCompletionMessageParam[];
   public readonly custom_prompt_templates: PromptTemplates;
 
-  // 任务上下文
-  public task_context: TaskContext;
-
   // 上下文助手（暂时设为可选，实际使用时需要初始化）
   private _tool_call_context_helper?: ToolCallContextHelper;
 
   constructor(config: FunMaxConfig) {
+    console.log('🚀 FunMax constructor', config);
     super(config);
 
     this.language = config.language || 'English';
@@ -64,21 +53,6 @@ export class FunMax extends ReActAgent {
       system: '',
       next: '',
       plan: '',
-    };
-
-    // 解析任务ID以获取任务上下文
-    const [organization_id, task_id] = this.task_id.split('/');
-    if (!organization_id || !task_id) {
-      throw new Error('Invalid task ID');
-    }
-
-    // 设置基础工作空间路径，具体任务目录将在 switchToTaskDirectory 中设置
-    const baseWorkspace = process.env.HEYFUN_AGENT_WORKSPACE || 'workspace';
-
-    this.task_context = {
-      task_id,
-      task_dir: baseWorkspace, // 这里只是基础路径，会在 prepare 中被更新为完整路径
-      organization_id,
     };
   }
 
@@ -100,17 +74,14 @@ export class FunMax extends ReActAgent {
     console.log(`   Current Working Directory: ${process.cwd()}`);
 
     // // 切换到任务工作目录
-    await this.switchToTaskDirectory();
-    const current_dir = process.cwd();
-    this.task_context.task_dir = current_dir;
+    const workspace_dir = await this.switchToWorkspace();
 
     // 添加系统提示词到内存
     const system_prompt = renderTemplate(this.custom_prompt_templates.system, {
-      task_id: this.task_context.task_id,
       language: this.language || 'English',
       max_steps: this.max_steps,
       current_time: new Date().toISOString(),
-      task_dir: this.task_context.task_dir,
+      workspace_dir: workspace_dir,
     });
     await this.updateMemory(createMessage.system(system_prompt));
 
@@ -141,40 +112,35 @@ export class FunMax extends ReActAgent {
   /**
    * 切换到任务工作目录
    */
-  private async switchToTaskDirectory(): Promise<void> {
+  private async switchToWorkspace(): Promise<string> {
     try {
-      // 获取用户主目录
-      const homeDir = os.homedir();
-
       // 构建绝对路径，避免使用相对路径
-      const workspacePath = process.env.HEYFUN_AGENT_WORKSPACE || 'workspace';
-      const absoluteTaskDir = path.isAbsolute(workspacePath)
-        ? path.join(workspacePath, this.task_context.task_id)
-        : path.join(homeDir, workspacePath, this.task_context.task_id);
-
-      // 更新任务目录为绝对路径
-      this.task_context.task_dir = absoluteTaskDir;
+      const currentProjectDir = process.cwd();
+      const workspacePath = process.env.HEYFUN_AGENT_WORKSPACE || path.join(currentProjectDir, 'workspace');
+      if (!path.isAbsolute(workspacePath)) {
+        throw new Error('Workspace path is not absolute');
+      }
 
       console.log('📁 Current dir', process.cwd());
-      console.log(`📁 Target task directory: ${this.task_context.task_dir}`);
+      console.log(`📁 Target task directory: ${workspacePath}`);
 
       // 检查目录是否存在，如果不存在则创建
       try {
-        await fs.access(this.task_context.task_dir);
+        await fs.access(workspacePath);
         console.log('✅ Task directory already exists');
       } catch {
         console.log('📁 Creating task directory...');
-        await fs.mkdir(this.task_context.task_dir, { recursive: true });
+        await fs.mkdir(workspacePath, { recursive: true });
         console.log('✅ Task directory created successfully');
       }
 
       // 切换到任务目录
-      process.chdir(this.task_context.task_dir);
-      console.log(`📁 Switched to task directory: ${this.task_context.task_dir}`);
+      process.chdir(workspacePath);
+      console.log(`📁 Switched to task directory: ${workspacePath}`);
+      return workspacePath;
     } catch (error) {
-      console.error(`❌ Failed to switch to task directory: ${error}`);
+      console.error(`❌ Failed to switch to workspace: ${error}`);
 
-      // 提供更详细的错误信息
       if (error instanceof Error) {
         if (error.message.includes('EACCES')) {
           console.error('💡 Permission denied. Check if the process has write access to the target directory.');

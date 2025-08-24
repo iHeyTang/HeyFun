@@ -14,7 +14,7 @@ import {
   SandboxRunner,
 } from './base';
 import { spawn, ChildProcess, exec } from 'child_process';
-import { join } from 'path';
+import path, { join } from 'path';
 import { promisify } from 'util';
 import { to } from '@/lib/shared/to';
 import fs from 'fs/promises';
@@ -222,24 +222,24 @@ class LocalSandboxFileSystem extends SandboxFileSystem {
   }
 
   async createFolder(path: string, mode: string): Promise<void> {
-    const absolutePath = await this.getAbsolutePath(path);
+    const absolutePath = await this.resolvePath(path);
     await fs.mkdir(absolutePath, { recursive: true });
     await fs.chmod(absolutePath, parseInt(mode, 8));
   }
 
   async deleteFile(path: string): Promise<void> {
-    const absolutePath = await this.getAbsolutePath(path);
+    const absolutePath = await this.resolvePath(path);
     await fs.rm(absolutePath, { recursive: true });
   }
 
   async downloadFile(path: string, timeout?: number): Promise<Buffer> {
-    const absolutePath = await this.getAbsolutePath(path);
+    const absolutePath = await this.resolvePath(path);
     return await fs.readFile(absolutePath);
   }
 
   async findFiles(path: string, pattern: string): Promise<SandboxFileMatch[]> {
     const matches: SandboxFileMatch[] = [];
-    const absolutePath = await this.getAbsolutePath(path);
+    const absolutePath = await this.resolvePath(path);
     const files = await fs.readdir(absolutePath);
     const promises = files.map(async file => {
       const content = await fs.readFile(join(absolutePath, file));
@@ -255,11 +255,11 @@ class LocalSandboxFileSystem extends SandboxFileSystem {
     return matches;
   }
 
-  async getFileDetails(path: string): Promise<SandboxFileInfo> {
-    const absolutePath = await this.getAbsolutePath(path);
+  async getFileDetails(p: string): Promise<SandboxFileInfo> {
+    const absolutePath = await this.resolvePath(p);
     const stats = await fs.stat(absolutePath);
     return {
-      name: path,
+      name: path.basename(absolutePath),
       size: stats.size,
       owner: stats.uid.toString(),
       group: stats.gid.toString(),
@@ -271,7 +271,7 @@ class LocalSandboxFileSystem extends SandboxFileSystem {
   }
 
   async listFiles(path: string): Promise<SandboxFileInfo[]> {
-    const absolutePath = await this.getAbsolutePath(path);
+    const absolutePath = await this.resolvePath(path);
     const files = await fs.readdir(absolutePath);
     return Promise.all(
       files.map(async file => {
@@ -291,8 +291,8 @@ class LocalSandboxFileSystem extends SandboxFileSystem {
   }
 
   async moveFiles(source: string, destination: string): Promise<void> {
-    const absoluteSource = await this.getAbsolutePath(source);
-    const absoluteDestination = await this.getAbsolutePath(destination);
+    const absoluteSource = await this.resolvePath(source);
+    const absoluteDestination = await this.resolvePath(destination);
     await fs.rename(absoluteSource, absoluteDestination);
   }
 
@@ -308,7 +308,7 @@ class LocalSandboxFileSystem extends SandboxFileSystem {
   }
 
   async searchFiles(path: string, pattern: string): Promise<SandboxFileSearchFilesResponse> {
-    const absolutePath = await this.getAbsolutePath(path);
+    const absolutePath = await this.resolvePath(path);
     const files = await fs.readdir(absolutePath);
     return {
       files: files.filter(file => file.includes(pattern)),
@@ -316,35 +316,38 @@ class LocalSandboxFileSystem extends SandboxFileSystem {
   }
 
   async setFilePermissions(path: string, permissions: SandboxFilePermissionsParams): Promise<void> {
-    const absolutePath = await this.getAbsolutePath(path);
+    const absolutePath = await this.resolvePath(path);
     await fs.chmod(absolutePath, parseInt(permissions.mode!, 8));
   }
 
   async uploadFileFromBuffer(file: Buffer, remotePath: string, timeout?: number): Promise<void> {
-    const absolutePath = await this.getAbsolutePath(remotePath);
+    const absolutePath = await this.resolvePath(remotePath);
     await fs.writeFile(absolutePath, file);
   }
 
   async uploadFileFromLocal(localPath: string, remotePath: string, timeout?: number): Promise<void> {
-    const absolutePath = await this.getAbsolutePath(remotePath);
+    const absolutePath = await this.resolvePath(remotePath);
     await fs.copyFile(localPath, absolutePath);
   }
 
   async uploadFiles(files: SandboxFileUpload[], timeout?: number): Promise<void> {
     const promises = files.map(async file => {
-      const absolutePath = await this.getAbsolutePath(file.destination);
+      const absolutePath = await this.resolvePath(file.destination);
       await fs.writeFile(absolutePath, file.source);
     });
     await Promise.all(promises);
   }
 
-  async getAbsolutePath(path: string): Promise<string> {
-    const worksapceRoot = join(process.cwd(), '..', 'agent', 'workspace');
-    const absolutePath = path.startsWith('/') ? path : join(worksapceRoot, path);
-    if (!absolutePath.startsWith(worksapceRoot)) {
-      throw new Error(`Path ${path} is not in workspace root`);
-    }
-    return absolutePath;
+  async getWorkspacePath(): Promise<string> {
+    const workspacePath = await fetch('http://localhost:7200/api/workspace')
+      .then(res => res.json())
+      .then(data => data.workspacePath);
+    return workspacePath;
+  }
+
+  async resolvePath(p: string): Promise<string> {
+    const workspacePath = await this.getWorkspacePath();
+    return path.resolve(workspacePath, p);
   }
 }
 
@@ -399,85 +402,10 @@ export class LocalSandboxManager extends BaseSandboxManager {
   }
 
   async start(id: string): Promise<void> {
-    if (id !== 'local-agent') {
-      throw new Error(`Only 'local-agent' is supported in local mode`);
-    }
-
-    // 检查进程是否已经在运行
-    if (this.processes.has(id)) {
-      const process = this.processes.get(id);
-      if (process && !process.killed) {
-        console.log('Agent process is already running');
-        return;
-      }
-    }
-
-    console.log('Starting local agent with bun dev...');
-
-    // 启动 bun dev 进程
-    console.log(this.config.agentPath);
-    const childProcess = spawn('bun', ['start:dev'], {
-      cwd: this.config.agentPath,
-      stdio: 'pipe',
-      env: {
-        ...process.env,
-        PORT: this.config.port?.toString() || '7200',
-      },
-    });
-
-    // 监听进程输出
-    childProcess.stdout?.on('data', data => {
-      console.log(`[Agent] ${data.toString().trim()}`);
-    });
-
-    childProcess.stderr?.on('data', data => {
-      console.error(`[Agent Error] ${data.toString().trim()}`);
-    });
-
-    // 监听进程退出
-    childProcess.on('exit', code => {
-      console.log(`Agent process exited with code ${code}`);
-      this.processes.delete(id);
-    });
-
-    // 监听进程错误
-    childProcess.on('error', error => {
-      console.error('Failed to start agent process:', error);
-      this.processes.delete(id);
-    });
-
-    // 等待一段时间确保进程启动
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    this.processes.set(id, childProcess);
-    console.log(`Agent started on port ${this.config.port}`);
+    // do nothing
   }
 
   async stop(id: string): Promise<void> {
-    if (id !== 'local-agent') {
-      throw new Error(`Only 'local-agent' is supported in local mode`);
-    }
-
-    const process = this.processes.get(id);
-    if (process && !process.killed) {
-      console.log('Stopping agent process...');
-      process.kill('SIGTERM');
-
-      // 等待进程优雅退出
-      await new Promise<void>(resolve => {
-        const timeout = setTimeout(() => {
-          process.kill('SIGKILL');
-          resolve();
-        }, 5000);
-
-        process.on('exit', () => {
-          clearTimeout(timeout);
-          resolve();
-        });
-      });
-
-      this.processes.delete(id);
-      console.log('Agent process stopped');
-    }
+    // do nothing
   }
 }
