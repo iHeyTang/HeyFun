@@ -59,8 +59,8 @@ export function withUserAuth<T = unknown, R = unknown>(fn: AuthWrapped<T, R>): A
 }
 
 export type AuthApiWrapperContext<P, Q, B> = BaseAuthWrapper & { query: Q; params: P; body: B };
-export type AuthApiWrapped<P, Q, B, R> = (request: NextRequest, ctx: AuthApiWrapperContext<P, Q, B>) => Promise<NextResponse<R>>;
-export type AuthApi<P, R> = (request: NextRequest, { params }: { params?: Promise<P> }) => Promise<NextResponse<R>>;
+export type AuthApiWrapped<P, Q, B, R> = (request: NextRequest, ctx: AuthApiWrapperContext<P, Q, B>) => Promise<NextResponse<R> | Response>;
+export type AuthApi<P, R> = (request: NextRequest, { params }: { params?: Promise<P> }) => Promise<NextResponse<R> | Response>;
 
 export function withUserAuthApi<P = unknown, Q = unknown, B = unknown, R = unknown>(apiFn: AuthApiWrapped<P, Q, B, R>): AuthApi<P, R> {
   return async (request: NextRequest, { params }: { params?: Promise<P> }) => {

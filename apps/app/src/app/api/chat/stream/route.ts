@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/server/clerk-auth';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/prisma';
 import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
 import { LLMClient } from '@repo/llm/chat';
 import fs from 'fs';
 import path from 'path';
+import { withUserAuthApi } from '@/lib/server/auth-wrapper';
 
 const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
 
@@ -135,32 +135,17 @@ async function getAIResponse({ organizationId, sessionId, messageId }: { organiz
   }
 }
 
-export async function POST(req: NextRequest) {
+export const POST = withUserAuthApi<{}, {}, { sessionId: string; messageId: string }>(async (_req, ctx) => {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
-
-    const body = await req.json();
-    const { sessionId, messageId } = body;
+    const { sessionId, messageId } = ctx.body;
 
     if (!sessionId || !messageId) {
       return new NextResponse('Missing required parameters', { status: 400 });
     }
 
-    // 获取用户组织信息
-    const orgUser = await prisma.organizationUsers.findFirst({
-      where: { userId: user.id },
-    });
-
-    if (!orgUser) {
-      return new NextResponse('Organization not found', { status: 404 });
-    }
-
     // 获取AI响应流
     const result = await getAIResponse({
-      organizationId: orgUser.organizationId,
+      organizationId: ctx.orgId,
       sessionId,
       messageId,
     });
@@ -170,7 +155,7 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         let heartbeatInterval: NodeJS.Timeout | null = null;
-        
+
         // 启动心跳机制
         const startHeartbeat = () => {
           heartbeatInterval = setInterval(() => {
@@ -228,7 +213,7 @@ export async function POST(req: NextRequest) {
     console.error('API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+});
 
 export async function OPTIONS() {
   return new NextResponse(null, {

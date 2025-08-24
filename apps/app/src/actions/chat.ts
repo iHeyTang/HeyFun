@@ -160,26 +160,6 @@ export const sendMessage = withUserAuth(async ({ orgId, args }: AuthWrapperConte
   }
 });
 
-// 更新会话标题
-export const updateSessionTitle = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ sessionId: string; title: string }>) => {
-  const { sessionId, title } = args;
-
-  try {
-    const session = await prisma.chatSessions.update({
-      where: {
-        id: sessionId,
-        organizationId: orgId,
-      },
-      data: { title },
-    });
-
-    return session;
-  } catch (error) {
-    console.error('Error updating session title:', error);
-    throw error;
-  }
-});
-
 // 删除会话（归档）
 export const deleteSession = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ sessionId: string }>) => {
   const { sessionId } = args;
