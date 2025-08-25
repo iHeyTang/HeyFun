@@ -11,6 +11,11 @@ const isPublicRoute = createRouteMatcher([
   '/api/tools/refresh-stars',
 ]);
 
+// 添加调试信息
+console.log('Middleware - CLERK_SECRET_KEY:', process.env.CLERK_SECRET_KEY ? 'SET' : 'NOT SET');
+console.log('Middleware - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:', process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? 'SET' : 'NOT SET');
+console.log('Middleware - CLERK_PUBLISHABLE_KEY:', process.env.CLERK_PUBLISHABLE_KEY ? 'SET' : 'NOT SET');
+
 export default clerkMiddleware(
   async (auth, request) => {
     if (!isPublicRoute(request)) {

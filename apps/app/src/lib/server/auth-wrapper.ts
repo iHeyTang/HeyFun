@@ -1,6 +1,5 @@
 import { auth, clerkClient, Organization, User } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { AuthUser } from './clerk-auth';
 import { to } from '../shared/to';
 
 export class UnauthorizedError extends Error {
