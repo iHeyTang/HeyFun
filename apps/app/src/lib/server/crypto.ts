@@ -1,4 +1,9 @@
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+
+const PRIVATE_KEY = fs.readFileSync(path.join(process.env.APP_CRYPTO_KEY || 'keys', 'private.pem'), 'utf8');
+const PUBLIC_KEY = fs.readFileSync(path.join(process.env.APP_CRYPTO_KEY || 'keys', 'public.pem'), 'utf8');
 
 /**
  * encrypt data with public key
@@ -82,7 +87,7 @@ function decryptWithAES(encrypted: Buffer, key: Buffer, iv: Buffer, authTag: Buf
  * @param publicKey - public key
  * @returns encrypted data
  */
-export function encryptTextWithPublicKey(data: string, publicKey: string): string {
+export function encryptTextWithPublicKey(data: string, publicKey: string = PUBLIC_KEY): string {
   const dataBuffer = Buffer.from(data, 'utf8');
 
   // generate aes key
@@ -119,7 +124,7 @@ export function encryptTextWithPublicKey(data: string, publicKey: string): strin
  * @param privateKey - private key
  * @returns decrypted data
  */
-export function decryptTextWithPrivateKey(encryptedData: string, privateKey: string): string {
+export function decryptTextWithPrivateKey(encryptedData: string, privateKey: string = PRIVATE_KEY): string {
   try {
     // try to parse as new encrypted format
     const data = JSON.parse(encryptedData);

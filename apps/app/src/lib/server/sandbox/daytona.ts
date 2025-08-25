@@ -1,8 +1,6 @@
 import { Daytona, DaytonaConfig, Sandbox, SandboxState } from '@daytonaio/sdk';
 import {
   BaseSandboxManager,
-  SandboxAgentEvent,
-  SandboxAgentProxy,
   SandboxFileInfo,
   SandboxFileMatch,
   SandboxFilePermissionsParams,
@@ -13,9 +11,7 @@ import {
   SandboxProcess,
   SandboxRunner,
 } from './base';
-import { to } from '@/lib/shared/to';
-import { FunMaxConfig } from '@repo/agent';
-import path from 'path';
+import path, { join } from 'path';
 
 class DaytonaSandboxProcess extends SandboxProcess {
   constructor(private sandbox: Sandbox) {
@@ -32,226 +28,6 @@ class DaytonaSandboxProcess extends SandboxProcess {
     const cmd = `${params.command} ${params.args.join(' ')}`;
     await this.sandbox.process.createSession(params.id);
     await this.sandbox.process.executeSessionCommand(params.id, { command: cmd, runAsync: true });
-  }
-}
-
-class DaytonaSandboxAgentProxy extends SandboxAgentProxy {
-  private link: { url: string; legacyProxyUrl?: string; token: string } | null = null;
-  private readonly MAX_RETRIES = 3;
-  private readonly BASE_DELAY = 1000; // 1 second
-  private readonly MAX_DELAY = 10000; // 10 seconds
-
-  constructor(private sandbox: Sandbox) {
-    super();
-  }
-
-  async createTask(params: FunMaxConfig): Promise<string> {
-    const [error, response] = await to(
-      this.request(`/api/tasks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify(params),
-      }).then(async res => {
-        if (res.status >= 200 && res.status < 300) {
-          return (await res.json()) as Promise<{ taskId: string }>;
-        }
-        throw Error(`Server Error of ${res.url}: Status Code ${res.status}; Response: ${await res.text()}`);
-      }),
-    );
-
-    if (error || !response.taskId) {
-      throw error || new Error('Unkown Error');
-    }
-
-    return response.taskId;
-  }
-
-  async terminateTask(params: { taskId: string }): Promise<void> {
-    await this.request(`/api/tasks/terminate`, {
-      method: 'POST',
-      body: JSON.stringify({ task_id: params.taskId }),
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-    });
-  }
-
-  async getTaskEventStream(params: { taskId: string }, onEvent: (event: SandboxAgentEvent) => Promise<void>): Promise<void> {
-    let lastError: any;
-
-    for (let attempt = 0; attempt <= this.MAX_RETRIES; attempt++) {
-      try {
-        const streamResponse = await this.request(`/api/tasks/event?taskId=${params.taskId}`, { method: 'GET', keepalive: true }, 300000);
-        const reader = streamResponse.body?.getReader();
-        if (!reader) throw new Error('Failed to get response stream');
-
-        const decoder = new TextDecoder();
-
-        let buffer = '';
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-
-            if (value) {
-              buffer += decoder.decode(value, { stream: true });
-            }
-
-            const lines = buffer.split('\n');
-            // Keep the last line (might be incomplete) if not the final read
-            buffer = done ? '' : lines.pop() || '';
-
-            for (const line of lines) {
-              if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
-
-              try {
-                const parsed = JSON.parse(line.slice(6)) as {
-                  id: string;
-                  name: string;
-                  step: number;
-                  timestamp: string;
-                  content: any;
-                };
-                await onEvent(parsed);
-              } catch (error) {
-                console.error('Failed to process message:', error);
-              }
-            }
-            if (done) break;
-          }
-          // If we reach here, the stream completed successfully
-          return;
-        } finally {
-          reader.releaseLock();
-        }
-      } catch (error) {
-        lastError = error;
-        console.error(`[Daytona] EventStream attempt ${attempt + 1}/${this.MAX_RETRIES + 1} failed:`, error);
-
-        if (attempt < this.MAX_RETRIES && this.isRetryableError(error)) {
-          // Reset link on network errors to force re-establishment
-          if (error instanceof TypeError && error.message.includes('fetch')) {
-            this.link = null;
-            console.log(`[Daytona] Network error in event stream, resetting link for retry`);
-          }
-
-          const delay = this.calculateRetryDelay(attempt);
-          console.log(`[Daytona] Retrying event stream in ${delay}ms...`);
-          await this.sleep(delay);
-        } else {
-          break;
-        }
-      }
-    }
-
-    throw lastError;
-  }
-
-  private async sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  private calculateRetryDelay(attempt: number): number {
-    const delay = Math.min(this.BASE_DELAY * Math.pow(2, attempt), this.MAX_DELAY);
-    // Add some jitter to avoid thundering herd
-    return delay + Math.random() * 1000;
-  }
-
-  private isRetryableError(error: any): boolean {
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      return true; // Network errors
-    }
-    if (error instanceof Error) {
-      const message = error.message.toLowerCase();
-      if (message.includes('timeout') || message.includes('network') || message.includes('connection')) {
-        return true;
-      }
-    }
-    if (error?.status >= 500 && error?.status < 600) {
-      return true; // 5xx server errors
-    }
-    if (error?.status === 429) {
-      return true; // Rate limiting
-    }
-    return false;
-  }
-
-  private async getAgentLink() {
-    if (this.link) {
-      return this.link;
-    }
-
-    let lastError: any;
-    for (let attempt = 0; attempt <= this.MAX_RETRIES; attempt++) {
-      try {
-        if (this.sandbox.state !== SandboxState.STARTED) {
-          await this.sandbox.start();
-          await this.sandbox.waitUntilStarted();
-        }
-        const previewLink = await this.sandbox.getPreviewLink(3000);
-        this.link = previewLink;
-        return previewLink;
-      } catch (error) {
-        lastError = error;
-        console.error(`[Daytona] getAgentLink attempt ${attempt + 1}/${this.MAX_RETRIES + 1} failed:`, error);
-
-        if (attempt < this.MAX_RETRIES && this.isRetryableError(error)) {
-          const delay = this.calculateRetryDelay(attempt);
-          console.log(`[Daytona] Retrying getAgentLink in ${delay}ms...`);
-          await this.sleep(delay);
-        } else {
-          break;
-        }
-      }
-    }
-    throw lastError;
-  }
-
-  async request(url: string, options: RequestInit, timeout = 30000) {
-    let lastError: any;
-
-    for (let attempt = 0; attempt <= this.MAX_RETRIES; attempt++) {
-      try {
-        const link = await this.getAgentLink();
-        console.log(`[Daytona] url: ${link.legacyProxyUrl || link.url}${url} (attempt ${attempt + 1}/${this.MAX_RETRIES + 1})`);
-        console.log(`[Daytona] x-daytona-preview-token: ${link.token}`);
-
-        const response = await fetch(`${link.legacyProxyUrl || link.url}${url}`, {
-          ...options,
-          headers: { ...options.headers, 'x-daytona-preview-token': link.token },
-          signal: AbortSignal.timeout(timeout),
-        });
-
-        // Check if response indicates a retryable error
-        if (!response.ok && this.isRetryableError({ status: response.status })) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        return response;
-      } catch (error) {
-        lastError = error;
-        console.error(`[Daytona] Request attempt ${attempt + 1}/${this.MAX_RETRIES + 1} failed:`, error);
-
-        if (attempt < this.MAX_RETRIES && this.isRetryableError(error)) {
-          // Reset link on network errors to force re-establishment
-          if (error instanceof TypeError && error.message.includes('fetch')) {
-            this.link = null;
-            console.log(`[Daytona] Network error detected, resetting link for retry`);
-          }
-
-          const delay = this.calculateRetryDelay(attempt);
-          console.log(`[Daytona] Retrying request in ${delay}ms...`);
-          await this.sleep(delay);
-        } else {
-          break;
-        }
-      }
-    }
-
-    throw lastError;
   }
 }
 
@@ -334,10 +110,7 @@ class DaytonaSandboxFileSystem extends SandboxFileSystem {
   }
 
   async getWorkspacePath(): Promise<string> {
-    const agent = new DaytonaSandboxAgentProxy(this.sandbox);
-    const response = await agent.request('/api/workspace', { method: 'GET' }, 3000);
-    const data = await response.json();
-    return data.workspacePath;
+    return join(process.cwd(), 'workspace');
   }
 
   async resolvePath(p: string): Promise<string> {
@@ -348,7 +121,6 @@ class DaytonaSandboxFileSystem extends SandboxFileSystem {
 
 export class DaytonaSandboxRunner extends SandboxRunner {
   public readonly process: SandboxProcess;
-  public readonly agent: SandboxAgentProxy;
   public readonly fs: SandboxFileSystem;
   constructor(
     public readonly id: string,
@@ -356,7 +128,6 @@ export class DaytonaSandboxRunner extends SandboxRunner {
   ) {
     super();
     this.process = new DaytonaSandboxProcess(this.sandbox);
-    this.agent = new DaytonaSandboxAgentProxy(this.sandbox);
     this.fs = new DaytonaSandboxFileSystem(this.sandbox);
   }
 }

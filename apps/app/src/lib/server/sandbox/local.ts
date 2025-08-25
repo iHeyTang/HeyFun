@@ -1,8 +1,5 @@
-import { FunMaxConfig } from '@repo/agent';
 import {
   BaseSandboxManager,
-  SandboxAgentEvent,
-  SandboxAgentProxy,
   SandboxFileInfo,
   SandboxFileMatch,
   SandboxFilePermissionsParams,
@@ -16,7 +13,6 @@ import {
 import { spawn, ChildProcess, exec } from 'child_process';
 import path, { join } from 'path';
 import { promisify } from 'util';
-import { to } from '@/lib/shared/to';
 import fs from 'fs/promises';
 
 const execAsync = promisify(exec);
@@ -133,86 +129,6 @@ class LocalSandboxProcess extends SandboxProcess {
   // 添加一个方法来列出所有长期运行的命令
   getLongTermCommands(): string[] {
     return Array.from(this.longTermProcesses.keys());
-  }
-}
-
-class LocalSandboxAgentProxy extends SandboxAgentProxy {
-  constructor() {
-    super();
-  }
-
-  async createTask(params: FunMaxConfig): Promise<string> {
-    const [error, response] = await to(
-      fetch(`http://localhost:7200/api/tasks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify(params),
-      }).then(async res => {
-        if (res.status >= 200 && res.status < 300) {
-          return (await res.json()) as Promise<{ taskId: string }>;
-        }
-        throw Error(`Server Error: ${JSON.stringify(await res.json())}`);
-      }),
-    );
-
-    if (error || !response.taskId) {
-      throw error || new Error('Unkown Error');
-    }
-
-    return response.taskId;
-  }
-
-  async terminateTask(params: { taskId: string }): Promise<void> {
-    await fetch(`http://localhost:7200/api/tasks/terminate`, {
-      method: 'POST',
-      body: JSON.stringify({ task_id: params.taskId }),
-    });
-  }
-
-  async getTaskEventStream(params: { taskId: string }, onEvent: (event: SandboxAgentEvent) => Promise<void>): Promise<void> {
-    const streamResponse = await fetch(`http://localhost:7200/api/tasks/event?taskId=${params.taskId}`);
-    const reader = streamResponse.body?.getReader();
-    if (!reader) throw new Error('Failed to get response stream');
-
-    const decoder = new TextDecoder();
-
-    let buffer = '';
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (value) {
-          buffer += decoder.decode(value, { stream: true });
-        }
-
-        const lines = buffer.split('\n');
-        // Keep the last line (might be incomplete) if not the final read
-        buffer = done ? '' : lines.pop() || '';
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
-
-          try {
-            const parsed = JSON.parse(line.slice(6)) as {
-              id: string;
-              name: string;
-              step: number;
-              timestamp: string;
-              content: any;
-            };
-            await onEvent(parsed);
-          } catch (error) {
-            console.error('Failed to process message:', error);
-          }
-        }
-        if (done) break;
-      }
-    } finally {
-      reader.releaseLock();
-    }
   }
 }
 
@@ -339,10 +255,7 @@ class LocalSandboxFileSystem extends SandboxFileSystem {
   }
 
   async getWorkspacePath(): Promise<string> {
-    const workspacePath = await fetch('http://localhost:7200/api/workspace')
-      .then(res => res.json())
-      .then(data => data.workspacePath);
-    return workspacePath;
+    return join(process.cwd(), 'workspace');
   }
 
   async resolvePath(p: string): Promise<string> {
@@ -353,12 +266,10 @@ class LocalSandboxFileSystem extends SandboxFileSystem {
 
 export class LocalSandboxRunner extends SandboxRunner {
   public readonly process: SandboxProcess;
-  public readonly agent: SandboxAgentProxy;
   public readonly fs: SandboxFileSystem;
 
   constructor(public readonly id: string) {
     super();
-    this.agent = new LocalSandboxAgentProxy();
     this.process = new LocalSandboxProcess();
     this.fs = new LocalSandboxFileSystem();
   }

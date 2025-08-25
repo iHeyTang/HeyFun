@@ -73,15 +73,12 @@ export class FunMax extends ReActAgent {
     console.log(`   Process ID: ${process.pid}`);
     console.log(`   Current Working Directory: ${process.cwd()}`);
 
-    // // 切换到任务工作目录
-    const workspace_dir = await this.switchToWorkspace();
-
     // 添加系统提示词到内存
     const system_prompt = renderTemplate(this.custom_prompt_templates.system, {
       language: this.language || 'English',
       max_steps: this.max_steps,
       current_time: new Date().toISOString(),
-      workspace_dir: workspace_dir,
+      workspace_dir: './workspace',
     });
     await this.updateMemory(createMessage.system(system_prompt));
 

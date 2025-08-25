@@ -12,6 +12,8 @@ import path from 'path';
 import type { AddMcpConfig } from '@repo/agent';
 import sandboxManager from '@/lib/server/sandbox';
 import { SandboxRunner } from '@/lib/server/sandbox/base';
+import { taskRuntime } from '@/lib/runtime';
+import { sseRuntime } from '@/lib/sse';
 
 const AGENT_URL = process.env.AGENT_URL || 'http://localhost:7200';
 
@@ -149,20 +151,28 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
   };
 
   const sandbox = await sandboxManager.getOrCreateOneById(orgId);
-  const outId = await sandbox.agent.createTask(body);
-  if (!outId) {
+
+  const existingTask = taskRuntime.getTask(body.task_id);
+  if (existingTask) {
+    throw new Error('Task already exists');
+  }
+
+  // 创建任务
+  taskRuntime.createTask(body.task_id, body);
+
+  if (!body.task_id) {
     await prisma.tasks.update({ where: { id: task.id }, data: { status: 'failed' } });
     throw new Error('Unkown Error');
   }
 
-  await prisma.tasks.update({ where: { id: task.id }, data: { outId, status: 'processing' } });
+  await prisma.tasks.update({ where: { id: task.id }, data: { outId: body.task_id, status: 'processing' } });
 
   // Handle event stream in background - completely detached from current request
-  handleTaskEvents(task.id, outId, orgId, sandbox).catch(error => {
+  handleTaskEvents(task.id, body.task_id, orgId, sandbox).catch(error => {
     console.error('Failed to handle task events:', error);
   });
 
-  return { id: task.id, outId };
+  return { id: task.id, outId: body.task_id };
 });
 
 export const terminateTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ taskId: string }>) => {
@@ -211,7 +221,8 @@ async function handleTaskEvents(taskId: string, outId: string, organizationId: s
   const rounds = taskProgresses.map(progress => progress.round);
   const round = Math.max(...rounds, 1);
   let messageIndex = taskProgresses.length || 0;
-  await sandbox.agent.getTaskEventStream({ taskId: outId }, async parsed => {
+  const stream = sseRuntime.createSSEStream(outId);
+  await getTaskEventStream(stream.getReader(), async parsed => {
     const type = parsed.name;
     const { step, content } = parsed;
 
@@ -312,3 +323,54 @@ const buildMcpSseFullUrl = (url: string, query: Record<string, string>) => {
   }
   return fullUrl;
 };
+
+type AgentEvent = {
+  id: string;
+  name: string;
+  step: number;
+  timestamp: string;
+  content: any;
+};
+
+async function getTaskEventStream(reader: ReadableStreamDefaultReader<Uint8Array>, onEvent: (event: AgentEvent) => Promise<void>): Promise<void> {
+  if (!reader) throw new Error('Failed to get response stream');
+
+  const decoder = new TextDecoder();
+
+  let buffer = '';
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (value) {
+        buffer += decoder.decode(value, { stream: true });
+      }
+
+      const lines = buffer.split('\n');
+      // Keep the last line (might be incomplete) if not the final read
+      buffer = done ? '' : lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
+
+        try {
+          const parsed = JSON.parse(line.slice(6)) as {
+            id: string;
+            name: string;
+            step: number;
+            timestamp: string;
+            content: any;
+          };
+          await onEvent(parsed);
+        } catch (error) {
+          console.error('Failed to process message:', error);
+        }
+      }
+      if (done) break;
+    }
+    // If we reach here, the stream completed successfully
+    return;
+  } finally {
+    reader.releaseLock();
+  }
+}
