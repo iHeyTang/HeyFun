@@ -3,10 +3,6 @@ import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { decryptTextWithPrivateKey, encryptTextWithPublicKey } from '@/lib/server/crypto';
 import { prisma } from '@/lib/server/prisma';
 import { LLMFactory } from '@repo/llm/chat';
-import fs from 'fs';
-import path from 'path';
-
-const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
 
 export const getModelProviders = withUserAuth(async ({}: AuthWrapperContext<{}>) => {
   const providers = LLMFactory.getAvailableProviders();
@@ -48,16 +44,14 @@ export const getModelProviderConfigs = withUserAuth(async ({ orgId }: AuthWrappe
 });
 
 export const getModelProviderConfig = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ provider: string }>) => {
-  const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
   const config = await prisma.modelProviderConfigs.findFirst({
     where: { organizationId: orgId, provider: args.provider },
   });
-  return config ? JSON.parse(decryptTextWithPrivateKey(config.config, privateKey)) : null;
+  return config ? JSON.parse(decryptTextWithPrivateKey(config.config)) : null;
 });
 
 export const updateModelProviderConfig = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ provider: string; config: any }>) => {
-  const publicKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'public.pem'), 'utf8');
-  const encryptedConfig = args.config ? encryptTextWithPublicKey(JSON.stringify(args.config), publicKey) : '';
+  const encryptedConfig = args.config ? encryptTextWithPublicKey(JSON.stringify(args.config)) : '';
 
   const config = await prisma.modelProviderConfigs.findFirst({
     where: { organizationId: orgId, provider: args.provider, isDefault: true },
@@ -87,7 +81,7 @@ export const testModelProviderConnection = withUserAuth(async ({ orgId, args }: 
     return { success: false, error: 'Provider not found' };
   }
 
-  provider.setConfig(JSON.parse(decryptTextWithPrivateKey(config.config, privateKey)));
+  provider.setConfig(JSON.parse(decryptTextWithPrivateKey(config.config)));
   const res = await provider.testConnection();
   if (res.success) {
     return { success: true, error: null };

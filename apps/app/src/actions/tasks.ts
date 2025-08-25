@@ -7,8 +7,6 @@ import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
 import { prisma } from '@/lib/server/prisma';
 import { to } from '@/lib/shared/to';
 import { mcpServerSchema } from '@/lib/shared/tools';
-import fs from 'fs';
-import path from 'path';
 import type { AddMcpConfig } from '@repo/agent';
 import sandboxManager from '@/lib/server/sandbox';
 import { SandboxRunner } from '@/lib/server/sandbox/base';
@@ -16,8 +14,6 @@ import { taskRuntime } from '@/lib/runtime';
 import { sseRuntime } from '@/lib/sse';
 
 const AGENT_URL = process.env.AGENT_URL || 'http://localhost:7200';
-
-const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
 
 export const getTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ taskId: string }>) => {
   const { taskId } = args;
@@ -53,7 +49,7 @@ type CreateTaskArgs = {
 export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<CreateTaskArgs>) => {
   const { taskId, agentId, modelProvider, modelId, prompt, toolIds, files, shouldPlan } = args;
   const crpytedProviderConfig = await prisma.modelProviderConfigs.findFirst({ where: { provider: modelProvider, organizationId: orgId } });
-  const providerConfig = crpytedProviderConfig?.config ? JSON.parse(decryptTextWithPrivateKey(crpytedProviderConfig.config, privateKey)) : {};
+  const providerConfig = crpytedProviderConfig?.config ? JSON.parse(decryptTextWithPrivateKey(crpytedProviderConfig.config)) : {};
 
   const preferences = await prisma.preferences.findUnique({
     where: { organizationId: orgId },
@@ -90,10 +86,10 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
     const agentTool = agentTools.find(at => at.id === tool);
     if (agentTool) {
       if (agentTool.source === 'STANDARD' && agentTool.schema) {
-        const env = agentTool.env ? JSON.parse(decryptTextWithPrivateKey(agentTool.env, privateKey)) : {};
-        const query = agentTool.query ? JSON.parse(decryptTextWithPrivateKey(agentTool.query, privateKey)) : {};
+        const env = agentTool.env ? JSON.parse(decryptTextWithPrivateKey(agentTool.env)) : {};
+        const query = agentTool.query ? JSON.parse(decryptTextWithPrivateKey(agentTool.query)) : {};
         const fullUrl = buildMcpSseFullUrl(agentTool.schema.url, query);
-        const headers = agentTool.headers ? JSON.parse(decryptTextWithPrivateKey(agentTool.headers, privateKey)) : {};
+        const headers = agentTool.headers ? JSON.parse(decryptTextWithPrivateKey(agentTool.headers)) : {};
 
         const tool: AddMcpConfig = {
           id: agentTool.id,
@@ -107,7 +103,7 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
         };
         return tool;
       } else if (agentTool.source === 'CUSTOM') {
-        const customConfig = agentTool.customConfig ? JSON.parse(decryptTextWithPrivateKey(agentTool.customConfig, privateKey)) : {};
+        const customConfig = agentTool.customConfig ? JSON.parse(decryptTextWithPrivateKey(agentTool.customConfig)) : {};
         const validationResult = mcpServerSchema.safeParse(customConfig);
         if (!validationResult.success) {
           throw new Error(`Invalid config: ${validationResult.error.message}`);

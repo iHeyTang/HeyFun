@@ -2,11 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/prisma';
 import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
 import { LLMClient } from '@repo/llm/chat';
-import fs from 'fs';
-import path from 'path';
 import { withUserAuthApi } from '@/lib/server/auth-wrapper';
-
-const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
 
 // 获取AI流式响应
 async function getAIResponse({ organizationId, sessionId, messageId }: { organizationId: string; sessionId: string; messageId: string }) {
@@ -39,7 +35,7 @@ async function getAIResponse({ organizationId, sessionId, messageId }: { organiz
       },
     });
 
-    const config = providerConfig ? JSON.parse(decryptTextWithPrivateKey(providerConfig.config, privateKey)) : {};
+    const config = providerConfig ? JSON.parse(decryptTextWithPrivateKey(providerConfig.config)) : {};
 
     // 创建LLM客户端
     const llmClient = new LLMClient({

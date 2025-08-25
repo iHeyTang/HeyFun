@@ -6,9 +6,7 @@ import { readmeFetcher } from '@/lib/server/readme-fetcher';
 import { to } from '@/lib/shared/to';
 import { mcpServerSchema } from '@/lib/shared/tools';
 import Ajv from 'ajv';
-import fs from 'fs';
 import { JSONSchema } from 'json-schema-to-ts';
-import path from 'path';
 import { z } from 'zod';
 
 const ajv = new Ajv();
@@ -46,7 +44,6 @@ type ToolConfig = {
   headers?: Record<string, any>;
 };
 export const installTool = withUserAuth(async ({ orgId, args }: AuthWrapperContext<ToolConfig>) => {
-  const publicKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'public.pem'), 'utf8');
   const { toolId, env, query = {}, headers = {} } = args;
   const tool = await prisma.toolSchemas.findUnique({
     where: { id: toolId },
@@ -89,9 +86,9 @@ export const installTool = withUserAuth(async ({ orgId, args }: AuthWrapperConte
     await prisma.agentTools.update({
       where: { schemaId_organizationId: { schemaId: toolId, organizationId: orgId } },
       data: {
-        env: encryptTextWithPublicKey(JSON.stringify(env), publicKey),
-        query: Object.keys(query).length > 0 ? encryptTextWithPublicKey(JSON.stringify(query), publicKey) : null,
-        headers: Object.keys(headers).length > 0 ? encryptTextWithPublicKey(JSON.stringify(headers), publicKey) : null,
+        env: encryptTextWithPublicKey(JSON.stringify(env)),
+        query: Object.keys(query).length > 0 ? encryptTextWithPublicKey(JSON.stringify(query)) : null,
+        headers: Object.keys(headers).length > 0 ? encryptTextWithPublicKey(JSON.stringify(headers)) : null,
       },
     });
   } else {
@@ -100,9 +97,9 @@ export const installTool = withUserAuth(async ({ orgId, args }: AuthWrapperConte
         source: 'STANDARD',
         organizationId: orgId,
         schemaId: toolId,
-        env: encryptTextWithPublicKey(JSON.stringify(env), publicKey),
-        query: Object.keys(query).length > 0 ? encryptTextWithPublicKey(JSON.stringify(query), publicKey) : null,
-        headers: Object.keys(headers).length > 0 ? encryptTextWithPublicKey(JSON.stringify(headers), publicKey) : null,
+        env: encryptTextWithPublicKey(JSON.stringify(env)),
+        query: Object.keys(query).length > 0 ? encryptTextWithPublicKey(JSON.stringify(query)) : null,
+        headers: Object.keys(headers).length > 0 ? encryptTextWithPublicKey(JSON.stringify(headers)) : null,
       },
     });
   }
@@ -120,13 +117,12 @@ export const installCustomTool = withUserAuth(async ({ orgId, args }: AuthWrappe
     throw new Error(`Invalid config: ${validationResult.error.message}`);
   }
 
-  const publicKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'public.pem'), 'utf8');
   await prisma.agentTools.create({
     data: {
       source: 'CUSTOM',
       organizationId: orgId,
       name,
-      customConfig: encryptTextWithPublicKey(config, publicKey),
+      customConfig: encryptTextWithPublicKey(config),
     },
   });
 

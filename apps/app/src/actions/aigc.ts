@@ -4,11 +4,6 @@ import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { decryptTextWithPrivateKey, encryptTextWithPublicKey } from '@/lib/server/crypto';
 import { prisma } from '@/lib/server/prisma';
 import { AdapterManager, aigcProviderConfigSchema } from '@repo/llm/aigc';
-import fs from 'fs';
-import path from 'path';
-
-const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
-const publicKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'public.pem'), 'utf8');
 
 // AIGC提供商信息
 const aigcProviders = {
@@ -61,7 +56,7 @@ export const getAigcProviderConfig = withUserAuth(async ({ args, orgId }: AuthWr
     return null;
   }
 
-  const decryptedConfig = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
+  const decryptedConfig = JSON.parse(decryptTextWithPrivateKey(config.config));
   return decryptedConfig;
 });
 
@@ -70,7 +65,7 @@ export const updateAigcProviderConfig = withUserAuth(async ({ args, orgId }: Aut
   const { provider, config } = args;
 
   try {
-    const encryptedConfig = encryptTextWithPublicKey(JSON.stringify(config), publicKey);
+    const encryptedConfig = encryptTextWithPublicKey(JSON.stringify(config));
 
     await prisma.aigcProviderConfigs.upsert({
       where: {
@@ -116,7 +111,7 @@ export const getAigcProviderModels = withUserAuth(async ({ args, orgId }: AuthWr
   const configMap = aigcProviderConfigSchema.parse(
     configs.reduce(
       (acc, config) => {
-        acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
+        acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config));
         return acc;
       },
       {} as Record<string, any>,
@@ -141,7 +136,7 @@ export const testAigcProviderConnection = withUserAuth(async ({ args, orgId }: A
     const configMap = aigcProviderConfigSchema.parse(
       configs.reduce(
         (acc, config) => {
-          acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
+          acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config));
           return acc;
         },
         {} as Record<string, any>,

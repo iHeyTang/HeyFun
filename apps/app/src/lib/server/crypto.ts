@@ -1,9 +1,7 @@
 import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
 
-const PRIVATE_KEY = fs.readFileSync(path.join(process.env.APP_CRYPTO_KEY || 'keys', 'private.pem'), 'utf8');
-const PUBLIC_KEY = fs.readFileSync(path.join(process.env.APP_CRYPTO_KEY || 'keys', 'public.pem'), 'utf8');
+const PRIVATE_KEY = process.env.RSA_PRIVATE_KEY!;
+const PUBLIC_KEY = process.env.RSA_PUBLIC_KEY!;
 
 /**
  * encrypt data with public key

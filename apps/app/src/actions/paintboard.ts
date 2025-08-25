@@ -31,15 +31,13 @@ export interface PaintboardResult {
   createdAt: string;
 }
 
-const privateKey = fs.readFileSync(path.join(process.cwd(), 'keys', 'private.pem'), 'utf8');
-
 // 根据生成类型获取对应的模型
 export const getModelsByGenerationType = withUserAuth(async ({ args, orgId }: AuthWrapperContext<{ generationType: GenerationType }>) => {
   const configs = await prisma.aigcProviderConfigs.findMany({ where: { organizationId: orgId } });
   const configMap = aigcProviderConfigSchema.parse(
     configs.reduce(
       (acc, config) => {
-        acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
+        acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config));
         return acc;
       },
       {} as Record<string, any>,
@@ -58,7 +56,7 @@ export const getAllServiceModels = withUserAuth(async ({ orgId }: AuthWrapperCon
   const configMap = aigcProviderConfigSchema.parse(
     configs.reduce(
       (acc, config) => {
-        acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
+        acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config));
         return acc;
       },
       {} as Record<string, any>,
@@ -536,7 +534,7 @@ export const processPaintboardTaskResult = withUserAuth(
       const configMap = aigcProviderConfigSchema.parse(
         configs.reduce(
           (acc, config) => {
-            acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
+            acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config));
             return acc;
           },
           {} as Record<string, any>,
@@ -709,7 +707,7 @@ export const submitGenerationTask = withUserAuth(
       const configMap = aigcProviderConfigSchema.parse(
         configs.reduce(
           (acc, config) => {
-            acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config, privateKey));
+            acc[config.provider] = JSON.parse(decryptTextWithPrivateKey(config.config));
             return acc;
           },
           {} as Record<string, any>,
