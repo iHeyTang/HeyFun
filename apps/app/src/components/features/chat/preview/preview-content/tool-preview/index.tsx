@@ -40,7 +40,7 @@ export const ToolPreview = ({ messages, executionId, className }: ToolPreviewPro
           <code className="text-xs whitespace-nowrap">ID: {executionId}</code>
         </PopoverContent>
       </Popover>
-      
+
       <div className="flex-1 space-y-4 overflow-auto p-2">
         {args && Object.keys(args).length > 0 && (
           <div className="space-y-2">
@@ -79,7 +79,7 @@ export const ToolPreview = ({ messages, executionId, className }: ToolPreviewPro
                       return `[${r.uri}](${r.uri})`;
                     }
                     if (r.type === 'audio') {
-                      return <audio src={r.data} controls />;
+                      return <audio key={index} src={r.data} controls />;
                     }
                   })
                   .join('\n\n')}

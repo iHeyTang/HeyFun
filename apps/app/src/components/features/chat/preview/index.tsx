@@ -16,7 +16,7 @@ export const ChatPreview = ({ messages, taskId }: ChatPreviewProps) => {
     <div className="flex h-full flex-col gap-2 rounded-2xl border p-2">
       <div>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-normal">FunMax's Computer</CardTitle>
+          <CardTitle className="text-normal">FunMax&apos;s Computer</CardTitle>
           <Button
             variant="outline"
             size="sm"

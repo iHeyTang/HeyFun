@@ -77,3 +77,5 @@ export const AddNewCustomToolDialog = React.forwardRef<AddNewCustomToolDialogRef
     </Dialog>
   );
 });
+
+AddNewCustomToolDialog.displayName = 'AddNewCustomToolDialog';

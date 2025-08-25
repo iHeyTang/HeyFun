@@ -7,7 +7,7 @@ import { usePreviewData } from '@/components/features/chat/preview/preview-conte
 import { aggregateMessages } from '@/lib/browser/chat-messages';
 import { Message } from '@/lib/browser/chat-messages/types';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sparkles } from 'lucide-react';
 
@@ -65,7 +65,7 @@ export default function ChatSharePage() {
     }
   };
 
-  const refreshTask = async () => {
+  const refreshTask = useCallback(async () => {
     const res = await getSharedTask({ taskId });
     if (res.error || !res.data) {
       console.error('Error fetching task:', res.error);
@@ -92,7 +92,7 @@ export default function ChatSharePage() {
     if (shouldAutoScroll) {
       requestAnimationFrame(scrollToBottom);
     }
-  };
+  }, [taskId]);
 
   useEffect(() => {
     if (!taskId) return;
@@ -103,13 +103,13 @@ export default function ChatSharePage() {
         clearTimeout(timeoutIdRef.current);
       }
     };
-  }, [taskId]);
+  }, [taskId, refreshTask]);
 
   useEffect(() => {
     if (shouldAutoScroll) {
       requestAnimationFrame(scrollToBottom);
     }
-  }, [messages, shouldAutoScroll]);
+  }, [messages, shouldAutoScroll, scrollToBottom]);
 
   useEffect(() => {
     return () => {
@@ -120,7 +120,7 @@ export default function ChatSharePage() {
         clearTimeout(timeoutIdRef.current);
       }
     };
-  }, []);
+  }, [abortControllerRef, timeoutIdRef]);
 
   return (
     <div className="flex h-full w-full flex-row justify-between">

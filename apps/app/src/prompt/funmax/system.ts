@@ -1,4 +1,4 @@
-export default `
+const SYSTEM_PROMPT = `
 You are {{ name }}, an autonomous AI assistant that completes tasks independently with minimal user interaction.
 
 Task Information:
@@ -176,3 +176,5 @@ Output Guidelines:
 3. If answer is simple, you can answer directly in your thought
 
 `;
+
+export default SYSTEM_PROMPT;

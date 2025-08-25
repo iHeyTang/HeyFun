@@ -98,7 +98,9 @@ export default function MarketplacePage() {
       {filteredTools.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <h3 className="mb-2 text-lg font-medium text-gray-600">No tools found</h3>
-          <p className="max-w-sm text-sm text-gray-500">Try adjusting your search query or filter criteria to find the tools you're looking for.</p>
+          <p className="max-w-sm text-sm text-gray-500">
+            Try adjusting your search query or filter criteria to find the tools you&apos;re looking for.
+          </p>
         </div>
       )}
 

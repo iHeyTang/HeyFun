@@ -1,6 +1,6 @@
-import { getModelProviderConfigs, getModelProviderModels } from "@/actions/llm";
-import { useCallback } from "react";
-import { create } from "zustand";
+import { getModelProviderConfigs, getModelProviderModels } from '@/actions/llm';
+import { useCallback } from 'react';
+import { create } from 'zustand';
 
 type ProviderModelInfo = NonNullable<Awaited<ReturnType<typeof getModelProviderModels>>['data']>[number];
 
@@ -26,13 +26,13 @@ export const useModelProvider = () => {
       }
       const modelPromises = p.data.map(async config => {
         const models = await getModelProviderModels({ provider: config.provider });
-        return models?.data?.map(model => ({ ...model, provider: config.provider, configId: config.id })) || [];
+        return models?.data?.map(model => ({ ...model, provider: config.provider, configId: 'id' in config ? config.id : undefined })) || [];
       });
       Promise.all(modelPromises).then(models => {
         setAvailableModels(models.flat());
       });
     });
-  }, []);
+  }, [setAvailableModels]);
 
   return { availableModels, refreshAvailableModels };
 };

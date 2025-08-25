@@ -111,7 +111,7 @@ export default function AigcProviderConfigPanel() {
         form.reset(p);
       }
     });
-  }, [providerId]);
+  }, [providerId, form]);
 
   const onSubmit = async (data: z.infer<typeof configSchema>) => {
     try {

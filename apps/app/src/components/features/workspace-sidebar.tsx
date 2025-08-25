@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useAsync } from '@/hooks/use-async';
 import { WorkspaceItem } from '@/components/features/chat/preview/preview-content/workspace-preview/types';
@@ -41,21 +41,24 @@ export function WorkspaceSidebar() {
     return response.json();
   };
 
-  const buildTreeData = (items: WorkspaceItem[], basePath: string, level: number): TreeNode[] => {
-    return items.map(item => ({
-      ...item,
-      path: basePath ? `${basePath}/${item.name}` : item.name,
-      level,
-      expanded: expandedPaths.has(basePath ? `${basePath}/${item.name}` : item.name),
-      children: item.isDirectory ? [] : undefined,
-    }));
-  };
+  const buildTreeData = useCallback(
+    (items: WorkspaceItem[], basePath: string, level: number): TreeNode[] => {
+      return items.map(item => ({
+        ...item,
+        path: basePath ? `${basePath}/${item.name}` : item.name,
+        level,
+        expanded: expandedPaths.has(basePath ? `${basePath}/${item.name}` : item.name),
+        children: item.isDirectory ? [] : undefined,
+      }));
+    },
+    [expandedPaths],
+  );
 
   useEffect(() => {
     if (rootItems) {
       setTreeData(buildTreeData(rootItems, '', 0));
     }
-  }, [rootItems, expandedPaths]);
+  }, [rootItems, expandedPaths, buildTreeData]);
 
   const toggleDirectory = async (node: TreeNode) => {
     if (!node.isDirectory) return;

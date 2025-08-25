@@ -10,7 +10,7 @@ import { usePreviewData } from '@/components/features/chat/preview/preview-conte
 import { aggregateMessages } from '@/lib/browser/chat-messages';
 import { Message } from '@/lib/browser/chat-messages/types';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export default function ChatPage() {
   const params = useParams();
@@ -45,7 +45,7 @@ export default function ChatPage() {
     }
   };
 
-  const refreshTask = async () => {
+  const refreshTask = useCallback(async () => {
     const res = await getTask({ taskId });
     if (res.error || !res.data) {
       console.error('Error fetching task:', res.error);
@@ -71,28 +71,27 @@ export default function ChatPage() {
     }
     setIsThinking(res.data!.status !== 'completed' && res.data!.status !== 'failed' && res.data!.status !== 'terminated');
     setIsTerminating(res.data!.status === 'terminating');
-  };
+  }, [taskId, shouldAutoScroll]);
 
   useEffect(() => {
     setPreviewData(null);
     if (!taskId) return;
     refreshTask();
-  }, [taskId]);
+  }, [taskId, refreshTask]);
 
   useEffect(() => {
-    refreshTask();
     if (!taskId || !isThinking) return;
     const interval = setInterval(refreshTask, 2000);
     return () => {
       clearInterval(interval);
     };
-  }, [taskId, isThinking, shouldAutoScroll]);
+  }, [taskId, isThinking, shouldAutoScroll, refreshTask]);
 
   useEffect(() => {
     if (shouldAutoScroll) {
       requestAnimationFrame(scrollToBottom);
     }
-  }, [messages, shouldAutoScroll]);
+  }, [messages, shouldAutoScroll, scrollToBottom]);
 
   useEffect(() => {
     return () => {
@@ -100,7 +99,7 @@ export default function ChatPage() {
         abortControllerRef.current.abort();
       }
     };
-  }, []);
+  }, [abortControllerRef]);
 
   const handleSubmit = async (value: { prompt: string; files: File[]; shouldPlan: boolean }) => {
     try {

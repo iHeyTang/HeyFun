@@ -243,7 +243,7 @@ export const ChatContainer = ({ availableModels, sessionId, existingSession }: C
             <Image src={logo} alt="HeyFun" width={64} height={64} />
             <div className="flex flex-col">
               <div className="text-2xl font-bold">HeyFun</div>
-              <div className="text-muted-foreground text-sm">Hey! Let's bring a little fun to this world together.</div>
+              <div className="text-muted-foreground text-sm">Hey! Let&apos;s bring a little fun to this world together.</div>
             </div>
           </div>
         ) : (

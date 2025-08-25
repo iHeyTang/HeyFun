@@ -11,6 +11,21 @@ import { nanoid } from 'nanoid';
 import path, { join } from 'path';
 import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
 import fs from 'fs';
+import {
+  wanT2iSubmitParamsSchema,
+  wanI2vSubmitParamsSchema,
+  wanKf2vSubmitParamsSchema,
+  wanT2vSubmitParamsSchema,
+  jimengT2iSubmitParamsSchema,
+  jimengI2iSubmitParamsSchema,
+  jimengT2vSubmitParamsSchema,
+  jimengI2vSubmitParamsSchema,
+  doubaoT2iSubmitParamsSchema,
+  doubaoI2iSubmitParamsSchema,
+  doubaoT2vSubmitParamsSchema,
+  doubaoI2vSubmitParamsSchema,
+  doubaoKf2vSubmitParamsSchema,
+} from '@repo/llm/aigc';
 
 // 任务状态枚举
 enum PaintboardTaskStatus {
@@ -77,10 +92,6 @@ export const getModelSchema = withUserAuth(
 
       switch (service) {
         case 'wan': {
-          const { wanT2iSubmitParamsSchema, wanI2vSubmitParamsSchema, wanKf2vSubmitParamsSchema, wanT2vSubmitParamsSchema } = await import(
-            '@repo/llm/aigc'
-          );
-
           switch (generationType) {
             case 'text-to-image':
               schema = wanT2iSubmitParamsSchema;
@@ -99,14 +110,6 @@ export const getModelSchema = withUserAuth(
         }
 
         case 'doubao': {
-          const {
-            doubaoT2iSubmitParamsSchema,
-            doubaoI2iSubmitParamsSchema,
-            doubaoT2vSubmitParamsSchema,
-            doubaoI2vSubmitParamsSchema,
-            doubaoKf2vSubmitParamsSchema,
-          } = await import('@repo/llm/aigc');
-
           switch (generationType) {
             case 'text-to-image':
               schema = doubaoT2iSubmitParamsSchema;
@@ -128,10 +131,6 @@ export const getModelSchema = withUserAuth(
         }
 
         case 'jimeng': {
-          const { jimengT2iSubmitParamsSchema, jimengI2iSubmitParamsSchema, jimengT2vSubmitParamsSchema, jimengI2vSubmitParamsSchema } = await import(
-            '@repo/llm/aigc'
-          );
-
           switch (generationType) {
             case 'text-to-image':
               // 所有文生图模型都使用统一的t2iSubmitParamsSchema

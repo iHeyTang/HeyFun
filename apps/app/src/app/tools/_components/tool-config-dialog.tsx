@@ -209,6 +209,8 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
   );
 });
 
+ToolConfigDialog.displayName = 'ToolConfigDialog';
+
 const generateZodSchema = (schema: Exclude<JSONSchema, boolean> | undefined) => {
   const zodSchema: Record<string, any> = {};
   if (!schema || typeof schema === 'boolean') {

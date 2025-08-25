@@ -11,7 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { providerConfigSchemas } from '@repo/llm/chat';
 import { Loader2, Save, Wifi, WifiOff } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z, ZodBoolean, ZodNumber, ZodString } from 'zod';
@@ -41,6 +41,32 @@ export default function ProviderConfigPanel() {
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  const testConnection = useCallback(
+    async (config: z.infer<typeof configSchema>) => {
+      setConnectionStatus(prev => ({ ...prev, isChecking: true }));
+
+      try {
+        // Test connection
+        const result = await testModelProviderConnection({ provider: providerId });
+
+        setConnectionStatus({
+          isChecking: false,
+          isConnected: result.data?.success ?? false,
+          error: result.data?.error ?? undefined,
+          lastChecked: new Date(),
+        });
+      } catch (error) {
+        setConnectionStatus({
+          isChecking: false,
+          isConnected: false,
+          error: error instanceof Error ? error.message : 'Test failed',
+          lastChecked: new Date(),
+        });
+      }
+    },
+    [providerId],
+  );
+
   useEffect(() => {
     getModelProviderInfo({ provider: providerId }).then(p => {
       if (!p.data) {
@@ -57,30 +83,7 @@ export default function ProviderConfigPanel() {
       form.reset(p.data);
       testConnection(p.data);
     });
-  }, [providerId]);
-
-  const testConnection = async (config: z.infer<typeof configSchema>) => {
-    setConnectionStatus(prev => ({ ...prev, isChecking: true }));
-
-    try {
-      // Test connection
-      const result = await testModelProviderConnection({ provider: providerId });
-
-      setConnectionStatus({
-        isChecking: false,
-        isConnected: result.data?.success ?? false,
-        error: result.data?.error ?? undefined,
-        lastChecked: new Date(),
-      });
-    } catch (error) {
-      setConnectionStatus({
-        isChecking: false,
-        isConnected: false,
-        error: error instanceof Error ? error.message : 'Test failed',
-        lastChecked: new Date(),
-      });
-    }
-  };
+  }, [providerId, form, getModelProviderInfo, getModelProviderConfig, testConnection]);
 
   useEffect(() => {
     if (!form.formState.isDirty && !connectionStatus.lastChecked && configSchema.safeParse(form.getValues()).success) {

@@ -36,71 +36,71 @@ export const JsonSchemaForm = (props: JsonSchemaFormProps) => {
   const formFieldPath = `params.${fieldName}`;
 
   switch (schema.type) {
-    case 'string':
-      return <StringForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
+  case 'string':
+    return <StringForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
 
-    case 'number':
-    case 'integer':
-      return (
-        <FormField
-          key={fieldName}
-          control={form.control}
-          name={formFieldPath}
-          render={({ field: formField }) => (
-            <FormItem className="space-y-2">
-              {!hideLabel && <FormLabel>{fieldName}</FormLabel>}
-              <FormControl>
-                <Input type="number" placeholder={`输入${fieldName}`} {...formField} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      );
+  case 'number':
+  case 'integer':
+    return (
+      <FormField
+        key={fieldName}
+        control={form.control}
+        name={formFieldPath}
+        render={({ field: formField }) => (
+          <FormItem className="space-y-2">
+            {!hideLabel && <FormLabel>{fieldName}</FormLabel>}
+            <FormControl>
+              <Input type="number" placeholder={`输入${fieldName}`} {...formField} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
 
-    case 'boolean':
-      return (
-        <FormField
-          key={fieldName}
-          control={form.control}
-          name={formFieldPath}
-          render={({ field: formField }) => (
-            <FormItem>
-              {!hideLabel && <FormLabel>{fieldName}</FormLabel>}
-              <FormControl>
-                <Switch checked={formField.value} onCheckedChange={formField.onChange} />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-      );
+  case 'boolean':
+    return (
+      <FormField
+        key={fieldName}
+        control={form.control}
+        name={formFieldPath}
+        render={({ field: formField }) => (
+          <FormItem>
+            {!hideLabel && <FormLabel>{fieldName}</FormLabel>}
+            <FormControl>
+              <Switch checked={formField.value} onCheckedChange={formField.onChange} />
+            </FormControl>
+          </FormItem>
+        )}
+      />
+    );
 
-    case 'array':
-      // 数组类型渲染
-      return <ArrayForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
+  case 'array':
+    // 数组类型渲染
+    return <ArrayForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
 
-    case 'object':
-      return Object.entries(schema.properties || {}).map(([fieldName, fieldSchema]) => {
-        // 构建完整的字段路径，支持嵌套
-        const currentFieldPath = fieldPath ? `${fieldPath}.${fieldName}` : fieldName;
+  case 'object':
+    return Object.entries(schema.properties || {}).map(([fieldName, fieldSchema]) => {
+      // 构建完整的字段路径，支持嵌套
+      const currentFieldPath = fieldPath ? `${fieldPath}.${fieldName}` : fieldName;
 
-        // 类型守卫：确保 fieldSchema 是有效的 JSONSchema 对象
-        if (typeof fieldSchema === 'boolean' || !fieldSchema || typeof fieldSchema !== 'object') {
-          return null;
-        }
+      // 类型守卫：确保 fieldSchema 是有效的 JSONSchema 对象
+      if (typeof fieldSchema === 'boolean' || !fieldSchema || typeof fieldSchema !== 'object') {
+        return null;
+      }
 
-        // 递归调用自身来处理每个字段
-        return <JsonSchemaForm key={fieldName} schema={fieldSchema} form={form} fieldPath={currentFieldPath} />;
-      });
+      // 递归调用自身来处理每个字段
+      return <JsonSchemaForm key={fieldName} schema={fieldSchema} form={form} fieldPath={currentFieldPath} />;
+    });
 
-    default:
-      return (
-        <div>
-          <FormLabel>
-            {fieldName} (Type: {schema.type})
-          </FormLabel>
-        </div>
-      );
+  default:
+    return (
+      <div>
+        <FormLabel>
+          {fieldName} (Type: {schema.type})
+        </FormLabel>
+      </div>
+    );
   }
 };
 
@@ -333,6 +333,32 @@ const ArrayForm = ({ schema, form, fieldPath, hideLabel }: JsonSchemaFormProps) 
       // 根据类型创建空值
       let emptyValue: unknown;
       switch (itemSchema.type) {
+      case 'string':
+        emptyValue = '';
+        break;
+      case 'number':
+      case 'integer':
+        emptyValue = undefined;
+        break;
+      case 'boolean':
+        emptyValue = undefined;
+        break;
+      case 'array':
+        emptyValue = [];
+        break;
+      case 'object':
+        emptyValue = {};
+        break;
+      default:
+        emptyValue = undefined;
+      }
+      append(emptyValue);
+    } else if (Array.isArray(itemSchema) && itemSchema.length > 0) {
+      // 如果items是数组，使用第一个schema
+      const firstSchema = itemSchema[0];
+      if (firstSchema && typeof firstSchema === 'object' && !Array.isArray(firstSchema) && 'type' in firstSchema) {
+        let emptyValue: unknown;
+        switch (firstSchema.type) {
         case 'string':
           emptyValue = '';
           break;
@@ -351,32 +377,6 @@ const ArrayForm = ({ schema, form, fieldPath, hideLabel }: JsonSchemaFormProps) 
           break;
         default:
           emptyValue = undefined;
-      }
-      append(emptyValue);
-    } else if (Array.isArray(itemSchema) && itemSchema.length > 0) {
-      // 如果items是数组，使用第一个schema
-      const firstSchema = itemSchema[0];
-      if (firstSchema && typeof firstSchema === 'object' && !Array.isArray(firstSchema) && 'type' in firstSchema) {
-        let emptyValue: unknown;
-        switch (firstSchema.type) {
-          case 'string':
-            emptyValue = '';
-            break;
-          case 'number':
-          case 'integer':
-            emptyValue = undefined;
-            break;
-          case 'boolean':
-            emptyValue = undefined;
-            break;
-          case 'array':
-            emptyValue = [];
-            break;
-          case 'object':
-            emptyValue = {};
-            break;
-          default:
-            emptyValue = undefined;
         }
         append(emptyValue);
       } else {

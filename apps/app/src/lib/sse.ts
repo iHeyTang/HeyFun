@@ -47,7 +47,6 @@ class SSERuntime {
     };
   }
 
-
   private createConnection(taskId: string, controller: ReadableStreamDefaultController): void {
     this.connections.set(taskId, controller);
 
@@ -100,7 +99,6 @@ class SSERuntime {
       return false;
     }
   }
-
 
   private sendHistoricalEvents(taskId: string, controller: ReadableStreamDefaultController): void {
     const task = taskRuntime.getTask(taskId);
@@ -167,7 +165,7 @@ class SSERuntime {
     }
 
     try {
-      controller.enqueue(new TextEncoder().encode(`: heartbeat\n\n`));
+      controller.enqueue(new TextEncoder().encode(': heartbeat\n\n'));
       console.log(`[SSE ${taskId}] Heartbeat sent`);
       return true;
     } catch (error) {

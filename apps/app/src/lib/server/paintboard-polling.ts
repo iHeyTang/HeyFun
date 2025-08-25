@@ -13,7 +13,7 @@ export function startPaintboardPolling() {
   }
 
   console.log('Starting paintboard task polling...');
-  
+
   pollingInterval = setInterval(async () => {
     try {
       await pollPaintboardTaskResults({});

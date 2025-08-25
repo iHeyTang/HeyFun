@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-export default function ConfigLlm(props: { onSuccess?: (success: boolean) => void }) {
+export default function PreferencesPage() {
   const t = useTranslations('config');
   const router = useRouter();
 
@@ -35,7 +35,6 @@ export default function ConfigLlm(props: { onSuccess?: (success: boolean) => voi
       await updatePreferences({ language: value });
       setSelectedLanguage(value);
       toast.success(t('toast.updateSuccess'));
-      props.onSuccess?.(true);
       router.refresh();
     } catch (error) {
       toast.error(t('toast.updateError'));
@@ -46,7 +45,6 @@ export default function ConfigLlm(props: { onSuccess?: (success: boolean) => voi
 
   const handleAppearanceChange = async (value: string) => {
     setTheme(value);
-    props.onSuccess?.(true);
     router.refresh();
   };
 

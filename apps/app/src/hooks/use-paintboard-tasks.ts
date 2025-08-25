@@ -111,7 +111,7 @@ export function usePaintboardTasks() {
   // 开始实时轮询
   const startRealTimePolling = useCallback(() => {
     if (isPolling) return;
-    
+
     setIsPolling(true);
     pollingIntervalRef.current = setInterval(async () => {
       try {

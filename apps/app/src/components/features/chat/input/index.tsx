@@ -97,14 +97,14 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
 
   const getPlaceholder = () => {
     switch (status) {
-      case 'thinking':
-        return 'Thinking...';
-      case 'terminating':
-        return 'Terminating...';
-      case 'completed':
-        return 'Task completed!';
-      default:
-        return "Let's Imagine the Impossible, Create the Future Together";
+    case 'thinking':
+      return 'Thinking...';
+    case 'terminating':
+      return 'Terminating...';
+    case 'completed':
+      return 'Task completed!';
+    default:
+      return "Let's Imagine the Impossible, Create the Future Together";
     }
   };
 

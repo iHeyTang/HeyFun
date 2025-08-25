@@ -15,8 +15,6 @@ const eslintConfig = [
     rules: {
       // Code style rules
       semi: ['error', 'always'],
-      quotes: ['error', 'single'],
-      indent: ['error', 2],
       'comma-dangle': ['error', 'always-multiline'],
       'no-trailing-spaces': 'error',
       'max-len': [
@@ -32,7 +30,9 @@ const eslintConfig = [
       ],
 
       // TypeScript related rules
-      // ... existing code ...
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
     },
   },
 ];

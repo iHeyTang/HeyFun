@@ -1,4 +1,4 @@
-export default `
+const NEXT_STEP_PROMPT = `
 As an autonomous AI assistant, determine the optimal next action and execute it immediately without seeking confirmation.
 You should always answer in {{ language }}.
 
@@ -33,3 +33,5 @@ Output Format:
 - Execute the next step directly rather than suggesting actions
 - Use tools instead of discussing using tools
 `;
+
+export default NEXT_STEP_PROMPT;

@@ -4,9 +4,9 @@ import { create } from 'zustand';
 import { isEqual } from 'lodash';
 
 type CacheStore = {
-  caches: Map<boolean | string | Symbol, any>;
-  getCache: <R>(cacheKey: boolean | string | Symbol) => R | undefined;
-  setCache: <R>(cacheKey: boolean | string | Symbol, data: R) => void;
+  caches: Map<boolean | string | symbol, any>;
+  getCache: <R>(cacheKey: boolean | string | symbol) => R | undefined;
+  setCache: <R>(cacheKey: boolean | string | symbol, data: R) => void;
 };
 
 const useCacheStore = create<CacheStore>((set, get) => ({
@@ -27,7 +27,7 @@ const useCacheStore = create<CacheStore>((set, get) => ({
 export const useAsync = <R, T extends unknown[]>(
   fn: (...params: T) => Promise<R>,
   params: T,
-  options: { manual?: boolean; deps?: DependencyList; skip?: (params: T) => boolean; cache?: string | Symbol } = {},
+  options: { manual?: boolean; deps?: DependencyList; skip?: (params: T) => boolean; cache?: string | symbol } = {},
 ) => {
   const [data, setData] = useState<R | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,12 +45,12 @@ export const useAsync = <R, T extends unknown[]>(
         setData(cachedData);
       }
     }
-  }, [cacheKey, options.manual]);
+  }, [cacheKey, options.manual, getCache]);
 
   // Update function reference without triggering re-renders
   useEffect(() => {
     fnRef.current = fn;
-  }, [fn]);
+  }, [fn, fnRef]);
 
   // Deep compare params to prevent unnecessary re-renders
   useEffect(() => {

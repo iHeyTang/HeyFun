@@ -8,4 +8,4 @@ export type PreviewData =
 export const usePreviewData = create<{
   data: PreviewData | null;
   setData: (data: PreviewData | null) => void;
-}>(set => ({ data: null, setData: data => set({ data }) }));
+    }>(set => ({ data: null, setData: data => set({ data }) }));

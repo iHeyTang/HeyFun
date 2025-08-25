@@ -212,3 +212,5 @@ export const ToolInfoDialog = forwardRef<ToolInfoDialogRef, ToolInfoDialogProps>
     </>
   );
 });
+
+ToolInfoDialog.displayName = 'ToolInfoDialog';

@@ -94,7 +94,7 @@ export class ReadmeFetcher {
       }
 
       // Try to get package.json for additional metadata
-      let [packageInfoError, packageInfo] = await to(async () => {
+      const [packageInfoError, packageInfo] = await to(async () => {
         const { data: packageData } = await this.octokit.repos.getContent({
           owner: repoInfo.owner,
           repo: repoInfo.repo,

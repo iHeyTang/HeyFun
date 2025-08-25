@@ -13,13 +13,13 @@ import { getChatSessions } from '@/actions/chat';
 export const useRecentChatSessions = create<{
   sessions: ChatSessions[];
   refreshSessions: () => Promise<void>;
-}>(set => ({
-  sessions: [],
-  refreshSessions: async () => {
-    const res = await getChatSessions({ page: 1, pageSize: 30 });
-    set({ sessions: res.data?.sessions || [] });
-  },
-}));
+    }>(set => ({
+      sessions: [],
+      refreshSessions: async () => {
+        const res = await getChatSessions({ page: 1, pageSize: 30 });
+        set({ sessions: res.data?.sessions || [] });
+      },
+    }));
 
 export function ChatHistorySidebar() {
   const { sessions, refreshSessions } = useRecentChatSessions();

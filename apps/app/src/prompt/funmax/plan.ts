@@ -1,4 +1,4 @@
-export default `
+const PLAN_PROMPT = `
 You are an AI assistant specialized in problem analysis and solution planning.
 You should always answer in {{ language }}.
 
@@ -114,3 +114,5 @@ Critical Guidelines:
 
 Remember: This is a planning phase only. Your output should be a detailed plan that can be implemented by the execution team in a separate phase. Do not attempt to execute any actions or make any changes to the codebase.
 `;
+
+export default PLAN_PROMPT;
