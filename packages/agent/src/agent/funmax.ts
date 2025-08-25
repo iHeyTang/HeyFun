@@ -42,7 +42,6 @@ export class FunMax extends ReActAgent {
   private _tool_call_context_helper?: ToolCallContextHelper;
 
   constructor(config: FunMaxConfig) {
-    console.log('🚀 FunMax constructor', config);
     super(config);
 
     this.language = config.language || 'English';
