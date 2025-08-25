@@ -13,6 +13,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import logo from '@/assets/logo.png';
 import { cn } from '@/lib/utils';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -78,6 +80,8 @@ export default async function RootLayout({
             <Toaster />
             <ConfirmDialog />
           </ThemeProvider>
+          <Analytics />
+          <SpeedInsights />
         </body>
       </html>
     </ClerkProvider>
