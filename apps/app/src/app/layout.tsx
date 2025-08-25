@@ -56,7 +56,7 @@ export default async function RootLayout({
   const { orgId } = await auth();
 
   return (
-    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider>
       <html lang={locale} suppressHydrationWarning>
         <body className={`${geistSans.variable} ${geistMono.variable} h-screen w-screen overflow-hidden antialiased`}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

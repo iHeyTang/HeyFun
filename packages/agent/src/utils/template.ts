@@ -1,7 +1,7 @@
-import { compile, TemplateDelegate } from 'handlebars';
+import Handlebars from 'handlebars';
 
 // 定义模板函数类型
-export type HandlebarsTemplateDelegate = TemplateDelegate;
+export type HandlebarsTemplateDelegate = Handlebars.TemplateDelegate;
 
 /**
  * 模板数据接口
@@ -11,22 +11,13 @@ export interface TemplateData {
 }
 
 /**
- * 编译模板并返回渲染函数
- * @param template 模板字符串
- * @returns 编译后的模板函数
- */
-export function compileTemplate(template: string): HandlebarsTemplateDelegate {
-  return compile(template);
-}
-
-/**
  * 直接渲染模板
  * @param template 模板字符串
  * @param data 模板数据
  * @returns 渲染后的字符串
  */
 export function renderTemplate(template: string, data: TemplateData): string {
-  const compiled = compileTemplate(template);
+  const compiled = Handlebars.compile(template);
   return compiled(data);
 }
 
@@ -39,7 +30,7 @@ export function compileTemplates<T extends Record<string, string>>(templates: T)
   const compiled: Record<keyof T, HandlebarsTemplateDelegate> = {} as any;
 
   for (const [key, template] of Object.entries(templates)) {
-    compiled[key as keyof T] = compileTemplate(template);
+    compiled[key as keyof T] = Handlebars.compile(template);
   }
 
   return compiled;

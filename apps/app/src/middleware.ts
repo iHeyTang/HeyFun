@@ -11,17 +11,11 @@ const isPublicRoute = createRouteMatcher([
   '/api/tools/refresh-stars',
 ]);
 
-export default clerkMiddleware(
-  async (auth, request) => {
-    if (!isPublicRoute(request)) {
-      await auth.protect();
-    }
-  },
-  {
-    secretKey: process.env.CLERK_SECRET_KEY,
-    publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-  },
-);
+export default clerkMiddleware(async (auth, request) => {
+  if (!isPublicRoute(request)) {
+    await auth.protect();
+  }
+});
 
 export const config = {
   matcher: [
