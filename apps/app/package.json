@@ -6,8 +6,7 @@
     "dev": "next dev --turbopack --port 7100",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "generate-keys": "ts-node --project scripts/tsconfig.json scripts/generate-keys.ts"
+    "lint": "next lint"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.57.0",
