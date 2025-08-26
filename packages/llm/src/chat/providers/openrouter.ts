@@ -14,14 +14,12 @@ export class OpenRouterProvider extends BaseProvider<z.infer<typeof configSchema
   protected config: z.infer<typeof configSchema> = {
     baseUrl: this.baseUrl,
     apiKey: '',
-  }
+  };
 
   async getModels(): Promise<ProviderModelInfo[]> {
     const response = await fetch(`${this.config.baseUrl}/models`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      method: 'GET'
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'force-cache',
     });
 
     if (response.ok) {
@@ -42,8 +40,8 @@ export class OpenRouterProvider extends BaseProvider<z.infer<typeof configSchema
         pricingDescription: `
 | Prompt Input | Output |
 |-------------------|---------------------|
-| $${(Number(model.pricing.prompt)* 1000000).toFixed(2)}/M | $${(Number(model.pricing.completion)* 1000000).toFixed(2)}/M |
-        `
+| $${(Number(model.pricing.prompt) * 1000000).toFixed(2)}/M | $${(Number(model.pricing.completion) * 1000000).toFixed(2)}/M |
+        `,
       }));
     }
 
@@ -54,10 +52,10 @@ export class OpenRouterProvider extends BaseProvider<z.infer<typeof configSchema
     try {
       const response = await fetch(`${this.config.baseUrl}/models`, {
         headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`,
+          Authorization: `Bearer ${this.config.apiKey}`,
           'Content-Type': 'application/json',
         },
-        method: 'GET'
+        method: 'GET',
       });
 
       if (response.ok) {
@@ -72,13 +70,13 @@ export class OpenRouterProvider extends BaseProvider<z.infer<typeof configSchema
         const errorData = await response.json().catch(() => ({}));
         return {
           success: false,
-          error: errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`
+          error: errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`,
         };
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Connection failed'
+        error: error instanceof Error ? error.message : 'Connection failed',
       };
     }
   }

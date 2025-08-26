@@ -1,6 +1,6 @@
 'use client';
 
-import { getModelProviderInfo, getModelProviderModels } from '@/actions/llm';
+import { getModelProviderModels } from '@/actions/llm';
 import { Markdown } from '@/components/block/markdown/markdown';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,27 +8,32 @@ import { Input } from '@/components/ui/input';
 import { ProviderModelInfo } from '@repo/llm/chat';
 import { Globe, Search, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useProvidersStore } from '../store';
+import { useParams } from 'next/navigation';
 
-export default function ProviderDetailsPanel({ params }: { params: Promise<{ providerId: string }> }) {
-  const [providerInfo, setProviderInfo] = useState<Awaited<ReturnType<typeof getModelProviderInfo>>['data']>();
+export default function ProviderDetailsPanel() {
   const [models, setModels] = useState<ProviderModelInfo[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  useEffect(() => {
-    params.then(params => {
-      getModelProviderInfo({ provider: params.providerId }).then(p => {
-        setProviderInfo(p.data);
-      });
+  const { providerId } = useParams<{ providerId: string }>();
+  const { providerInfos } = useProvidersStore();
 
-      getModelProviderModels({ provider: params.providerId }).then(p => {
-        if (!p.data) {
-          return;
-        }
-        setModels(p.data);
-      });
+  const providerInfo = useMemo(() => {
+    return providerInfos?.find(info => info.provider === providerId);
+  }, [providerInfos, providerId]);
+
+  useEffect(() => {
+    if (!providerId) {
+      return;
+    }
+    getModelProviderModels({ provider: providerId }).then(p => {
+      if (!p.data) {
+        return;
+      }
+      setModels(p.data);
     });
-  }, [params]);
+  }, [providerId, providerInfos]);
 
   // Filter models based on search term
   const filteredModels = models.filter(

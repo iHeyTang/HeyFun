@@ -1,6 +1,6 @@
 'use client';
 
-import { getModelProviderConfig, getModelProviderInfo, testModelProviderConnection, updateModelProviderConfig } from '@/actions/llm';
+import { getModelProviderConfig, testModelProviderConnection, updateModelProviderConfig } from '@/actions/llm';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
@@ -15,6 +15,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z, ZodBoolean, ZodNumber, ZodString } from 'zod';
+import { useProvidersStore } from '../../store';
 
 interface ConnectionStatus {
   isChecking: boolean;
@@ -26,8 +27,8 @@ interface ConnectionStatus {
 export default function ProviderConfigPanel() {
   const params = useParams();
   const providerId = params.providerId as string;
-
-  const [providerInfo, setProviderInfo] = useState<Awaited<ReturnType<typeof getModelProviderInfo>>['data']>();
+  const providerInfo = useProvidersStore(state => state.getProviderInfo(providerId));
+  const providerConfig = useProvidersStore(state => state.getProviderConfig(providerId));
   const [configSchema, setConfigSchema] = useState<z.ZodObject<Record<string, z.ZodTypeAny>>>(z.object({}));
 
   const form = useForm<z.infer<typeof configSchema>>({
@@ -68,13 +69,7 @@ export default function ProviderConfigPanel() {
   );
 
   useEffect(() => {
-    getModelProviderInfo({ provider: providerId }).then(p => {
-      if (!p.data) {
-        return;
-      }
-      setProviderInfo(p.data);
-      setConfigSchema(providerConfigSchemas[p.data.provider as keyof typeof providerConfigSchemas].schema);
-    });
+    setConfigSchema(providerConfigSchemas[providerInfo?.provider as keyof typeof providerConfigSchemas].schema);
 
     getModelProviderConfig({ provider: providerId }).then(p => {
       if (!p.data) {
@@ -83,7 +78,7 @@ export default function ProviderConfigPanel() {
       form.reset(p.data);
       testConnection(p.data);
     });
-  }, [providerId, form, getModelProviderInfo, getModelProviderConfig, testConnection]);
+  }, [providerId, form, providerConfig, testConnection]);
 
   useEffect(() => {
     if (!form.formState.isDirty && !connectionStatus.lastChecked && configSchema.safeParse(form.getValues()).success) {

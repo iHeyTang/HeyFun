@@ -9,6 +9,7 @@ export const getModelProviders = withUserAuth(async ({}: AuthWrapperContext<{}>)
   return Object.keys(providers).map(provider => ({
     provider: provider,
     displayName: providers[provider]?.displayName ?? 'Unknown Provider',
+    homepage: providers[provider]?.homepage ?? '',
   }));
 });
 
@@ -40,7 +41,7 @@ export const getModelProviderConfigs = withUserAuth(async ({ orgId }: AuthWrappe
       provider: true,
     },
   });
-  return [{ provider: 'builtin', config: {} }, ...configs];
+  return [{ id: '', provider: 'builtin', config: {} }, ...configs];
 });
 
 export const getModelProviderConfig = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ provider: string }>) => {

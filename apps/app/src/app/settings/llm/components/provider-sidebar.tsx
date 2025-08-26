@@ -1,40 +1,26 @@
-import { getModelProviderConfigs, getModelProviders } from '@/actions/llm';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Settings, Stars, Wand2 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useProvidersStore } from '../store';
 
 export function ProviderSidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [providerInfos, setProviderInfos] = useState<{ provider: string; displayName: string }[]>([]);
-  const [providerConfigs, setProviderConfigs] = useState<{ id?: string; provider: string }[]>([]);
+  const { providerInfos, providerConfigs, refreshProviderInfos, refreshProviderConfigs } = useProvidersStore();
 
   useEffect(() => {
-    getModelProviders({}).then(p => {
-      if (!p.data) {
-        return;
-      }
-      setProviderInfos(p.data);
-    });
-  }, []);
-
-  useEffect(() => {
-    getModelProviderConfigs({}).then(p => {
-      if (!p.data) {
-        return;
-      }
-      setProviderConfigs(p.data);
-    });
+    refreshProviderInfos();
+    refreshProviderConfigs();
   }, []);
 
   return (
     <div className="bg-muted/20 flex h-full w-[240px] flex-col shadow">
       <ScrollArea className="flex-1 py-4">
         <div className="space-y-1">
-          {providerInfos.map(info => {
+          {providerInfos?.map(info => {
             const isSelected = pathname === `/settings/llm/${info.provider}`;
 
             return (
@@ -54,7 +40,7 @@ export function ProviderSidebar() {
                     <Stars />
                   </Badge>
                 ) : (
-                  providerConfigs.find(config => config.provider === info.provider)?.id && (
+                  providerConfigs?.find(config => config.provider === info.provider)?.id && (
                     <Badge className="text-xs" variant="secondary">
                       <Wand2 />
                     </Badge>
