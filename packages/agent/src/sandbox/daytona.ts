@@ -189,24 +189,7 @@ export class DaytonaSandboxManager extends BaseSandboxManager {
       labels: { id },
       volumes: [{ volumeId: volume.id, mountPath: '/heyfun/workspace' }],
     });
-    await sandbox.process.createSession('mcp-uni');
-    const exec = await sandbox.process.executeSessionCommand('mcp-uni', {
-      command: 'npx mcp-uni --port 7200 --config /heyfun/workspace/mcp-uni.config.json',
-      runAsync: true,
-    });
-
-    await new Promise((resolve, reject) => {
-      sandbox.process.getSessionCommandLogs('mcp-uni', exec.cmdId!, chunk => {
-        console.log('[mcp-uni] ', chunk);
-        if (chunk.includes('Stream endpoint available at')) {
-          resolve(true);
-        }
-      });
-      setTimeout(() => {
-        reject(new Error('MCP-Uni server launch timeout'));
-      }, 30000);
-    });
-
+    await this.startMcpUni(sandbox);
     const runner = new DaytonaSandboxRunner(id, sandbox);
     await sandbox.fs.createFolder('/heyfun/workspace', '755');
     return runner;
@@ -218,6 +201,7 @@ export class DaytonaSandboxManager extends BaseSandboxManager {
       if (sandbox.state !== SandboxState.STARTED) {
         await this.daytona.start(sandbox);
       }
+      await this.startMcpUni(sandbox);
       return new DaytonaSandboxRunner(id, sandbox);
     } catch (error) {
       console.error(error instanceof Error ? error.message : error);
@@ -226,6 +210,42 @@ export class DaytonaSandboxManager extends BaseSandboxManager {
       }
       throw error;
     }
+  }
+
+  async startMcpUni(sandbox: Sandbox): Promise<void> {
+    const sessions = await sandbox.process.listSessions();
+
+    let session = sessions.find(session => session.sessionId === 'mcp-uni');
+
+    if (!session) {
+      await sandbox.process.createSession('mcp-uni');
+      session = await sandbox.process.getSession('mcp-uni');
+    }
+
+    const command = session.commands?.find(command => command.command === 'npx mcp-uni --port 7200 --config /heyfun/workspace/mcp-uni.config.json');
+    if (command) {
+      return;
+    }
+
+    const exec = await sandbox.process.executeSessionCommand(
+      'mcp-uni',
+      {
+        command: 'npx mcp-uni --port 7200 --config /heyfun/workspace/mcp-uni.config.json',
+        runAsync: true,
+      },
+      30000,
+    );
+    await new Promise((resolve, reject) => {
+      sandbox.process.getSessionCommandLogs('mcp-uni', exec.cmdId!, chunk => {
+        console.log('[mcp-uni] ', chunk);
+        if (chunk.includes('Stream endpoint available at')) {
+          resolve(true);
+        }
+      });
+      setTimeout(() => {
+        reject(new Error('MCP-Uni server launch timeout'));
+      }, 30000);
+    });
   }
 
   async delete(id: string, timeout?: number): Promise<void> {
