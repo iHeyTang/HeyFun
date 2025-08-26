@@ -35,6 +35,10 @@ export class ToolCallContextHelper {
     this.addTool(new TerminalTool(this.agent.sandbox!));
   }
 
+  async initiate() {
+    await this.availableTools.initiate(this.agent.sandbox!);
+  }
+
   /**
    * 添加工具
    */

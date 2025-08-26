@@ -197,13 +197,14 @@ export class DaytonaSandboxManager extends BaseSandboxManager {
 
     await new Promise((resolve, reject) => {
       sandbox.process.getSessionCommandLogs('mcp-uni', exec.cmdId!, chunk => {
+        console.log('[mcp-uni] ', chunk);
         if (chunk.includes('Stream endpoint available at')) {
           resolve(true);
         }
       });
       setTimeout(() => {
         reject(new Error('MCP-Uni server launch timeout'));
-      }, 10000);
+      }, 30000);
     });
 
     const runner = new DaytonaSandboxRunner(id, sandbox);

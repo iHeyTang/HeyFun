@@ -158,30 +158,17 @@ export class FunMax extends ReActAgent {
    */
   private async initializeTools(): Promise<void> {
     if (!this._tool_call_context_helper) return;
+    await this._tool_call_context_helper.initiate();
 
     const map = new Map<string, AddMcpConfig>();
     for (const tool of this.tools) {
       map.set(tool.id, tool);
     }
 
-    const fileContent = JSON.stringify({ mcpServers: map }, null, 2);
-
-    await this.sandbox!.fs.createFolder('/heyfun/workspace', '755');
-    await this.sandbox!.fs.uploadFileFromBuffer(Buffer.from(fileContent), '/heyfun/workspace/mcp-uni.config.json');
-
-    const mcpUniUrl = await this.sandbox!.portal.getMcpUniPortal();
-    await this._tool_call_context_helper.addMcp({
-      id: 'mcp-uni',
-      name: 'mcp-uni',
-      version: '1.0.0',
-      url: mcpUniUrl.url,
-      headers: mcpUniUrl.headers,
-    });
-
-    // 添加系统工具和MCP工具
-    // for (const tool of this.tools) {
-    //   await this._tool_call_context_helper.addMcp(tool);
-    // }
+    // 添加系统工具和MCP工具;
+    for (const tool of this.tools) {
+      await this._tool_call_context_helper.addMcp(tool);
+    }
   }
 
   /**

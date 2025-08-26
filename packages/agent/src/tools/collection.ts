@@ -1,7 +1,9 @@
 import type { Chat } from '@repo/llm/chat';
 import type { BaseTool, ToolResult } from './types';
-import McpHost from './mcp';
 import { AddMcpConfig } from './types';
+import type { SandboxRunner } from '../sandbox';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
 /**
  * 工具集合实现类
@@ -10,12 +12,32 @@ export class ToolCollection {
   public tools: BaseTool[] = [];
   public toolMap: Record<string, BaseTool> = {};
 
-  private mcp: McpHost = new McpHost();
+  private mcpUni: Client | null = null;
 
   constructor(...initialTools: BaseTool[]) {
     for (const tool of initialTools) {
       this.addTool(tool);
     }
+  }
+
+  async initiate(sandbox: SandboxRunner) {
+    const mcpUniUrl = await sandbox!.portal.getMcpUniPortal();
+    this.mcpUni = new Client({
+      name: 'mcp-uni',
+      version: '1.0.0',
+      url: mcpUniUrl.url,
+      headers: mcpUniUrl.headers,
+    });
+
+    const transport = new StreamableHTTPClientTransport(new URL(mcpUniUrl.url), {
+      requestInit: {
+        headers: { ...mcpUniUrl.headers },
+        cache: 'no-store',
+      },
+    });
+
+    await this.mcpUni.connect(transport);
+    await this.refreshMcpTools();
   }
 
   /**
@@ -37,11 +59,33 @@ export class ToolCollection {
 
   async addMcp(config: AddMcpConfig): Promise<void> {
     if ('url' in config && config.url) {
-      await this.mcp.addStreamableMcp(config);
+      await this.mcpUni?.callTool({
+        name: 'connect_mcp',
+        arguments: {
+          name: config.name,
+          transportConfig: {
+            type: 'sse',
+            url: config.url,
+            headers: config.headers,
+          },
+        },
+      });
     } else if ('command' in config && config.command) {
-      await this.mcp.addStdioMcp(config);
+      await this.mcpUni?.callTool({
+        name: 'connect_mcp',
+        arguments: {
+          name: config.name,
+          transportConfig: {
+            type: 'stdio',
+            command: config.command,
+            args: config.args,
+            env: config.env || {},
+            cwd: '/heyfun/workspace',
+          },
+        },
+      });
     }
-    await this.addMcpTools(config.id);
+    await this.refreshMcpTools();
   }
 
   /**
@@ -124,21 +168,14 @@ export class ToolCollection {
   async cleanup(): Promise<void> {
     const cleanupPromises = this.tools.filter(tool => tool.cleanup).map(tool => tool.cleanup!());
     await Promise.allSettled(cleanupPromises);
-    await this.mcp.cleanup();
+    await this.mcpUni?.close();
   }
 
-  /**
-   * 添加MCP工具
-   */
-  private async addMcpTools(id: string): Promise<void> {
-    const client = this.mcp.getClient(id);
-    if (!client) {
-      throw new Error(`Client ${id} not found`);
-    }
-    const mcpTools = await client.listTools();
+  private async refreshMcpTools(): Promise<void> {
+    const mcpTools = await this.mcpUni!.listTools();
     const tools: BaseTool[] = mcpTools.tools
       .map(tool => {
-        const internalName = `${id}-${tool.name}`;
+        const internalName = `${tool.name}`;
 
         if (internalName.length > 64) {
           console.warn(`Tool name length exceeds the limit of 64 characters, this tool will be ignored: ${internalName}`);
@@ -158,7 +195,7 @@ export class ToolCollection {
             };
           },
           execute: async input => {
-            const result = await this.mcp.getClient(id)!.callTool({ name: tool.name, arguments: input });
+            const result = await this.mcpUni!.callTool({ name: tool.name, arguments: input });
             return result as ToolResult;
           },
         };
