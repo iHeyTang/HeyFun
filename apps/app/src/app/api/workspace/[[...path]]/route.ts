@@ -1,5 +1,5 @@
 import { withUserAuthApi } from '@/lib/server/auth-wrapper';
-import sandboxManager from '@/lib/server/sandbox';
+import { sandboxManager } from '@repo/agent';
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';

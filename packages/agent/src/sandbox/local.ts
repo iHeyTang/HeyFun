@@ -9,6 +9,8 @@ import {
   SandboxFileUpload,
   SandboxProcess,
   SandboxRunner,
+  SandboxWebPortal,
+  SandboxWebPortalSchema,
 } from './base';
 import { spawn, ChildProcess, exec } from 'child_process';
 import path, { join } from 'path';
@@ -264,14 +266,28 @@ class LocalSandboxFileSystem extends SandboxFileSystem {
   }
 }
 
+class LocalSandboxWebPortal extends SandboxWebPortal {
+  constructor() {
+    super();
+  }
+
+  async getMcpUniPortal(): Promise<SandboxWebPortalSchema> {
+    return {
+      url: `http://localhost:7200/stream`,
+      headers: {},
+    };
+  }
+}
+
 export class LocalSandboxRunner extends SandboxRunner {
   public readonly process: SandboxProcess;
   public readonly fs: SandboxFileSystem;
-
+  public readonly portal: SandboxWebPortal;
   constructor(public readonly id: string) {
     super();
     this.process = new LocalSandboxProcess();
     this.fs = new LocalSandboxFileSystem();
+    this.portal = new LocalSandboxWebPortal();
   }
 }
 

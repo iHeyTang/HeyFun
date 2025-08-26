@@ -2,6 +2,7 @@ import { Chat } from '@repo/llm/chat';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
+import sandboxManager from '../sandbox';
 import { ToolCallContextHelper } from '../tools/toolcall';
 import type { AddMcpConfig } from '../tools/types';
 import { createMessage } from '../utils/message';
@@ -88,6 +89,9 @@ export class FunMax extends ReActAgent {
       }
     }
 
+    // 初始化沙盒
+    this.sandbox = await sandboxManager.getOrCreateOneById(this.sandboxId);
+
     // 初始化上下文助手
     this._tool_call_context_helper = new ToolCallContextHelper(this);
 
@@ -155,10 +159,29 @@ export class FunMax extends ReActAgent {
   private async initializeTools(): Promise<void> {
     if (!this._tool_call_context_helper) return;
 
-    // 添加系统工具和MCP工具
+    const map = new Map<string, AddMcpConfig>();
     for (const tool of this.tools) {
-      await this._tool_call_context_helper.addMcp(tool);
+      map.set(tool.id, tool);
     }
+
+    const fileContent = JSON.stringify({ mcpServers: map }, null, 2);
+
+    await this.sandbox!.fs.createFolder('/heyfun/workspace', '755');
+    await this.sandbox!.fs.uploadFileFromBuffer(Buffer.from(fileContent), '/heyfun/workspace/mcp-uni.config.json');
+
+    const mcpUniUrl = await this.sandbox!.portal.getMcpUniPortal();
+    await this._tool_call_context_helper.addMcp({
+      id: 'mcp-uni',
+      name: 'mcp-uni',
+      version: '1.0.0',
+      url: mcpUniUrl.url,
+      headers: mcpUniUrl.headers,
+    });
+
+    // 添加系统工具和MCP工具
+    // for (const tool of this.tools) {
+    //   await this._tool_call_context_helper.addMcp(tool);
+    // }
   }
 
   /**

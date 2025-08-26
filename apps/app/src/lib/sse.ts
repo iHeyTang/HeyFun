@@ -57,6 +57,10 @@ class SSERuntime {
         console.log(`[SSE ${taskId}] Task completed, closing connection`);
         this.removeConnection(taskId);
       }
+      if (event.name === 'agent:lifecycle:error') {
+        console.log(`[SSE ${taskId}] Task error, closing connection`);
+        this.removeConnection(taskId);
+      }
     });
 
     console.log(`[SSE ${taskId}] Connection established`);

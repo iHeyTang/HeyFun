@@ -7,6 +7,7 @@ import { StepBadge } from './step';
 import { ToolMessageContent } from './tools';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ChatMessageProps {
   messages: AggregatedMessage[];
@@ -116,6 +117,34 @@ const TerminatedMessage = ({ message }: TerminatedMessageProps) => {
   );
 };
 
+const ErrorMessage = ({ message }: { message: Message<{ error: string; total_input_tokens?: number; total_completion_tokens?: number }> }) => {
+  const showTokenCount = message.content.total_input_tokens || message.content.total_completion_tokens;
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge className="cursor-pointer font-mono">
+            🚫 Oops! something went wrong{' '}
+            {showTokenCount && (
+              <>
+                (
+                <span>
+                  {formatNumber(message.content.total_input_tokens || 0, { autoUnit: true })} input;{' '}
+                  {formatNumber(message.content.total_completion_tokens || 0, { autoUnit: true })} completion
+                </span>
+                )
+              </>
+            )}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          <div className="max-w-80 break-words">{message.content.error}</div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
 const StepMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:lifecycle:step' } }) => {
   if (!('messages' in message)) return null;
 
@@ -206,6 +235,15 @@ const LifecycleMessage = ({ message }: { message: AggregatedMessage }) => {
           return (
             <div key={index} className="container mx-auto max-w-4xl">
               <TerminatedMessage message={msg} />
+            </div>
+          );
+        }
+
+        // 处理生命周期错误
+        if (msg.type === 'agent:lifecycle:error') {
+          return (
+            <div key={index} className="container mx-auto max-w-4xl">
+              <ErrorMessage message={msg} />
             </div>
           );
         }

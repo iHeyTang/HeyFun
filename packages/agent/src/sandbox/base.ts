@@ -139,6 +139,15 @@ export abstract class SandboxFileSystem {
   abstract resolvePath(path: string): Promise<string>;
 }
 
+export interface SandboxWebPortalSchema {
+  url: string;
+  headers: Record<string, string>;
+}
+
+export abstract class SandboxWebPortal {
+  abstract getMcpUniPortal(): Promise<SandboxWebPortalSchema>;
+}
+
 /**
  * 沙盒运行器，它负责连接到 sandbox 的 runner 使得当前进程可以和 sandbox 的 runner 进行通信
  */
@@ -146,6 +155,7 @@ export abstract class SandboxRunner {
   abstract readonly id: string;
   abstract process: SandboxProcess;
   abstract fs: SandboxFileSystem;
+  abstract portal: SandboxWebPortal;
 }
 
 export abstract class BaseSandboxManager {

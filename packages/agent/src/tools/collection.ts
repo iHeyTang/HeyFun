@@ -37,7 +37,7 @@ export class ToolCollection {
 
   async addMcp(config: AddMcpConfig): Promise<void> {
     if ('url' in config && config.url) {
-      await this.mcp.addSseMcp(config);
+      await this.mcp.addStreamableMcp(config);
     } else if ('command' in config && config.command) {
       await this.mcp.addStdioMcp(config);
     }

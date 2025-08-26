@@ -40,7 +40,8 @@ type AgentLifecycleType =
   | 'agent:lifecycle:memory:added'
   | 'agent:lifecycle:state:change'
   | 'agent:lifecycle:complete'
-  | 'agent:lifecycle:terminated';
+  | 'agent:lifecycle:terminated'
+  | 'agent:lifecycle:error';
 
 type AggregatedMessageType =
   | 'agent:lifecycle'

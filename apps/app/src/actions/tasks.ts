@@ -8,8 +8,6 @@ import { prisma } from '@/lib/server/prisma';
 import { to } from '@/lib/shared/to';
 import { mcpServerSchema } from '@/lib/shared/tools';
 import type { AddMcpConfig } from '@repo/agent';
-import sandboxManager from '@/lib/server/sandbox';
-import { SandboxRunner } from '@/lib/server/sandbox/base';
 import { taskRuntime } from '@/lib/runtime';
 import { sseRuntime } from '@/lib/sse';
 
@@ -144,9 +142,8 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
     tools: processedTools.filter(tool => tool !== undefined) as AddMcpConfig[],
     history: history as Chat.ChatCompletionMessageParam[],
     promptTemplates: promptTemplates,
+    sandboxId: orgId,
   };
-
-  const sandbox = await sandboxManager.getOrCreateOneById(orgId);
 
   const existingTask = taskRuntime.getTask(body.task_id);
   if (existingTask) {
@@ -154,8 +151,6 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
   }
 
   // 创建任务
-  taskRuntime.createTask(body.task_id, body);
-
   if (!body.task_id) {
     await prisma.tasks.update({ where: { id: task.id }, data: { status: 'failed' } });
     throw new Error('Unkown Error');
@@ -164,8 +159,11 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
   await prisma.tasks.update({ where: { id: task.id }, data: { outId: body.task_id, status: 'processing' } });
 
   // Handle event stream in background - completely detached from current request
-  handleTaskEvents(task.id, body.task_id, orgId, sandbox).catch(error => {
-    console.error('Failed to handle task events:', error);
+  setImmediate(() => {
+    taskRuntime.createTask(body.task_id, body);
+    handleTaskEvents(task.id, body.task_id, orgId).catch(error => {
+      console.error('Failed to handle task events:', error);
+    });
   });
 
   return { id: task.id, outId: body.task_id };
@@ -212,7 +210,7 @@ export const getSharedTask = async ({ taskId }: { taskId: string }) => {
 };
 
 // Handle event stream in background
-async function handleTaskEvents(taskId: string, outId: string, organizationId: string, sandbox: SandboxRunner) {
+async function handleTaskEvents(taskId: string, outId: string, organizationId: string) {
   const taskProgresses = await prisma.taskProgresses.findMany({ where: { taskId }, orderBy: { index: 'asc' } });
   const rounds = taskProgresses.map(progress => progress.round);
   const round = Math.max(...rounds, 1);
@@ -253,6 +251,12 @@ async function handleTaskEvents(taskId: string, outId: string, organizationId: s
         data: { status: 'terminated' },
       });
     }
+    if (type === 'agent:lifecycle:error') {
+      await prisma.tasks.update({
+        where: { id: taskId },
+        data: { status: 'failed' },
+      });
+    }
   });
 }
 
@@ -276,7 +280,7 @@ async function createOrFetchTask(organizationId: string, config: { taskId: strin
   if (task.status !== 'completed' && task.status !== 'terminated' && task.status !== 'failed') throw new Error('Task is processing');
 
   const progresses = await prisma.taskProgresses.findMany({
-    where: { taskId: task.id, type: { in: ['agent:lifecycle:start', 'agent:lifecycle:complete'] } },
+    where: { taskId: task.id, type: { in: ['agent:lifecycle:start', 'agent:lifecycle:complete', 'agent:lifecycle:error'] } },
     select: { type: true, content: true },
     orderBy: { index: 'asc' },
   });
@@ -289,6 +293,11 @@ async function createOrFetchTask(organizationId: string, config: { taskId: strin
         const latestUserProgress = acc.reverse().find(item => item.role === 'user');
         if (latestUserProgress) {
           acc.push({ role: 'assistant', message: (progress.content as { results: string[] }).results.join('\n') });
+        }
+      } else if (progress.type === 'agent:lifecycle:error') {
+        const latestUserProgress = acc.reverse().find(item => item.role === 'user');
+        if (latestUserProgress) {
+          acc.push({ role: 'assistant', message: (progress.content as { error: string }).error });
         }
       }
       return acc;

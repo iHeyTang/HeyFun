@@ -7,6 +7,7 @@ import { ToolCollection } from './collection';
 import { FileSystemTool } from './tools/file-system';
 import { TerminateTool } from './tools/terminate';
 import type { AddMcpConfig, BaseTool } from './types';
+import { TerminalTool } from './tools/terminal';
 
 /**
  * 工具调用上下文助手实现
@@ -30,7 +31,8 @@ export class ToolCallContextHelper {
     // 初始化工具集合，包含默认工具
     this.availableTools = new ToolCollection();
     this.addTool(new TerminateTool());
-    this.addTool(new FileSystemTool());
+    this.addTool(new FileSystemTool(this.agent.sandbox!));
+    this.addTool(new TerminalTool(this.agent.sandbox!));
   }
 
   /**

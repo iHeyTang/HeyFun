@@ -10,6 +10,8 @@ import {
   SandboxFileUpload,
   SandboxProcess,
   SandboxRunner,
+  SandboxWebPortal,
+  SandboxWebPortalSchema,
 } from './base';
 import path, { join } from 'path';
 
@@ -110,7 +112,7 @@ class DaytonaSandboxFileSystem extends SandboxFileSystem {
   }
 
   async getWorkspacePath(): Promise<string> {
-    return join(process.cwd(), 'workspace');
+    return join('/heyfun', 'workspace');
   }
 
   async resolvePath(p: string): Promise<string> {
@@ -119,9 +121,29 @@ class DaytonaSandboxFileSystem extends SandboxFileSystem {
   }
 }
 
+class DaytonaSandboxWebPortal extends SandboxWebPortal {
+  private mcpUniPreviewLink?: SandboxWebPortalSchema;
+
+  constructor(private sandbox: Sandbox) {
+    super();
+  }
+
+  async getMcpUniPortal(): Promise<SandboxWebPortalSchema> {
+    if (!this.mcpUniPreviewLink) {
+      const previewLink = await this.sandbox.getPreviewLink(7200);
+      this.mcpUniPreviewLink = {
+        url: `${previewLink.legacyProxyUrl}/stream`,
+        headers: { 'x-daytona-preview-token': previewLink.token },
+      };
+    }
+    return this.mcpUniPreviewLink;
+  }
+}
+
 export class DaytonaSandboxRunner extends SandboxRunner {
   public readonly process: SandboxProcess;
   public readonly fs: SandboxFileSystem;
+  public readonly portal: SandboxWebPortal;
   constructor(
     public readonly id: string,
     private sandbox: Sandbox,
@@ -129,6 +151,7 @@ export class DaytonaSandboxRunner extends SandboxRunner {
     super();
     this.process = new DaytonaSandboxProcess(this.sandbox);
     this.fs = new DaytonaSandboxFileSystem(this.sandbox);
+    this.portal = new DaytonaSandboxWebPortal(this.sandbox);
   }
 }
 
@@ -165,6 +188,22 @@ export class DaytonaSandboxManager extends BaseSandboxManager {
       user: 'daytona',
       labels: { id },
       volumes: [{ volumeId: volume.id, mountPath: '/heyfun/workspace' }],
+    });
+    await sandbox.process.createSession('mcp-uni');
+    const exec = await sandbox.process.executeSessionCommand('mcp-uni', {
+      command: 'npx mcp-uni --port 7200 --config /heyfun/workspace/mcp-uni.config.json',
+      runAsync: true,
+    });
+
+    await new Promise((resolve, reject) => {
+      sandbox.process.getSessionCommandLogs('mcp-uni', exec.cmdId!, chunk => {
+        if (chunk.includes('Stream endpoint available at')) {
+          resolve(true);
+        }
+      });
+      setTimeout(() => {
+        reject(new Error('MCP-Uni server launch timeout'));
+      }, 10000);
     });
 
     const runner = new DaytonaSandboxRunner(id, sandbox);

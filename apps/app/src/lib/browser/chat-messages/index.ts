@@ -85,6 +85,7 @@ class ChatMessageAggregator {
       if (
         message.type === 'agent:lifecycle:complete' ||
         message.type === 'agent:lifecycle:terminated' ||
+        message.type === 'agent:lifecycle:error' ||
         message.type === 'agent:lifecycle:memory:added' ||
         message.type === 'agent:lifecycle:state:change'
       ) {

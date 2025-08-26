@@ -18,6 +18,7 @@ export class BaseAgentEvents {
   static readonly LIFECYCLE_PLAN_START = `${BASE_AGENT_EVENTS_PREFIX}:plan:start`;
   static readonly LIFECYCLE_PLAN_COMPLETE = `${BASE_AGENT_EVENTS_PREFIX}:plan:complete`;
   static readonly LIFECYCLE_COMPLETE = `${BASE_AGENT_EVENTS_PREFIX}:complete`;
+  static readonly LIFECYCLE_ERROR = `${BASE_AGENT_EVENTS_PREFIX}:error`;
   static readonly LIFECYCLE_TERMINATING = `${BASE_AGENT_EVENTS_PREFIX}:terminating`;
   static readonly LIFECYCLE_TERMINATED = `${BASE_AGENT_EVENTS_PREFIX}:terminated`;
 

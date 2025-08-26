@@ -1,6 +1,6 @@
 import { BaseToolParameters, ToolResult } from '../types';
 import { AbstractBaseTool } from './base';
-import * as fs from 'fs/promises';
+import { SandboxRunner } from '../../sandbox/base';
 import * as path from 'path';
 
 interface ToolParameters extends BaseToolParameters {
@@ -25,12 +25,19 @@ interface ToolParameters extends BaseToolParameters {
 }
 
 /**
- * 文件系统操作工具 - 支持常见的文件系统操作
+ * 文件系统操作工具 - 支持在沙盒环境中进行常见的文件系统操作
  */
 export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
   public name = 'file_system';
   public description =
-    'Perform comprehensive file system operations including read/write text and binary files, create/delete directories, copy/move files, list directory contents, check file existence, and get detailed file information. Supports various encodings and handles large files with warnings.';
+    'Perform comprehensive file system operations in sandbox environment including read/write text and binary files, create/delete directories, copy/move files, list directory contents, check file existence, and get detailed file information. Supports various encodings and handles large files with warnings.';
+
+  private sandbox: SandboxRunner;
+
+  constructor(sandbox: SandboxRunner) {
+    super();
+    this.sandbox = sandbox;
+  }
 
   async execute(input: ToolParameters): Promise<ToolResult> {
     try {
@@ -76,11 +83,8 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
 
   private async readFile(filePath: string, encoding: string = 'utf-8'): Promise<ToolResult> {
     try {
-      // 检查文件是否存在
-      await fs.access(filePath);
-
       // 获取文件信息以确定最佳读取方式
-      const stats = await fs.stat(filePath);
+      const stats = await this.sandbox.fs.getFileDetails(filePath);
 
       // 对于大文件，提供警告
       if (stats.size > 10 * 1024 * 1024) {
@@ -95,7 +99,8 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
         };
       }
 
-      const content = await fs.readFile(filePath, { encoding: encoding as BufferEncoding });
+      const buffer = await this.sandbox.fs.downloadFile(filePath);
+      const content = buffer.toString(encoding as BufferEncoding);
       return {
         content: [{ type: 'text', text: `File content:\n${content}` }],
       };
@@ -112,22 +117,29 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
     try {
       // 确保目录存在
       const dir = path.dirname(filePath);
-      await fs.mkdir(dir, { recursive: true });
+      try {
+        await this.sandbox.fs.createFolder(dir, '755');
+      } catch {
+        // 目录可能已存在
+      }
 
       // 检查文件是否已存在，如果存在则备份
       try {
-        await fs.access(filePath);
-        const backupPath = `${filePath}.backup.${Date.now()}`;
-        await fs.copyFile(filePath, backupPath);
-        console.log(`Backup created: ${backupPath}`);
+        const stats = await this.sandbox.fs.getFileDetails(filePath);
+        if (stats) {
+          const backupPath = `${filePath}.backup.${Date.now()}`;
+          await this.sandbox.fs.moveFiles(filePath, backupPath);
+          console.log(`Backup created: ${backupPath}`);
+        }
       } catch {
         // 文件不存在，无需备份
       }
 
-      await fs.writeFile(filePath, content, { encoding: encoding as BufferEncoding });
+      const buffer = Buffer.from(content, encoding as BufferEncoding);
+      await this.sandbox.fs.uploadFileFromBuffer(buffer, filePath);
 
       // 获取文件大小
-      const stats = await fs.stat(filePath);
+      const stats = await this.sandbox.fs.getFileDetails(filePath);
       return {
         content: [{ type: 'text', text: `File written successfully: ${filePath} (${stats.size} bytes)` }],
       };
@@ -142,12 +154,7 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
 
   private async deleteFile(filePath: string): Promise<ToolResult> {
     try {
-      const stats = await fs.stat(filePath);
-      if (stats.isDirectory()) {
-        await fs.rmdir(filePath, { recursive: true });
-      } else {
-        await fs.unlink(filePath);
-      }
+      await this.sandbox.fs.deleteFile(filePath);
       return {
         content: [{ type: 'text', text: `Successfully deleted: ${filePath}` }],
       };
@@ -162,7 +169,7 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
 
   private async createDirectory(dirPath: string): Promise<ToolResult> {
     try {
-      await fs.mkdir(dirPath, { recursive: true });
+      await this.sandbox.fs.createFolder(dirPath, '755');
       return {
         content: [{ type: 'text', text: `Directory created successfully: ${dirPath}` }],
       };
@@ -177,34 +184,17 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
 
   private async listDirectory(dirPath: string): Promise<ToolResult> {
     try {
-      const items = await fs.readdir(dirPath, { withFileTypes: true });
+      const items = await this.sandbox.fs.listFiles(dirPath);
 
-      // 获取每个项目的详细信息
-      const detailedItems = await Promise.all(
-        items.map(async item => {
-          const itemPath = path.join(dirPath, item.name);
-          try {
-            const stats = await fs.stat(itemPath);
-            return {
-              name: item.name,
-              type: item.isDirectory() ? 'directory' : 'file',
-              path: itemPath,
-              size: stats.size,
-              modified: stats.mtime,
-              permissions: stats.mode.toString(8),
-            };
-          } catch {
-            return {
-              name: item.name,
-              type: 'unknown',
-              path: itemPath,
-              size: 0,
-              modified: new Date(),
-              permissions: '000',
-            };
-          }
-        }),
-      );
+      // 转换为统一格式
+      const detailedItems = items.map(item => ({
+        name: item.name,
+        type: item.isDir ? 'directory' : 'file',
+        path: path.join(dirPath, item.name),
+        size: item.size,
+        modified: new Date(item.modTime),
+        permissions: item.permissions,
+      }));
 
       // 按类型和名称排序
       const sortedItems = detailedItems.sort((a, b) => {
@@ -223,7 +213,9 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
         })
         .join('\n');
 
-      const summary = `Total: ${items.length} items (${items.filter(i => i.isDirectory()).length} directories, ${items.filter(i => !i.isDirectory()).length} files)`;
+      const directories = items.filter(i => i.isDir).length;
+      const files = items.length - directories;
+      const summary = `Total: ${items.length} items (${directories} directories, ${files} files)`;
 
       return {
         content: [{ type: 'text', text: `Directory contents of ${dirPath}:\n${summary}\n\n${result}` }],
@@ -239,9 +231,8 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
 
   private async checkExists(filePath: string): Promise<ToolResult> {
     try {
-      await fs.access(filePath);
-      const stats = await fs.stat(filePath);
-      const type = stats.isDirectory() ? 'directory' : 'file';
+      const stats = await this.sandbox.fs.getFileDetails(filePath);
+      const type = stats.isDir ? 'directory' : 'file';
       return {
         content: [{ type: 'text', text: `Path exists: ${filePath} (${type})` }],
       };
@@ -254,7 +245,8 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
 
   private async copyFile(sourcePath: string, destinationPath: string): Promise<ToolResult> {
     try {
-      await fs.copyFile(sourcePath, destinationPath);
+      const buffer = await this.sandbox.fs.downloadFile(sourcePath);
+      await this.sandbox.fs.uploadFileFromBuffer(buffer, destinationPath);
       return {
         content: [{ type: 'text', text: `File copied successfully: ${sourcePath} -> ${destinationPath}` }],
       };
@@ -269,7 +261,7 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
 
   private async moveFile(sourcePath: string, destinationPath: string): Promise<ToolResult> {
     try {
-      await fs.rename(sourcePath, destinationPath);
+      await this.sandbox.fs.moveFiles(sourcePath, destinationPath);
       return {
         content: [{ type: 'text', text: `File moved successfully: ${sourcePath} -> ${destinationPath}` }],
       };
@@ -284,7 +276,7 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
 
   private async readBinaryFile(filePath: string): Promise<ToolResult> {
     try {
-      const buffer = await fs.readFile(filePath);
+      const buffer = await this.sandbox.fs.downloadFile(filePath);
       const base64Data = buffer.toString('base64');
       return {
         content: [{ type: 'text', text: `Binary file content (base64):\n${base64Data}` }],
@@ -302,10 +294,14 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
     try {
       // 确保目录存在
       const dir = path.dirname(filePath);
-      await fs.mkdir(dir, { recursive: true });
+      try {
+        await this.sandbox.fs.createFolder(dir, '755');
+      } catch {
+        // 目录可能已存在
+      }
 
       const buffer = Buffer.from(base64Data, 'base64');
-      await fs.writeFile(filePath, buffer);
+      await this.sandbox.fs.uploadFileFromBuffer(buffer, filePath);
       return {
         content: [{ type: 'text', text: `Binary file written successfully: ${filePath}` }],
       };
@@ -328,7 +324,7 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
 
   private async getCurrentDirectory(): Promise<ToolResult> {
     try {
-      const currentDir = process.cwd();
+      const currentDir = await this.sandbox.fs.getWorkspacePath();
       return {
         content: [{ type: 'text', text: `Current working directory: ${currentDir}` }],
       };
@@ -343,20 +339,20 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
 
   private async getFileInfo(filePath: string): Promise<ToolResult> {
     try {
-      const stats = await fs.stat(filePath);
+      const stats = await this.sandbox.fs.getFileDetails(filePath);
       const info = {
-        name: path.basename(filePath),
+        name: stats.name,
         path: filePath,
         size: stats.size,
         sizeFormatted: this.formatFileSize(stats.size),
-        type: stats.isDirectory() ? 'directory' : 'file',
-        created: stats.birthtime,
-        modified: stats.mtime,
-        accessed: stats.atime,
-        permissions: stats.mode.toString(8),
-        isDirectory: stats.isDirectory(),
-        isFile: stats.isFile(),
-        isSymbolicLink: stats.isSymbolicLink(),
+        type: stats.isDir ? 'directory' : 'file',
+        modified: new Date(stats.modTime),
+        permissions: stats.permissions,
+        owner: stats.owner,
+        group: stats.group,
+        mode: stats.mode,
+        isDirectory: stats.isDir,
+        isFile: !stats.isDir,
       };
 
       return {

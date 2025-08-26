@@ -1,31 +1,31 @@
 'use server';
 
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
-import { AdapterManager, aigcProviderConfigSchema } from '@repo/llm/aigc';
-import type { GenerationType } from '@repo/llm/aigc';
-import z from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
-import { prisma } from '@/lib/server/prisma';
-import sandboxManager from '@/lib/server/sandbox';
-import { nanoid } from 'nanoid';
-import path, { join } from 'path';
 import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
-import fs from 'fs';
+import { prisma } from '@/lib/server/prisma';
+import { sandboxManager } from '@repo/agent';
+import type { GenerationType } from '@repo/llm/aigc';
 import {
-  wanT2iSubmitParamsSchema,
-  wanI2vSubmitParamsSchema,
-  wanKf2vSubmitParamsSchema,
-  wanT2vSubmitParamsSchema,
-  jimengT2iSubmitParamsSchema,
-  jimengI2iSubmitParamsSchema,
-  jimengT2vSubmitParamsSchema,
-  jimengI2vSubmitParamsSchema,
-  doubaoT2iSubmitParamsSchema,
+  AdapterManager,
+  aigcProviderConfigSchema,
   doubaoI2iSubmitParamsSchema,
-  doubaoT2vSubmitParamsSchema,
   doubaoI2vSubmitParamsSchema,
   doubaoKf2vSubmitParamsSchema,
+  doubaoT2iSubmitParamsSchema,
+  doubaoT2vSubmitParamsSchema,
+  jimengI2iSubmitParamsSchema,
+  jimengI2vSubmitParamsSchema,
+  jimengT2iSubmitParamsSchema,
+  jimengT2vSubmitParamsSchema,
+  wanI2vSubmitParamsSchema,
+  wanKf2vSubmitParamsSchema,
+  wanT2iSubmitParamsSchema,
+  wanT2vSubmitParamsSchema,
 } from '@repo/llm/aigc';
+import { nanoid } from 'nanoid';
+import { join } from 'path';
+import z from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 // 任务状态枚举
 enum PaintboardTaskStatus {
