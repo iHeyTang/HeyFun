@@ -1,20 +1,14 @@
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useLLM } from '@/hooks/use-llm';
 import { Settings, Stars, Wand2 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { useProvidersStore } from '../store';
 
 export function ProviderSidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { providerInfos, providerConfigs, refreshProviderInfos, refreshProviderConfigs } = useProvidersStore();
-
-  useEffect(() => {
-    refreshProviderInfos();
-    refreshProviderConfigs();
-  }, []);
+  const { providerInfos, providerConfigs } = useLLM();
 
   return (
     <div className="bg-muted/20 flex h-full w-[240px] flex-col shadow">

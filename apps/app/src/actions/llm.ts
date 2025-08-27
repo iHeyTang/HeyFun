@@ -33,6 +33,16 @@ export const getModelProviderModels = withUserAuth(async ({ args }: AuthWrapperC
   return await provider.getModels();
 });
 
+export const getAllAvailableModelProviderModels = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
+  const providers = LLMFactory.getAvailableProviders();
+  const configs = await prisma.modelProviderConfigs.findMany({
+    where: { organizationId: orgId },
+  });
+  const availableProviders = Object.keys(providers).filter(provider => configs.some(config => config.provider === provider));
+  const models = await Promise.all(availableProviders.map(provider => providers[provider]?.getModels()));
+  return models.filter(model => model !== undefined).flat();
+});
+
 export const getModelProviderConfigs = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
   const configs = await prisma.modelProviderConfigs.findMany({
     where: { organizationId: orgId },

@@ -2,7 +2,7 @@
 
 import { getChatSession } from '@/actions/chat';
 import { ChatContainer } from '@/components/features/simple-chat/chat-container';
-import { useModelProvider } from '@/hooks/use-llm';
+import { useLLM } from '@/hooks/use-llm';
 import { useEffect, useState } from 'react';
 
 interface ChatPageProps {
@@ -17,7 +17,7 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [loadingSession, setLoadingSession] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { availableModels } = useModelProvider();
+  const { availableModels } = useLLM();
 
   useEffect(() => {
     const initializePage = async () => {

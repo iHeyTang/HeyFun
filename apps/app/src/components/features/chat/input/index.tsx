@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useModelProvider } from '@/hooks/use-llm';
+import { useLLM } from '@/hooks/use-llm';
 import { getAgents } from '@/actions/agents';
 import { Check, Circle, Paperclip, PauseCircle, Send, Wrench, X, Bot } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -30,10 +30,9 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
 
   const { selectedModel, setSelectedModel } = useModelSelectorStore('chat-input-model-storage');
   const { selectedAgent, setSelectedAgent } = useAgentSelectorStore('chat-input-agent-storage')();
-  const { availableModels, refreshAvailableModels } = useModelProvider();
+  const { availableModels } = useLLM();
 
   useEffect(() => {
-    refreshAvailableModels();
     // Load available agents
     const loadAgents = async () => {
       try {
@@ -46,7 +45,7 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
       }
     };
     loadAgents();
-  }, [refreshAvailableModels]);
+  }, []);
 
   const handleModelSelect = (model: ModelInfo) => {
     setSelectedModel(model);
@@ -97,14 +96,14 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
 
   const getPlaceholder = () => {
     switch (status) {
-    case 'thinking':
-      return 'Thinking...';
-    case 'terminating':
-      return 'Terminating...';
-    case 'completed':
-      return 'Task completed!';
-    default:
-      return "Let's Imagine the Impossible, Create the Future Together";
+      case 'thinking':
+        return 'Thinking...';
+      case 'terminating':
+        return 'Terminating...';
+      case 'completed':
+        return 'Task completed!';
+      default:
+        return "Let's Imagine the Impossible, Create the Future Together";
     }
   };
 

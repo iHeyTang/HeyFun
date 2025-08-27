@@ -5,19 +5,19 @@ import { Markdown } from '@/components/block/markdown/markdown';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useLLM } from '@/hooks/use-llm';
 import { ProviderModelInfo } from '@repo/llm/chat';
 import { Globe, Search, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import { useProvidersStore } from '../store';
 import { useParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 
 export default function ProviderDetailsPanel() {
   const [models, setModels] = useState<ProviderModelInfo[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   const { providerId } = useParams<{ providerId: string }>();
-  const { providerInfos } = useProvidersStore();
+  const { providerInfos } = useLLM();
 
   const providerInfo = useMemo(() => {
     return providerInfos?.find(info => info.provider === providerId);
