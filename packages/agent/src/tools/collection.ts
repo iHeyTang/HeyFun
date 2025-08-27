@@ -24,7 +24,7 @@ export class ToolCollection {
     const mcpUniUrl = await sandbox!.portal.getMcpUniPortal();
     this.mcpUni = new Client({
       name: 'mcp-uni',
-      version: '1.0.0',
+      version: '',
       url: mcpUniUrl.url,
       headers: mcpUniUrl.headers,
     });
