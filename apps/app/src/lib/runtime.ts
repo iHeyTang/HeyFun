@@ -4,6 +4,7 @@ import PLAN_PROMPT from '../prompt/funmax/plan';
 import SYSTEM_PROMPT from '../prompt/funmax/system';
 
 export interface TaskStatus {
+  agent: FunMax;
   status: 'pending' | 'completed' | 'failed';
   result?: unknown;
   error?: string;
@@ -30,26 +31,25 @@ class TaskRuntime {
     config.promptTemplates.plan = config.promptTemplates.plan || PLAN_PROMPT;
 
     const now = new Date();
-    const taskStatus: TaskStatus = {
-      status: 'pending',
-      history: [],
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    this.tasks.set(taskId, taskStatus);
 
     // 异步执行任务
     setImmediate(async () => {
       try {
-        const agent = new FunMax(config);
+        const task: TaskStatus = {
+          agent: new FunMax(config),
+          status: 'pending',
+          history: [],
+          createdAt: now,
+          updatedAt: now,
+        };
+        this.tasks.set(taskId, task);
 
         // 监听所有agent事件
-        agent.on('agent:*', (event: EventItem) => {
+        task.agent.on('agent:*', (event: EventItem) => {
           this.addEvent(taskId, event);
         });
 
-        await agent.run(config.task_request);
+        await task.agent.run(config.task_request);
 
         // 任务完成
         this.updateTaskStatus(taskId, 'completed');
@@ -76,6 +76,13 @@ class TaskRuntime {
       task.error = error;
       task.updatedAt = new Date();
       this.tasks.set(taskId, task);
+    }
+  }
+
+  async terminateTask(taskId: string): Promise<void> {
+    const task = this.tasks.get(taskId);
+    if (task) {
+      await task.agent.terminate();
     }
   }
 

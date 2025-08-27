@@ -270,16 +270,12 @@ export class FunMax extends ReActAgent {
   }
 
   /**
-   * 清理代理资源
+   * 清理资源
    */
-  public async cleanupAgent(): Promise<void> {
-    console.log(`🧹 Cleaning up resources for agent '${this.name}'...`);
-
+  protected async cleanup(): Promise<void> {
     if (this._tool_call_context_helper) {
       await this._tool_call_context_helper.cleanup();
     }
-
-    await super.cleanupAgent();
-    console.log(`✨ Cleanup complete for agent '${this.name}'.`);
+    await super.cleanup();
   }
 }

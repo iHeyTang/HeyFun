@@ -89,11 +89,7 @@ export abstract class BaseAgent {
   /**
    * Cleanup resources
    */
-  public cleanup(): void {
-    if (this._private_event_queue) {
-      this._private_event_queue.stop();
-    }
-  }
+  protected async cleanup(): Promise<void> {}
 
   /**
    * Context manager for safe agent state transitions
@@ -252,6 +248,10 @@ export abstract class BaseAgent {
     } catch (error) {
       this.emit(BaseAgentEvents.LIFECYCLE_ERROR, { error: error instanceof Error ? error.message : String(error) });
       throw error;
+    } finally {
+      console.log(`🧹Cleaning up resources for agent '${this.name}'...`);
+      await this.cleanup();
+      console.log(`✨ Cleanup complete for agent '${this.name}'.`);
     }
   }
 
@@ -331,13 +331,6 @@ export abstract class BaseAgent {
   public async terminate(): Promise<void> {
     this.should_terminate = true;
     this.emit(BaseAgentEvents.LIFECYCLE_TERMINATING, {});
-  }
-
-  /**
-   * Clean up the agent's resources
-   */
-  public async cleanupAgent(): Promise<void> {
-    // This method should be overridden by subclasses to handle resource cleanup
   }
 }
 

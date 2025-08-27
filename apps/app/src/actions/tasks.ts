@@ -178,16 +178,7 @@ export const terminateTask = withUserAuth(async ({ orgId, args }: AuthWrapperCon
     return;
   }
 
-  const [error] = await to(
-    fetch(`${AGENT_URL}/tasks/terminate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ task_id: `${orgId}/${taskId}` }),
-    }),
-  );
-  if (error && error.message !== 'Task not found') throw new Error('Failed to terminate task');
-
-  await prisma.tasks.update({ where: { id: taskId, organizationId: orgId }, data: { status: 'terminated' } });
+  await taskRuntime.terminateTask(task.outId!);
 });
 
 export const shareTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ taskId: string; expiresAt: number }>) => {
