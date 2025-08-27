@@ -46,21 +46,7 @@ export const GET = withUserAuthApi<{ path?: string[] }, {}, {}>(async (request: 
       return NextResponse.json(fileDetails);
     }
 
-    // calculate ETag
-    const fileBuffer = await sandbox.fs.downloadFile(fileInfo.name);
-    const etag = crypto.createHash('md5').update(fileBuffer).digest('hex');
-
-    // check If-None-Match header
-    const ifNoneMatch = request.headers.get('if-none-match');
-    if (ifNoneMatch && ifNoneMatch === etag) {
-      return new NextResponse(null, { status: 304 });
-    }
-
-    // check If-Modified-Since header
-    const ifModifiedSince = request.headers.get('if-modified-since');
-    if (ifModifiedSince && new Date(ifModifiedSince) >= new Date(fileInfo.modTime)) {
-      return new NextResponse(null, { status: 304 });
-    }
+    const fileBuffer = await sandbox.fs.downloadFile(p);
 
     const contentType = getContentType(fileInfo.name);
     const encodedFileName = encodeURIComponent(fileInfo.name);
@@ -69,9 +55,7 @@ export const GET = withUserAuthApi<{ path?: string[] }, {}, {}>(async (request: 
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `inline; filename*=UTF-8''${encodedFileName}`,
-        ETag: etag,
-        'Last-Modified': fileInfo.modTime,
-        'Cache-Control': 'private, must-revalidate',
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=5',
       },
     });
   } catch (error) {

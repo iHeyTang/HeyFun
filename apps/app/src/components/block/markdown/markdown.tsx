@@ -5,26 +5,15 @@ import SyntaxHighlighter from 'react-syntax-highlighter';
 import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
-import rehypeSanitize from 'rehype-sanitize';
 import { useAsync } from '@/hooks/use-async';
-import { LoaderIcon } from 'lucide-react';
-
-const checkJson = (text: string | null) => {
-  if (!text) return false;
-
-  try {
-    JSON.parse(text);
-    return true;
-  } catch (error) {
-    return false;
-  }
-};
 
 export const Markdown: React.FC<{ src?: string; children?: string | null; className?: string }> = ({ src, children, className }) => {
   const { data: content, isLoading } = useAsync(
     async () => {
       if (src) {
-        const response = await fetch(src);
+        const response = await fetch(src, {
+          cache: 'default',
+        });
         return await response.text();
       }
       return children;
@@ -33,12 +22,29 @@ export const Markdown: React.FC<{ src?: string; children?: string | null; classN
     { deps: [src, children] },
   );
 
-  if (isLoading) {
-    return (
-      <div className="flex h-40 items-center justify-center">
-        <LoaderIcon className="text-primary h-5 w-5 animate-spin" />
+  const MarkdownSkeleton = () => (
+    <div className={cn('markdown-body mt-2 flex min-h-40 items-center justify-center rounded-md bg-transparent p-4', className)}>
+      <div className="w-full max-w-2xl space-y-4">
+        <div className="bg-muted/60 mx-auto h-7 w-48 animate-pulse rounded" />
+
+        <div className="space-y-3">
+          <div className="bg-muted/40 h-5 w-full animate-pulse rounded" />
+          <div className="bg-muted/40 mx-auto h-5 w-4/5 animate-pulse rounded" />
+          <div className="bg-muted/40 mx-auto h-5 w-5/6 animate-pulse rounded" />
+        </div>
+
+        <div className="bg-muted/50 mx-auto h-6 w-32 animate-pulse rounded" />
+
+        <div className="space-y-3">
+          <div className="bg-muted/40 h-5 w-full animate-pulse rounded" />
+          <div className="bg-muted/40 mx-auto h-5 w-3/4 animate-pulse rounded" />
+        </div>
       </div>
-    );
+    </div>
+  );
+
+  if (isLoading) {
+    return <MarkdownSkeleton />;
   }
 
   return (
