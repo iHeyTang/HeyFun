@@ -11,7 +11,6 @@ import { ClerkProvider, OrganizationList, OrganizationSwitcher, SignedIn, Signed
 import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import Image from 'next/image';
-import logo from '@/assets/logo.png';
 import { cn } from '@/lib/utils';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -29,6 +28,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'HeyFun',
   description: "Hey! Let's bring a little fun to this world together.",
+  icons: {
+    icon: '/logo.png',
+  },
 };
 
 const Header = ({ className }: { className?: string }) => {
@@ -37,7 +39,7 @@ const Header = ({ className }: { className?: string }) => {
       <div className="flex items-center gap-2">
         <Link href="/">
           <div className="from-primary/20 to-primary/5 ml-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border bg-gradient-to-br">
-            <Image src={logo} alt="Fun Studio" width={20} height={20} className="object-contain opacity-80" />
+            <Image src="/logo.png" alt="Fun Studio" width={20} height={20} className="object-contain opacity-80" />
           </div>
         </Link>
         <OrganizationSwitcher hidePersonal />

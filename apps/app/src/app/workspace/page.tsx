@@ -3,12 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { WorkspaceFile } from '@/components/features/chat/preview/preview-content/workspace-preview/workspace-file';
-import logo from '@/assets/logo.png';
 import Image from 'next/image';
 
 const EmptyState = () => (
   <div className="flex h-full items-center justify-center gap-4 opacity-50">
-    <Image src={logo} alt="HeyFun" width={64} height={64} />
+    <Image src="/logo.png" alt="HeyFun" width={64} height={64} />
     <div className="flex flex-col">
       <div className="text-2xl font-bold">Workspace</div>
       <div className="text-muted-foreground text-sm">Select a file from the sidebar to view its contents.</div>

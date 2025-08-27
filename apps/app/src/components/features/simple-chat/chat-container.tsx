@@ -7,7 +7,6 @@ import { createChatSession, sendMessage } from '@/actions/chat';
 import { toast } from 'sonner';
 import { useRecentChatSessions } from './chat-history-sidebar';
 import { useRouter } from 'next/navigation';
-import logo from '@/assets/logo.png';
 import Image from 'next/image';
 
 interface Message {
@@ -240,7 +239,7 @@ export const ChatContainer = ({ availableModels, sessionId, existingSession }: C
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center gap-4 opacity-50">
-            <Image src={logo} alt="HeyFun" width={64} height={64} />
+            <Image src="/logo.png" alt="HeyFun" width={64} height={64} />
             <div className="flex flex-col">
               <div className="text-2xl font-bold">HeyFun</div>
               <div className="text-muted-foreground text-sm">Hey! Let&apos;s bring a little fun to this world together.</div>
