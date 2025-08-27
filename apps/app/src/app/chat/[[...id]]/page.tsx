@@ -1,7 +1,9 @@
-import { getModelProviderConfigs } from '@/actions/llm';
+'use client';
+
 import { getChatSession } from '@/actions/chat';
 import { ChatContainer } from '@/components/features/simple-chat/chat-container';
-import { LLMFactory } from '@repo/llm/chat';
+import { useModelProvider } from '@/hooks/use-llm';
+import { useEffect, useState } from 'react';
 
 interface ChatPageProps {
   params: Promise<{
@@ -9,56 +11,41 @@ interface ChatPageProps {
   }>;
 }
 
-export default async function ChatPage({ params }: ChatPageProps) {
-  const sessionId = (await params).id?.[0];
+export default function ChatPage({ params }: ChatPageProps) {
+  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [existingSession, setExistingSession] = useState<Awaited<ReturnType<typeof getChatSession>>['data'] | null>(null);
+  const [loadingSession, setLoadingSession] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  try {
-    // Get available providers and their configs
-    const configsResult = await getModelProviderConfigs({});
+  const { availableModels } = useModelProvider();
 
-    const configs = configsResult.data ?? [];
-
-    // Get available models from configured providers
-    const availableModels: Array<{ provider: string; id: string; name: string }> = [];
-
-    for (const config of configs) {
+  useEffect(() => {
+    const initializePage = async () => {
       try {
-        const provider = LLMFactory.getProvider(config.provider);
-        if (provider) {
-          const models = await provider.getModels();
-          if (models && Array.isArray(models)) {
-            for (const model of models) {
-              availableModels.push({
-                provider: config.provider,
-                id: model.id,
-                name: model.name || model.id,
-              });
-            }
+        setLoadingSession(true);
+        const resolvedParams = await params;
+        const id = resolvedParams.id?.[0];
+        setSessionId(id);
+        if (id) {
+          try {
+            const sessionResult = await getChatSession({ sessionId: id });
+            setExistingSession(sessionResult?.data || null);
+          } catch (error) {
+            console.error('Error loading session:', error);
           }
         }
       } catch (error) {
-        console.error(`Failed to get models for provider ${config.provider}:`, error);
+        console.error('Error initializing chat page:', error);
+        setError('Failed to initialize chat page');
+      } finally {
+        setLoadingSession(false);
       }
-    }
+    };
 
-    // If sessionId exists, try to fetch the session
-    let existingSession = null;
-    if (sessionId) {
-      try {
-        const sessionResult = await getChatSession({ sessionId });
-        existingSession = sessionResult.data;
-      } catch (error) {
-        console.error('Error loading session:', error);
-      }
-    }
+    initializePage();
+  }, [params]);
 
-    return (
-      <div className="h-full">
-        <ChatContainer availableModels={availableModels} sessionId={sessionId} existingSession={existingSession} />
-      </div>
-    );
-  } catch (error) {
-    console.error('Error loading chat page:', error);
+  if (error) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="space-y-4 text-center">
@@ -68,4 +55,10 @@ export default async function ChatPage({ params }: ChatPageProps) {
       </div>
     );
   }
+
+  return (
+    <div className="h-full">
+      <ChatContainer loading={loadingSession} availableModels={availableModels} sessionId={sessionId} existingSession={existingSession} />
+    </div>
+  );
 }

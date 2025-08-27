@@ -8,28 +8,37 @@ import { useEffect } from 'react';
 import { create } from 'zustand';
 import { MessageSquare, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getChatSessions } from '@/actions/chat';
 
 export const useRecentChatSessions = create<{
+  loading: boolean;
   sessions: ChatSessions[];
   refreshSessions: () => Promise<void>;
-    }>(set => ({
-      sessions: [],
-      refreshSessions: async () => {
-        const res = await getChatSessions({ page: 1, pageSize: 30 });
-        set({ sessions: res.data?.sessions || [] });
-      },
-    }));
+}>(set => ({
+  loading: false,
+  sessions: [],
+  refreshSessions: async () => {
+    set({ loading: true });
+    try {
+      const res = await getChatSessions({ page: 1, pageSize: 30 });
+      set({ sessions: res.data?.sessions || [], loading: false });
+    } catch (error) {
+      console.error('Error refreshing sessions:', error);
+      set({ loading: false });
+    }
+  },
+}));
 
 export function ChatHistorySidebar() {
-  const { sessions, refreshSessions } = useRecentChatSessions();
+  const { sessions, refreshSessions, loading } = useRecentChatSessions();
   const pathname = usePathname();
 
   const currentSessionId = pathname.split('/').pop();
 
   useEffect(() => {
     refreshSessions();
-  }, []);
+  }, [refreshSessions]);
 
   return (
     <div className="bg-muted/20 flex h-full flex-col gap-2 pt-2">
@@ -43,7 +52,20 @@ export function ChatHistorySidebar() {
       </div>
 
       <div className="flex h-full flex-col overflow-x-hidden overflow-y-auto pb-4">
-        {sessions.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col gap-1 px-2">
+            {Array.from({ length: 8 }).map((_, index) => {
+              const widths = ['w-3/4', 'w-full', 'w-5/6', 'w-2/3', 'w-4/5', 'w-full', 'w-3/5', 'w-5/6'];
+              const heights = ['h-4', 'h-4', 'h-5', 'h-4', 'h-4', 'h-5', 'h-4', 'h-4'];
+              return (
+                <div key={index} className="flex items-center gap-2 p-2">
+                  <Skeleton className="h-3 w-3 flex-shrink-0 rounded-sm" />
+                  <Skeleton className={`${heights[index]} ${widths[index]}`} />
+                </div>
+              );
+            })}
+          </div>
+        ) : sessions.length === 0 ? (
           <div className="text-muted-foreground px-2 py-4 text-center text-xs">No chat history yet</div>
         ) : (
           sessions.map(session => (

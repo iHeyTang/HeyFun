@@ -26,9 +26,10 @@ interface ChatContainerProps {
   }>;
   sessionId?: string;
   existingSession?: any; // Will be typed properly with Prisma types
+  loading?: boolean;
 }
 
-export const ChatContainer = ({ availableModels, sessionId, existingSession }: ChatContainerProps) => {
+export const ChatContainer = ({ availableModels, sessionId, existingSession, loading }: ChatContainerProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(sessionId || null);
@@ -237,7 +238,13 @@ export const ChatContainer = ({ availableModels, sessionId, existingSession }: C
     <div className="flex h-full flex-col">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
-        {messages.length === 0 ? (
+        {loading ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <p className="text-muted-foreground">Loading...</p>
+            </div>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="flex h-full items-center justify-center gap-4 opacity-50">
             <Image src="/logo.png" alt="HeyFun" width={64} height={64} />
             <div className="flex flex-col">
