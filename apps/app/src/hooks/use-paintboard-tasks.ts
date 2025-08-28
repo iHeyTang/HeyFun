@@ -80,7 +80,9 @@ export function usePaintboardTasks() {
   const downloadFile = useCallback(async (filePath: string, _organizationId: string, filename: string) => {
     try {
       // 使用workspace下载接口
-      const downloadUrl = `/api/workspace/download/${filePath}`;
+      const searchParams = new URLSearchParams();
+      searchParams.set('path', filePath);
+      const downloadUrl = `/api/workspace/download?${searchParams.toString()}`;
 
       // 创建下载链接
       const a = document.createElement('a');

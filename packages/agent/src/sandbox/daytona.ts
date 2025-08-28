@@ -38,9 +38,9 @@ class DaytonaSandboxFileSystem extends SandboxFileSystem {
     super();
   }
 
-  async createFolder(p: string, mode: string): Promise<void> {
+  async createFolder(p: string, mode?: string): Promise<void> {
     const workspacePath = await this.getWorkspacePath();
-    return await this.sandbox.fs.createFolder(path.resolve(workspacePath, p), mode);
+    return await this.sandbox.fs.createFolder(path.resolve(workspacePath, p), mode || '755');
   }
 
   async deleteFile(p: string): Promise<void> {

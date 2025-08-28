@@ -1,12 +1,17 @@
 import { Markdown } from '@/components/block/markdown/markdown';
 import { Syntax } from '@/components/block/syntax';
+import { Button } from '@/components/ui/button';
 import { isBinaryFile } from '@/lib/utils';
+import { Shell } from 'lucide-react';
+import Link from 'next/link';
 interface WorkspaceFileProps {
   filePath: string;
 }
 
 export const WorkspaceFile = ({ filePath }: WorkspaceFileProps) => {
-  const src = filePath.startsWith('/') ? `/api/workspace${filePath}` : `/api/workspace/${filePath}`;
+  const searchParams = new URLSearchParams();
+  searchParams.set('path', filePath);
+  const src = `/api/workspace?${searchParams.toString()}`;
   return (
     <div className="h-full overflow-auto">
       <FileContent path={src} />
@@ -55,14 +60,11 @@ const FileContent = ({ path }: { path: string }) => {
   return (
     <div className="flex h-full w-full items-center justify-center">
       <div className="text-center">
-        <div className="mb-4 text-gray-500">Can&apos;t preview this file type</div>
-        <a
-          href={path}
-          download={fileName}
-          className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
-        >
-          Download file
-        </a>
+        <Shell className="mx-auto h-10 w-10 text-gray-500" />
+        <div className="mb-4 text-gray-500">Oops! This file type can&apos;t be previewed</div>
+        <Link href={path} download={fileName}>
+          <Button>Download file</Button>
+        </Link>
       </div>
     </div>
   );

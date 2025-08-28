@@ -122,7 +122,7 @@ export interface SandboxFileUpload {
 }
 
 export abstract class SandboxFileSystem {
-  abstract createFolder(path: string, mode: string): Promise<void>;
+  abstract createFolder(path: string, mode?: string): Promise<void>;
   abstract deleteFile(path: string): Promise<void>;
   abstract downloadFile(path: string, timeout?: number): Promise<Buffer>;
   abstract findFiles(path: string, pattern: string): Promise<SandboxFileMatch[]>;

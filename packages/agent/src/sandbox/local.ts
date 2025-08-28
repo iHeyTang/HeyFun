@@ -139,10 +139,12 @@ class LocalSandboxFileSystem extends SandboxFileSystem {
     super();
   }
 
-  async createFolder(path: string, mode: string): Promise<void> {
+  async createFolder(path: string, mode?: string): Promise<void> {
     const absolutePath = await this.resolvePath(path);
     await fs.mkdir(absolutePath, { recursive: true });
-    await fs.chmod(absolutePath, parseInt(mode, 8));
+    if (mode) {
+      await fs.chmod(absolutePath, parseInt(mode, 8));
+    }
   }
 
   async deleteFile(path: string): Promise<void> {

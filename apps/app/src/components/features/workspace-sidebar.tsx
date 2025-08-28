@@ -1,11 +1,28 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, formatFileSize } from '@/lib/utils';
 import { useAsync } from '@/hooks/use-async';
 import { WorkspaceItem } from '@/components/features/chat/preview/preview-content/workspace-preview/types';
-import { FileIcon, FolderIcon, ChevronRightIcon, ChevronDownIcon, Loader2, AlertCircle, FolderOpen } from 'lucide-react';
+import {
+  FileIcon,
+  FolderIcon,
+  ChevronRightIcon,
+  ChevronDownIcon,
+  Loader2,
+  AlertCircle,
+  FolderOpen,
+  Download,
+  Menu,
+  MoreHorizontal,
+  MoreVertical,
+  Trash2,
+} from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Button } from '../ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import Link from 'next/link';
+import { confirm } from '../block/confirm';
 
 interface TreeNode extends WorkspaceItem {
   path: string;
@@ -55,7 +72,9 @@ export function WorkspaceSidebar() {
         return treeState.cache.get(path)!;
       }
 
-      const response = await fetch(`/api/workspace/${path}`);
+      const searchParams = new URLSearchParams();
+      searchParams.set('path', path);
+      const response = await fetch(`/api/workspace?${searchParams.toString()}`);
       if (!response.ok) {
         throw new Error('Failed to fetch directory items');
       }
@@ -214,6 +233,18 @@ export function WorkspaceSidebar() {
     return buildChildren('');
   }, [treeState]);
 
+  const removeFile = useCallback(async (path: string) => {
+    const searchParams = new URLSearchParams();
+    searchParams.set('path', path);
+    const response = await fetch(`/api/workspace?${searchParams.toString()}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to remove file');
+    }
+    router.refresh();
+  }, []);
+
   const renderTreeNode = (node: TreeNode): React.ReactNode => {
     const isSelected = node.path === currentPath;
     const isExpanded = node.isDirectory && treeState.expandedPaths.has(node.path);
@@ -224,7 +255,7 @@ export function WorkspaceSidebar() {
       <div key={node.path}>
         <div
           className={cn(
-            'hover:bg-muted/50 flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm',
+            'hover:bg-muted/50 group flex cursor-pointer items-center gap-1 px-2 py-1.5 text-sm',
             isSelected && 'bg-muted',
             hasError && 'text-destructive',
             'transition-colors',
@@ -261,6 +292,42 @@ export function WorkspaceSidebar() {
           )}
 
           <span className="flex-1 truncate">{node.name}</span>
+          {!node.isDirectory && (
+            <span className="text-muted-foreground text-xs opacity-0 transition-all group-hover:opacity-100">{formatFileSize(node.size)}</span>
+          )}
+          {!node.isDirectory && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <MoreVertical className="text-muted-foreground h-4 w-4 opacity-0 transition-all group-hover:opacity-100" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem className="cursor-pointer">
+                  <Link href={`/api/workspace/download?path=${node.path}`} download={node.name} className="flex cursor-pointer gap-2">
+                    <Download className="h-4 w-4" />
+                    Download
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => {
+                    confirm({
+                      content: 'Are you sure you want to remove this file?',
+                      onConfirm: async () => await removeFile(node.path),
+                      buttonText: {
+                        confirm: 'Remove',
+                        cancel: 'Cancel',
+                      },
+                    });
+                  }}
+                >
+                  <div className="text-destructive/80 flex items-center gap-2">
+                    <Trash2 className="text-currentColor h-4 w-4" />
+                    Remove
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {node.isDirectory && isExpanded && node.children && <div>{node.children.map(child => renderTreeNode(child))}</div>}

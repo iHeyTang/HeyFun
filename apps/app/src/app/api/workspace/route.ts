@@ -14,11 +14,10 @@ import path from 'path';
  * @param params
  * @returns
  */
-export const GET = withUserAuthApi<{ path?: string[] }, {}, {}>(async (request: NextRequest, ctx) => {
+export const GET = withUserAuthApi<{}, { path: string }, {}>(async (request: NextRequest, ctx) => {
   try {
-    const { path: pathSegments = [] } = ctx.params;
     const sandbox = await sandboxManager.getOrCreateOneById(ctx.orgId);
-    const p = await sandbox.fs.resolvePath(pathSegments.join('/'));
+    const p = await sandbox.fs.resolvePath(ctx.query.path || '');
     const fileInfo = await sandbox.fs.getFileDetails(p);
 
     if (fileInfo.isDir) {
@@ -60,6 +59,39 @@ export const GET = withUserAuthApi<{ path?: string[] }, {}, {}>(async (request: 
     });
   } catch (error) {
     console.error('Error serving protected asset:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+});
+
+export const DELETE = withUserAuthApi<{}, { path: string }, {}>(async (request: NextRequest, ctx) => {
+  try {
+    const sandbox = await sandboxManager.getOrCreateOneById(ctx.orgId);
+    await sandbox.fs.deleteFile(await sandbox.fs.resolvePath(ctx.query.path));
+    return new NextResponse('File deleted', { status: 200 });
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+});
+
+/**
+ * Create a file or directory
+ * @param request
+ * @param ctx
+ * @returns
+ */
+export const POST = withUserAuthApi<{}, {}, { directory: boolean; path: string; name: string }>(async (request: NextRequest, ctx) => {
+  try {
+    const sandbox = await sandboxManager.getOrCreateOneById(ctx.orgId);
+    const currentPath = await sandbox.fs.resolvePath(ctx.body.path);
+    if (ctx.body.directory) {
+      await sandbox.fs.createFolder(currentPath);
+    } else {
+      await sandbox.fs.uploadFileFromBuffer(Buffer.from(''), currentPath);
+    }
+    return new NextResponse('Directory created', { status: 200 });
+  } catch (error) {
+    console.error('Error creating directory:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 });

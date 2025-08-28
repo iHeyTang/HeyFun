@@ -13,14 +13,13 @@ import { NextRequest, NextResponse } from 'next/server';
  * @param params
  * @returns
  */
-export const GET = withUserAuthApi<{ path?: string[] }, {}, {}>(async (request: NextRequest, ctx) => {
+export const GET = withUserAuthApi<{}, { path: string }, {}>(async (request: NextRequest, ctx) => {
   try {
-    const { path: pathSegments = [] } = ctx.params;
     const sandbox = await sandboxManager.getOrCreateOneById(ctx.orgId);
     if (!sandbox) {
       return new NextResponse('Sandbox not found', { status: 404 });
     }
-    const resolvedPath = await sandbox.fs.resolvePath(pathSegments.join('/'));
+    const resolvedPath = await sandbox.fs.resolvePath(ctx.query.path || '');
     const fileInfo = await sandbox.fs.getFileDetails(resolvedPath);
 
     // If it's a single file, simply return it for download
