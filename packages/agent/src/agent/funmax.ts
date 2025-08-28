@@ -99,58 +99,10 @@ export class FunMax extends ReActAgent {
     await this.initializeTools();
 
     // 生成任务摘要
-    const summary = await this.generateTaskSummary();
-    this.emit(BaseAgentEvents.LIFECYCLE_SUMMARY, { summary });
-
-    console.log(summary);
-    console.log('--------------------------------');
-    console.log(
-      `prepare success, available tools: ${this._tool_call_context_helper?.availableTools.tools.map(tool => tool.name).join(', ') || 'none'}`,
-    );
-  }
-
-  /**
-   * 切换到任务工作目录
-   */
-  private async switchToWorkspace(): Promise<string> {
-    try {
-      // 构建绝对路径，避免使用相对路径
-      const currentProjectDir = process.cwd();
-      const workspacePath = process.env.HEYFUN_AGENT_WORKSPACE || path.join(currentProjectDir, 'workspace');
-      if (!path.isAbsolute(workspacePath)) {
-        throw new Error('Workspace path is not absolute');
-      }
-
-      console.log('📁 Current dir', process.cwd());
-      console.log(`📁 Target task directory: ${workspacePath}`);
-
-      // 检查目录是否存在，如果不存在则创建
-      try {
-        await fs.access(workspacePath);
-        console.log('✅ Task directory already exists');
-      } catch {
-        console.log('📁 Creating task directory...');
-        await fs.mkdir(workspacePath, { recursive: true });
-        console.log('✅ Task directory created successfully');
-      }
-
-      // 切换到任务目录
-      process.chdir(workspacePath);
-      console.log(`📁 Switched to task directory: ${workspacePath}`);
-      return workspacePath;
-    } catch (error) {
-      console.error(`❌ Failed to switch to workspace: ${error}`);
-
-      if (error instanceof Error) {
-        if (error.message.includes('EACCES')) {
-          console.error('💡 Permission denied. Check if the process has write access to the target directory.');
-        } else if (error.message.includes('ENOENT')) {
-          console.error('💡 Directory not found. Check if the parent directory exists and is accessible.');
-        }
-      }
-
-      throw error;
-    }
+    setImmediate(async () => {
+      const summary = await this.generateTaskSummary();
+      this.emit(BaseAgentEvents.LIFECYCLE_SUMMARY, { summary });
+    });
   }
 
   /**

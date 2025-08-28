@@ -170,7 +170,9 @@ export abstract class BaseAgent {
    */
   public async prepare(): Promise<void> {
     // For now, it's a placeholder
+    this.emit(BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, { message: 'Preparing sandbox...' });
     this.sandbox = await sandboxManager.getOrCreateOneById(this.sandboxId);
+    this.emit(BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, { message: 'sandbox ready' });
   }
 
   /**

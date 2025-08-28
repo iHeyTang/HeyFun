@@ -1,6 +1,6 @@
 import type { Chat } from '@repo/llm/chat';
 import { AgentState, type BaseAgent } from '../agent/base';
-import { ToolCallAgentEvents } from '../event/constants';
+import { BaseAgentEvents, ToolCallAgentEvents } from '../event/constants';
 import { createMessage } from '../utils/message';
 import { to } from '../utils/to';
 import { ToolCollection } from './collection';
@@ -36,7 +36,9 @@ export class ToolCallContextHelper {
   }
 
   async initiate() {
+    this.agent.emit(BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, { message: 'Initializing tools...' });
     await this.availableTools.initiate(this.agent.sandbox!);
+    this.agent.emit(BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, { message: 'Tools initialized' });
   }
 
   /**
@@ -50,7 +52,9 @@ export class ToolCallContextHelper {
    * 添加MCP
    */
   async addMcp(config: AddMcpConfig): Promise<void> {
+    this.agent.emit(BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, { message: `Adding MCP: ${config.name}` });
     await this.availableTools.addMcp(config);
+    this.agent.emit(BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, { message: `MCP ${config.name} added` });
   }
 
   /**

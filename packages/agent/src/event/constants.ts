@@ -14,6 +14,7 @@ export class BaseAgentEvents {
   static readonly LIFECYCLE_START = `${BASE_AGENT_EVENTS_PREFIX}:start`;
   static readonly LIFECYCLE_SUMMARY = `${BASE_AGENT_EVENTS_PREFIX}:summary`;
   static readonly LIFECYCLE_PREPARE_START = `${BASE_AGENT_EVENTS_PREFIX}:prepare:start`;
+  static readonly LIFECYCLE_PREPARE_PROGRESS = `${BASE_AGENT_EVENTS_PREFIX}:prepare:progress`;
   static readonly LIFECYCLE_PREPARE_COMPLETE = `${BASE_AGENT_EVENTS_PREFIX}:prepare:complete`;
   static readonly LIFECYCLE_PLAN_START = `${BASE_AGENT_EVENTS_PREFIX}:plan:start`;
   static readonly LIFECYCLE_PLAN_COMPLETE = `${BASE_AGENT_EVENTS_PREFIX}:plan:complete`;
