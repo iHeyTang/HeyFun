@@ -1,104 +1,11 @@
 ![HeyFun](https://socialify.git.ci/iHeyTang/HeyFun/image?description=1&font=Inter&forks=1&issues=1&logo=https%3A%2F%2Fheyfun.ai%2Flogo.png&name=1&owner=1&pattern=Signal&pulls=1&stargazers=1&theme=Auto)
 
-<div align="center" style="margin: 20px 0;">
-  <style>
-    .carousel {
-      position: relative;
-      max-width: 1000px;
-      overflow: hidden;
-    }
-    .carousel-container {
-      position: relative;
-      border-radius: 16px;
-    }
-    .carousel-slides {
-      display: flex;
-      width: 400%;
-      height: 100%;
-      animation: autoSlide 16s infinite;
-    }
-    .carousel-slide {
-      width: 25%;
-      flex-shrink: 0;
-      position: relative;
-    }
-    .carousel img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: block;
-    }
-    .carousel-nav {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 15px;
-    }
-    .carousel-nav div {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.3);
-      display: block;
-    }
-    .nav-dot-1 { animation: dotActive1 16s infinite; }
-    .nav-dot-2 { animation: dotActive2 16s infinite; }
-    .nav-dot-3 { animation: dotActive3 16s infinite; }
-    .nav-dot-4 { animation: dotActive4 16s infinite; }
-    /* 自动轮播动画 */
-    @keyframes autoSlide {
-      0%, 20% { transform: translateX(0%); }
-      25%, 45% { transform: translateX(-25%); }
-      50%, 70% { transform: translateX(-50%); }
-      75%, 95% { transform: translateX(-75%); }
-      100% { transform: translateX(0%); }
-    }
-    /* 指示点动画 */
-    @keyframes dotActive1 {
-      0%, 20% { background: rgba(0,0,0,0.8); }
-      25%, 100% { background: rgba(0,0,0,0.3); }
-    }
-    @keyframes dotActive2 {
-      0%, 24% { background: rgba(0,0,0,0.3); }
-      25%, 45% { background: rgba(0,0,0,0.8); }
-      50%, 100% { background: rgba(0,0,0,0.3); }
-    }
-    @keyframes dotActive3 {
-      0%, 49% { background: rgba(0,0,0,0.3); }
-      50%, 70% { background: rgba(0,0,0,0.8); }
-      75%, 100% { background: rgba(0,0,0,0.3); }
-    }
-    @keyframes dotActive4 {
-      0%, 74% { background: rgba(0,0,0,0.3); }
-      75%, 95% { background: rgba(0,0,0,0.8); }
-      100% { background: rgba(0,0,0,0.3); }
-    }
-  </style>
-
-  <div class="carousel">
-    <div class="carousel-container">
-      <div class="carousel-slides">
-        <div class="carousel-slide">
-          <img src="assets/screenshots/tasks.png" alt="screenshots/tasks.png">
-        </div>
-        <div class="carousel-slide">
-          <img src="assets/screenshots/paintboard.png" alt="screenshots/paintboard.png">
-        </div>
-        <div class="carousel-slide">
-          <img src="assets/screenshots/settings-models.png" alt="screenshots/settings-models.png">
-        </div>
-        <div class="carousel-slide">
-          <img src="assets/screenshots/settings-aigc.png" alt="screenshots/settings-aigc.png">
-        </div>
-      </div>
-    </div>
-    <div class="carousel-nav">
-      <div class="nav-dot-1"></div>
-      <div class="nav-dot-2"></div>
-      <div class="nav-dot-3"></div>
-      <div class="nav-dot-4"></div>
-    </div>
-  </div>
+<div style="max-width:1000px">
+  <img src="assets/screenshots/tasks.png" style="border-radius:16px"
+  alt="screenshots/tasks.png">
+  <img src="assets/screenshots/paintboard.png" style="border-radius:16px" alt="screenshots/paintboard.png">
+  <img src="assets/screenshots/settings-models.png" style="border-radius:16px"  alt="screenshots/settings-models.png">
+  <img src="assets/screenshots/settings-aigc.png" style="border-radius:16px"  alt="screenshots/settings-aigc.png">
 </div>
 
 ## 项目愿景
