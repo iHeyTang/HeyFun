@@ -55,7 +55,7 @@ const FileContent = ({ path }: { path: string }) => {
   return (
     <div className="flex h-full w-full items-center justify-center">
       <div className="text-center">
-        <div className="mb-4 text-gray-500">Can't preview this file type</div>
+        <div className="mb-4 text-gray-500">Can&apos;t preview this file type</div>
         <a
           href={path}
           download={fileName}
