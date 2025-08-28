@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NotificationZh from './notification-zh';
 import NotificationEn from './notification-en';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Github } from 'lucide-react';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -71,6 +71,9 @@ const Header = ({ className }: { className?: string }) => {
             </Tabs>
           </DialogContent>
         </Dialog>
+        <Link href="https://github.com/iHeyTang/HeyFun" target="_blank">
+          <Github className="text-muted-foreground h-3 w-3 cursor-pointer" />
+        </Link>
       </div>
       <UserButton />
     </div>
