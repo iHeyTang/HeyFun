@@ -1,126 +1,188 @@
-<p align="center">
-  <img src="assets/logo.png" width="100"/>
-</p>
+![HeyFun](https://socialify.git.ci/iHeyTang/HeyFun/image?description=1&font=Inter&forks=1&issues=1&logo=https%3A%2F%2Fheyfun.ai%2Flogo.png&name=1&owner=1&pattern=Signal&pulls=1&stargazers=1&theme=Auto)
 
-中文 | [English](README-en.md)
+<div align="center" style="margin: 20px 0;">
+  <style>
+    .carousel {
+      position: relative;
+      max-width: 1000px;
+      overflow: hidden;
+    }
+    .carousel-container {
+      position: relative;
+      border-radius: 16px;
+    }
+    .carousel-slides {
+      display: flex;
+      width: 400%;
+      height: 100%;
+      animation: autoSlide 16s infinite;
+    }
+    .carousel-slide {
+      width: 25%;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .carousel img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .carousel-nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .carousel-nav div {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.3);
+      display: block;
+    }
+    .nav-dot-1 { animation: dotActive1 16s infinite; }
+    .nav-dot-2 { animation: dotActive2 16s infinite; }
+    .nav-dot-3 { animation: dotActive3 16s infinite; }
+    .nav-dot-4 { animation: dotActive4 16s infinite; }
+    /* 自动轮播动画 */
+    @keyframes autoSlide {
+      0%, 20% { transform: translateX(0%); }
+      25%, 45% { transform: translateX(-25%); }
+      50%, 70% { transform: translateX(-50%); }
+      75%, 95% { transform: translateX(-75%); }
+      100% { transform: translateX(0%); }
+    }
+    /* 指示点动画 */
+    @keyframes dotActive1 {
+      0%, 20% { background: rgba(0,0,0,0.8); }
+      25%, 100% { background: rgba(0,0,0,0.3); }
+    }
+    @keyframes dotActive2 {
+      0%, 24% { background: rgba(0,0,0,0.3); }
+      25%, 45% { background: rgba(0,0,0,0.8); }
+      50%, 100% { background: rgba(0,0,0,0.3); }
+    }
+    @keyframes dotActive3 {
+      0%, 49% { background: rgba(0,0,0,0.3); }
+      50%, 70% { background: rgba(0,0,0,0.8); }
+      75%, 100% { background: rgba(0,0,0,0.3); }
+    }
+    @keyframes dotActive4 {
+      0%, 74% { background: rgba(0,0,0,0.3); }
+      75%, 95% { background: rgba(0,0,0,0.8); }
+      100% { background: rgba(0,0,0,0.3); }
+    }
+  </style>
 
-# 🎉 HeyFun
-
-Hey! Let's bring a little fun to this world together.
-
-<img src="assets/screenshots/tasks.png" width="1000"/>
-<img src="assets/screenshots/paintboard.png" width="1000"/>
-<img src="assets/screenshots/settings-models.png" width="1000"/>
-<img src="assets/screenshots/settings-aigc.png" width="1000"/>
-
-**当前项目非常不稳定，且暂时没有整理好全部的quick start，依靠自己想启动体验可能比较困难，如果有任何感兴趣的朋友欢迎随时交流～**
-
-## 项目重构说明
-
-原项目为 Fork [OpenManus](https://github.com/FoundationAgents/OpenManus)，目前已归档至分支 `openmanus` 下。
-当前默认分支 `main` 为使用 `Typescript` 的重构版本。
-
-> 为什么要用 Typescript 重构？
-> 本项目致力于构建一个全栈可定制的 AGI 应用。在 `app layer` 和 `agent layer` 会有大量通用的实现。使用 `Typescript` 可以完成从前端到应用服务到智能体服务的全栈无缝开发。
+  <div class="carousel">
+    <div class="carousel-container">
+      <div class="carousel-slides">
+        <div class="carousel-slide">
+          <img src="assets/screenshots/tasks.png" alt="screenshots/tasks.png">
+        </div>
+        <div class="carousel-slide">
+          <img src="assets/screenshots/paintboard.png" alt="screenshots/paintboard.png">
+        </div>
+        <div class="carousel-slide">
+          <img src="assets/screenshots/settings-models.png" alt="screenshots/settings-models.png">
+        </div>
+        <div class="carousel-slide">
+          <img src="assets/screenshots/settings-aigc.png" alt="screenshots/settings-aigc.png">
+        </div>
+      </div>
+    </div>
+    <div class="carousel-nav">
+      <div class="nav-dot-1"></div>
+      <div class="nav-dot-2"></div>
+      <div class="nav-dot-3"></div>
+      <div class="nav-dot-4"></div>
+    </div>
+  </div>
+</div>
 
 ## 项目愿景
 
 1. 通用领域全能 AI 助手，为 AI 时代的超级个体和一人公司提供最有力的支持
 2. 专精领域 AI 智能体的快速开发验证，为垂类 AI Agent 提供最好的效率平台
 
-## 安装指南
+## 环境准备
 
-1. 克隆仓库：
-
-```bash
-git clone https://github.com/iHeyTang/HeyFun.git
-cd HeyFun
-```
-
-2. 安装 `node` 环境
-
-   方式 1: [推荐] 使用 nvm 包管理器 https://github.com/nvm-sh/nvm
-   方式 2: 前往官方下载 https://nodejs.org/en
-   方式 3: (Windows 系统) 使用 nvm 包管理器 https://github.com/coreybutler/nvm-windows/releases/tag/1.2.2
+1. 安装 `node` 环境
+   - 方式 1: [推荐] 使用 nvm 包管理器 https://github.com/nvm-sh/nvm
+   - 方式 2: 前往官方下载 https://nodejs.org/en
+   - 方式 3: (Windows 系统) 使用 nvm 包管理器 https://github.com/coreybutler/nvm-windows/releases/tag/1.2.2
 
 ```bash
 # 按照流程安装完毕后，通过命令确认安装成功
-node -v
+$ node -v
 # 输出版本号表示安装成功
 # v20.19.0
 ```
 
-3. 安装 `bun` 包管理器
+2. 安装 `bun` 包管理器
 
 ```bash
 # Linux & MacOS
-curl -fsSL https://bun.sh/install | bash
+$ curl -fsSL https://bun.sh/install | bash
 
 # Windows
-powershell -c "irm bun.sh/install.ps1 | iex"
+$ powershell -c "irm bun.sh/install.ps1 | iex"
 ```
 
-4. 安装项目依赖
+## 启动项目
+
+1. 克隆仓库：
+
+```bash
+$ git clone https://github.com/iHeyTang/HeyFun.git
+$ cd HeyFun
+```
+
+2. 安装项目依赖
 
 ```bash
 # 安装项目依赖
-bun install
+$ bun install
 ```
 
-5. 进入 `apps/app` 文件夹
+3. 环境变量配置
 
 ```bash
-# 如果已经在 web 目录下忽略即可
-cd apps/app
+# 拷贝 apps/app/.env.example 并按照注释提示修改环境变量
+$ cp apps/app/.env.example apps/app/.env
 ```
 
-4. 生成密钥对
-
-项目需要一对公钥和私钥用于认证，可以通过以下命令生成（有自行生成证书能力的忽略即可）：
-
-```bash
-npm run generate-keys
-
-# 这将在 `web/keys` 目录生成：
-# - `private.pem`: 私钥文件
-# - `public.pem`: 公钥文件
-```
-
-5. 数据库初始化
+4. 初始化数据库
 
 项目使用 PostgreSQL 作为持久化数据库。可使用 [Docker 容器](https://hub.docker.com/_/postgres) 来启动数据库服务
 
 ```bash
 # 启动 docker 容器 并自动创建 名为 heyfun 的数据库
-docker run --name heyfun-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=heyfun -d -p 5432:5432 postgres
-```
-
-6. 环境变量配置
-
-在项目根目录创建 `.env` 文件，配置必要的环境变量，具体参考 `/web/.env.example`
-
-```bash
-# 若按照 步骤 5 配置数据库，则数据库连接为
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/heyfun?schema=public"
-```
-
-7. 生成 Prisma 客户端 & 初始化数据库
-
-```bash
-# 若第一次启动项目、重新安装了依赖、schema.prisma 存在更新，需执行此命令更新 Prisma Client
-npx prisma generate
-
+$ docker run --name heyfun-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=heyfun -d -p 5432:5432 postgres
 # 若第一次启动项目，需要先初始化数据库，此命令会自动将表结构同步进相应配置的数据库中
-npx prisma db push
+$ npx prisma db push
 ```
 
-## 快速启动
+5. 项目启动
 
 ```bash
-bun dev
+$ bun dev
 ```
 
 启动完毕后，打开 `http://localhost:7100` 即可查看
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=iHeyTang/HeyFun&type=Date)](https://www.star-history.com/#iHeyTang/HeyFun&Date)
+
+## 说明
+
+原项目为 Fork [OpenManus](https://github.com/FoundationAgents/OpenManus)，目前已归档至分支 `openmanus` 下。
+当前默认分支 `main` 为使用 `Typescript` 的重构版本。
+
+> 为什么要用 Typescript 重构？
+> 本项目致力于构建一个全栈可定制的 AGI 应用。在 `app layer` 和 `agent layer` 会有大量通用的实现。使用 `Typescript` 可以完成从前端到应用服务到智能体服务的全栈无缝开发。
 
 ## 致谢
 

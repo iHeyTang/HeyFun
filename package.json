@@ -8,7 +8,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "prisma:generate": "cd apps/app && bunx prisma generate",
-    "postinstall": "cd apps/app && bunx prisma generate"
+    "postinstall": "bun prisma:generate",
+    "generate-keys": "node scripts/gen-certificate.js"
   },
   "devDependencies": {
     "prettier": "^3.6.2",
