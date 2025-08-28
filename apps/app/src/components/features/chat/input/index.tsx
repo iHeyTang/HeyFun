@@ -30,7 +30,6 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
 
   const { selectedModel, setSelectedModel } = useModelSelectorStore('chat-input-model-storage');
   const { selectedAgent, setSelectedAgent } = useAgentSelectorStore('chat-input-agent-storage')();
-  const { availableModels } = useLLM();
 
   useEffect(() => {
     // Load available agents
@@ -196,7 +195,6 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
       <InputToolsConfigDialog ref={toolsConfigDialogRef} />
       <ModelSelectorDialog
         ref={modelSelectorRef}
-        availableModels={availableModels}
         selectedModel={selectedModel}
         onModelSelect={handleModelSelect}
         storageKey="chat-input-model-storage"

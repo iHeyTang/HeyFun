@@ -10,7 +10,6 @@ import { useEffect, useRef } from 'react';
 interface ChatInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
-  availableModels: ModelInfo[];
   selectedModel?: ModelInfo;
   onModelSelect: (model: ModelInfo) => void;
   onClearChat?: () => void;
@@ -20,7 +19,6 @@ interface ChatInputProps {
 export const ChatInput = ({
   onSend,
   disabled = false,
-  availableModels,
   selectedModel,
   onModelSelect,
   onClearChat,
@@ -94,7 +92,6 @@ export const ChatInput = ({
       />
       <ModelSelectorDialog
         ref={modelSelectorRef}
-        availableModels={availableModels}
         selectedModel={selectedModel}
         onModelSelect={handleModelSelect}
         storageKey="simple-chat-model-storage"

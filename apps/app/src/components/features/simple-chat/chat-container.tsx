@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { ChatMessage } from './chat-message';
-import { ChatInput } from './chat-input';
 import { createChatSession, sendMessage } from '@/actions/chat';
+import { ProviderModelInfo } from '@repo/llm/chat';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useRecentChatSessions } from './chat-history-sidebar';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { ChatInput } from './chat-input';
+import { ChatMessage } from './chat-message';
 
 interface Message {
   id: string;
@@ -19,11 +20,7 @@ interface Message {
 }
 
 interface ChatContainerProps {
-  availableModels: Array<{
-    provider: string;
-    id: string;
-    name: string;
-  }>;
+  availableModels: Array<ProviderModelInfo>;
   sessionId?: string;
   existingSession?: any; // Will be typed properly with Prisma types
   loading?: boolean;
@@ -272,7 +269,6 @@ export const ChatContainer = ({ availableModels, sessionId, existingSession, loa
       <ChatInput
         onSend={handleSendMessage}
         disabled={isLoading || !selectedModel}
-        availableModels={availableModels}
         selectedModel={selectedModel}
         onModelSelect={setSelectedModel}
         onClearChat={clearChat}

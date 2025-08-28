@@ -77,13 +77,13 @@ export default function ProviderConfigPanel() {
   );
 
   useEffect(() => {
-    setConfigSchema(providerConfigSchemas[providerInfo?.provider as keyof typeof providerConfigSchemas].schema);
+    setConfigSchema(providerConfigSchemas[params?.providerId as keyof typeof providerConfigSchemas]?.schema);
 
     if (providerConfig) {
       form.reset(providerConfig);
       testConnection(providerConfig);
     }
-  }, [providerId, form, providerConfig, testConnection, providerInfo]);
+  }, [params?.providerId, form, providerConfig, testConnection]);
 
   useEffect(() => {
     if (!form.formState.isDirty && !connectionStatus.lastChecked && configSchema.safeParse(form.getValues()).success) {
