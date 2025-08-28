@@ -1,3 +1,4 @@
+import binaryExtensions from 'binary-extensions';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -35,4 +36,8 @@ export function formatNumber(
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
+}
+
+export function isBinaryFile(path: string): boolean {
+  return binaryExtensions.includes(path.split('.').pop()?.toLowerCase() || '');
 }

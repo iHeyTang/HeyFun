@@ -62,9 +62,13 @@ export abstract class ReActAgent extends BaseAgent {
 
       this.emit(ReActAgentEvents.THINK_COMPLETE, {});
 
-      // 如果不需要执行行动且没有终止标志，直接返回
-      if (!shouldAct && !this.should_terminate) {
+      // 如果不需要执行行动直接返回
+      if (!shouldAct) {
         return 'Thinking complete - no action needed';
+      }
+
+      if (this.signalUserTerminate) {
+        return 'User Terminated';
       }
 
       // Act阶段开始

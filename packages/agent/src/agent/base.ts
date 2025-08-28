@@ -27,7 +27,6 @@ export interface BaseAgentConfig {
   task_id: string;
   memory?: Memory;
   state?: AgentState;
-  should_terminate?: boolean;
   max_steps?: number;
   current_step?: number;
   duplicate_threshold?: number;
@@ -52,7 +51,6 @@ export abstract class BaseAgent {
   public sandboxId: string;
   public sandbox?: SandboxRunner;
   // Execution control
-  public should_terminate: boolean;
   public readonly max_steps: number;
   public current_step: number;
   public readonly duplicate_threshold: number;
@@ -61,12 +59,13 @@ export abstract class BaseAgent {
   // Private attributes
   private _private_event_queue?: AgentEvent;
 
+  public signalUserTerminate: boolean = false;
+
   constructor(config: BaseAgentConfig) {
     this.name = config.name;
     this.description = config.description;
     this.should_plan = config.should_plan ?? true;
     this.state = config.state ?? AgentState.IDLE;
-    this.should_terminate = config.should_terminate ?? false;
     this.max_steps = config.max_steps ?? 20;
     this.current_step = config.current_step ?? 0;
     this.duplicate_threshold = config.duplicate_threshold ?? 2;
@@ -220,7 +219,7 @@ export abstract class BaseAgent {
 
             results.push(`Step ${this.current_step}: ${step_result}`);
 
-            if (this.should_terminate) {
+            if (this.signalUserTerminate) {
               this.state = AgentState.FINISHED;
             }
           } catch (error) {
@@ -238,7 +237,7 @@ export abstract class BaseAgent {
         }
       });
 
-      if (this.should_terminate) {
+      if (this.signalUserTerminate) {
         this.emit(BaseAgentEvents.LIFECYCLE_TERMINATED, {});
       } else {
         this.emit(BaseAgentEvents.LIFECYCLE_COMPLETE, { results });
@@ -329,7 +328,7 @@ export abstract class BaseAgent {
    * Request to terminate the current task
    */
   public async terminate(): Promise<void> {
-    this.should_terminate = true;
+    this.signalUserTerminate = true;
     this.emit(BaseAgentEvents.LIFECYCLE_TERMINATING, {});
   }
 }

@@ -1,6 +1,6 @@
 import { Markdown } from '@/components/block/markdown/markdown';
 import { Syntax } from '@/components/block/syntax';
-import isTextPath from 'is-text-path';
+import { isBinaryFile } from '@/lib/utils';
 interface WorkspaceFileProps {
   filePath: string;
 }
@@ -46,7 +46,7 @@ const FileContent = ({ path }: { path: string }) => {
   }
 
   // Check if it's a text file that can be previewed with Syntax component
-  if (isTextPath(path)) {
+  if (!isBinaryFile(path)) {
     return <Syntax src={path} />;
   }
 
