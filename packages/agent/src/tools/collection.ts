@@ -36,7 +36,10 @@ export class ToolCollection {
       },
     });
 
-    await this.mcpUni.connect(transport);
+    await this.mcpUni.connect(transport).catch(error => {
+      console.error('Failed to connect to MCP Uni', error);
+      throw error;
+    });
     await this.refreshMcpTools();
   }
 

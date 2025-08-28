@@ -184,51 +184,6 @@ export class BuiltinModelRegistry implements ModelRegistry {
   private initializeDefaultModels(): void {
     const models: ModelDefinition[] = [
       {
-        id: 'gpt-4o',
-        name: 'GPT-4o',
-        description: 'Most advanced multimodal flagship model',
-        family: 'gpt',
-        contextLength: 128000,
-        supportedParameters: ['temperature', 'top_p', 'max_tokens', 'frequency_penalty', 'presence_penalty'],
-        inputModalities: ['text', 'image'],
-        outputModalities: ['text'],
-        instructType: 'openai',
-        providers: [
-          { id: 'openai', modelId: 'gpt-4o', priority: 1, pricing: { input: 5, output: 15, currency: 'USD' } },
-          { id: 'openrouter', modelId: 'openai/gpt-4o', priority: 2, pricing: { input: 5, output: 15, currency: 'USD' } },
-        ],
-      },
-      {
-        id: 'gpt-4o-mini',
-        name: 'GPT-4o Mini',
-        description: 'Affordable and intelligent small model for fast, lightweight tasks',
-        family: 'gpt',
-        contextLength: 128000,
-        supportedParameters: ['temperature', 'top_p', 'max_tokens', 'frequency_penalty', 'presence_penalty'],
-        inputModalities: ['text', 'image'],
-        outputModalities: ['text'],
-        instructType: 'openai',
-        providers: [
-          { id: 'openai', modelId: 'gpt-4o-mini', priority: 1, pricing: { input: 0.15, output: 0.6, currency: 'USD' } },
-          { id: 'openrouter', modelId: 'openai/gpt-4o-mini', priority: 2, pricing: { input: 0.15, output: 0.6, currency: 'USD' } },
-        ],
-      },
-      {
-        id: 'claude-3-5-sonnet',
-        name: 'Claude 3.5 Sonnet',
-        description: 'Most intelligent model, combining top-tier performance with improved speed',
-        family: 'claude',
-        contextLength: 200000,
-        supportedParameters: ['temperature', 'top_p', 'max_tokens'],
-        inputModalities: ['text', 'image'],
-        outputModalities: ['text'],
-        instructType: 'anthropic',
-        providers: [
-          { id: 'anthropic', modelId: 'claude-3-5-sonnet-20241022', priority: 1, pricing: { input: 3, output: 15, currency: 'USD' } },
-          { id: 'openrouter', modelId: 'anthropic/claude-3.5-sonnet', priority: 2, pricing: { input: 3, output: 15, currency: 'USD' } },
-        ],
-      },
-      {
         id: 'deepseek-chat:free',
         name: 'DeepSeek Chat(Free)',
         description: 'DeepSeek Chat / DeepSeek V3',
@@ -240,22 +195,6 @@ export class BuiltinModelRegistry implements ModelRegistry {
         instructType: 'openai',
         providers: [
           { id: 'openrouter', modelId: 'deepseek/deepseek-chat-v3-0324:free', priority: 1, pricing: { input: 0, output: 0, currency: 'USD' } },
-        ],
-      },
-      {
-        id: 'deepseek-chat',
-        name: 'DeepSeek Chat',
-        description: 'DeepSeek Chat / DeepSeek V3',
-        family: 'deepseek',
-        contextLength: 64000,
-        supportedParameters: ['temperature', 'top_p', 'max_tokens'],
-        inputModalities: ['text'],
-        outputModalities: ['text'],
-        instructType: 'openai',
-        providers: [
-          { id: 'deepseek', modelId: 'deepseek-chat', priority: 1, pricing: { input: 0.14, output: 0.28, currency: 'USD' } },
-          { id: 'siliconflow', modelId: 'deepseek-ai/DeepSeek-V3', priority: 2, pricing: { input: 0.14, output: 0.28, currency: 'USD' } },
-          { id: 'openrouter', modelId: 'deepseek/deepseek-chat', priority: 3, pricing: { input: 0.27, output: 1.1, currency: 'USD' } },
         ],
       },
       {
@@ -271,22 +210,6 @@ export class BuiltinModelRegistry implements ModelRegistry {
         providers: [{ id: 'openrouter', modelId: 'deepseek/deepseek-r1-0528:free', priority: 1, pricing: { input: 0, output: 0, currency: 'USD' } }],
       },
       {
-        id: 'deepseek-reasoner',
-        name: 'DeepSeek Reasoner',
-        description: 'DeepSeek Reasoner / DeepSeek V3',
-        family: 'deepseek',
-        contextLength: 64000,
-        supportedParameters: ['temperature', 'top_p', 'max_tokens'],
-        inputModalities: ['text'],
-        outputModalities: ['text'],
-        instructType: 'openai',
-        providers: [
-          { id: 'deepseek', modelId: 'deepseek-reasoner', priority: 1, pricing: { input: 0.14, output: 0.28, currency: 'USD' } },
-          { id: 'siliconflow', modelId: 'deepseek-ai/DeepSeek-R1', priority: 2, pricing: { input: 0.14, output: 0.28, currency: 'USD' } },
-          { id: 'openrouter', modelId: 'deepseek/deepseek-reasoner', priority: 3, pricing: { input: 0.27, output: 1.1, currency: 'USD' } },
-        ],
-      },
-      {
         id: 'qwen/qwen3-235b-a22b:free',
         name: 'Qwen3 235B A22B (free)',
         description: "Alibaba's latest flagship model with strong reasoning capabilities",
@@ -299,8 +222,8 @@ export class BuiltinModelRegistry implements ModelRegistry {
         providers: [{ id: 'openrouter', modelId: 'qwen/qwen3-235b-a22b:free', priority: 1, pricing: { input: 0, output: 0, currency: 'USD' } }],
       },
       {
-        id: 'Qwen/Qwen3-235B-A22B-Instruct-2507',
-        name: 'Qwen/Qwen3-235B-A22B-Instruct-2507',
+        id: 'qwen/qwen3-235b-a22b',
+        name: 'Qwen3 235B A22B',
         description: "Alibaba's latest flagship model with strong reasoning capabilities",
         family: 'qwen',
         contextLength: 32768,
@@ -309,7 +232,22 @@ export class BuiltinModelRegistry implements ModelRegistry {
         outputModalities: ['text'],
         instructType: 'openai',
         providers: [
-          { id: 'siliconflow', modelId: 'Qwen/Qwen3-235B-A22B-Instruct-2507', priority: 2, pricing: { input: 0.56, output: 1.26, currency: 'USD' } },
+          { id: 'openrouter', modelId: 'qwen/qwen3-235b-a22b-2507', priority: 1, pricing: { input: 0.078, output: 0.312, currency: 'USD' } },
+        ],
+      },
+      {
+        id: 'gemini-2.5-flash-lite',
+        name: 'Gemini 2.5 Flash Lite',
+        description:
+          'Gemini 2.5 Flash-Lite is a lightweight reasoning model in the Gemini 2.5 family, optimized for ultra-low latency and cost efficiency. It offers improved throughput, faster token generation, and better performance across common benchmarks compared to earlier Flash models. By default, "thinking" (i.e. multi-pass reasoning) is disabled to prioritize speed, but developers can enable it via the Reasoning API parameter to selectively trade off cost for intelligence.',
+        family: 'gemini',
+        contextLength: 1048576,
+        supportedParameters: ['temperature', 'top_p', 'max_tokens'],
+        inputModalities: ['text'],
+        outputModalities: ['text'],
+        instructType: 'google',
+        providers: [
+          { id: 'openrouter', modelId: 'google/gemini-2.5-flash-lite', priority: 1, pricing: { input: 0.1, output: 0.4, currency: 'USD' } },
         ],
       },
     ];
