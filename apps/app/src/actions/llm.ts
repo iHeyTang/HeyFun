@@ -38,7 +38,9 @@ export const getAllAvailableModelProviderModels = withUserAuth(async ({ orgId }:
   const configs = await prisma.modelProviderConfigs.findMany({
     where: { organizationId: orgId },
   });
-  const availableProviders = Object.keys(providers).filter(provider => configs.some(config => config.provider === provider));
+  const availableProviders = Object.keys(providers).filter(
+    provider => provider !== 'builtin' && configs.some(config => config.provider === provider),
+  );
   const models = await Promise.all(availableProviders.map(provider => providers[provider]?.getModels()));
   return models.filter(model => model !== undefined).flat();
 });
