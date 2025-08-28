@@ -1,5 +1,6 @@
 import { Markdown } from '@/components/block/markdown/markdown';
 import { Syntax } from '@/components/block/syntax';
+import isTextPath from 'is-text-path';
 interface WorkspaceFileProps {
   filePath: string;
 }
@@ -44,7 +45,27 @@ const FileContent = ({ path }: { path: string }) => {
     );
   }
 
-  return <Syntax src={path} />;
+  // Check if it's a text file that can be previewed with Syntax component
+  if (isTextPath(path)) {
+    return <Syntax src={path} />;
+  }
+
+  // For non-previewable files, show download button
+  const fileName = path.split('/').pop() || 'file';
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <div className="text-center">
+        <div className="mb-4 text-gray-500">Can't preview this file type</div>
+        <a
+          href={path}
+          download={fileName}
+          className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+        >
+          Download file
+        </a>
+      </div>
+    </div>
+  );
 };
 
 const getFileLanguage = (path: string): string => {

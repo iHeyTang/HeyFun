@@ -1,7 +1,6 @@
 import { withUserAuthApi } from '@/lib/server/auth-wrapper';
 import { sandboxManager } from '@repo/agent';
 import archiver from 'archiver';
-import fs from 'fs';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -14,20 +13,20 @@ import { NextRequest, NextResponse } from 'next/server';
  * @param params
  * @returns
  */
-export const GET = withUserAuthApi<{ path: string[] }, {}, {}>(async (request: NextRequest, ctx) => {
+export const GET = withUserAuthApi<{ path?: string[] }, {}, {}>(async (request: NextRequest, ctx) => {
   try {
-    const { path = [] } = ctx.params;
+    const { path: pathSegments = [] } = ctx.params;
     const sandbox = await sandboxManager.getOrCreateOneById(ctx.orgId);
     if (!sandbox) {
       return new NextResponse('Sandbox not found', { status: 404 });
     }
-    const filePath = path.join('/');
-    const fileInfo = await sandbox.fs.getFileDetails(filePath);
+    const resolvedPath = await sandbox.fs.resolvePath(pathSegments.join('/'));
+    const fileInfo = await sandbox.fs.getFileDetails(resolvedPath);
 
     // If it's a single file, simply return it for download
     if (!fileInfo.isDir) {
-      const fileBuffer = await sandbox.fs.downloadFile(filePath);
-      const fileName = filePath.split('/').pop() || 'download';
+      const fileBuffer = await sandbox.fs.downloadFile(resolvedPath);
+      const fileName = resolvedPath.split('/').pop() || 'download';
 
       // Encode the filename for Content-Disposition header
       const encodedFileName = encodeURIComponent(fileName);
@@ -41,7 +40,7 @@ export const GET = withUserAuthApi<{ path: string[] }, {}, {}>(async (request: N
     }
 
     // For directories, create a zip archive
-    const directoryName = filePath.split('/').pop() || 'workspace';
+    const directoryName = resolvedPath.split('/').pop() || 'workspace';
     const zipFileName = `${directoryName}.zip`;
 
     // Encode the zip filename for Content-Disposition header
@@ -73,27 +72,27 @@ export const GET = withUserAuthApi<{ path: string[] }, {}, {}>(async (request: N
       console.error('Archive error:', err);
     });
 
-    // Function to recursively add files to the zip
-    const addFilesToArchive = (currentPath: string, relativePath = '') => {
-      const items = fs.readdirSync(currentPath);
+    // Function to recursively add files to the zip using sandbox FS
+    const addFilesToArchive = async (currentPath: string, relativePath = '') => {
+      const items = await sandbox.fs.listFiles(currentPath);
 
       for (const item of items) {
-        const itemPath = `${currentPath}/${item}`;
-        const itemRelativePath = relativePath ? `${relativePath}/${item}` : item;
-        const itemStat = fs.statSync(itemPath);
+        const itemPath = `${currentPath}/${item.name}`;
+        const itemRelativePath = relativePath ? `${relativePath}/${item.name}` : item.name;
 
-        if (itemStat.isDirectory()) {
+        if (item.isDir) {
           // Recursively add directory contents
-          addFilesToArchive(itemPath, itemRelativePath);
+          await addFilesToArchive(itemPath, itemRelativePath);
         } else {
-          // Add file to archive
-          archive.file(itemPath, { name: itemRelativePath });
+          // Download file content and add to archive
+          const fileBuffer = await sandbox.fs.downloadFile(itemPath);
+          archive.append(fileBuffer, { name: itemRelativePath });
         }
       }
     };
 
     // Add files to the archive
-    addFilesToArchive(filePath);
+    await addFilesToArchive(resolvedPath);
 
     // Finalize the archive
     await archive.finalize();
