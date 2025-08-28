@@ -14,6 +14,12 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import NotificationZh from './notification-zh';
+import NotificationEn from './notification-en';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -43,6 +49,28 @@ const Header = ({ className }: { className?: string }) => {
           </div>
         </Link>
         <OrganizationSwitcher hidePersonal />
+        <Dialog>
+          <DialogTrigger asChild>
+            <Badge className="cursor-pointer bg-yellow-50 text-yellow-500 transition hover:scale-101">EARLY ACCESS</Badge>
+          </DialogTrigger>
+          <DialogContent showCloseButton={false}>
+            <DialogHeader>
+              <DialogTitle>EARLY ACCESS</DialogTitle>
+            </DialogHeader>
+            <Tabs className="flex-1">
+              <TabsList>
+                <TabsTrigger value="zh">中文</TabsTrigger>
+                <TabsTrigger value="en">English</TabsTrigger>
+              </TabsList>
+              <TabsContent value="zh">
+                <NotificationZh />
+              </TabsContent>
+              <TabsContent value="en">
+                <NotificationEn />
+              </TabsContent>
+            </Tabs>
+          </DialogContent>
+        </Dialog>
       </div>
       <UserButton />
     </div>

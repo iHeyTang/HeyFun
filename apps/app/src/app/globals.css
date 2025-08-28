@@ -181,6 +181,10 @@
   z-index: 2;
 }
 
+.markdown-body hr {
+  @apply border-border my-3 h-[1px];
+}
+
 .markdown-body.compact {
   @apply text-sm leading-relaxed;
   color: var(--foreground);
