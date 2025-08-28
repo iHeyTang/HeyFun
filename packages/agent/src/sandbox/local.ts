@@ -1,5 +1,6 @@
 import {
   BaseSandboxManager,
+  ExecuteCommandResponse,
   SandboxFileInfo,
   SandboxFileMatch,
   SandboxFilePermissionsParams,
@@ -31,7 +32,7 @@ class LocalSandboxProcess extends SandboxProcess {
     super();
   }
 
-  async executeCommand(params: { command: string; args: string[]; env: Record<string, string> }): Promise<string> {
+  async executeCommand(params: { command: string; args: string[]; env: Record<string, string> }): Promise<ExecuteCommandResponse> {
     const cmd = `${params.command} ${params.args.join(' ')}`;
     try {
       const { stdout, stderr } = await execAsync(cmd, {
@@ -42,25 +43,27 @@ class LocalSandboxProcess extends SandboxProcess {
       if (stderr) {
         console.error(`Command stderr: ${stderr}`);
       }
-
-      return stdout;
+      return { exitCode: 0, result: stdout };
     } catch (error) {
       throw new Error(`Failed to execute command: ${cmd}. Error: ${error}`);
     }
   }
 
-  async executeLongTermCommand(params: { id: string; command: string; args: string[]; env: Record<string, string> }): Promise<void> {
+  async executeLongTermCommand(params: {
+    id: string;
+    command: string;
+    args: string[];
+    env: Record<string, string>;
+    runAsync?: boolean;
+    onLogs?: (data: string) => void;
+  }): Promise<void> {
     const cmd = `${params.command} ${params.args.join(' ')}`;
 
     // 检查是否已经有相同 ID 的进程在运行
     if (this.longTermProcesses.has(params.id)) {
       const existingProcess = this.longTermProcesses.get(params.id);
       if (existingProcess && !existingProcess.killed) {
-        console.log(`Long-term command ${params.id} is already running`);
-        return;
-      } else {
-        // 清理已退出的进程
-        this.longTermProcesses.delete(params.id);
+        throw Error(`Long-term command ${params.id} is already running`);
       }
     }
 
@@ -77,10 +80,12 @@ class LocalSandboxProcess extends SandboxProcess {
       // 监听输出
       childProcess.stdout?.on('data', data => {
         console.log(`[LongTerm-${params.id}] ${data.toString().trim()}`);
+        params.onLogs?.(data.toString().trim());
       });
 
       childProcess.stderr?.on('data', data => {
         console.error(`[LongTerm-${params.id}-Error] ${data.toString().trim()}`);
+        params.onLogs?.(data.toString().trim());
       });
 
       // 监听进程退出
@@ -96,6 +101,14 @@ class LocalSandboxProcess extends SandboxProcess {
       });
 
       console.log(`Started long-term command ${params.id}: ${cmd}`);
+
+      if (params.runAsync) {
+        return;
+      }
+
+      await new Promise(resolve => {
+        childProcess.on('exit', resolve);
+      });
     } catch (error) {
       throw new Error(`Failed to execute long-term command: ${cmd}. Error: ${error}`);
     }

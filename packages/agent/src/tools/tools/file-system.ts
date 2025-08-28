@@ -1,7 +1,8 @@
+import * as path from 'path';
+import { SandboxRunner } from '../../sandbox/base';
+import { to } from '../../utils/to';
 import { BaseToolParameters, ToolResult } from '../types';
 import { AbstractBaseTool } from './base';
-import { SandboxRunner } from '../../sandbox/base';
-import * as path from 'path';
 
 interface ToolParameters extends BaseToolParameters {
   operation:
@@ -86,6 +87,10 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
       // 获取文件信息以确定最佳读取方式
       const stats = await this.sandbox.fs.getFileDetails(filePath);
 
+      if (!stats) {
+        return { content: [{ type: 'text', text: 'no such file or directory' }] };
+      }
+
       // 对于大文件，提供警告
       if (stats.size > 10 * 1024 * 1024) {
         // 10MB
@@ -123,25 +128,26 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
         // 目录可能已存在
       }
 
-      // 检查文件是否已存在，如果存在则备份
-      try {
-        const stats = await this.sandbox.fs.getFileDetails(filePath);
-        if (stats) {
-          const backupPath = `${filePath}.backup.${Date.now()}`;
-          await this.sandbox.fs.moveFiles(filePath, backupPath);
-          console.log(`Backup created: ${backupPath}`);
-        }
-      } catch {
-        // 文件不存在，无需备份
+      // 检查文件是否已存在，如果存在则报错
+      const [_e, exsitStats] = await to(this.sandbox.fs.getFileDetails(filePath));
+      if (exsitStats) {
+        return {
+          content: [{ type: 'text', text: `File already exists: ${filePath}` }],
+          error: 'File already exists',
+        };
       }
 
-      const buffer = Buffer.from(content, encoding as BufferEncoding);
-      await this.sandbox.fs.uploadFileFromBuffer(buffer, filePath);
-
-      // 获取文件大小
-      const stats = await this.sandbox.fs.getFileDetails(filePath);
+      // 使用命令将内容写入指定文件而不是直接调用fs.uploadFileFromBuffe，这个速度很慢
+      const result = await this.sandbox.process.executeCommand({
+        command: 'sh',
+        args: ['-c', `cat > "${filePath}" << 'EOF'\n${content}\nEOF`],
+        env: {},
+      });
+      if (result.exitCode !== 0) {
+        return { content: [{ type: 'text', text: `Error writing file: ${result.result}` }] };
+      }
       return {
-        content: [{ type: 'text', text: `File written successfully: ${filePath} (${stats.size} bytes)` }],
+        content: [{ type: 'text', text: `File written successfully: ${filePath} (${content.length} bytes)` }],
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -232,6 +238,9 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
   private async checkExists(filePath: string): Promise<ToolResult> {
     try {
       const stats = await this.sandbox.fs.getFileDetails(filePath);
+      if (!stats) {
+        return { content: [{ type: 'text', text: `Path does not exist: ${filePath}` }] };
+      }
       const type = stats.isDir ? 'directory' : 'file';
       return {
         content: [{ type: 'text', text: `Path exists: ${filePath} (${type})` }],
@@ -340,6 +349,9 @@ export class FileSystemTool extends AbstractBaseTool<ToolParameters> {
   private async getFileInfo(filePath: string): Promise<ToolResult> {
     try {
       const stats = await this.sandbox.fs.getFileDetails(filePath);
+      if (!stats) {
+        throw Error('no such file or directory');
+      }
       const info = {
         name: stats.name,
         path: filePath,

@@ -1,6 +1,7 @@
 import { Daytona, DaytonaConfig, Sandbox, SandboxState } from '@daytonaio/sdk';
 import {
   BaseSandboxManager,
+  ExecuteCommandResponse,
   SandboxFileInfo,
   SandboxFileMatch,
   SandboxFilePermissionsParams,
@@ -20,16 +21,27 @@ class DaytonaSandboxProcess extends SandboxProcess {
     super();
   }
 
-  async executeCommand(params: { command: string; args: string[]; env: Record<string, string> }): Promise<string> {
+  async executeCommand(params: { command: string; args: string[]; env: Record<string, string> }): Promise<ExecuteCommandResponse> {
     const cmd = `${params.command} ${params.args.join(' ')}`;
     const res = await this.sandbox.process.executeCommand(cmd, undefined, params.env);
-    return res.result;
+    return { exitCode: res.exitCode, result: res.result };
   }
 
-  async executeLongTermCommand(params: { id: string; command: string; args: string[]; env: Record<string, string> }): Promise<void> {
+  async executeLongTermCommand(params: {
+    id: string;
+    command: string;
+    args: string[];
+    env: Record<string, string>;
+    runAsync?: boolean;
+    onLogs?: (data: string) => void;
+  }): Promise<void> {
     const cmd = `${params.command} ${params.args.join(' ')}`;
     await this.sandbox.process.createSession(params.id);
-    await this.sandbox.process.executeSessionCommand(params.id, { command: cmd, runAsync: true });
+    const exec = await this.sandbox.process.executeSessionCommand(params.id, { command: cmd, runAsync: params.runAsync });
+    if (params.onLogs) {
+      this.sandbox.process.getSessionCommandLogs(params.id, exec.cmdId!, params.onLogs);
+    }
+    await this.sandbox.process.deleteSession(params.id);
   }
 }
 
@@ -58,9 +70,16 @@ class DaytonaSandboxFileSystem extends SandboxFileSystem {
     return await this.sandbox.fs.findFiles(path.resolve(workspacePath, p), pattern);
   }
 
-  async getFileDetails(p: string): Promise<SandboxFileInfo> {
+  async getFileDetails(p: string): Promise<SandboxFileInfo | null> {
     const workspacePath = await this.getWorkspacePath();
-    return await this.sandbox.fs.getFileDetails(path.resolve(workspacePath, p));
+    try {
+      return await this.sandbox.fs.getFileDetails(path.resolve(workspacePath, p));
+    } catch (e: any) {
+      if (e.message.includes('no such file or directory')) {
+        return null;
+      }
+      throw e;
+    }
   }
 
   async listFiles(p: string): Promise<SandboxFileInfo[]> {

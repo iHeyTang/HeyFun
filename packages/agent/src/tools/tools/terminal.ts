@@ -56,11 +56,12 @@ export class TerminalTool extends AbstractBaseTool<TerminalParameters> {
 
   private async executeCommand(command: string, args: string[], env: Record<string, string>): Promise<ToolResult> {
     try {
-      const output = await this.sandbox.process.executeCommand({
-        command,
-        args,
-        env,
-      });
+      const output = await this.sandbox.process.executeCommand({ command, args, env });
+      if (output.exitCode !== 0) {
+        return {
+          content: [{ type: 'text', text: `Command executed error:\n${output}` }],
+        };
+      }
 
       return {
         content: [{ type: 'text', text: `Command executed successfully:\n${output}` }],
@@ -76,12 +77,7 @@ export class TerminalTool extends AbstractBaseTool<TerminalParameters> {
 
   private async executeLongTermCommand(id: string, command: string, args: string[], env: Record<string, string>): Promise<ToolResult> {
     try {
-      await this.sandbox.process.executeLongTermCommand({
-        id,
-        command,
-        args,
-        env,
-      });
+      await this.sandbox.process.executeLongTermCommand({ id, command, args, env });
 
       return {
         content: [{ type: 'text', text: `Long-term command '${id}' started successfully: ${command} ${args.join(' ')}` }],

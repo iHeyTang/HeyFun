@@ -1,9 +1,21 @@
+export interface ExecuteCommandResponse {
+  exitCode: number;
+  result: string;
+}
+
 /**
  * 沙盒进程，它负责执行命令
  */
 export abstract class SandboxProcess {
-  abstract executeCommand(params: { command: string; args: string[]; env: Record<string, string> }): Promise<string>;
-  abstract executeLongTermCommand(params: { id: string; command: string; args: string[]; env: Record<string, string> }): Promise<void>;
+  abstract executeCommand(params: { command: string; args: string[]; env: Record<string, string> }): Promise<ExecuteCommandResponse>;
+  abstract executeLongTermCommand(params: {
+    id: string;
+    command: string;
+    args: string[];
+    env: Record<string, string>;
+    runAsync?: boolean;
+    onLogs?: (data: string) => void;
+  }): Promise<void>;
 }
 
 export interface SandboxFileInfo {
@@ -126,7 +138,7 @@ export abstract class SandboxFileSystem {
   abstract deleteFile(path: string): Promise<void>;
   abstract downloadFile(path: string, timeout?: number): Promise<Buffer>;
   abstract findFiles(path: string, pattern: string): Promise<SandboxFileMatch[]>;
-  abstract getFileDetails(path: string): Promise<SandboxFileInfo>;
+  abstract getFileDetails(path: string): Promise<SandboxFileInfo | null>;
   abstract listFiles(path: string): Promise<SandboxFileInfo[]>;
   abstract moveFiles(source: string, destination: string): Promise<void>;
   abstract replaceInFiles(files: string[], pattern: string, newValue: string): Promise<SandboxFileReplaceResult[]>;

@@ -1,6 +1,5 @@
 import { withUserAuthApi } from '@/lib/server/auth-wrapper';
 import { sandboxManager } from '@repo/agent';
-import archiver from 'archiver';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -13,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * @param params
  * @returns
  */
-export const GET = withUserAuthApi<{}, { path: string }, {}>(async (request: NextRequest, ctx) => {
+export const GET = withUserAuthApi<{}, { path: string }, {}>(async (_request: NextRequest, ctx) => {
   try {
     const sandbox = await sandboxManager.getOrCreateOneById(ctx.orgId);
     if (!sandbox) {
@@ -23,7 +22,7 @@ export const GET = withUserAuthApi<{}, { path: string }, {}>(async (request: Nex
     const fileInfo = await sandbox.fs.getFileDetails(resolvedPath);
 
     // If it's a single file, simply return it for download
-    if (!fileInfo.isDir) {
+    if (!fileInfo?.isDir) {
       const fileBuffer = await sandbox.fs.downloadFile(resolvedPath);
       const fileName = resolvedPath.split('/').pop() || 'download';
 
@@ -37,75 +36,7 @@ export const GET = withUserAuthApi<{}, { path: string }, {}>(async (request: Nex
         },
       });
     }
-
-    // For directories, create a zip archive
-    const directoryName = resolvedPath.split('/').pop() || 'workspace';
-    const zipFileName = `${directoryName}.zip`;
-
-    // Encode the zip filename for Content-Disposition header
-    const encodedZipFileName = encodeURIComponent(zipFileName);
-
-    // Create zip archive in memory
-    const archive = archiver('zip', {
-      zlib: { level: 9 }, // Compression level
-    });
-
-    // Collect the chunks of the zip file
-    const chunks: Buffer[] = [];
-
-    archive.on('data', (chunk: any) => {
-      chunks.push(Buffer.from(chunk));
-    });
-
-    // Handle archive warnings
-    archive.on('warning', (err: any) => {
-      if (err.code === 'ENOENT') {
-        console.warn('Archive warning:', err);
-      } else {
-        console.error('Archive error:', err);
-      }
-    });
-
-    // Handle archive errors
-    archive.on('error', (err: any) => {
-      console.error('Archive error:', err);
-    });
-
-    // Function to recursively add files to the zip using sandbox FS
-    const addFilesToArchive = async (currentPath: string, relativePath = '') => {
-      const items = await sandbox.fs.listFiles(currentPath);
-
-      for (const item of items) {
-        const itemPath = `${currentPath}/${item.name}`;
-        const itemRelativePath = relativePath ? `${relativePath}/${item.name}` : item.name;
-
-        if (item.isDir) {
-          // Recursively add directory contents
-          await addFilesToArchive(itemPath, itemRelativePath);
-        } else {
-          // Download file content and add to archive
-          const fileBuffer = await sandbox.fs.downloadFile(itemPath);
-          archive.append(fileBuffer, { name: itemRelativePath });
-        }
-      }
-    };
-
-    // Add files to the archive
-    await addFilesToArchive(resolvedPath);
-
-    // Finalize the archive
-    await archive.finalize();
-
-    // Combine all chunks into a single buffer
-    const zipBuffer = Buffer.concat(chunks);
-
-    // Return the zip file
-    return new NextResponse(zipBuffer, {
-      headers: {
-        'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename*=UTF-8''${encodedZipFileName}`,
-      },
-    });
+    return new NextResponse('Not implemented', { status: 501 });
   } catch (error) {
     console.error('Error creating download:', error);
     return new NextResponse('Internal Server Error', { status: 500 });

@@ -19,6 +19,9 @@ export const GET = withUserAuthApi<{}, { path: string }, {}>(async (request: Nex
     const sandbox = await sandboxManager.getOrCreateOneById(ctx.orgId);
     const p = await sandbox.fs.resolvePath(ctx.query.path || '');
     const fileInfo = await sandbox.fs.getFileDetails(p);
+    if (!fileInfo) {
+      return new NextResponse('File not found', { status: 404 });
+    }
 
     if (fileInfo.isDir) {
       const files = await sandbox.fs.listFiles(p);

@@ -13,16 +13,12 @@ import {
   AlertCircle,
   FolderOpen,
   Download,
-  Menu,
-  MoreHorizontal,
   MoreVertical,
   Trash2,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import Link from 'next/link';
-import { confirm } from '../block/confirm';
 
 interface TreeNode extends WorkspaceItem {
   path: string;
@@ -41,11 +37,7 @@ interface TreeState {
   cache: Map<string, WorkspaceItem[]>;
 }
 
-export function WorkspaceSidebar() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const currentPath = searchParams.get('path') || '';
-
+const useWorkspaceFile = () => {
   const [treeState, setTreeState] = useState<TreeState>({
     nodes: new Map(),
     expandedPaths: new Set(['/']),
@@ -53,18 +45,6 @@ export function WorkspaceSidebar() {
     errorPaths: new Set(),
     cache: new Map(),
   });
-
-  const { data: rootItems, isLoading: isRootLoading } = useAsync(
-    async () => {
-      const response = await fetch('/api/workspace/');
-      if (!response.ok) {
-        throw new Error('Failed to fetch workspace items');
-      }
-      return response.json() as Promise<WorkspaceItem[]>;
-    },
-    [],
-    {},
-  );
 
   const loadDirectoryChildren = useCallback(
     async (path: string): Promise<WorkspaceItem[]> => {
@@ -103,109 +83,174 @@ export function WorkspaceSidebar() {
     };
   }, []);
 
-  useEffect(() => {
-    if (rootItems) {
-      const rootNodes = new Map<string, TreeNode>();
-      rootItems.forEach(item => {
-        const node = createTreeNode(item, '', 0);
-        rootNodes.set(node.path, node);
-      });
+  const toggleDirectory = useCallback(
+    async (nodePath: string) => {
+      const node = treeState.nodes.get(nodePath);
+      if (!node?.isDirectory) return;
 
-      setTreeState(prev => ({
-        ...prev,
-        nodes: rootNodes,
-        cache: new Map(prev.cache).set('', rootItems),
-      }));
-    }
-  }, [rootItems, createTreeNode]);
+      const wasExpanded = treeState.expandedPaths.has(nodePath);
 
-  const toggleDirectory = async (nodePath: string) => {
-    const node = treeState.nodes.get(nodePath);
-    if (!node?.isDirectory) return;
-
-    const wasExpanded = treeState.expandedPaths.has(nodePath);
-
-    setTreeState(prev => {
-      const newExpandedPaths = new Set(prev.expandedPaths);
-      if (wasExpanded) {
-        newExpandedPaths.delete(nodePath);
-      } else {
-        newExpandedPaths.add(nodePath);
-      }
-      return { ...prev, expandedPaths: newExpandedPaths };
-    });
-
-    if (!wasExpanded && (!node.isLoaded || node.loadError) && !treeState.loadingPaths.has(nodePath)) {
       setTreeState(prev => {
-        const newErrorPaths = new Set(prev.errorPaths);
-        newErrorPaths.delete(nodePath);
-        return {
-          ...prev,
-          loadingPaths: new Set(prev.loadingPaths).add(nodePath),
-          errorPaths: newErrorPaths,
-          nodes: new Map(prev.nodes).set(nodePath, { ...node, isLoading: true, loadError: false }),
-        };
+        const newExpandedPaths = new Set(prev.expandedPaths);
+        if (wasExpanded) {
+          newExpandedPaths.delete(nodePath);
+        } else {
+          newExpandedPaths.add(nodePath);
+        }
+        return { ...prev, expandedPaths: newExpandedPaths };
       });
 
-      try {
-        const children = await loadDirectoryChildren(nodePath);
-        const childNodes = new Map<string, TreeNode>();
-
-        children.forEach(child => {
-          const childNode = createTreeNode(child, nodePath, node.level + 1);
-          childNodes.set(childNode.path, childNode);
+      if (!wasExpanded && (!node.isLoaded || node.loadError) && !treeState.loadingPaths.has(nodePath)) {
+        setTreeState(prev => {
+          const newErrorPaths = new Set(prev.errorPaths);
+          newErrorPaths.delete(nodePath);
+          return {
+            ...prev,
+            loadingPaths: new Set(prev.loadingPaths).add(nodePath),
+            errorPaths: newErrorPaths,
+            nodes: new Map(prev.nodes).set(nodePath, { ...node, isLoading: true, loadError: false }),
+          };
         });
 
+        try {
+          const children = await loadDirectoryChildren(nodePath);
+          const childNodes = new Map<string, TreeNode>();
+
+          children.forEach(child => {
+            const childNode = createTreeNode(child, nodePath, node.level + 1);
+            childNodes.set(childNode.path, childNode);
+          });
+
+          setTreeState(prev => {
+            const newNodes = new Map(prev.nodes);
+            const newLoadingPaths = new Set(prev.loadingPaths);
+            newLoadingPaths.delete(nodePath);
+
+            childNodes.forEach((childNode, path) => {
+              newNodes.set(path, childNode);
+            });
+
+            newNodes.set(nodePath, {
+              ...node,
+              isLoaded: true,
+              isLoading: false,
+              loadError: false,
+              children: Array.from(childNodes.values()),
+            });
+
+            return {
+              ...prev,
+              nodes: newNodes,
+              loadingPaths: newLoadingPaths,
+            };
+          });
+        } catch (error) {
+          console.error('Failed to load directory children:', error);
+          setTreeState(prev => {
+            const newLoadingPaths = new Set(prev.loadingPaths);
+            const newExpandedPaths = new Set(prev.expandedPaths);
+            const newErrorPaths = new Set(prev.errorPaths);
+
+            newLoadingPaths.delete(nodePath);
+            newExpandedPaths.delete(nodePath);
+            newErrorPaths.add(nodePath);
+
+            return {
+              ...prev,
+              loadingPaths: newLoadingPaths,
+              expandedPaths: newExpandedPaths,
+              errorPaths: newErrorPaths,
+              nodes: new Map(prev.nodes).set(nodePath, {
+                ...node,
+                isLoading: false,
+                loadError: true,
+              }),
+            };
+          });
+        }
+      }
+    },
+    [treeState.nodes, treeState.expandedPaths, treeState.loadingPaths, loadDirectoryChildren, createTreeNode],
+  );
+
+  const removeFromTree = useCallback(
+    async (path: string) => {
+      try {
+        // 调用 API 删除文件/文件夹
+        const searchParams = new URLSearchParams();
+        searchParams.set('path', path);
+        const response = await fetch(`/api/workspace?${searchParams.toString()}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to remove file/folder');
+        }
+
+        // 从树状态中移除节点及其子节点
         setTreeState(prev => {
           const newNodes = new Map(prev.nodes);
+          const newCache = new Map(prev.cache);
+          const newExpandedPaths = new Set(prev.expandedPaths);
           const newLoadingPaths = new Set(prev.loadingPaths);
-          newLoadingPaths.delete(nodePath);
+          const newErrorPaths = new Set(prev.errorPaths);
 
-          childNodes.forEach((childNode, path) => {
-            newNodes.set(path, childNode);
-          });
+          // 递归删除所有子节点
+          const removeNodeAndChildren = (nodePath: string) => {
+            // 删除节点
+            newNodes.delete(nodePath);
 
-          newNodes.set(nodePath, {
-            ...node,
-            isLoaded: true,
-            isLoading: false,
-            loadError: false,
-            children: Array.from(childNodes.values()),
-          });
+            // 删除相关状态
+            newExpandedPaths.delete(nodePath);
+            newLoadingPaths.delete(nodePath);
+            newErrorPaths.delete(nodePath);
+
+            // 删除缓存
+            newCache.delete(nodePath);
+
+            // 找到并删除所有子节点
+            const childPaths = Array.from(newNodes.keys()).filter(p => p.startsWith(nodePath + '/') && p !== nodePath);
+
+            childPaths.forEach(childPath => {
+              newNodes.delete(childPath);
+              newExpandedPaths.delete(childPath);
+              newLoadingPaths.delete(childPath);
+              newErrorPaths.delete(childPath);
+              newCache.delete(childPath);
+            });
+          };
+
+          removeNodeAndChildren(path);
+
+          // 更新父节点的children数组
+          const parentPath = path.substring(0, path.lastIndexOf('/')) || '';
+          const parentNode = newNodes.get(parentPath);
+          if (parentNode && parentNode.children) {
+            const updatedParent = {
+              ...parentNode,
+              children: parentNode.children.filter(child => child.path !== path),
+            };
+            newNodes.set(parentPath, updatedParent);
+          }
 
           return {
             ...prev,
             nodes: newNodes,
+            cache: newCache,
+            expandedPaths: newExpandedPaths,
             loadingPaths: newLoadingPaths,
+            errorPaths: newErrorPaths,
           };
         });
       } catch (error) {
-        console.error('Failed to load directory children:', error);
-        setTreeState(prev => {
-          const newLoadingPaths = new Set(prev.loadingPaths);
-          const newExpandedPaths = new Set(prev.expandedPaths);
-          const newErrorPaths = new Set(prev.errorPaths);
-
-          newLoadingPaths.delete(nodePath);
-          newExpandedPaths.delete(nodePath);
-          newErrorPaths.add(nodePath);
-
-          return {
-            ...prev,
-            loadingPaths: newLoadingPaths,
-            expandedPaths: newExpandedPaths,
-            errorPaths: newErrorPaths,
-            nodes: new Map(prev.nodes).set(nodePath, {
-              ...node,
-              isLoading: false,
-              loadError: true,
-            }),
-          };
-        });
+        console.error('Failed to remove file/folder:', error);
+        throw error;
       }
-    }
-  };
+    },
+    [setTreeState],
+  );
 
+  // 构建树结构
   const buildTreeStructure = useMemo(() => {
     const { nodes, expandedPaths } = treeState;
 
@@ -233,17 +278,75 @@ export function WorkspaceSidebar() {
     return buildChildren('');
   }, [treeState]);
 
-  const removeFile = useCallback(async (path: string) => {
-    const searchParams = new URLSearchParams();
-    searchParams.set('path', path);
-    const response = await fetch(`/api/workspace?${searchParams.toString()}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      throw new Error('Failed to remove file');
+  // 初始化根数据
+  const initializeRootData = useCallback(
+    (rootItems: WorkspaceItem[]) => {
+      const rootNodes = new Map<string, TreeNode>();
+      rootItems.forEach(item => {
+        const node = createTreeNode(item, '', 0);
+        rootNodes.set(node.path, node);
+      });
+
+      setTreeState(prev => ({
+        ...prev,
+        nodes: rootNodes,
+        cache: new Map(prev.cache).set('', rootItems),
+      }));
+    },
+    [createTreeNode],
+  );
+
+  return {
+    treeState,
+    buildTreeStructure,
+    loadDirectoryChildren,
+    createTreeNode,
+    toggleDirectory,
+    removeFromTree,
+    initializeRootData,
+  };
+};
+
+export function WorkspaceSidebar() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentPath = searchParams.get('path') || '';
+
+  const { treeState, buildTreeStructure, toggleDirectory, initializeRootData, removeFromTree } = useWorkspaceFile();
+
+  const { data: rootItems, isLoading: isRootLoading } = useAsync(
+    async () => {
+      const response = await fetch('/api/workspace/');
+      if (!response.ok) {
+        throw new Error('Failed to fetch workspace items');
+      }
+      return response.json() as Promise<WorkspaceItem[]>;
+    },
+    [],
+    {},
+  );
+
+  // 初始化根数据
+  useEffect(() => {
+    if (rootItems) {
+      initializeRootData(rootItems);
     }
-    router.refresh();
-  }, []);
+  }, [rootItems, initializeRootData]);
+
+  const removeFile = useCallback(
+    async (path: string) => {
+      try {
+        await removeFromTree(path);
+        // 如果当前显示的是被删除的文件，跳转到根目录
+        if (currentPath === path) {
+          router.push('/workspace');
+        }
+      } catch (error) {
+        console.error('Failed to remove file:', error);
+      }
+    },
+    [removeFromTree, currentPath, router],
+  );
 
   const renderTreeNode = (node: TreeNode): React.ReactNode => {
     const isSelected = node.path === currentPath;
@@ -295,39 +398,26 @@ export function WorkspaceSidebar() {
           {!node.isDirectory && (
             <span className="text-muted-foreground text-xs opacity-0 transition-all group-hover:opacity-100">{formatFileSize(node.size)}</span>
           )}
-          {!node.isDirectory && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <MoreVertical className="text-muted-foreground h-4 w-4 opacity-0 transition-all group-hover:opacity-100" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem className="cursor-pointer">
-                  <Link href={`/api/workspace/download?path=${node.path}`} download={node.name} className="flex cursor-pointer gap-2">
-                    <Download className="h-4 w-4" />
-                    Download
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => {
-                    confirm({
-                      content: 'Are you sure you want to remove this file?',
-                      onConfirm: async () => await removeFile(node.path),
-                      buttonText: {
-                        confirm: 'Remove',
-                        cancel: 'Cancel',
-                      },
-                    });
-                  }}
-                >
-                  <div className="text-destructive/80 flex items-center gap-2">
-                    <Trash2 className="text-currentColor h-4 w-4" />
-                    Remove
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <MoreVertical className="text-muted-foreground h-4 w-4 opacity-0 transition-all group-hover:opacity-100" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem className="cursor-pointer">
+                <Link href={`/api/workspace/download?path=${node.path}`} download={node.name} className="flex cursor-pointer gap-2">
+                  <Download className="h-4 w-4" />
+                  Download
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => removeFile(node.path)}>
+                <div className="text-destructive/80 flex items-center gap-2">
+                  <Trash2 className="text-currentColor h-4 w-4" />
+                  Remove
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {node.isDirectory && isExpanded && node.children && <div>{node.children.map(child => renderTreeNode(child))}</div>}
