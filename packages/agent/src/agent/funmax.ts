@@ -78,7 +78,7 @@ export class FunMax extends ReActAgent {
       language: this.language || 'English',
       max_steps: this.max_steps,
       current_time: new Date().toISOString(),
-      workspace_dir: './workspace',
+      workspace_dir: '/heyfun/workspace',
     });
     await this.updateMemory(createMessage.system(system_prompt));
 
