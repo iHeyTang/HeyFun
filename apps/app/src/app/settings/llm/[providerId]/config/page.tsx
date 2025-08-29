@@ -41,8 +41,6 @@ export default function ProviderConfigPanel() {
     return providerConfigSchemas[providerId as keyof typeof providerConfigSchemas].schema;
   }, [providerId]);
 
-  console.log('configSchema', configSchema.shape);
-
   const form = useForm<z.infer<typeof configSchema>>({
     resolver: zodResolver(configSchema),
     defaultValues: providerConfigSchemas[providerId as keyof typeof providerConfigSchemas].defaultValues,
@@ -137,29 +135,30 @@ export default function ProviderConfigPanel() {
       <div className="space-y-3">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {Object.entries((configSchema as z.ZodObject<Record<string, z.ZodTypeAny>>).shape).map(([key, value]) => {
+            {Object.entries((configSchema as z.ZodObject<Record<string, z.ZodTypeAny>>).shape).map(([key, keySchema]) => {
+              console.log('form field', key, keySchema._def.typeName);
               return (
                 <FormField
                   key={key}
                   control={form.control}
                   name={key as any}
-                  rules={{ required: value.isOptional() ? false : true }}
+                  rules={{ required: keySchema.isOptional() ? false : true }}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-1">
                         <span>{key}</span>
-                        {!value.isOptional() ? <span className="text-destructive/50 text-xs">*</span> : null}
+                        {!keySchema.isOptional() ? <span className="text-destructive/50 text-xs">*</span> : null}
                       </FormLabel>
                       <FormControl>
-                        {value._def.typeName === ZodString.name ? (
+                        {keySchema._def.typeName === 'ZodString' ? (
                           providerConfigSchemas[providerId as keyof typeof providerConfigSchemas].maskSensitiveKeys.includes(key) ? (
                             <InputPassword {...field} showPasswordToggle={true} />
                           ) : (
                             <Input {...field} />
                           )
-                        ) : value._def.typeName === ZodNumber.name ? (
+                        ) : keySchema._def.typeName === 'ZodNumber' ? (
                           <Input type="number" {...field} />
-                        ) : value._def.typeName === ZodBoolean.name ? (
+                        ) : keySchema._def.typeName === 'ZodBoolean' ? (
                           <Switch {...field} />
                         ) : null}
                       </FormControl>
