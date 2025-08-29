@@ -1,6 +1,6 @@
 'use client';
 
-import { getModelProviderConfig, testModelProviderConnection, updateModelProviderConfig } from '@/actions/llm';
+import { testModelProviderConnection, updateModelProviderConfig } from '@/actions/llm';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
@@ -37,7 +37,11 @@ export default function ProviderConfigPanel() {
     return providerConfigs?.find(config => config.provider === providerId);
   }, [providerConfigs, providerId]);
 
-  const [configSchema, setConfigSchema] = useState<z.ZodObject<Record<string, z.ZodTypeAny>>>(z.object({}));
+  const configSchema = useMemo(() => {
+    return providerConfigSchemas[providerId as keyof typeof providerConfigSchemas].schema;
+  }, [providerId]);
+
+  console.log('configSchema', configSchema.shape);
 
   const form = useForm<z.infer<typeof configSchema>>({
     resolver: zodResolver(configSchema),
@@ -77,13 +81,10 @@ export default function ProviderConfigPanel() {
   );
 
   useEffect(() => {
-    setConfigSchema(providerConfigSchemas[params?.providerId as keyof typeof providerConfigSchemas]?.schema);
-
     if (providerConfig) {
-      form.reset(providerConfig);
       testConnection(providerConfig);
     }
-  }, [params?.providerId, form, providerConfig, testConnection]);
+  }, [providerConfig, testConnection]);
 
   useEffect(() => {
     if (!form.formState.isDirty && !connectionStatus.lastChecked && configSchema.safeParse(form.getValues()).success) {
