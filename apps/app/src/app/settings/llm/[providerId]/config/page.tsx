@@ -136,7 +136,6 @@ export default function ProviderConfigPanel() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             {Object.entries((configSchema as z.ZodObject<Record<string, z.ZodTypeAny>>).shape).map(([key, keySchema]) => {
-              console.log('form field', key, keySchema._def.typeName);
               return (
                 <FormField
                   key={key}
