@@ -69,7 +69,7 @@ export class LLMClient {
     if (this.config.providerId === 'builtin' && 'createModelAdapter' in this.provider) {
       const builtinProvider = this.provider as any; // BuiltinProvider
       const runtimeConfig = builtinProvider.getModelRuntimeConfig(this.config.modelId);
-      
+
       if (!runtimeConfig) {
         throw new Error(`No runtime config available for model: ${this.config.modelId}`);
       }
@@ -96,7 +96,7 @@ export class LLMClient {
       this.model = model;
     } else {
       // 4. 创建model实例，传入provider的配置（原有逻辑）
-      const model = getModel(targetModel.architecture.instructType, {
+      const model = getModel(targetModel.architecture.instructType || 'openai', {
         model: this.config.modelId,
         apiKey: this.config.apiKey,
         baseUrl: this.config.baseUrl,

@@ -36,10 +36,24 @@ export class ToolCollection {
       },
     });
 
-    await this.mcpUni.connect(transport).catch(error => {
-      console.error('Failed to connect to MCP Uni', error);
-      throw error;
-    });
+    let retryCount = 0;
+    const maxRetries = 10;
+    const retryDelay = 5000; // 10秒
+
+    while (retryCount < maxRetries) {
+      try {
+        await this.mcpUni.connect(transport);
+        console.log('MCP Uni connected');
+        break;
+      } catch (error: any) {
+        retryCount++;
+        console.error(`MCP Uni connect failed, retry ${retryCount}/${maxRetries}:`, error.message || error);
+        if (retryCount >= maxRetries) {
+          throw new Error(`Failed to connect to MCP Uni after ${maxRetries} retries: ${error.message || error}`);
+        }
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    }
     await this.refreshMcpTools();
   }
 

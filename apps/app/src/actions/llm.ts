@@ -72,7 +72,7 @@ export const updateModelProviderConfig = withUserAuth(async ({ orgId, args }: Au
 
   if (!config) {
     await prisma.modelProviderConfigs.create({
-      data: { organizationId: orgId, provider: args.provider, config: encryptedConfig },
+      data: { organizationId: orgId, provider: args.provider, config: encryptedConfig, isDefault: true },
     });
   } else {
     await prisma.modelProviderConfigs.update({ where: { id: config.id, organizationId: orgId }, data: { config: encryptedConfig } });

@@ -44,7 +44,6 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
   const { taskId, agentId, modelProvider, modelId, prompt, toolIds, files, shouldPlan } = args;
   const crpytedProviderConfig = await prisma.modelProviderConfigs.findFirst({ where: { provider: modelProvider, organizationId: orgId } });
   const providerConfig = crpytedProviderConfig?.config ? JSON.parse(decryptTextWithPrivateKey(crpytedProviderConfig.config)) : {};
-
   const preferences = await prisma.preferences.findUnique({
     where: { organizationId: orgId },
   });

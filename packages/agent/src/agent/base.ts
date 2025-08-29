@@ -210,22 +210,18 @@ export abstract class BaseAgent {
           this.current_step += 1;
           console.log(`Executing step ${this.current_step}/${this.max_steps}`);
 
-          try {
-            const step_result = await this.step();
+          const step_result = await this.step();
 
-            // Check for stuck state
-            if (this.isStuck()) {
-              this.emit(BaseAgentEvents.STATE_STUCK_DETECTED, {});
-              this.handleStuckState();
-            }
+          // Check for stuck state
+          if (this.isStuck()) {
+            this.emit(BaseAgentEvents.STATE_STUCK_DETECTED, {});
+            this.handleStuckState();
+          }
 
-            results.push(`Step ${this.current_step}: ${step_result}`);
+          results.push(`Step ${this.current_step}: ${step_result}`);
 
-            if (this.signalUserTerminate) {
-              this.state = AgentState.FINISHED;
-            }
-          } catch (error) {
-            throw error;
+          if (this.signalUserTerminate) {
+            this.state = AgentState.FINISHED;
           }
         }
 
