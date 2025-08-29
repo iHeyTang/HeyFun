@@ -59,12 +59,12 @@ export class TerminalTool extends AbstractBaseTool<TerminalParameters> {
       const output = await this.sandbox.process.executeCommand({ command, args, env });
       if (output.exitCode !== 0) {
         return {
-          content: [{ type: 'text', text: `Command executed error:\n${output}` }],
+          content: [{ type: 'text', text: `Command executed error:\n${output.result}` }],
         };
       }
 
       return {
-        content: [{ type: 'text', text: `Command executed successfully:\n${output}` }],
+        content: [{ type: 'text', text: `Command executed successfully:\n${output.result}` }],
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
