@@ -1,6 +1,6 @@
 'use client';
 
-import { AigcProviderSidebar } from './components/aigc-provider-sidebar';
+import { AigcProviderSidebar } from './sidebar';
 
 export default function ConfigAigc({ children }: { children: React.ReactNode }) {
   return (

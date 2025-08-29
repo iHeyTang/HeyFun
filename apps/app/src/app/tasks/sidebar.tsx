@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { Button } from '@/components/ui/button';
 import { Plus, Share2 } from 'lucide-react';
-import { ShareDialog, ShareDialogRef } from './chat/input/share-dialog';
+import { ShareDialog, ShareDialogRef } from '../../components/features/chat/input/share-dialog';
 
 export const useRecentTasks = create<{ tasks: Tasks[]; refreshTasks: () => Promise<void> }>(set => ({
   tasks: [],

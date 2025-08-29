@@ -1,7 +1,7 @@
 'use client';
 
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { WorkspaceSidebar } from '@/components/features/workspace-sidebar';
+import { WorkspaceSidebar } from './sidebar';
 
 export default function WorkspaceLayout({
   children,

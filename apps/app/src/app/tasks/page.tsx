@@ -1,14 +1,14 @@
 'use client';
 
-import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { createTask } from '@/actions/tasks';
-import { useRecentTasks } from '@/components/features/chat-history-sidebar';
+import { useAgentSelectorStore } from '@/components/features/agent-selector';
 import { ChatInput } from '@/components/features/chat/input';
 import { useInputToolsConfig } from '@/components/features/chat/input/config-tools';
 import { useModelSelectorStore } from '@/components/features/model-selector';
-import { useAgentSelectorStore } from '@/components/features/agent-selector';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useRecentTasks } from './sidebar';
 
 const EmptyState = () => (
   <div className="flex h-full items-center justify-center gap-4 opacity-50">

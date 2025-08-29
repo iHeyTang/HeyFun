@@ -1,25 +1,25 @@
 import { ConfirmDialog } from '@/components/block/confirm';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Toaster } from '@/components/ui/sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { ClerkProvider, OrganizationList, OrganizationSwitcher, SignedIn, UserButton } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Github } from 'lucide-react';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale } from 'next-intl/server';
-import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
-import './globals.css';
-import { AppSidebar } from '@/components/features/app-sidebar';
-import { ClerkProvider, OrganizationList, OrganizationSwitcher, SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
-import { auth } from '@clerk/nextjs/server';
-import Link from 'next/link';
+import { Geist, Geist_Mono } from 'next/font/google';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
-import { Analytics } from '@vercel/analytics/react';
-import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import NotificationZh from './notification-zh';
+import Link from 'next/link';
+import './globals.css';
 import NotificationEn from './notification-en';
-import { Github } from 'lucide-react';
+import NotificationZh from './notification-zh';
+import { AppSidebar } from './sidebar';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',

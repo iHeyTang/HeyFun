@@ -1,8 +1,8 @@
 'use client';
 
 import { useLLM } from '@/hooks/use-llm';
-import { ProviderSidebar } from './components/provider-sidebar';
 import { useEffect } from 'react';
+import { ProviderSidebar } from './sidebar';
 
 export default function ConfigLlm({ children }: { children: React.ReactNode }) {
   const { initiate } = useLLM();
