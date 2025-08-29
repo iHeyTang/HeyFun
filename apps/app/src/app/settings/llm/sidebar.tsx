@@ -15,7 +15,7 @@ export function ProviderSidebar() {
       <ScrollArea className="flex-1 py-4">
         <div className="space-y-1">
           {providerInfos?.map(info => {
-            const isSelected = pathname === `/settings/llm/${info.provider}`;
+            const isSelected = pathname.startsWith(`/settings/llm/${info.provider}`);
 
             return (
               <div
