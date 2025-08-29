@@ -66,49 +66,35 @@ export class ToolCallContextHelper {
       await this.agent.updateMemory(createMessage.user(prompt));
     }
 
-    try {
-      // 获取可用工具列表
-      const tools = this.availableTools.toOpenAITools();
+    // 获取可用工具列表
+    const tools = this.availableTools.toOpenAITools();
 
-      // 发送工具调用请求
-      const [error, response] = await to(
-        this.agent.llm.chat({
-          messages: this.agent.memory.getMessagesForLLM(),
-          tools,
-          tool_choice: this.toolChoice,
-        }),
-      );
+    // 发送工具调用请求
+    const response = await this.agent.llm.chat({
+      messages: this.agent.memory.getMessagesForLLM(),
+      tools,
+      tool_choice: this.toolChoice,
+    });
 
-      if (error) {
-        await this.agent.updateMemory(createMessage.assistant(`LLM Error: ${error.message}`));
-        console.error(`🚨 Error in askTool: ${error.message}`);
-        return false;
-      }
+    // 提取工具调用和内容
+    this.toolCalls = this.extractToolCalls(response);
+    const content = response.choices[0]?.message?.content || '';
 
-      // 提取工具调用和内容
-      this.toolCalls = this.extractToolCalls(response);
-      const content = response.choices[0]?.message?.content || '';
+    // 发射工具选择事件
+    this.agent.emit(ToolCallAgentEvents.TOOL_SELECTED, {
+      thoughts: content,
+      tool_calls: this.toolCalls,
+    });
 
-      // 发射工具选择事件
-      this.agent.emit(ToolCallAgentEvents.TOOL_SELECTED, {
-        thoughts: content,
-        tool_calls: this.toolCalls,
-      });
-
-      if (this.toolCalls.length > 0) {
-        const toolInfo = {
-          tools: this.toolCalls.map(call => call.function.name),
-          arguments: this.toolCalls[0]?.function?.arguments,
-        };
-      }
-
-      // 处理不同的工具选择模式
-      return this.handleToolChoiceResponse(content);
-    } catch (error) {
-      console.error(`🚨 Error in askTool: ${error}`);
-      await this.agent.updateMemory(createMessage.assistant(`Error encountered while processing: ${error}`));
-      return false;
+    if (this.toolCalls.length > 0) {
+      const toolInfo = {
+        tools: this.toolCalls.map(call => call.function.name),
+        arguments: this.toolCalls[0]?.function?.arguments,
+      };
     }
+
+    // 处理不同的工具选择模式
+    return this.handleToolChoiceResponse(content);
   }
 
   /**

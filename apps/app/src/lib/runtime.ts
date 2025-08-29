@@ -5,7 +5,7 @@ import SYSTEM_PROMPT from '../prompt/funmax/system';
 
 export interface TaskStatus {
   agent: FunMax;
-  status: 'pending' | 'completed' | 'failed';
+  status: 'pending' | 'running' | 'completed' | 'failed';
   result?: unknown;
   error?: string;
   history: EventItem[];
@@ -13,11 +13,19 @@ export interface TaskStatus {
   updatedAt: Date;
 }
 
-class TaskRuntime {
-  private tasks: Map<string, TaskStatus> = new Map();
-  private eventListeners: Map<string, (event: EventItem) => void> = new Map();
+type TaskRuntimeListener = (event: EventItem) => void | Promise<void>;
 
-  createTask(taskId: string, config: FunMaxConfig): void {
+export class TaskRuntime {
+  private agent: FunMax;
+  private status: TaskStatus['status'] = 'pending';
+  private result?: unknown;
+  private error?: string;
+  private history: EventItem[] = [];
+  private eventListeners: Map<string, TaskRuntimeListener> = new Map();
+  private createdAt: Date;
+  private updatedAt: Date;
+
+  private constructor(config: FunMaxConfig) {
     // 设置默认提示模板
     if (!config.promptTemplates) {
       config.promptTemplates = {
@@ -31,94 +39,64 @@ class TaskRuntime {
     config.promptTemplates.plan = config.promptTemplates.plan || PLAN_PROMPT;
 
     const now = new Date();
+    this.createdAt = now;
+    this.updatedAt = now;
 
-    // 异步执行任务
-    setImmediate(async () => {
-      try {
-        const task: TaskStatus = {
-          agent: new FunMax(config),
-          status: 'pending',
-          history: [],
-          createdAt: now,
-          updatedAt: now,
-        };
-        this.tasks.set(taskId, task);
-
-        // 监听所有agent事件
-        task.agent.on('agent:*', (event: EventItem) => {
-          this.addEvent(taskId, event);
-        });
-
-        await task.agent.run(config.task_request);
-
-        // 任务完成
-        this.updateTaskStatus(taskId, 'completed');
-      } catch (error) {
-        console.error(`[Task ${taskId}] Agent execution failed:`, error);
-        this.updateTaskStatus(taskId, 'failed', undefined, error instanceof Error ? error.message : String(error));
-      }
-    });
+    this.agent = new FunMax(config);
   }
 
-  getTask(taskId: string): TaskStatus | undefined {
-    return this.tasks.get(taskId);
+  static createTask(config: FunMaxConfig): TaskRuntime {
+    return new TaskRuntime(config);
   }
 
-  getAllTasks(): Map<string, TaskStatus> {
-    return new Map(this.tasks);
-  }
+  async run(taskRequest: string): Promise<void> {
+    try {
+      this.status = 'running';
+      this.updatedAt = new Date();
 
-  updateTaskStatus(taskId: string, status: TaskStatus['status'], result?: unknown, error?: string): void {
-    const task = this.tasks.get(taskId);
-    if (task) {
-      task.status = status;
-      task.result = result;
-      task.error = error;
-      task.updatedAt = new Date();
-      this.tasks.set(taskId, task);
-    }
-  }
-
-  async terminateTask(taskId: string): Promise<void> {
-    const task = this.tasks.get(taskId);
-    if (task) {
-      await task.agent.terminate();
-    }
-  }
-
-  addEvent(taskId: string, event: EventItem): void {
-    const task = this.tasks.get(taskId);
-    if (task) {
-      task.history.push(event);
-      task.updatedAt = new Date();
-      this.tasks.set(taskId, task);
-
-      // 通知事件监听器
-      const listener = this.eventListeners.get(taskId);
-      if (listener) {
-        try {
-          listener(event);
-        } catch (error) {
-          console.error(`[Task ${taskId}] Event listener error:`, error);
+      // 监听所有agent事件
+      this.agent.on('agent:*', async (event: EventItem) => {
+        this.history.push(event);
+        this.updatedAt = new Date();
+        // 通知事件监听器
+        for (const [, listener] of this.eventListeners) {
+          try {
+            await listener(event);
+          } catch (error) {
+            console.error('Event listener error:', error);
+          }
         }
-      }
+      });
+
+      await this.agent.run(taskRequest);
+
+      this.status = 'completed';
+      this.updatedAt = new Date();
+    } catch (error) {
+      console.error('Agent execution failed:', error);
+      this.status = 'failed';
+      this.error = error instanceof Error ? error.message : String(error);
+      this.updatedAt = new Date();
     }
   }
 
-  removeTask(taskId: string): void {
-    this.tasks.delete(taskId);
-    this.eventListeners.delete(taskId);
+  getStatus(): TaskStatus {
+    return {
+      agent: this.agent,
+      status: this.status,
+      result: this.result,
+      error: this.error,
+      history: [...this.history],
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+    };
   }
 
-  // SSE相关方法
-  addEventListener(taskId: string, listener: (event: EventItem) => void): void {
-    this.eventListeners.set(taskId, listener);
+  async terminate(): Promise<void> {
+    await this.agent.terminate();
   }
 
-  removeEventListener(taskId: string): void {
-    this.eventListeners.delete(taskId);
+  on(eventType: string, listener: TaskRuntimeListener): void {
+    this.eventListeners.set(eventType, listener);
   }
 }
-
-// 创建全局任务运行时实例
-export const taskRuntime = new TaskRuntime();

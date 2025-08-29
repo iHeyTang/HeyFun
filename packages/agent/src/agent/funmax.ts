@@ -138,8 +138,8 @@ export class FunMax extends ReActAgent {
       });
 
       return response.choices[0]?.message?.content || 'Task summary not available';
-    } catch (error) {
-      console.error('Error generating task summary:', error);
+    } catch (error: any) {
+      console.error('Error generating task summary:', error?.message || error);
       return 'Unable to generate task summary';
     }
   }

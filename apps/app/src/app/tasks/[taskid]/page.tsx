@@ -45,6 +45,79 @@ export default function ChatPage() {
     }
   };
 
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  const handleProgressUpdate = useCallback(
+    (progress: any) => {
+      setMessages(prev => {
+        const newMessage = { ...progress, index: progress.index || 0, type: progress.type as any, role: 'assistant' as const };
+        const existingIndex = prev.findIndex(m => m.index === newMessage.index);
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = newMessage;
+          return updated;
+        }
+        return [...prev, newMessage];
+      });
+
+      if (shouldAutoScroll) {
+        requestAnimationFrame(scrollToBottom);
+        if (progress?.type === 'agent:lifecycle:step:think:browser:browse:complete') {
+          setPreviewData({
+            type: 'browser',
+            url: progress.content.url,
+            title: progress.content.title,
+            screenshot: progress.content.screenshot,
+          });
+        }
+        if (progress?.type === 'agent:lifecycle:step:act:tool:execute:start') {
+          setPreviewData({ type: 'tool', executionId: progress.content.id });
+        }
+      }
+    },
+    [shouldAutoScroll, scrollToBottom, setPreviewData],
+  );
+
+  const initializeSSE = useCallback(() => {
+    if (!taskId) return;
+
+    const eventSource = new EventSource(`/api/tasks/stream?taskId=${taskId}`);
+    eventSourceRef.current = eventSource;
+
+    eventSource.onmessage = event => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'progress') {
+          handleProgressUpdate(data.data);
+        } else if (data.type === 'status') {
+          const status = data.data.status;
+          setIsThinking(status !== 'completed' && status !== 'failed' && status !== 'terminated');
+          setIsTerminating(status === 'terminating');
+        } else if (data.type === 'end') {
+          const status = data.data.status;
+          setIsThinking(false);
+          setIsTerminating(status === 'terminating');
+          eventSource.close();
+        } else if (data.type === 'error') {
+          console.error('SSE Error:', data.error);
+          setIsThinking(false);
+          eventSource.close();
+        }
+      } catch (error) {
+        console.error('Error parsing SSE data:', error);
+      }
+    };
+
+    eventSource.onerror = error => {
+      console.error('SSE connection error:', error);
+      setIsThinking(false);
+      eventSource.close();
+    };
+
+    return eventSource;
+  }, [taskId, handleProgressUpdate]);
+
   const refreshTask = useCallback(async () => {
     const res = await getTask({ taskId });
     if (res.error || !res.data) {
@@ -52,40 +125,26 @@ export default function ChatPage() {
       return;
     }
     setMessages(res.data.progresses.map(step => ({ ...step, index: step.index! || 0, type: step.type as any, role: 'assistant' as const })));
-    if (shouldAutoScroll) {
-      requestAnimationFrame(scrollToBottom);
-      const nextMessage = messages[messages.length - 1];
-      if (shouldAutoScroll) {
-        if (nextMessage?.type === 'agent:lifecycle:step:think:browser:browse:complete') {
-          setPreviewData({
-            type: 'browser',
-            url: nextMessage.content.url,
-            title: nextMessage.content.title,
-            screenshot: nextMessage.content.screenshot,
-          });
-        }
-        if (nextMessage?.type === 'agent:lifecycle:step:act:tool:execute:start') {
-          setPreviewData({ type: 'tool', executionId: nextMessage.content.id });
-        }
-      }
-    }
     setIsThinking(res.data!.status !== 'completed' && res.data!.status !== 'failed' && res.data!.status !== 'terminated');
     setIsTerminating(res.data!.status === 'terminating');
-  }, [taskId, shouldAutoScroll]);
+  }, [taskId]);
 
   useEffect(() => {
     setPreviewData(null);
     if (!taskId) return;
-    refreshTask();
-  }, [taskId, refreshTask]);
 
-  useEffect(() => {
-    if (!taskId || !isThinking) return;
-    const interval = setInterval(refreshTask, 2000);
+    // Initialize with existing data
+    refreshTask();
+
+    // Start SSE connection for real-time updates
+    const eventSource = initializeSSE();
+
     return () => {
-      clearInterval(interval);
+      if (eventSource) {
+        eventSource.close();
+      }
     };
-  }, [taskId, isThinking, shouldAutoScroll, refreshTask]);
+  }, [taskId]);
 
   useEffect(() => {
     if (shouldAutoScroll) {
@@ -98,11 +157,21 @@ export default function ChatPage() {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
     };
-  }, [abortControllerRef]);
+  }, []);
 
   const handleSubmit = async (value: { prompt: string; files: File[]; shouldPlan: boolean }) => {
     try {
+      // Close existing SSE connection before creating new task
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+
       const res = await createTask({
         taskId,
         modelId: selectedModel?.id || '',
@@ -114,9 +183,14 @@ export default function ChatPage() {
       });
       if (res.error) {
         console.error('Error restarting task:', res.error);
+        return;
       }
+
       setIsThinking(true);
-      router.refresh();
+      setMessages([]); // Clear existing messages
+
+      // Start new SSE connection for the restarted task
+      const eventSource = initializeSSE();
     } catch (error) {
       console.error('Error submitting task:', error);
     }
