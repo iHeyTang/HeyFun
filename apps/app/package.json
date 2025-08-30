@@ -11,7 +11,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.57.0",
     "@clerk/nextjs": "^6.31.4",
-    "@daytonaio/sdk": "^0.25.4",
+    "@daytonaio/sdk": "^0.25.6",
     "@hookform/resolvers": "^4.1.3",
     "@octokit/rest": "^22.0.0",
     "@prisma/client": "^6.14.0",
