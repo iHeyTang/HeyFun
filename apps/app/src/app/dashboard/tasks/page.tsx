@@ -62,7 +62,7 @@ export default function ChatPage() {
         throw new Error('Failed to create task');
       }
       await refreshTasks();
-      router.push(`/tasks/${res.data.id}`);
+      router.push(`/dashboard/tasks/${res.data.id}`);
     } catch (error: any) {
       if (error.name === 'AbortError') {
         return;

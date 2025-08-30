@@ -38,7 +38,7 @@ export function TaskHistorySidebar() {
   };
 
   const handleNewTask = () => {
-    router.push('/tasks');
+    router.push('/dashboard/tasks');
   };
 
   return (
