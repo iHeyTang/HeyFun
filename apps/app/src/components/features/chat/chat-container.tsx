@@ -1,13 +1,12 @@
 'use client';
 
 import { createChatSession, sendMessage } from '@/actions/chat';
-import { ProviderModelInfo } from '@repo/llm/chat';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useRecentChatSessions } from '../../../app/chat/sidebar';
-import { ChatInput } from './chat-input';
+import { ChatInput, useChatbotModelSelector } from './chat-input';
 import { ChatMessage } from './chat-message';
 
 interface Message {
@@ -20,24 +19,16 @@ interface Message {
 }
 
 interface ChatContainerProps {
-  availableModels: Array<ProviderModelInfo>;
   sessionId?: string;
   existingSession?: any; // Will be typed properly with Prisma types
   loading?: boolean;
 }
 
-export const ChatContainer = ({ availableModels, sessionId, existingSession, loading }: ChatContainerProps) => {
+export const ChatContainer = ({ sessionId, existingSession, loading }: ChatContainerProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(sessionId || null);
-  const [selectedModel, setSelectedModel] = useState<
-    | {
-        provider: string;
-        id: string;
-        name: string;
-      }
-    | undefined
-  >(existingSession ? { provider: existingSession.modelProvider, id: existingSession.modelId, name: existingSession.modelId } : availableModels[0]);
+  const { selectedModel } = useChatbotModelSelector();
 
   const { refreshSessions } = useRecentChatSessions();
   const router = useRouter();
@@ -266,14 +257,7 @@ export const ChatContainer = ({ availableModels, sessionId, existingSession, loa
       </div>
 
       {/* Input */}
-      <ChatInput
-        onSend={handleSendMessage}
-        disabled={isLoading || !selectedModel}
-        selectedModel={selectedModel}
-        onModelSelect={setSelectedModel}
-        onClearChat={clearChat}
-        showClearChat={messages.length > 0}
-      />
+      <ChatInput onSend={handleSendMessage} disabled={isLoading || !selectedModel} onClearChat={clearChat} showClearChat={messages.length > 0} />
     </div>
   );
 };

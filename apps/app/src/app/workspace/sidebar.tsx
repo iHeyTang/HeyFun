@@ -316,6 +316,7 @@ export function WorkspaceSidebar() {
 
   const { data: rootItems, isLoading: isRootLoading } = useAsync(
     async () => {
+      console.log('fetching workspace items');
       const response = await fetch('/api/workspace/');
       if (!response.ok) {
         throw new Error('Failed to fetch workspace items');

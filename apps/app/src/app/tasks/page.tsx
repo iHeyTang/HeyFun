@@ -2,9 +2,8 @@
 
 import { createTask } from '@/actions/tasks';
 import { useAgentSelectorStore } from '@/components/features/agent-selector';
-import { ChatInput } from '@/components/features/tasks/input';
+import { ChatInput, useAgentModelSelector } from '@/components/features/tasks/input';
 import { useInputToolsConfig } from '@/components/features/tasks/input/config-tools';
-import { useModelSelectorStore } from '@/components/features/model-selector';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -26,7 +25,7 @@ export default function ChatPage() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const { refreshTasks } = useRecentTasks();
 
-  const { selectedModel } = useModelSelectorStore('chat-input-model-storage');
+  const { selectedModel } = useAgentModelSelector();
   const { enabledTools } = useInputToolsConfig();
   const { selectedAgent } = useAgentSelectorStore('chat-input-agent-storage')();
 

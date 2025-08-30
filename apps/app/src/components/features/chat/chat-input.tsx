@@ -1,34 +1,61 @@
 'use client';
 
-import { ChatInput as BaseChatInput } from '@/components/features/chat-input/index';
-import { ModelInfo, ModelSelectorDialog, ModelSelectorRef, useModelSelectorStore } from '@/components/features/model-selector';
+import { ChatInput as BaseChatInput } from '@/components/block/chat-input/index';
+import { ModelInfo, ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useLLM } from '@/hooks/use-llm';
+import { usePreferences } from '@/hooks/use-preferences';
 import { Bot, Send, Trash2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { create } from 'zustand';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
-  selectedModel?: ModelInfo;
-  onModelSelect: (model: ModelInfo) => void;
   onClearChat?: () => void;
   showClearChat?: boolean;
 }
 
-export const ChatInput = ({ onSend, disabled = false, selectedModel, onModelSelect, onClearChat, showClearChat = false }: ChatInputProps) => {
-  const modelSelectorRef = useRef<ModelSelectorRef>(null);
-  const { selectedModel: storedModel, setSelectedModel } = useModelSelectorStore('chat-model-storage');
+const useChatbotModelSelectorStore = create<{
+  selectedModel: ModelInfo | null;
+  setSelectedModel: (model: ModelInfo | null) => void;
+}>()(set => ({
+  selectedModel: null,
+  setSelectedModel: model => {
+    set({ selectedModel: model });
+  },
+}));
+
+export const useChatbotModelSelector = () => {
+  const { availableModels } = useLLM();
+  const { data: preferences, update: updatePreferences } = usePreferences();
+  const { selectedModel, setSelectedModel } = useChatbotModelSelectorStore();
 
   useEffect(() => {
-    if (storedModel && !selectedModel) {
-      onModelSelect(storedModel);
+    if (preferences?.defaultChatbotModel && !selectedModel) {
+      const model =
+        availableModels.find(m => {
+          return m.id === preferences.defaultChatbotModel?.id && m.provider === preferences.defaultChatbotModel?.provider;
+        }) || null;
+      setSelectedModel(model);
     }
-  }, [storedModel, selectedModel, onModelSelect]);
+  }, [availableModels, preferences?.defaultChatbotModel, selectedModel, setSelectedModel]);
+
+  const handleModelSelect = async (model: ModelInfo) => {
+    await updatePreferences({ defaultChatbotModel: model });
+    setSelectedModel(model);
+  };
+
+  return { selectedModel, setSelectedModel: handleModelSelect };
+};
+
+export const ChatInput = ({ onSend, disabled = false, onClearChat, showClearChat = false }: ChatInputProps) => {
+  const modelSelectorRef = useRef<ModelSelectorRef>(null);
+  const { selectedModel, setSelectedModel } = useChatbotModelSelector();
 
   const handleModelSelect = (model: ModelInfo) => {
     setSelectedModel(model);
-    onModelSelect(model);
   };
 
   const renderFooter = ({
@@ -83,7 +110,7 @@ export const ChatInput = ({ onSend, disabled = false, selectedModel, onModelSele
         placeholder={disabled ? 'AI is responding...' : 'Type your message...'}
         renderFooter={renderFooter}
       />
-      <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={handleModelSelect} storageKey="chat-model-storage" />
+      <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={handleModelSelect} />
     </>
   );
 };

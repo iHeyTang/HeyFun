@@ -2,7 +2,6 @@
 
 import { getChatSession } from '@/actions/chat';
 import { ChatContainer } from '@/components/features/chat/chat-container';
-import { useLLM } from '@/hooks/use-llm';
 import { useEffect, useState } from 'react';
 
 interface ChatPageProps {
@@ -16,8 +15,6 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [existingSession, setExistingSession] = useState<Awaited<ReturnType<typeof getChatSession>>['data'] | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const { availableModels } = useLLM();
 
   useEffect(() => {
     const initializePage = async () => {
@@ -58,7 +55,7 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   return (
     <div className="h-full">
-      <ChatContainer loading={loadingSession} availableModels={availableModels} sessionId={sessionId} existingSession={existingSession} />
+      <ChatContainer loading={loadingSession} sessionId={sessionId} existingSession={existingSession} />
     </div>
   );
 }

@@ -1,22 +1,55 @@
+import { getAgents } from '@/actions/agents';
+import { ChatInput as BaseChatInput } from '@/components/block/chat-input';
 import { confirm } from '@/components/block/confirm';
-import { ChatInput as BaseChatInput } from '@/components/features/chat-input';
-import { ModelInfo, ModelSelectorDialog, ModelSelectorRef, useModelSelectorStore } from '@/components/features/model-selector';
 import { AgentInfo, AgentSelectorDialog, AgentSelectorRef, useAgentSelectorStore } from '@/components/features/agent-selector';
+import { ModelInfo, ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useLLM } from '@/hooks/use-llm';
-import { getAgents } from '@/actions/agents';
-import { Check, Circle, Paperclip, PauseCircle, Send, Wrench, X, Bot } from 'lucide-react';
+import { Bot, Check, Circle, Paperclip, PauseCircle, Send, Wrench, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { InputToolsConfigDialog, InputToolsConfigDialogRef, useInputToolsConfig } from './config-tools';
+import { create } from 'zustand';
+import { usePreferences } from '@/hooks/use-preferences';
+import { useLLM } from '@/hooks/use-llm';
 
 interface ChatInputProps {
   status?: 'idle' | 'thinking' | 'terminating' | 'completed';
   onSubmit?: (value: { prompt: string; files: File[]; shouldPlan: boolean }) => Promise<void>;
   onTerminate?: () => Promise<void>;
 }
+
+const useAgentModelSelectorStore = create<{
+  selectedModel: ModelInfo | null;
+  setSelectedModel: (model: ModelInfo | null) => void;
+}>()(set => ({
+  selectedModel: null,
+  setSelectedModel: model => {
+    set({ selectedModel: model });
+  },
+}));
+
+export const useAgentModelSelector = () => {
+  const { availableModels } = useLLM();
+  const { data: preferences, update: updatePreferences } = usePreferences();
+  const { selectedModel, setSelectedModel } = useAgentModelSelectorStore();
+
+  useEffect(() => {
+    if (preferences?.defaultAgentModel && !selectedModel) {
+      setSelectedModel(
+        availableModels.find(m => m.id === preferences.defaultAgentModel?.id && m.provider === preferences.defaultAgentModel?.provider) || null,
+      );
+    }
+  }, [availableModels, preferences?.defaultAgentModel, selectedModel, setSelectedModel]);
+
+  const handleModelSelect = async (model: ModelInfo) => {
+    await updatePreferences({ defaultAgentModel: model });
+    setSelectedModel(model);
+  };
+
+  return { selectedModel, setSelectedModel: handleModelSelect };
+};
 
 export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -28,7 +61,7 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
   const [availableAgents, setAvailableAgents] = useState<AgentInfo[]>([]);
   const { enabledTools } = useInputToolsConfig();
 
-  const { selectedModel, setSelectedModel } = useModelSelectorStore('chat-input-model-storage');
+  const { selectedModel, setSelectedModel } = useAgentModelSelector();
   const { selectedAgent, setSelectedAgent } = useAgentSelectorStore('chat-input-agent-storage')();
 
   useEffect(() => {
@@ -193,12 +226,7 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
         renderFooter={renderFooter}
       />
       <InputToolsConfigDialog ref={toolsConfigDialogRef} />
-      <ModelSelectorDialog
-        ref={modelSelectorRef}
-        selectedModel={selectedModel}
-        onModelSelect={handleModelSelect}
-        storageKey="chat-input-model-storage"
-      />
+      <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={handleModelSelect} />
       <AgentSelectorDialog
         ref={agentSelectorRef}
         availableAgents={availableAgents}

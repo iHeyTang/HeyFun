@@ -4,6 +4,12 @@ declare global {
   declare namespace PrismaJson {
     type JsonSchema = JSONSchema;
     type StringList = string[];
+
+    type ModelInfo = {
+      provider: string;
+      id: string;
+      name: string;
+    };
   }
 }
 

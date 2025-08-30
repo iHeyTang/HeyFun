@@ -34,13 +34,15 @@ model Organizations {
 }
 
 model Preferences {
-  id             String   @id @default(cuid())
-  organizationId String   @unique
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  language       String?
-  defaultChatbot String?
-  defaultAgent   String?
+  id                  String   @id @default(cuid())
+  organizationId      String   @unique
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  language            String?
+  /// [ModelInfo]
+  defaultChatbotModel Json?
+  /// [ModelInfo]
+  defaultAgentModel   Json?
 }
 
 model OrganizationUsers {
