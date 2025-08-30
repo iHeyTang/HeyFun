@@ -1,9 +1,9 @@
 'use client';
 
-import { ChatHistorySidebar } from '@/components/features/chat/chat-history-sidebar';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { useLLM } from '@/hooks/use-llm';
 import { useEffect } from 'react';
+import { ChatHistorySidebar } from './sidebar';
 
 export default function ChatLayout({
   children,

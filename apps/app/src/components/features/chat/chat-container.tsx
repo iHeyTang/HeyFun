@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { useRecentChatSessions } from './chat-history-sidebar';
+import { useRecentChatSessions } from '../../../app/chat/sidebar';
 import { ChatInput } from './chat-input';
 import { ChatMessage } from './chat-message';
 
