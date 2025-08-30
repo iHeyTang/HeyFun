@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { cn, formatFileSize } from '@/lib/utils';
 import { useAsync } from '@/hooks/use-async';
-import { WorkspaceItem } from '@/components/features/chat/preview/preview-content/workspace-preview/types';
+import { WorkspaceItem } from '@/components/features/tasks/preview/preview-content/workspace-preview/types';
 import {
   FileIcon,
   FolderIcon,

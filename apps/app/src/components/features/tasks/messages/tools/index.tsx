@@ -1,4 +1,4 @@
-import { usePreviewData } from '@/components/features/chat/preview/preview-content/workspace-preview';
+import { usePreviewData } from '@/components/features/tasks/preview/preview-content/workspace-preview';
 import { Badge } from '@/components/ui/badge';
 import useAgentTools from '@/hooks/use-tools';
 import { AggregatedMessage, Message } from '@/lib/browser/chat-messages/types';

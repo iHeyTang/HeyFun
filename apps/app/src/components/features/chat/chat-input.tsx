@@ -1,6 +1,6 @@
 'use client';
 
-import { ChatInput as BaseChatInput } from '@/components/features/chat-input';
+import { ChatInput as BaseChatInput } from '@/components/features/chat-input/index';
 import { ModelInfo, ModelSelectorDialog, ModelSelectorRef, useModelSelectorStore } from '@/components/features/model-selector';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,16 +16,9 @@ interface ChatInputProps {
   showClearChat?: boolean;
 }
 
-export const ChatInput = ({
-  onSend,
-  disabled = false,
-  selectedModel,
-  onModelSelect,
-  onClearChat,
-  showClearChat = false,
-}: ChatInputProps) => {
+export const ChatInput = ({ onSend, disabled = false, selectedModel, onModelSelect, onClearChat, showClearChat = false }: ChatInputProps) => {
   const modelSelectorRef = useRef<ModelSelectorRef>(null);
-  const { selectedModel: storedModel, setSelectedModel } = useModelSelectorStore('simple-chat-model-storage');
+  const { selectedModel: storedModel, setSelectedModel } = useModelSelectorStore('chat-model-storage');
 
   useEffect(() => {
     if (storedModel && !selectedModel) {
@@ -90,12 +83,7 @@ export const ChatInput = ({
         placeholder={disabled ? 'AI is responding...' : 'Type your message...'}
         renderFooter={renderFooter}
       />
-      <ModelSelectorDialog
-        ref={modelSelectorRef}
-        selectedModel={selectedModel}
-        onModelSelect={handleModelSelect}
-        storageKey="simple-chat-model-storage"
-      />
+      <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={handleModelSelect} storageKey="chat-model-storage" />
     </>
   );
 };

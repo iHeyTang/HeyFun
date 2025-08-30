@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { WorkspaceFile } from '@/components/features/chat/preview/preview-content/workspace-preview/workspace-file';
+import { WorkspaceFile } from '@/components/features/tasks/preview/preview-content/workspace-preview/workspace-file';
 import Image from 'next/image';
 
 const EmptyState = () => (

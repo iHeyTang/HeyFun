@@ -1,6 +1,6 @@
 'use client';
 
-import { ChatHistorySidebar } from '@/components/features/simple-chat/chat-history-sidebar';
+import { ChatHistorySidebar } from '@/components/features/chat/chat-history-sidebar';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { useLLM } from '@/hooks/use-llm';
 import { useEffect } from 'react';

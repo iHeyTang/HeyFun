@@ -1,12 +1,12 @@
 'use client';
 
 import { getTask, createTask, terminateTask } from '@/actions/tasks';
-import { ChatInput } from '@/components/features/chat/input';
+import { ChatInput } from '@/components/features/tasks/input';
 import { useModelSelectorStore } from '@/components/features/model-selector';
-import { useInputToolsConfig } from '@/components/features/chat/input/config-tools';
-import { ChatMessages } from '@/components/features/chat/messages';
-import { ChatPreview } from '@/components/features/chat/preview';
-import { usePreviewData } from '@/components/features/chat/preview/preview-content/workspace-preview';
+import { useInputToolsConfig } from '@/components/features/tasks/input/config-tools';
+import { ChatMessages } from '@/components/features/tasks/messages';
+import { ChatPreview } from '@/components/features/tasks/preview';
+import { usePreviewData } from '@/components/features/tasks/preview/preview-content/workspace-preview';
 import { aggregateMessages } from '@/lib/browser/chat-messages';
 import { Message } from '@/lib/browser/chat-messages/types';
 import { useParams, useRouter } from 'next/navigation';

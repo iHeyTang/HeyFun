@@ -39,6 +39,8 @@ model Preferences {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   language       String?
+  defaultChatbot String?
+  defaultAgent   String?
 }
 
 model OrganizationUsers {
@@ -161,16 +163,16 @@ model Agents {
   @@index([organizationId, isDefault])
 }
 
-model InviteCodes {
-  id        String    @id @default(cuid())
-  code      String    @unique
-  email     String    @unique
-  isUsed    Boolean   @default(false)
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+model McpServerConfigs {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  organizationId  String
+  name            String
+  encryptedConfig String   @db.Text
 
-  @@index([isUsed])
+  @@index([organizationId])
+  @@index([createdAt])
 }
 
 enum AgentToolSource {

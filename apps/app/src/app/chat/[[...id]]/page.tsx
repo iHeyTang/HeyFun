@@ -1,7 +1,7 @@
 'use client';
 
 import { getChatSession } from '@/actions/chat';
-import { ChatContainer } from '@/components/features/simple-chat/chat-container';
+import { ChatContainer } from '@/components/features/chat/chat-container';
 import { useLLM } from '@/hooks/use-llm';
 import { useEffect, useState } from 'react';
 

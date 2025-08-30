@@ -2,8 +2,8 @@
 
 import { createTask } from '@/actions/tasks';
 import { useAgentSelectorStore } from '@/components/features/agent-selector';
-import { ChatInput } from '@/components/features/chat/input';
-import { useInputToolsConfig } from '@/components/features/chat/input/config-tools';
+import { ChatInput } from '@/components/features/tasks/input';
+import { useInputToolsConfig } from '@/components/features/tasks/input/config-tools';
 import { useModelSelectorStore } from '@/components/features/model-selector';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
