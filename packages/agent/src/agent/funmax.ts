@@ -1,7 +1,8 @@
 import { Chat } from '@repo/llm/chat';
-import fs from 'fs/promises';
 import os from 'os';
-import path from 'path';
+import NEXT_STEP_PROMPT from '../prompts/next';
+import PLAN_PROMPT from '../prompts/plan';
+import SYSTEM_PROMPT from '../prompts/system';
 import sandboxManager from '../sandbox';
 import { ToolCallContextHelper } from '../tools/toolcall';
 import type { AddMcpConfig } from '../tools/types';
@@ -10,18 +11,12 @@ import { renderTemplate } from '../utils/template';
 import { BaseAgentEvents } from './base';
 import { ReActAgent, ReActAgentConfig } from './react';
 
-export interface PromptTemplates {
-  system: string;
-  next: string;
-  plan: string;
-}
-
 export interface FunMaxConfig extends ReActAgentConfig {
   task_request: string;
   language?: string;
   tools?: AddMcpConfig[];
   history?: Chat.ChatCompletionMessageParam[];
-  promptTemplates?: PromptTemplates;
+  systemPromptTemplate?: string;
 }
 
 /**
@@ -37,7 +32,7 @@ export class FunMax extends ReActAgent {
   public readonly tools: AddMcpConfig[];
   public readonly task_request: string;
   public readonly history: Chat.ChatCompletionMessageParam[];
-  public readonly custom_prompt_templates: PromptTemplates;
+  public readonly system_prompt_template: string;
 
   // 上下文助手（暂时设为可选，实际使用时需要初始化）
   private _tool_call_context_helper?: ToolCallContextHelper;
@@ -49,11 +44,7 @@ export class FunMax extends ReActAgent {
     this.tools = config.tools || [];
     this.task_request = config.task_request;
     this.history = config.history || [];
-    this.custom_prompt_templates = config.promptTemplates || {
-      system: '',
-      next: '',
-      plan: '',
-    };
+    this.system_prompt_template = config.systemPromptTemplate || SYSTEM_PROMPT;
   }
 
   /**
@@ -74,7 +65,7 @@ export class FunMax extends ReActAgent {
     console.log(`   Current Working Directory: ${process.cwd()}`);
 
     // 添加系统提示词到内存
-    const system_prompt = renderTemplate(this.custom_prompt_templates.system, {
+    const system_prompt = renderTemplate(this.system_prompt_template, {
       language: this.language || 'English',
       max_steps: this.max_steps,
       current_time: new Date().toISOString(),
@@ -150,7 +141,7 @@ export class FunMax extends ReActAgent {
   public async plan(): Promise<string> {
     this.emit(BaseAgentEvents.LIFECYCLE_PLAN_START, {});
 
-    const planPrompt = renderTemplate(this.custom_prompt_templates.plan, {
+    const planPrompt = renderTemplate(PLAN_PROMPT, {
       language: this.language || 'English',
       max_steps: this.max_steps,
       available_tools:
@@ -182,7 +173,7 @@ export class FunMax extends ReActAgent {
    */
   public async think(): Promise<boolean> {
     // 更新下一步提示词
-    const next_step_prompt = renderTemplate(this.custom_prompt_templates.next, {
+    const next_step_prompt = renderTemplate(NEXT_STEP_PROMPT, {
       max_steps: this.max_steps,
       current_step: this.current_step,
       remaining_steps: this.max_steps - this.current_step,

@@ -8,11 +8,7 @@ export interface Agent {
   name: string;
   description: string;
   tools: string[];
-  promptTemplates?: {
-    system: string;
-    plan: string;
-    next: string;
-  };
+  systemPromptTemplate: string | null;
   isDefault: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -22,11 +18,7 @@ type CreateAgentArgs = {
   name: string;
   description: string;
   tools: string[];
-  promptTemplates?: {
-    system: string;
-    plan: string;
-    next: string;
-  };
+  systemPromptTemplate?: string;
   isDefault?: boolean;
 };
 
@@ -35,18 +27,14 @@ type UpdateAgentArgs = {
   name: string;
   description: string;
   tools: string[];
-  promptTemplates?: {
-    system: string;
-    plan: string;
-    next: string;
-  };
+  systemPromptTemplate?: string;
   isDefault?: boolean;
 };
 
 export const getAgents = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
   const agents = await prisma.agents.findMany({
     where: { organizationId: orgId },
-    orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
   });
 
   return agents.map(agent => ({
@@ -54,7 +42,6 @@ export const getAgents = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) 
     name: agent.name,
     description: agent.description,
     tools: agent.tools as string[],
-    promptTemplates: agent.promptTemplates as any,
     isDefault: agent.isDefault,
     createdAt: agent.createdAt,
     updatedAt: agent.updatedAt,
@@ -62,7 +49,7 @@ export const getAgents = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) 
 });
 
 export const createAgent = withUserAuth(async ({ orgId, args }: AuthWrapperContext<CreateAgentArgs>) => {
-  const { name, description, tools, promptTemplates, isDefault = false } = args;
+  const { name, description, tools, systemPromptTemplate, isDefault = false } = args;
 
   // If this is set as default, unset all other defaults
   if (isDefault) {
@@ -78,7 +65,7 @@ export const createAgent = withUserAuth(async ({ orgId, args }: AuthWrapperConte
       description,
       organizationId: orgId,
       tools: tools,
-      promptTemplates: promptTemplates,
+      systemPromptTemplate,
       isDefault,
     },
   });
@@ -88,7 +75,7 @@ export const createAgent = withUserAuth(async ({ orgId, args }: AuthWrapperConte
     name: agent.name,
     description: agent.description,
     tools: agent.tools as string[],
-    promptTemplates: agent.promptTemplates as any,
+    systemPromptTemplate: agent.systemPromptTemplate,
     isDefault: agent.isDefault,
     createdAt: agent.createdAt,
     updatedAt: agent.updatedAt,
@@ -96,7 +83,7 @@ export const createAgent = withUserAuth(async ({ orgId, args }: AuthWrapperConte
 });
 
 export const updateAgent = withUserAuth(async ({ orgId, args }: AuthWrapperContext<UpdateAgentArgs>) => {
-  const { id, name, description, tools, promptTemplates, isDefault = false } = args;
+  const { id, name, description, tools, systemPromptTemplate, isDefault = false } = args;
 
   // Verify agent belongs to organization
   const existingAgent = await prisma.agents.findUnique({
@@ -125,7 +112,7 @@ export const updateAgent = withUserAuth(async ({ orgId, args }: AuthWrapperConte
       name,
       description,
       tools: tools,
-      promptTemplates: promptTemplates,
+      systemPromptTemplate,
       isDefault,
     },
   });
@@ -135,7 +122,7 @@ export const updateAgent = withUserAuth(async ({ orgId, args }: AuthWrapperConte
     name: agent.name,
     description: agent.description,
     tools: agent.tools as string[],
-    promptTemplates: agent.promptTemplates as any,
+    systemPromptTemplate: agent.systemPromptTemplate,
     isDefault: agent.isDefault,
     createdAt: agent.createdAt,
     updatedAt: agent.updatedAt,
@@ -181,7 +168,7 @@ export const getAgent = withUserAuth(async ({ orgId, args }: AuthWrapperContext<
     name: agent.name,
     description: agent.description,
     tools: agent.tools as string[],
-    promptTemplates: agent.promptTemplates as any,
+    systemPromptTemplate: agent.systemPromptTemplate,
     isDefault: agent.isDefault,
     createdAt: agent.createdAt,
     updatedAt: agent.updatedAt,

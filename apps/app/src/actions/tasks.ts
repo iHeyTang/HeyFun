@@ -51,7 +51,7 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
   // Get agent configuration if agentId is provided
   let agent = null;
   let finalToolIds = toolIds;
-  let promptTemplates = undefined;
+  let systemPromptTemplate = undefined;
 
   if (agentId) {
     agent = await prisma.agents.findUnique({
@@ -65,7 +65,7 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
     }
 
     // Use agent's prompt templates
-    promptTemplates = agent.promptTemplates;
+    systemPromptTemplate = agent.systemPromptTemplate || undefined;
   }
 
   // Query tool configurations
@@ -139,7 +139,7 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
     should_plan: shouldPlan,
     tools: processedTools.filter(tool => tool !== undefined) as AddMcpConfig[],
     history: history as Chat.ChatCompletionMessageParam[],
-    promptTemplates: promptTemplates,
+    systemPromptTemplate: systemPromptTemplate,
     sandboxId: orgId,
   };
 

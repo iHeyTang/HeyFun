@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getAgents, createAgent, updateAgent, deleteAgent, Agent } from '@/actions/agents';
+import { getAgents, createAgent, updateAgent, deleteAgent, Agent, getAgent } from '@/actions/agents';
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -24,7 +24,7 @@ export default function AgentsPage() {
     try {
       const result = await getAgents({});
       if (result.data) {
-        setAgents(result.data);
+        setAgents(result.data as Agent[]);
       }
     } catch (error) {
       console.error('Failed to load agents:', error);
@@ -59,7 +59,7 @@ export default function AgentsPage() {
           name: agentData.name!,
           description: agentData.description!,
           tools: agentData.tools!,
-          promptTemplates: agentData.promptTemplates,
+          systemPromptTemplate: agentData.systemPromptTemplate || undefined,
           isDefault: agentData.isDefault,
         });
       } else {
@@ -67,7 +67,7 @@ export default function AgentsPage() {
           name: agentData.name!,
           description: agentData.description!,
           tools: agentData.tools!,
-          promptTemplates: agentData.promptTemplates,
+          systemPromptTemplate: agentData.systemPromptTemplate || undefined,
           isDefault: agentData.isDefault,
         });
       }
@@ -85,7 +85,7 @@ export default function AgentsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Agents</h1>
-          <p className="text-muted-foreground">Configure custom agents with specific tools and prompts</p>
+          <p className="text-muted-foreground">Configure custom agents with specific prompt and tools</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -97,9 +97,9 @@ export default function AgentsPage() {
           <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingAgent ? 'Edit Agent' : 'Create New Agent'}</DialogTitle>
-              <DialogDescription>Configure your custom agent with specific tools and prompt templates</DialogDescription>
+              <DialogDescription>Configure your custom agent with specific prompt and tools</DialogDescription>
             </DialogHeader>
-            <AgentForm agent={editingAgent} onSave={handleSaveAgent} onCancel={() => setIsDialogOpen(false)} isSaving={isSaving} />
+            <AgentForm agentId={editingAgent?.id} onSave={handleSaveAgent} onCancel={() => setIsDialogOpen(false)} isSaving={isSaving} />
           </DialogContent>
         </Dialog>
       </div>
@@ -117,11 +117,11 @@ export default function AgentsPage() {
                   <CardDescription>{agent.description}</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleEditAgent(agent)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleEditAgent(agent)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   {!agent.isDefault && (
-                    <Button variant="outline" size="sm" onClick={() => handleDeleteAgent(agent.id)}>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteAgent(agent.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
@@ -140,12 +140,6 @@ export default function AgentsPage() {
                     ))}
                   </div>
                 </div>
-                {agent.promptTemplates && (
-                  <div>
-                    <Label className="text-xs font-medium">Custom Prompts</Label>
-                    <p className="text-muted-foreground text-xs">Custom system, plan, and next step prompts configured</p>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -156,23 +150,37 @@ export default function AgentsPage() {
 }
 
 interface AgentFormProps {
-  agent?: Agent | null;
+  agentId?: string | null;
   onSave: (agentData: Partial<Agent>) => void;
   onCancel: () => void;
   isSaving?: boolean;
 }
 
-function AgentForm({ agent, onSave, onCancel, isSaving }: AgentFormProps) {
+function AgentForm({ agentId, onSave, onCancel, isSaving }: AgentFormProps) {
+  const [agent, setAgent] = useState<Agent | null>(null);
+
   const [formData, setFormData] = useState({
     name: agent?.name || '',
     description: agent?.description || '',
     tools: agent?.tools || [],
-    promptTemplates: agent?.promptTemplates || {
-      system: '',
-      plan: '',
-      next: '',
-    },
+    systemPromptTemplate: agent?.systemPromptTemplate || undefined,
   });
+
+  useEffect(() => {
+    if (agentId) {
+      getAgent({ id: agentId }).then(result => {
+        if (result.data) {
+          setAgent(result.data as Agent);
+          setFormData({
+            name: result.data.name,
+            description: result.data.description,
+            tools: result.data.tools,
+            systemPromptTemplate: result.data.systemPromptTemplate || undefined,
+          });
+        }
+      });
+    }
+  }, [agentId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,60 +212,19 @@ function AgentForm({ agent, onSave, onCancel, isSaving }: AgentFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label>Tools</Label>
-        <p className="text-muted-foreground text-sm">Select tools this agent can use (TODO: Implement tool selector)</p>
+        <Label htmlFor="system-prompt">System Prompt</Label>
+        <Textarea
+          id="system-prompt"
+          value={formData.systemPromptTemplate}
+          onChange={e => setFormData({ ...formData, systemPromptTemplate: e.target.value })}
+          placeholder="Enter custom system prompt template"
+          rows={4}
+        />
       </div>
 
-      <div className="space-y-4">
-        <Label>Prompt Templates (Optional)</Label>
-
-        <div className="space-y-2">
-          <Label htmlFor="system-prompt">System Prompt</Label>
-          <Textarea
-            id="system-prompt"
-            value={formData.promptTemplates.system}
-            onChange={e =>
-              setFormData({
-                ...formData,
-                promptTemplates: { ...formData.promptTemplates, system: e.target.value },
-              })
-            }
-            placeholder="Enter custom system prompt template"
-            rows={4}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="plan-prompt">Plan Prompt</Label>
-          <Textarea
-            id="plan-prompt"
-            value={formData.promptTemplates.plan}
-            onChange={e =>
-              setFormData({
-                ...formData,
-                promptTemplates: { ...formData.promptTemplates, plan: e.target.value },
-              })
-            }
-            placeholder="Enter custom plan prompt template"
-            rows={4}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="next-prompt">Next Step Prompt</Label>
-          <Textarea
-            id="next-prompt"
-            value={formData.promptTemplates.next}
-            onChange={e =>
-              setFormData({
-                ...formData,
-                promptTemplates: { ...formData.promptTemplates, next: e.target.value },
-              })
-            }
-            placeholder="Enter custom next step prompt template"
-            rows={4}
-          />
-        </div>
+      <div className="space-y-2">
+        <Label>Tools</Label>
+        <p className="text-muted-foreground text-sm">Select tools this agent can use (TODO: Implement tool selector)</p>
       </div>
 
       <div className="flex justify-end gap-2">

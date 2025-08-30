@@ -1,7 +1,4 @@
 import { EventItem, FunMax, FunMaxConfig } from '@repo/agent';
-import NEXT_STEP_PROMPT from '../prompt/funmax/next';
-import PLAN_PROMPT from '../prompt/funmax/plan';
-import SYSTEM_PROMPT from '../prompt/funmax/system';
 
 export interface TaskStatus {
   agent: FunMax;
@@ -26,18 +23,6 @@ export class TaskRuntime {
   private updatedAt: Date;
 
   private constructor(config: FunMaxConfig) {
-    // 设置默认提示模板
-    if (!config.promptTemplates) {
-      config.promptTemplates = {
-        system: SYSTEM_PROMPT,
-        next: NEXT_STEP_PROMPT,
-        plan: PLAN_PROMPT,
-      };
-    }
-    config.promptTemplates.system = config.promptTemplates.system || SYSTEM_PROMPT;
-    config.promptTemplates.next = config.promptTemplates.next || NEXT_STEP_PROMPT;
-    config.promptTemplates.plan = config.promptTemplates.plan || PLAN_PROMPT;
-
     const now = new Date();
     this.createdAt = now;
     this.updatedAt = now;

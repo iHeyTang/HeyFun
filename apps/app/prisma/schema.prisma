@@ -148,17 +148,18 @@ model AigcProviderConfigs {
 }
 
 model Agents {
-  id              String   @id @default(cuid())
-  name            String
-  description     String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  organizationId  String
+  id                   String   @id @default(cuid())
+  name                 String
+  description          String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  organizationId       String
+  systemPromptTemplate String?
   /// [JSONSchema] String[]
-  tools           Json     @default("[]")
+  tools                Json     @default("[]")
   /// [JSONSchema] Object with system, plan, next template strings
-  promptTemplates Json?
-  isDefault       Boolean  @default(false)
+  promptTemplates      Json?
+  isDefault            Boolean  @default(false)
 
   @@index([organizationId])
   @@index([createdAt])
