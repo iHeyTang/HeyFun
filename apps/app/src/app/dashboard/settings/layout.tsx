@@ -16,26 +16,38 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         <div className="text-muted-foreground px-2 py-2 text-xs font-medium whitespace-nowrap">Settings</div>
         <div className="flex h-full flex-col pl-0.5">
           <Link
-            href="/settings/llm"
-            className={cn('hover:bg-muted cursor-pointer p-2 text-sm transition-colors', pathname.startsWith('/settings/llm') && 'bg-muted')}
+            href="/dashboard/settings/llm"
+            className={cn(
+              'hover:bg-muted cursor-pointer p-2 text-sm transition-colors',
+              pathname.startsWith('/dashboard/settings/llm') && 'bg-muted',
+            )}
           >
             {t('models')}
           </Link>
           <Link
-            href="/settings/aigc"
-            className={cn('hover:bg-muted cursor-pointer p-2 text-sm transition-colors', pathname.startsWith('/settings/aigc') && 'bg-muted')}
+            href="/dashboard/settings/aigc"
+            className={cn(
+              'hover:bg-muted cursor-pointer p-2 text-sm transition-colors',
+              pathname.startsWith('/dashboard/settings/aigc') && 'bg-muted',
+            )}
           >
             {t('aigc')}
           </Link>
           <Link
-            href="/settings/agents"
-            className={cn('hover:bg-muted cursor-pointer p-2 text-sm transition-colors', pathname.startsWith('/settings/agents') && 'bg-muted')}
+            href="/dashboard/settings/agents"
+            className={cn(
+              'hover:bg-muted cursor-pointer p-2 text-sm transition-colors',
+              pathname.startsWith('/dashboard/settings/agents') && 'bg-muted',
+            )}
           >
             {t('agents')}
           </Link>
           <Link
-            href="/settings/preferences"
-            className={cn('hover:bg-muted cursor-pointer p-2 text-sm transition-colors', pathname === '/settings/preferences' && 'bg-muted')}
+            href="/dashboard/settings/preferences"
+            className={cn(
+              'hover:bg-muted cursor-pointer p-2 text-sm transition-colors',
+              pathname === '/dashboard/settings/preferences' && 'bg-muted',
+            )}
           >
             {t('preferences')}
           </Link>

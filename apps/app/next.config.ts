@@ -27,23 +27,23 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: '/',
-        destination: '/chat',
+        source: '/dashboard',
+        destination: '/dashboard/chat',
         permanent: true,
       },
       {
-        source: '/settings',
-        destination: '/settings/llm',
+        source: '/dashboard/settings',
+        destination: '/dashboard/settings/llm',
         permanent: true,
       },
       {
-        source: '/settings/llm',
-        destination: '/settings/llm/deepseek',
+        source: '/dashboard/settings/llm',
+        destination: '/dashboard/settings/llm/deepseek',
         permanent: true,
       },
       {
-        source: '/settings/aigc',
-        destination: '/settings/aigc/doubao',
+        source: '/dashboard/settings/aigc',
+        destination: '/dashboard/settings/aigc/doubao',
         permanent: true,
       },
     ];

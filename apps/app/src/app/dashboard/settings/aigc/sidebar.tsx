@@ -35,7 +35,7 @@ export function AigcProviderSidebar() {
       <ScrollArea className="flex-1 py-4">
         <div className="space-y-1">
           {providerInfos.map(info => {
-            const isSelected = pathname.startsWith(`/settings/aigc/${info.provider}`);
+            const isSelected = pathname.startsWith(`/dashboard/settings/aigc/${info.provider}`);
 
             return (
               <div
@@ -43,7 +43,7 @@ export function AigcProviderSidebar() {
                 className={`flex cursor-pointer items-center justify-between p-2 px-4 transition-colors ${
                   isSelected ? 'bg-accent' : 'hover:bg-accent'
                 }`}
-                onClick={() => router.push(`/settings/aigc/${info.provider}`)}
+                onClick={() => router.push(`/dashboard/settings/aigc/${info.provider}`)}
               >
                 <div className="flex items-center gap-2">
                   <Palette className="h-3 w-3" />

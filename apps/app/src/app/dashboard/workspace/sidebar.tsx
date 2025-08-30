@@ -17,7 +17,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/dropdown-menu';
 import Link from 'next/link';
 
 interface TreeNode extends WorkspaceItem {
@@ -340,7 +340,7 @@ export function WorkspaceSidebar() {
         await removeFromTree(path);
         // 如果当前显示的是被删除的文件，跳转到根目录
         if (currentPath === path) {
-          router.push('/workspace');
+          router.push('/dashboard/workspace');
         }
       } catch (error) {
         console.error('Failed to remove file:', error);
@@ -369,7 +369,7 @@ export function WorkspaceSidebar() {
             if (node.isDirectory) {
               toggleDirectory(node.path);
             } else {
-              router.push(`/workspace?path=${encodeURIComponent(node.path)}`);
+              router.push(`/dashboard/workspace?path=${encodeURIComponent(node.path)}`);
             }
           }}
           title={hasError ? 'Failed to load directory. Click to retry.' : undefined}
@@ -406,7 +406,7 @@ export function WorkspaceSidebar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem className="cursor-pointer">
-                <Link href={`/api/workspace/download?path=${node.path}`} download={node.name} className="flex cursor-pointer gap-2">
+                <Link href={`/dashboard/api/workspace/download?path=${node.path}`} download={node.name} className="flex cursor-pointer gap-2">
                   <Download className="h-4 w-4" />
                   Download
                 </Link>

@@ -1,34 +1,13 @@
 'use client';
 
+import { useRecentChatSessions } from '@/components/features/chat/chat-container';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { ChatSessions } from '@prisma/client';
+import { MessageSquare, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { create } from 'zustand';
-import { MessageSquare, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { getChatSessions } from '@/actions/chat';
-
-export const useRecentChatSessions = create<{
-  loading: boolean;
-  sessions: ChatSessions[];
-  refreshSessions: () => Promise<void>;
-}>(set => ({
-  loading: false,
-  sessions: [],
-  refreshSessions: async () => {
-    set({ loading: true });
-    try {
-      const res = await getChatSessions({ page: 1, pageSize: 30 });
-      set({ sessions: res.data?.sessions || [], loading: false });
-    } catch (error) {
-      console.error('Error refreshing sessions:', error);
-      set({ loading: false });
-    }
-  },
-}));
 
 export function ChatHistorySidebar() {
   const { sessions, refreshSessions, loading } = useRecentChatSessions();
@@ -45,7 +24,7 @@ export function ChatHistorySidebar() {
       <div className="flex items-center justify-between px-2">
         <div className="text-muted-foreground text-xs font-medium whitespace-nowrap">Chat History</div>
         <Button variant="ghost" size="sm" className="h-6 w-6 p-0" asChild>
-          <Link href="/chat">
+          <Link href="/dashboard/chat">
             <Plus className="h-3 w-3" />
           </Link>
         </Button>
@@ -70,7 +49,7 @@ export function ChatHistorySidebar() {
         ) : (
           sessions.map(session => (
             <Link
-              href={`/chat/${session.id}`}
+              href={`/dashboard/chat/${session.id}`}
               key={session.id}
               className={cn(
                 'hover:bg-muted flex cursor-pointer items-center gap-2 p-2 pl-2.5 text-sm',

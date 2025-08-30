@@ -50,7 +50,7 @@ export default function AigcProviderDetailsPanel({ params }: { params: Promise<{
           <div className="flex flex-1 items-center">
             <h2 className="text-2xl leading-none font-bold">{providerInfo.displayName}</h2>
           </div>
-          <Link href={`/settings/aigc/${providerInfo.provider}/config`}>
+          <Link href={`/dashboard/settings/aigc/${providerInfo.provider}/config`}>
             <Button variant="ghost" size="sm">
               <Settings className="mr-2 h-4 w-4" />
               配置提供商

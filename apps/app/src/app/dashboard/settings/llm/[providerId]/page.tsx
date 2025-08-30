@@ -55,7 +55,7 @@ export default function ProviderDetailsPanel() {
             <h2 className="text-2xl leading-none font-bold">{providerInfo.displayName}</h2>
           </div>
           {providerInfo.provider === 'builtin' ? null : (
-            <Link href={`/settings/llm/${providerInfo.provider}/config`}>
+            <Link href={`/dashboard/settings/llm/${providerInfo.provider}/config`}>
               <Button variant="ghost" size="sm">
                 <Settings className="mr-2 h-4 w-4" />
                 Configure Provider

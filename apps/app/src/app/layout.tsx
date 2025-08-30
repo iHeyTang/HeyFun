@@ -1,25 +1,12 @@
-import { ConfirmDialog } from '@/components/block/confirm';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Toaster } from '@/components/ui/sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
-import { ClerkProvider, OrganizationList, OrganizationSwitcher, SignedIn, UserButton } from '@clerk/nextjs';
-import { auth } from '@clerk/nextjs/server';
+import { ClerkProvider } from '@clerk/nextjs';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Github } from 'lucide-react';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale } from 'next-intl/server';
 import { ThemeProvider } from 'next-themes';
 import { Geist, Geist_Mono } from 'next/font/google';
-import Image from 'next/image';
-import Link from 'next/link';
 import './globals.css';
-import NotificationEn from './notification-en';
-import NotificationZh from './notification-zh';
-import { AppSidebar } from './sidebar';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -32,52 +19,89 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'HeyFun',
-  description: "Hey! Let's bring a little fun to this world together.",
+  title: {
+    default: 'HeyFun - Universal AI Studio',
+    template: '%s | HeyFun',
+  },
+  description:
+    'The creative platform that connects all AI services. Customizable, fully connected AI studio providing intelligent workflow orchestration and creative productivity platform.',
+  keywords: [
+    'AI Studio',
+    'AI Platform',
+    'Artificial Intelligence',
+    'Creative Platform',
+    'AI Tools',
+    'AI Services',
+    'Smart Workflow',
+    'AI Agent',
+    'Universal AI',
+    'Creative AI',
+    'AI Workflow',
+    'Machine Learning',
+    'Productivity Tools',
+    'AI Integration',
+  ],
+  authors: [{ name: 'HeyFun Team' }],
+  creator: 'HeyFun',
+  publisher: 'HeyFun',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL('https://heyfun.ai'),
+  alternates: {
+    canonical: '/',
+    languages: {
+      'en-US': '/en',
+      'zh-CN': '/zh',
+    },
+  },
   icons: {
     icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+    other: {
+      rel: 'apple-touch-icon-precomposed',
+      url: '/logo.png',
+    },
   },
-};
-
-const Header = ({ className }: { className?: string }) => {
-  return (
-    <div className={cn('flex items-center justify-between overflow-hidden border-b p-2', className)}>
-      <div className="flex items-center gap-2">
-        <Link href="/">
-          <div className="from-primary/20 to-primary/5 ml-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border bg-gradient-to-br">
-            <Image src="/logo.png" alt="Fun Studio" width={20} height={20} className="object-contain opacity-80" />
-          </div>
-        </Link>
-        <OrganizationSwitcher hidePersonal />
-        <Dialog>
-          <DialogTrigger asChild>
-            <Badge className="cursor-pointer bg-yellow-50 text-yellow-500 transition hover:scale-101">EARLY ACCESS</Badge>
-          </DialogTrigger>
-          <DialogContent showCloseButton={false}>
-            <DialogHeader>
-              <DialogTitle>EARLY ACCESS</DialogTitle>
-            </DialogHeader>
-            <Tabs className="flex-1">
-              <TabsList>
-                <TabsTrigger value="zh">中文</TabsTrigger>
-                <TabsTrigger value="en">English</TabsTrigger>
-              </TabsList>
-              <TabsContent value="zh">
-                <NotificationZh />
-              </TabsContent>
-              <TabsContent value="en">
-                <NotificationEn />
-              </TabsContent>
-            </Tabs>
-          </DialogContent>
-        </Dialog>
-        <Link href="https://github.com/iHeyTang/HeyFun" target="_blank">
-          <Github className="text-muted-foreground h-3 w-3 cursor-pointer" />
-        </Link>
-      </div>
-      <UserButton />
-    </div>
-  );
+  openGraph: {
+    title: 'HeyFun - Universal AI Studio',
+    description: 'The creative platform that connects all AI services. Customizable • Fully Connected • AI Studio',
+    url: 'https://heyfun.ai',
+    siteName: 'HeyFun',
+    images: [
+      {
+        url: '/logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'HeyFun - Universal AI Studio',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'HeyFun - Universal AI Studio',
+    description: 'The creative platform that connects all AI services',
+    images: ['/logo.png'],
+    creator: '@HeyFunAI',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  manifest: '/manifest.json',
+  category: 'technology',
 };
 
 export default async function RootLayout({
@@ -86,7 +110,6 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
-  const { orgId } = await auth();
 
   return (
     <ClerkProvider>
@@ -94,24 +117,8 @@ export default async function RootLayout({
         <body className={`${geistSans.variable} ${geistMono.variable} h-screen w-screen overflow-hidden antialiased`}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <NextIntlClientProvider>
-              <SignedIn>
-                {!orgId ? (
-                  <div className="flex h-full flex-col items-center justify-center">
-                    <OrganizationList hidePersonal />
-                  </div>
-                ) : (
-                  <div className="flex h-full flex-col">
-                    <Header className="h-12" />
-                    <div className="flex h-[calc(100vh-48px)] w-full">
-                      <AppSidebar />
-                      <div className="h-full flex-1 overflow-hidden">{children}</div>
-                    </div>
-                  </div>
-                )}
-              </SignedIn>
+              <div className="h-full flex-1 overflow-hidden">{children}</div>
             </NextIntlClientProvider>
-            <Toaster />
-            <ConfirmDialog />
           </ThemeProvider>
           <Analytics />
           <SpeedInsights />

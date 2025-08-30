@@ -53,7 +53,7 @@ export function TaskHistorySidebar() {
         {tasks.map(item => (
           <div key={item.id} className="group relative" onMouseEnter={() => setHoveredTaskId(item.id)} onMouseLeave={() => setHoveredTaskId(null)}>
             <Link
-              href={`/tasks/${item.id}`}
+              href={`/dashboard/tasks/${item.id}`}
               className={cn('hover:bg-muted block cursor-pointer p-2 pr-8 pl-2.5 text-sm', currentTaskId === item.id && 'bg-muted')}
             >
               <div className="truncate">{item.summary || item.prompt}</div>

@@ -1,0 +1,214 @@
+@keyframes scanBeam {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100vw);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}
+
+@keyframes typewriter {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink {
+  50% {
+    border-color: transparent;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes glow-dark {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(107, 114, 128, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 15px rgba(107, 114, 128, 0.5),
+      0 0 25px rgba(107, 114, 128, 0.3);
+  }
+}
+
+@keyframes luxury-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 20px rgba(107, 114, 128, 0.1),
+      0 0 40px rgba(156, 163, 175, 0.05),
+      0 0 60px rgba(209, 213, 219, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(107, 114, 128, 0.15),
+      0 0 60px rgba(156, 163, 175, 0.1),
+      0 0 80px rgba(209, 213, 219, 0.15);
+  }
+}
+
+.typewriter-dark {
+  overflow: hidden;
+  border-right: 2px solid #4b5563;
+  white-space: nowrap;
+  margin: 0 auto;
+  letter-spacing: 0.1em;
+  animation:
+    typewriter 3s steps(30, end) 0.5s forwards,
+    blink 0.75s infinite;
+  width: 0;
+}
+
+.floating {
+  animation: float 6s ease-in-out infinite;
+}
+
+.shimmer-text-dark {
+  background: linear-gradient(90deg, #374151, #6b7280, #374151);
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.glow-effect-dark {
+  animation: glow-dark 2s ease-in-out infinite alternate;
+}
+
+.luxury-glow {
+  animation: luxury-glow 3s ease-in-out infinite alternate;
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #d1d5db;
+  border-radius: 50%;
+}
+
+.particle-1 {
+  top: 20%;
+  left: 15%;
+  animation: float 4s ease-in-out infinite;
+}
+.particle-2 {
+  top: 60%;
+  left: 85%;
+  animation: float 5s ease-in-out infinite 1s;
+}
+.particle-3 {
+  top: 80%;
+  left: 10%;
+  animation: float 6s ease-in-out infinite 2s;
+}
+.particle-4 {
+  top: 30%;
+  left: 80%;
+  animation: float 4.5s ease-in-out infinite 1.5s;
+}
+.particle-5 {
+  top: 70%;
+  left: 20%;
+  animation: float 5.5s ease-in-out infinite 0.5s;
+}
+
+/* 页面加载时的渐入动画 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUpDelayed {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUpMoreDelayed {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 应用动画的类 */
+.animate-fade-in-title {
+  animation: fadeInUp 0.6s ease-out 0.15s both;
+}
+
+.animate-fade-in-subtitle {
+  animation: fadeInUpDelayed 0.6s ease-out 0.45s both;
+}
+
+.animate-fade-in-buttons {
+  animation: fadeInUpMoreDelayed 0.6s ease-out 0.75s both;
+}

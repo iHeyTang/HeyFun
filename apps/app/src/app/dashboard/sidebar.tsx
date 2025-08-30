@@ -13,22 +13,22 @@ const navItems = [
   {
     icon: MessageSquare,
     label: 'Chat',
-    path: '/chat',
+    path: '/dashboard/chat',
   },
   {
     icon: Bot,
     label: 'Tasks',
-    path: '/tasks',
+    path: '/dashboard/tasks',
   },
   {
     icon: Palette,
     label: 'Paintboard',
-    path: '/paintboard',
+    path: '/dashboard/paintboard',
   },
   {
     icon: FolderOpen,
     label: 'Workspace',
-    path: '/workspace',
+    path: '/dashboard/workspace',
   },
 ];
 
@@ -36,12 +36,12 @@ const bottomNavItems = [
   {
     icon: BoxIcon,
     label: 'Tools',
-    path: '/tools',
+    path: '/dashboard/tools',
   },
   {
     icon: SettingsIcon,
     label: 'Settings',
-    path: '/settings',
+    path: '/dashboard/settings',
   },
 ];
 

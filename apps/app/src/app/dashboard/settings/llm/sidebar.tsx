@@ -15,7 +15,7 @@ export function ProviderSidebar() {
       <ScrollArea className="flex-1 py-4">
         <div className="space-y-1">
           {providerInfos?.map(info => {
-            const isSelected = pathname.startsWith(`/settings/llm/${info.provider}`);
+            const isSelected = pathname.startsWith(`/dashboard/settings/llm/${info.provider}`);
 
             return (
               <div
@@ -23,7 +23,7 @@ export function ProviderSidebar() {
                 className={`flex cursor-pointer items-center justify-between p-2 px-4 transition-colors ${
                   isSelected ? 'bg-accent' : 'hover:bg-accent'
                 }`}
-                onClick={() => router.push(`/settings/llm/${info.provider}`)}
+                onClick={() => router.push(`/dashboard/settings/llm/${info.provider}`)}
               >
                 <div className="flex items-center gap-2">
                   <Settings className="h-3 w-3" />

@@ -1,13 +1,14 @@
 'use client';
 
-import { createChatSession, sendMessage } from '@/actions/chat';
+import { createChatSession, getChatSessions, sendMessage } from '@/actions/chat';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { useRecentChatSessions } from '../../../app/chat/sidebar';
 import { ChatInput, useChatbotModelSelector } from './chat-input';
 import { ChatMessage } from './chat-message';
+import { create } from 'zustand';
+import { ChatSessions } from '@prisma/client';
 
 interface Message {
   id: string;
@@ -23,6 +24,25 @@ interface ChatContainerProps {
   existingSession?: any; // Will be typed properly with Prisma types
   loading?: boolean;
 }
+
+export const useRecentChatSessions = create<{
+  loading: boolean;
+  sessions: ChatSessions[];
+  refreshSessions: () => Promise<void>;
+}>(set => ({
+  loading: false,
+  sessions: [],
+  refreshSessions: async () => {
+    set({ loading: true });
+    try {
+      const res = await getChatSessions({ page: 1, pageSize: 30 });
+      set({ sessions: res.data?.sessions || [], loading: false });
+    } catch (error) {
+      console.error('Error refreshing sessions:', error);
+      set({ loading: false });
+    }
+  },
+}));
 
 export const ChatContainer = ({ sessionId, existingSession, loading }: ChatContainerProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
