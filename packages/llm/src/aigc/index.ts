@@ -17,6 +17,24 @@ export type {
 // 统一接口和适配器
 export { BaseGenerationAdapter, WanAdapter, DoubaoAdapter, JimengAdapter, AdapterManager, aigcProviderConfigSchema } from './unified';
 
+// Providers 导出
+export {
+  BuiltinAigcProvider,
+  createBuiltinAigcProvider,
+  BuiltinModelRegistry,
+  UniversalAigcApiAdapter,
+  getProvider,
+  getAllProviders,
+  registerProvider,
+} from './providers';
+
+export type {
+  ModelDefinition,
+  ModelProviderConfig,
+  ServiceAdapter,
+  ModelRegistry,
+} from './providers';
+
 // 配置schema导出
 export { volcengineArkServiceConfigSchema } from './providers/volcengine/ark';
 export { volcengineJimengServiceConfigSchema } from './providers/volcengine/jimeng';
