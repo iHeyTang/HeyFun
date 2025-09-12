@@ -10,6 +10,9 @@ declare global {
       id: string;
       name: string;
     };
+
+    type PaintboardTaskParams = Record<string, any>;
+    type PaintboardTaskResult = { bucket: string; key: string }[];
   }
 }
 

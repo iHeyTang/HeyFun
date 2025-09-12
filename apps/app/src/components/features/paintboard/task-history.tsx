@@ -1,80 +1,39 @@
-import { PaintboardResult } from '@/actions/paintboard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { usePaintboardTasks, type PaintboardTask } from '@/hooks/use-paintboard-tasks';
-import { getImageUrl } from '@/lib/browser/image';
 import { formatDate } from 'date-fns';
 import { Check, Clock, Copy, Download } from 'lucide-react';
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { MediaPreview } from './media-preview';
-
-// Check if file is video
-const isVideoFile = (filename: string): boolean => {
-  const videoExtensions = ['.mp4', '.avi', '.mov', '.webm'];
-  return videoExtensions.some(ext => filename.toLowerCase().endsWith(ext));
-};
-
-const isImageFile = (filename: string): boolean => {
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-  return imageExtensions.some(ext => filename.toLowerCase().endsWith(ext));
-};
+import { usePaintboardTasks, type PaintboardTask } from './use-paintboard-tasks';
+import { isImageExtension, isVideoExtension } from '@/lib/shared/file-type';
 
 export interface TaskHistoryRef {
   triggerRefresh: () => Promise<void>;
 }
 
 export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => {
-  const { tasks, loading, error, fetchTasks, pollResults, downloadFile, startPolling, startRealTimePolling, subscribeToRefresh, triggerRefresh } =
-    usePaintboardTasks();
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { tasks, loading, error, fetchTasks, downloadFile, startRealTimePolling, triggerRefresh } = usePaintboardTasks();
 
   // 暴露给父组件的方法
   useImperativeHandle(ref, () => ({
     triggerRefresh,
   }));
 
-  // 订阅刷新事件
-  useEffect(() => {
-    const unsubscribe = subscribeToRefresh(() => {
-      setRefreshTrigger(prev => prev + 1);
-    });
-    return unsubscribe;
-  }, [subscribeToRefresh]);
-
   // 检查是否有进行中的任务，如果有则开始实时轮询
   useEffect(() => {
-    const hasInProgressTasks = tasks.some(
-      task => task.status === 'processing' || task.status === 'pending' || !task.results || task.results.length === 0,
-    );
+    const hasInProgressTasks = tasks.some(task => {
+      const statusNotCompleted = task.status === 'processing' || task.status === 'pending';
+      return statusNotCompleted;
+    });
 
     if (hasInProgressTasks) {
       startRealTimePolling();
     }
   }, [tasks, startRealTimePolling]);
 
-  const handlePollResults = async () => {
-    try {
-      await pollResults();
-    } catch (error) {
-      console.error('Error polling results:', error);
-    }
-  };
-
-  const handleDownload = async (result: any, organizationId: string) => {
-    try {
-      await downloadFile(result.localPath, organizationId, result.filename);
-    } catch (error) {
-      console.error('Error downloading file:', error);
-    }
-  };
-
-  const handleStartPolling = async () => {
-    try {
-      await startPolling();
-    } catch (error) {
-      console.error('Error starting polling:', error);
-    }
+  const handleDownload = async (result: PaintboardTask['results'][number], organizationId: string) => {
+    await downloadFile(result.url, organizationId, result.key);
   };
 
   if (loading && tasks.length === 0) {
@@ -198,8 +157,8 @@ function TaskCard({ task, onDownload }: TaskCardProps) {
         <div className="mt-2 text-xs text-gray-400">{task.error}</div>
       ) : task.results && task.results.length > 0 ? (
         <div className="flex gap-4">
-          {task.results.map((result: PaintboardResult) => (
-            <ResultCard key={result.id} result={result} onDownload={() => onDownload(result, task.organizationId)} />
+          {task.results.map(result => (
+            <ResultCard key={result.key} result={result} onDownload={() => onDownload(result, task.organizationId)} />
           ))}
         </div>
       ) : (
@@ -243,18 +202,18 @@ function LoadingPlaceholder({ task }: LoadingPlaceholderProps) {
 }
 
 interface ResultCardProps {
-  result: PaintboardResult;
+  result: PaintboardTask['results'][number];
   onDownload: () => void;
 }
 
 function ResultCard({ result, onDownload }: ResultCardProps) {
-  const isVideo = isVideoFile(result.localPath);
-  const isImage = isImageFile(result.localPath);
+  const isVideo = isVideoExtension(result.key);
+  const isImage = isImageExtension(result.key);
 
   if (isVideo) {
     return (
-      <MediaPreview src={result.url} alt={result.filename} type="video" filename={result.filename} onDownload={onDownload}>
-        <div className="h-48 overflow-hidden rounded-lg bg-black">
+      <MediaPreview src={result.url} alt={result.key} type="video" filename={result.key} onDownload={onDownload}>
+        <div className="h-48 overflow-hidden rounded-lg">
           <video src={result.url} controls className="h-full w-full object-contain">
             Your browser does not support the video tag.
           </video>
@@ -265,9 +224,9 @@ function ResultCard({ result, onDownload }: ResultCardProps) {
 
   if (isImage) {
     return (
-      <MediaPreview src={getImageUrl(result.localPath)} alt={result.filename} type="image" filename={result.filename} onDownload={onDownload}>
-        <div className="h-48 overflow-hidden rounded-lg bg-black">
-          <img src={getImageUrl(result.localPath)} alt={result.filename} className="h-full w-full object-contain" />
+      <MediaPreview src={result.url} alt={result.key} type="image" filename={result.key} onDownload={onDownload}>
+        <div className="h-48 overflow-hidden rounded-lg">
+          <img src={result.url} alt={result.key} className="h-full w-full object-contain" />
         </div>
       </MediaPreview>
     );
@@ -275,7 +234,7 @@ function ResultCard({ result, onDownload }: ResultCardProps) {
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border p-3">
-      <div className="overflow-hidden text-sm text-ellipsis whitespace-nowrap">{result.filename}</div>
+      <div className="overflow-hidden text-sm text-ellipsis whitespace-nowrap">{result.key}</div>
       <Button onClick={onDownload} size="sm" variant="outline">
         <Download className="h-3 w-3" />
         Download

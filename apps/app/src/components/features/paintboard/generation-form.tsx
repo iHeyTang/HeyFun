@@ -1,14 +1,16 @@
 'use client';
 
-import { getAllServiceModels, submitGenerationTask } from '@/actions/paintboard';
+import { getSignedUploadUrl, getSignedUrl } from '@/actions/oss';
+import { getAllServiceModelInfos, submitGenerationTask } from '@/actions/paintboard';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Upload, FileWithPreview } from '@/components/ui/upload';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { GenerationType, ServiceModel } from '@repo/llm/aigc';
+import { BaseAigcModelInfo, GenerationType } from '@repo/llm/aigc';
+import { SquareIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -48,9 +50,13 @@ interface UnifiedGenerationFormProps {
 
 export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) {
   const [selectedGenerationType, setSelectedGenerationType] = useState<GenerationType>('text-to-image');
-  const [availableModels, setAvailableModels] = useState<ServiceModel[]>([]);
+  const [availableModels, setAvailableModels] = useState<BaseAigcModelInfo[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState<number>(5);
+  const [referenceImageFiles, setReferenceImageFiles] = useState<FileWithPreview[]>([]);
+  const [firstFrameFiles, setFirstFrameFiles] = useState<FileWithPreview[]>([]);
+  const [lastFrameFiles, setLastFrameFiles] = useState<FileWithPreview[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>({}); // 存储上传后的文件URL
   const form = useForm<FormData>({
     resolver: zodResolver(createFormSchema()),
     defaultValues: {
@@ -64,26 +70,19 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
 
   const watchedServiceModel = form.watch('serviceModel');
   const watchedAspectRatio = form.watch('aspectRatio');
-  const selectedServiceModel = useMemo(() => {
-    return availableModels.find(model => `${model.service}:${model.model}` === watchedServiceModel);
-  }, [availableModels, watchedServiceModel]);
 
-  const groupedModels = useMemo(() => {
-    return availableModels
-      .filter(model => model.parameterLimits?.generationType?.includes(selectedGenerationType))
-      .reduce(
-        (acc, model) => {
-          acc[model.service] = [...(acc[model.service] || []), model];
-          return acc;
-        },
-        {} as Record<string, ServiceModel[]>,
-      );
+  const filteredAvailableModels = useMemo(() => {
+    return availableModels.filter(model => model.parameterLimits?.generationType?.includes(selectedGenerationType));
   }, [availableModels, selectedGenerationType]);
+
+  const selectedServiceModel = useMemo(() => {
+    return availableModels.find(model => `${model.name}` === watchedServiceModel);
+  }, [availableModels, watchedServiceModel]);
 
   // Initialize and get all service models
   useEffect(() => {
     const loadModels = async () => {
-      const result = await getAllServiceModels({});
+      const result = await getAllServiceModelInfos({});
       if (result.data) {
         setAvailableModels(result.data);
       }
@@ -103,6 +102,11 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
 
     form.reset(defaultValues);
     setSelectedDuration(5);
+    // Clear file states when generation type changes
+    setReferenceImageFiles([]);
+    setFirstFrameFiles([]);
+    setLastFrameFiles([]);
+    setUploadedFiles({});
   }, [form, selectedGenerationType]);
 
   const handleSubmit = async (data: FormData) => {
@@ -110,26 +114,29 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
       setIsSubmitting(true);
 
       // Parse service and model from serviceModel
-      const [service, model] = data.serviceModel.split(':', 2);
+      const model = data.serviceModel;
 
-      if (!service || !model) {
+      if (!model) {
         toast.error('Invalid service or model information');
         return;
       }
 
-      const result = await submitGenerationTask({
-        service,
-        model,
-        generationType: data.generationType,
-        params: data,
-      });
+      // Prepare form data with uploaded file URLs
+      const formData = {
+        ...data,
+        referenceImage: uploadedFiles['referenceImage'] || '',
+        firstFrame: uploadedFiles['firstFrame'] || '',
+        lastFrame: uploadedFiles['lastFrame'] || '',
+      };
+
+      const result = await submitGenerationTask({ model, params: formData });
 
       if (result.data) {
         if (result.data.success) {
           toast.success('Task submitted successfully');
           onSubmit?.(result);
         } else {
-          toast.error(`Task submission failed: ${result.data?.error || 'Unknown error'}`);
+          toast.error('Task submission failed');
         }
       } else {
         toast.error(`Task submission failed: ${result?.error || 'Unknown error'}`);
@@ -170,8 +177,11 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
           <ToggleGroup type="single" value={watchedAspectRatio} onValueChange={handleCanvasSizeChange} variant="outline">
             {aspectRatio.map((ratio: string) => {
               return (
-                <ToggleGroupItem key={ratio} value={ratio} className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground w-16">
-                  {ratio}
+                <ToggleGroupItem key={ratio} value={ratio} className="cursor-pointer data-[state=on]:bg-primary data-[state=on]:text-primary-foreground w-12 h-16">
+                  <div className="flex flex-col items-center gap-1">
+                    <SquareIcon />
+                    <span className="text-xs">{ratio}</span>
+                  </div>
                 </ToggleGroupItem>
               );
             })}
@@ -200,22 +210,54 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
     );
   };
 
-  const renderImageUpload = (fieldName: string, label: string) => (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Input
-        type="file"
-        accept="image/*"
-        onChange={e => {
-          const file = e.target.files?.[0];
-          if (file) {
-            // Here should handle file upload, temporarily using filename
-            form.setValue(fieldName as keyof FormData, file.name);
-          }
-        }}
-      />
-    </div>
-  );
+  const renderImageUpload = (label: string, files: FileWithPreview[], setFiles: (files: FileWithPreview[]) => void, fileKey: string) => {
+    // 添加调试信息
+    console.log(`renderImageUpload - ${label}:`, files);
+
+    const handleUpload = async (filesToUpload: FileWithPreview[]) => {
+      try {
+        console.log('handleUpload 开始:', filesToUpload);
+        const fileWithPreview = filesToUpload[0];
+        if (!fileWithPreview) return;
+
+        console.log('准备上传文件:', fileWithPreview.file.name);
+        const url = await uploadFile(fileWithPreview.file, 'paintboard');
+        console.log('上传完成，获取到URL:', url);
+
+        if (url) {
+          setUploadedFiles(prev => ({
+            ...prev,
+            [fileKey]: url,
+          }));
+          console.log('设置上传文件URL成功:', fileKey, url);
+          toast.success('文件上传成功');
+        } else {
+          throw new Error('文件上传失败: Unknown error');
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast.error('文件上传失败');
+        throw error;
+      }
+    };
+
+    return (
+      <div className="space-y-2">
+        <Label>{label}</Label>
+        <Upload
+          accept="image/*"
+          maxSize={10 * 1024 * 1024} // 10MB
+          maxFiles={1}
+          value={files}
+          onChange={setFiles}
+          onUpload={handleUpload}
+          size="sm"
+          showPreview={true}
+          className="max-w-16"
+        />
+      </div>
+    );
+  };
 
   return (
     <div className="h-full overflow-y-auto p-4">
@@ -245,21 +287,14 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
               <SelectValue placeholder="Select Service & Model" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(groupedModels).map(([service, models]) => {
-                return (
-                  <SelectGroup key={service}>
-                    <SelectLabel>{service.charAt(0).toUpperCase() + service.slice(1)}</SelectLabel>
-                    {models.map(model => (
-                      <SelectItem key={`${model.service}:${model.model}`} value={`${model.service}:${model.model}`}>
-                        <div className="flex items-center gap-2">
-                          <div>{model.displayName}</div>
-                          {model.description && <div className="text-muted-foreground text-xs">({model.description})</div>}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                );
-              })}
+              {filteredAvailableModels.map(model => (
+                <SelectItem key={`${model.name}`} value={`${model.name}`}>
+                  <div className="flex items-center gap-2">
+                    <div>{model.displayName}</div>
+                    {model.description && <div className="text-muted-foreground text-xs">({model.description})</div>}
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -275,7 +310,7 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
 
         {selectedGenerationType === 'image-to-image' && (
           <>
-            {renderImageUpload('referenceImage', 'Reference Image')}
+            {renderImageUpload('Reference Image', referenceImageFiles, setReferenceImageFiles, 'referenceImage')}
             {renderCanvasSizeInputs()}
           </>
         )}
@@ -289,7 +324,7 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
 
         {selectedGenerationType === 'image-to-video' && (
           <>
-            {renderImageUpload('referenceImage', 'Reference Image')}
+            {renderImageUpload('Reference Image', referenceImageFiles, setReferenceImageFiles, 'referenceImage')}
             {renderCanvasSizeInputs()}
             {renderDurationInput()}
           </>
@@ -297,8 +332,8 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
 
         {selectedGenerationType === 'keyframe-to-video' && (
           <>
-            {renderImageUpload('firstFrame', 'First Frame')}
-            {renderImageUpload('lastFrame', 'Last Frame')}
+            {renderImageUpload('First Frame', firstFrameFiles, setFirstFrameFiles, 'firstFrame')}
+            {renderImageUpload('Last Frame', lastFrameFiles, setLastFrameFiles, 'lastFrame')}
             {renderCanvasSizeInputs()}
             {renderDurationInput()}
           </>
@@ -312,3 +347,27 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
     </div>
   );
 }
+
+export const uploadFile = async (file: File, path: string) => {
+  // 获取上传URL
+  const uploadUrl = await getSignedUploadUrl({ filePath: path });
+
+  // 上传文件
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(uploadUrl.data!, {
+    method: 'PUT',
+    body: file,
+    headers: {
+      'Content-Type': file.type,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.statusText}`);
+  }
+
+  const url = await getSignedUrl({ filePath: path });
+  return url.data;
+};

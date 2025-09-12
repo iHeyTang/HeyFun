@@ -265,8 +265,10 @@ model PaintboardTasks {
   status         String @default("pending") // 任务状态：pending, processing, completed, failed
 
   // 任务参数和结果
+  /// [PaintboardTaskParams]
   params  Json // 任务参数
   taskId  String? // 外部服务返回的任务ID
+  /// [PaintboardTaskResult]
   results Json    @default("[]") // 结果数组，包含文件路径等信息
 
   // 错误信息

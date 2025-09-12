@@ -42,7 +42,7 @@ export class ToAsyncTaskManager<Result = any> {
     return task;
   }
 
-  getTask(id: string): ToAsyncTask | null {
+  getTask(id: string): ToAsyncTask<Result> | null {
     return this.tasks[id] || null;
   }
 
