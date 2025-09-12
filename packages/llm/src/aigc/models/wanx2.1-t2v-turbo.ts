@@ -1,5 +1,6 @@
-import { BaseAigcModel, TextToVideoParams } from '../core/base-model';
-import { DashscopeWanProvider, t2vSubmitParamsSchema, t2vGetResultParamsSchema } from '../providers/aliyun-dashscope';
+import z from 'zod';
+import { BaseAigcModel } from '../core/base-model';
+import { DashscopeWanProvider, t2vGetResultParamsSchema } from '../providers/aliyun-dashscope';
 import { GenerationTaskResult, GenerationType } from '../types';
 
 /**
@@ -16,7 +17,11 @@ export class Wanx21T2vTurbo extends BaseAigcModel {
     generationType: ['text-to-video'] as GenerationType[],
   };
 
-  submitParamsSchema = t2vSubmitParamsSchema;
+  paramsSchema = z.object({
+    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
+    aspectRatio: z.enum(['1:1', '16:9', '9:16']).describe('[title:画面比例][renderType:ratio]'),
+    duration: z.number().min(5).max(5).default(5).describe('[title:视频时长(秒)][unit:s]'),
+  });
 
   provider: DashscopeWanProvider;
   constructor(provider: DashscopeWanProvider) {
@@ -24,8 +29,8 @@ export class Wanx21T2vTurbo extends BaseAigcModel {
     this.provider = provider;
   }
 
-  async submitTask(params: TextToVideoParams): Promise<string> {
-    const parsed = this.submitParamsSchema.safeParse({
+  async submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string> {
+    const result = await this.provider.t2vSubmit({
       model: 'wanx2.1-t2v-turbo',
       input: {
         prompt: params.prompt,
@@ -38,10 +43,6 @@ export class Wanx21T2vTurbo extends BaseAigcModel {
         watermark: false,
       },
     });
-    if (!parsed.success) {
-      throw new Error(parsed.error.message);
-    }
-    const result = await this.provider.t2vSubmit(parsed.data);
     return result.output.task_id;
   }
 

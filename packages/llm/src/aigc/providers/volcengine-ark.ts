@@ -7,7 +7,7 @@ export const seedEdit30I2iParamsSchema = z.object({
   response_format: z.enum(['url', 'b64_json']).default('url'),
   size: z.literal('adaptive').default('adaptive'),
   seed: z.number().default(-1),
-  guidance_scale: z.number().min(1).max(10).default(5.5),
+  guidance_scale: z.number().min(1).max(10).default(5.5).optional(),
   watermark: z.boolean().default(true),
 });
 
@@ -28,7 +28,11 @@ export const seedance10ProSubmitParamsSchema = z.object({
   content: z.array(
     z.discriminatedUnion('type', [
       z.object({ type: z.literal('text'), text: z.string() }),
-      z.object({ type: z.literal('image'), image_url: z.object({ url: z.string() }), role: z.enum(['first_frame', 'last_frame']) }),
+      z.object({
+        type: z.literal('image'),
+        image_url: z.object({ url: z.string() }),
+        role: z.enum(['first_frame', 'last_frame', 'reference_image']),
+      }),
     ]),
   ),
   callback_url: z.string().optional(),
@@ -73,6 +77,32 @@ export const seedream30T2iParamsSchema = z.object({
 
 export interface Seedream30T2iResponse {
   model: 'doubao-seedream-3-0-t2i-250415';
+  created: number;
+  data: { url: string }[];
+  usage: {
+    generated_images: number;
+    output_tokens: number;
+    total_tokens: number;
+  };
+}
+
+export const seedream40ParamsSchema = z.object({
+  model: z.literal('doubao-seedream-4-0-250828'),
+  prompt: z.string(),
+  image: z.array(z.string()).optional(),
+  response_format: z.enum(['url', 'b64_json']).default('url'),
+  sequential_image_generation: z.enum(['auto', 'disabled']).default('auto'),
+  sequential_image_generation_options: z.object({
+    max_images: z.number().min(1).max(15).default(15).optional(),
+  }).optional(),
+  size: z.literal('adaptive').default('adaptive'),
+  seed: z.number().default(-1),
+  guidance_scale: z.number().min(1).max(10).default(5.5).optional(),
+  watermark: z.boolean().default(true).optional(),
+});
+
+export interface Seedream40Response {
+  model: 'doubao-seedream-4-0-250828';
   created: number;
   data: { url: string }[];
   usage: {
@@ -146,6 +176,23 @@ export class VolcengineArkProvider {
    * https://www.volcengine.com/docs/82379/1541523
    */
   async seedream30T2i(params: z.infer<typeof seedream30T2iParamsSchema>): Promise<Seedream30T2iResponse> {
+    const url = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
+    const response = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(params),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    });
+    return response.json();
+  }
+
+  /**
+   * 图片生成API/图生图 Seedream 4.0
+   * https://www.volcengine.com/docs/82379/1666946
+   */
+  async seedream40(params: z.infer<typeof seedream40ParamsSchema>): Promise<Seedream40Response> {
     const url = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
     const response = await fetch(url, {
       method: 'POST',

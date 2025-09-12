@@ -1,4 +1,5 @@
-import { BaseAigcModel, TextToImageParams } from '../core/base-model';
+import z from 'zod';
+import { BaseAigcModel } from '../core/base-model';
 import { jimengT2iV31GetResultParamsSchema, jimengT2iV31SubmitParamsSchema, VolcengineJimengProvider } from '../providers/volcengine-jimeng';
 import { GenerationTaskResult, GenerationType } from '../types';
 
@@ -15,7 +16,10 @@ export class JimengT2iV31 extends BaseAigcModel {
     generationType: ['text-to-image'] as GenerationType[],
   };
 
-  submitParamsSchema = jimengT2iV31SubmitParamsSchema;
+  paramsSchema = z.object({
+    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
+    aspectRatio: z.enum(['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1', '21:9']).describe('[title:画面比例][renderType:ratio]'),
+  });
 
   provider: VolcengineJimengProvider;
   constructor(provider: VolcengineJimengProvider) {
@@ -23,20 +27,16 @@ export class JimengT2iV31 extends BaseAigcModel {
     this.provider = provider;
   }
 
-  async submitTask(params: TextToImageParams): Promise<string> {
+  async submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string> {
     const size = this.convertAspectRatioToImageSize(params.aspectRatio);
-    const parsed = this.submitParamsSchema.safeParse({
+    const result = await this.provider.t2iV31Submit({
       req_key: 'jimeng_t2i_v31',
       prompt: params.prompt,
       seed: -1, // 使用默认种子
-      width: size?.width,
-      height: size?.height,
+      width: size?.width || 1024,
+      height: size?.height || 1024,
       use_pre_llm: true, // 使用预训练LLM
     });
-    if (!parsed.success) {
-      throw new Error(parsed.error.message);
-    }
-    const result = await this.provider.t2iV31Submit(parsed.data);
     console.log('result', result);
     return result.data.task_id;
   }

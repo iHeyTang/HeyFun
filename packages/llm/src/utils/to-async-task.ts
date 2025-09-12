@@ -6,6 +6,7 @@ interface ToAsyncTask<Result = any> {
   status: 'pending' | 'succeeded' | 'failed';
   result: Result | null;
   promise: Promise<Result>;
+  error: string | null;
 }
 
 /**
@@ -24,21 +25,24 @@ export class ToAsyncTaskManager<Result = any> {
       status: 'pending',
       result: null,
       promise,
+      error: null,
     };
     this.tasks[task.id] = task;
-    new Promise<void>(resolve => {
-      promise
-        .then(result => {
-          task.status = 'succeeded';
-          task.result = result;
-          resolve();
-        })
-        .catch(error => {
+    promise
+      .then((result: any) => {
+        if (result.error) {
           task.status = 'failed';
-          task.result = error;
-          resolve();
-        });
-    });
+          task.error = result.error.message;
+          return;
+        }
+        task.status = 'succeeded';
+        task.result = result;
+      })
+      .catch(error => {
+        console.error('addTask error', error);
+        task.status = 'failed';
+        task.error = error instanceof Error ? error.message : String(error);
+      });
     return task;
   }
 

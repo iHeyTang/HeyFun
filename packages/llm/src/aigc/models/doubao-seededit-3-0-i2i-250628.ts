@@ -1,6 +1,7 @@
+import z from 'zod';
 import { ToAsyncTaskManager } from '../../utils/to-async-task';
-import { BaseAigcModel, ImageToImageParams } from '../core/base-model';
-import { seedEdit30I2iParamsSchema, VolcengineArkProvider } from '../providers/volcengine-ark';
+import { BaseAigcModel } from '../core/base-model';
+import { VolcengineArkProvider } from '../providers/volcengine-ark';
 import { GenerationTaskResult, GenerationType } from '../types';
 
 const toAsync = new ToAsyncTaskManager<Awaited<ReturnType<VolcengineArkProvider['seedEdit30I2i']>>>();
@@ -16,7 +17,11 @@ export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
     generationType: ['image-to-image'] as GenerationType[],
   };
 
-  submitParamsSchema = seedEdit30I2iParamsSchema;
+  paramsSchema = z.object({
+    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
+    image: z.string().describe('[title:参考图片][renderType:image]'),
+    guidance_scale: z.number().min(1).max(10).default(5.5).optional().describe('[title:提示词引导强度]'),
+  });
 
   provider: VolcengineArkProvider;
   constructor(provider: VolcengineArkProvider) {
@@ -24,18 +29,19 @@ export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
     this.provider = provider;
   }
 
-  async submitTask(params: ImageToImageParams): Promise<string> {
-    const parsed = this.submitParamsSchema.safeParse({
-      model: this.name,
-      prompt: params.prompt,
-      image: params.referenceImage,
-      size: 'adaptive',
-    });
-    if (!parsed.success) {
-      throw new Error(parsed.error.message);
-    }
-
-    const task = toAsync.addTask(this.provider.seedEdit30I2i(parsed.data));
+  async submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string> {
+    const task = toAsync.addTask(
+      this.provider.seedEdit30I2i({
+        model: 'doubao-seededit-3-0-i2i-250628',
+        prompt: params.prompt,
+        image: params.image,
+        guidance_scale: params.guidance_scale,
+        size: 'adaptive',
+        seed: -1,
+        response_format: 'url',
+        watermark: false,
+      }),
+    );
     return task.id;
   }
 
@@ -48,6 +54,7 @@ export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
       status: result.status === 'succeeded' ? 'completed' : result.status === 'failed' ? 'failed' : 'pending',
       data: result.result?.data?.map(item => ({ url: item.url, type: 'image' })) || [],
       usage: { image_count: result.result?.data?.length || 0 },
+      error: result.error || undefined,
     };
   }
 }

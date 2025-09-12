@@ -1,4 +1,5 @@
-import { BaseAigcModel, KeyframeToVideoParams } from '../core/base-model';
+import z from 'zod';
+import { BaseAigcModel } from '../core/base-model';
 import { DashscopeWanProvider, kf2vGetResultParamsSchema, kf2vSubmitParamsSchema } from '../providers/aliyun-dashscope';
 import { GenerationTaskResult, GenerationType } from '../types';
 
@@ -15,7 +16,13 @@ export class Wanx21Kf2vPlus extends BaseAigcModel {
     generationType: ['keyframe-to-video'] as GenerationType[],
   };
 
-  submitParamsSchema = kf2vSubmitParamsSchema;
+  paramsSchema = z.object({
+    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
+    firstFrame: z.string().describe('[title:首帧图片][renderType:image]'),
+    lastFrame: z.string().describe('[title:尾帧图片][renderType:image]'),
+    aspectRatio: z.enum(['1:1', '16:9', '9:16']).describe('[title:画面比例][renderType:ratio]'),
+    duration: z.number().min(1).max(10).default(5).describe('[title:视频时长(秒)][unit:s]'),
+  });
 
   provider: DashscopeWanProvider;
   constructor(provider: DashscopeWanProvider) {
@@ -23,8 +30,8 @@ export class Wanx21Kf2vPlus extends BaseAigcModel {
     this.provider = provider;
   }
 
-  async submitTask(params: KeyframeToVideoParams): Promise<string> {
-    const parsed = this.submitParamsSchema.safeParse({
+  async submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string> {
+    const result = await this.provider.kf2vSubmit({
       model: 'wanx2.1-kf2v-plus',
       input: {
         first_frame_url: params.firstFrame,
@@ -36,10 +43,6 @@ export class Wanx21Kf2vPlus extends BaseAigcModel {
         duration: params.duration,
       },
     });
-    if (!parsed.success) {
-      throw new Error(parsed.error.message);
-    }
-    const result = await this.provider.kf2vSubmit(parsed.data);
     return result.output.task_id;
   }
 

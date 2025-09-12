@@ -1,3 +1,4 @@
+import z from 'zod';
 import { GenerationTaskResponse, GenerationTaskResult } from '../types';
 
 // 生成类型枚举
@@ -52,23 +53,18 @@ export interface KeyframeToVideoParams extends BaseGenerationParams {
 
 export type SubmitTaskParams = TextToImageParams | ImageToImageParams | TextToVideoParams | ImageToVideoParams | KeyframeToVideoParams;
 
-export interface BaseAigcModelInfo {
-  name: string;
-  displayName: string;
-  description?: string;
-  parameterLimits?: ModelParameterLimits;
-}
-
 // 基础适配器抽象类
-export abstract class BaseAigcModel implements BaseAigcModelInfo {
+export abstract class BaseAigcModel {
   public abstract name: string;
   public abstract displayName: string;
   public abstract description?: string;
   public abstract parameterLimits?: ModelParameterLimits;
 
-  abstract submitTask(params: SubmitTaskParams): Promise<string>;
+  public abstract paramsSchema: z.ZodSchema;
 
-  abstract getTaskResult(params: { taskId: string }): Promise<GenerationTaskResult>;
+  abstract submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string>;
+
+  abstract getTaskResult(params: { generationType: string; model: string; taskId: string }): Promise<GenerationTaskResult>;
 
   // 通用错误处理方法
   protected handleError(error: unknown, operation: string): GenerationTaskResponse {

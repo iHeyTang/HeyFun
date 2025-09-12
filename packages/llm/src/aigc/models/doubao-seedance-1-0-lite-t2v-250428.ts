@@ -1,4 +1,5 @@
-import { BaseAigcModel, TextToVideoParams } from '../core/base-model';
+import z from 'zod';
+import { BaseAigcModel } from '../core/base-model';
 import { seedance10ProSubmitParamsSchema, VolcengineArkProvider } from '../providers/volcengine-ark';
 import { GenerationTaskResult, GenerationType } from '../types';
 
@@ -14,7 +15,12 @@ export class DoubaoSeedance10LiteT2v250428 extends BaseAigcModel {
     generationType: ['text-to-video'] as GenerationType[],
   };
 
-  submitParamsSchema = seedance10ProSubmitParamsSchema;
+  paramsSchema = z.object({
+    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
+    aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']).describe('[title:画面比例][renderType:ratio]'),
+    duration: z.number().min(3).max(12).default(5).describe('[title:视频时长(秒)][unit:s]'),
+    camerafixed: z.boolean().default(false).describe('[title:固定镜头]'),
+  });
 
   provider: VolcengineArkProvider;
   constructor(provider: VolcengineArkProvider) {
@@ -22,14 +28,16 @@ export class DoubaoSeedance10LiteT2v250428 extends BaseAigcModel {
     this.provider = provider;
   }
 
-  async submitTask(params: TextToVideoParams): Promise<string> {
+  async submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string> {
     const size = this.convertAspectRatioToImageSize(params.aspectRatio);
-    const parsed = this.submitParamsSchema.safeParse({ ...params, model: this.name, size: size });
-    if (!parsed.success) {
-      throw new Error(parsed.error.message);
-    }
 
-    const task = await this.provider.seedanceSubmit(parsed.data);
+    const task = await this.provider.seedanceSubmit({
+      model: 'doubao-seedance-1-0-lite-t2v-250428',
+      content: [
+        { type: 'text', text: params.prompt },
+        { type: 'text', text: `--rt ${size} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.camerafixed}` },
+      ],
+    });
     return task.id;
   }
 

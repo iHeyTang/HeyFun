@@ -1,4 +1,5 @@
-import { BaseAigcModel, ImageToImageParams } from '../core/base-model';
+import z from 'zod';
+import { BaseAigcModel } from '../core/base-model';
 import {
   jimengI2iV30GetResultParamsSchema,
   jimengI2iV30SubmitParamsSchema,
@@ -21,7 +22,11 @@ export class JimengI2iV30 extends BaseAigcModel {
     generationType: ['image-to-image'] as GenerationType[],
   };
 
-  submitParamsSchema = jimengI2iV30SubmitParamsSchema;
+  paramsSchema = z.object({
+    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
+    referenceImage: z.string().describe('[title:参考图片][renderType:image]'),
+    aspectRatio: z.enum(['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1', '21:9']).describe('[title:画面比例][renderType:ratio]'),
+  });
 
   provider: VolcengineJimengProvider;
   constructor(provider: VolcengineJimengProvider) {
@@ -29,22 +34,18 @@ export class JimengI2iV30 extends BaseAigcModel {
     this.provider = provider;
   }
 
-  async submitTask(params: ImageToImageParams): Promise<string> {
+  async submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string> {
     const size = this.convertAspectRatioToImageSize(params.aspectRatio);
     const buffer = await downloadFile(params.referenceImage);
-    const parsed = this.submitParamsSchema.safeParse({
+    const result = await this.provider.i2iV30Submit({
       req_key: 'jimeng_i2i_v30',
       prompt: params.prompt,
       seed: -1, // 使用默认种子
-      width: size?.width,
-      height: size?.height,
+      width: size?.width || 1024,
+      height: size?.height || 1024,
       scale: 0.5, // 默认缩放比例
       binary_data_base64: [buffer.toString('base64')],
     });
-    if (!parsed.success) {
-      throw new Error(parsed.error.message);
-    }
-    const result = await this.provider.i2iV30Submit(parsed.data);
     return result.data.task_id;
   }
 

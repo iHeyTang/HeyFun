@@ -1,4 +1,5 @@
-import { BaseAigcModel, TextToVideoParams } from '../core/base-model';
+import z from 'zod';
+import { BaseAigcModel } from '../core/base-model';
 import { jimengt2vS20ProGetResultParamsSchema, jimengt2vS20ProParamsSchema, VolcengineJimengProvider } from '../providers/volcengine-jimeng';
 import { GenerationTaskResult, GenerationType } from '../types';
 
@@ -15,7 +16,10 @@ export class JimengVgfmT2vL20 extends BaseAigcModel {
     generationType: ['text-to-video'] as GenerationType[],
   };
 
-  submitParamsSchema = jimengt2vS20ProParamsSchema;
+  paramsSchema = z.object({
+    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
+    aspectRatio: z.enum(['16:9', '9:16', '4:3', '3:4', '21:9']).describe('[title:画面比例][renderType:ratio]'),
+  });
 
   provider: VolcengineJimengProvider;
   constructor(provider: VolcengineJimengProvider) {
@@ -23,17 +27,13 @@ export class JimengVgfmT2vL20 extends BaseAigcModel {
     this.provider = provider;
   }
 
-  async submitTask(params: TextToVideoParams): Promise<string> {
-    const parsed = this.submitParamsSchema.safeParse({
+  async submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string> {
+    const result = await this.provider.t2vS20Pro({
       req_key: 'jimeng_vgfm_t2v_l20',
       prompt: params.prompt,
       seed: -1, // 使用默认种子
       aspect_ratio: params.aspectRatio,
     });
-    if (!parsed.success) {
-      throw new Error(parsed.error.message);
-    }
-    const result = await this.provider.t2vS20Pro(parsed.data);
     return result.data.task_id;
   }
 

@@ -6,6 +6,7 @@ import storage, { downloadFile, getBucket } from '@/lib/server/storage';
 import { PaintboardTasks } from '@prisma/client';
 import AIGC from '@repo/llm/aigc';
 import { nanoid } from 'nanoid';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 // 任务状态枚举
 enum PaintboardTaskStatus {
@@ -16,12 +17,13 @@ enum PaintboardTaskStatus {
 }
 
 // 获取所有服务模型信息
-export const getAllServiceModelInfos = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
+export const getAllAigcModelInfos = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
   const models = await AIGC.getAllServiceModels();
   return models.map(model => ({
     name: model.name,
     displayName: model.displayName,
     description: model.description,
+    paramsSchema: zodToJsonSchema(model.paramsSchema),
     parameterLimits: model.parameterLimits,
   }));
 });
@@ -188,23 +190,14 @@ const processPaintboardTaskResult = withUserAuth(
               throw new Error('No valid results found');
             }
           } else if (result.status === 'failed') {
-            throw new Error(result.error);
+            throw new Error(result.error || 'Task failed');
           } else {
             // 任务仍在处理中，等待后继续轮询
             console.log(`Task ${taskId} still processing, waiting ${retryDelay}ms before next attempt`);
             await new Promise(resolve => setTimeout(resolve, retryDelay));
           }
         } catch (error) {
-          // 如果是任务失败，直接抛出错误
-          if (error instanceof Error && error.message.includes('Task failed')) {
-            throw error;
-          }
-
-          // 其他错误，记录并继续重试
-          console.error(`Error polling task ${taskId}:`, error);
-
-          // 等待后重试
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          throw error;
         }
       }
 
@@ -213,11 +206,11 @@ const processPaintboardTaskResult = withUserAuth(
       throw new Error(`Task ${taskId} timed out after ${elapsedMinutes} minutes`);
     } catch (error) {
       // 更新任务状态为失败
+      console.error(`Task ${taskId} failed:`, error);
       await prisma.paintboardTasks.update({
         where: { id: taskId },
         data: { status: PaintboardTaskStatus.FAILED, error: (error as Error).message },
       });
-      throw error;
     }
   },
 );

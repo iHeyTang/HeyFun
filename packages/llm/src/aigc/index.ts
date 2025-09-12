@@ -1,5 +1,5 @@
 import z from 'zod';
-import { BaseAigcModel, BaseAigcModelInfo, ModelParameterLimits, SubmitTaskParams } from './core/base-model';
+import { BaseAigcModel, ModelParameterLimits, SubmitTaskParams } from './core/base-model';
 import { DashscopeWanProvider, dashscopeWanServiceConfigSchema } from './providers/aliyun-dashscope';
 import { VolcengineArkProvider, volcengineArkServiceConfigSchema } from './providers/volcengine-ark';
 import { VolcengineJimengProvider, volcengineJimengServiceConfigSchema } from './providers/volcengine-jimeng';
@@ -11,6 +11,7 @@ import { DoubaoSeedance10Pro250528 } from './models/doubao-seedance-1-0-pro-2505
 import { DoubaoSeededit30I2i250628 } from './models/doubao-seededit-3-0-i2i-250628';
 import { DoubaoSeedance10LiteT2v250428 } from './models/doubao-seedance-1-0-lite-t2v-250428';
 import { DoubaoSeedream30T2i250415 } from './models/doubao-seedream-3-0-t2i-250415';
+import { DoubaoSeedream40 } from './models/doubao-seedream-4-0-250828';
 
 // 即梦模型
 import { JimengI2iV30 } from './models/jimeng-i2i-v30';
@@ -72,7 +73,7 @@ class AIGCHost {
   }
 
   // 获取所有服务模型信息
-  public async getAllServiceModels(): Promise<BaseAigcModelInfo[]> {
+  public async getAllServiceModels(): Promise<BaseAigcModel[]> {
     return Array.from(this.models.values());
   }
 
@@ -98,7 +99,7 @@ class AIGCHost {
       throw new Error(`不支持的服务: ${modelName}`);
     }
 
-    return await model.getTaskResult({ taskId });
+    return await model.getTaskResult({ generationType: '', model: modelName, taskId });
   }
 
   public async registerModel(fn: (providers: typeof this.providers) => BaseAigcModel | null): Promise<void> {
@@ -129,6 +130,7 @@ AIGC.registerModel(providers => (providers['volcengine-ark'] ? new DoubaoSeedanc
 AIGC.registerModel(providers => (providers['volcengine-ark'] ? new DoubaoSeededit30I2i250628(providers['volcengine-ark']) : null));
 AIGC.registerModel(providers => (providers['volcengine-ark'] ? new DoubaoSeedance10LiteT2v250428(providers['volcengine-ark']) : null));
 AIGC.registerModel(providers => (providers['volcengine-ark'] ? new DoubaoSeedream30T2i250415(providers['volcengine-ark']) : null));
+AIGC.registerModel(providers => (providers['volcengine-ark'] ? new DoubaoSeedream40(providers['volcengine-ark']) : null));
 
 // 即梦模型注册
 AIGC.registerModel(providers => (providers['volcengine-jimeng'] ? new JimengI2iV30(providers['volcengine-jimeng']) : null));
@@ -153,4 +155,4 @@ AIGC.registerModel(providers => (providers['dashscope-wan'] ? new Wanx21T2vPlus(
 AIGC.registerModel(providers => (providers['dashscope-wan'] ? new Wanx21T2vTurbo(providers['dashscope-wan']) : null));
 
 export default AIGC;
-export type { GenerationType, BaseAigcModel, BaseAigcModelInfo, ModelParameterLimits };
+export type { GenerationType, BaseAigcModel, ModelParameterLimits };

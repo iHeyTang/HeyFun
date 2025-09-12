@@ -1,4 +1,5 @@
-import { BaseAigcModel, ImageToVideoParams } from '../core/base-model';
+import z from 'zod';
+import { BaseAigcModel } from '../core/base-model';
 import { DashscopeWanProvider, i2vGetResultParamsSchema, i2vSubmitParamsSchema } from '../providers/aliyun-dashscope';
 import { GenerationTaskResult, GenerationType } from '../types';
 
@@ -16,7 +17,12 @@ export class Wan22I2vFlash extends BaseAigcModel {
     generationType: ['image-to-video'] as GenerationType[],
   };
 
-  submitParamsSchema = i2vSubmitParamsSchema;
+  paramsSchema = z.object({
+    prompt: z.string().optional().describe('[title:提示词][renderType:textarea]'),
+    referenceImage: z.string().describe('[title:参考图片][renderType:image]'),
+    aspectRatio: z.enum(['1:1', '16:9', '9:16']).describe('[title:画面比例][renderType:ratio]'),
+    duration: z.number().min(5).max(5).default(5).describe('[title:视频时长(秒)][unit:s]'),
+  });
 
   provider: DashscopeWanProvider;
   constructor(provider: DashscopeWanProvider) {
@@ -24,8 +30,8 @@ export class Wan22I2vFlash extends BaseAigcModel {
     this.provider = provider;
   }
 
-  async submitTask(params: ImageToVideoParams): Promise<string> {
-    const parsed = this.submitParamsSchema.safeParse({
+  async submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string> {
+    const result = await this.provider.i2vSubmit({
       model: 'wan2.2-i2v-flash',
       input: {
         prompt: params.prompt || '',
@@ -39,10 +45,6 @@ export class Wan22I2vFlash extends BaseAigcModel {
         watermark: false,
       },
     });
-    if (!parsed.success) {
-      throw new Error(parsed.error.message);
-    }
-    const result = await this.provider.i2vSubmit(parsed.data);
     return result.output.task_id;
   }
 
