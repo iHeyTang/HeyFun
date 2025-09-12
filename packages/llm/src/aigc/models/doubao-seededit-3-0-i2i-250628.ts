@@ -10,7 +10,7 @@ const toAsync = new ToAsyncTaskManager<Awaited<ReturnType<VolcengineArkProvider[
  */
 export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
   name = 'doubao-seededit-3-0-i2i-250628';
-  displayName = 'Doubao-Seededit-3.0-i2i';
+  displayName = '豆包3.0(图生图)';
   description = '准确遵循编辑指令，有效保留图像内容';
   parameterLimits = {
     generationType: ['image-to-image'] as GenerationType[],

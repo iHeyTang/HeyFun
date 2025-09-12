@@ -8,7 +8,7 @@ import { GenerationTaskResult, GenerationType } from '../types';
  */
 export class Wanx21I2vPlus extends BaseAigcModel {
   name = 'wanx2.1-i2v-plus';
-  displayName = '万相 2.1 I2V Plus';
+  displayName = '万相 2.1 Plus(图生视频)';
   description = '高质量图生视频模型';
   parameterLimits = {
     aspectRatio: ['1:1', '16:9', '9:16'],

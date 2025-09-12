@@ -7,7 +7,7 @@ import { GenerationTaskResult, GenerationType } from '../types';
  */
 export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
   name = 'doubao-seedance-1-0-pro-250528';
-  displayName = 'Doubao-Seedance-1.0-pro';
+  displayName = '豆包1.0 Pro';
   description = '全面强大，独具多镜头叙事能力';
   parameterLimits = {
     aspectRatio: ['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9'],

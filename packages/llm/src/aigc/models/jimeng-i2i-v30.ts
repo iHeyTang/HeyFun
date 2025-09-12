@@ -14,7 +14,7 @@ import { downloadFile } from '../utils/downloader';
  */
 export class JimengI2iV30 extends BaseAigcModel {
   name = 'jimeng-i2i-v30';
-  displayName = '即梦 图生图 3.0';
+  displayName = '即梦 3.0(图生图)';
   description = '高质量图生图模型';
   parameterLimits = {
     aspectRatio: ['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1', '21:9'],

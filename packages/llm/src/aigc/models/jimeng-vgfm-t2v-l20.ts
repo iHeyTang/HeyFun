@@ -8,7 +8,7 @@ import { GenerationTaskResult, GenerationType } from '../types';
  */
 export class JimengVgfmT2vL20 extends BaseAigcModel {
   name = 'jimeng-vgfm-t2v-l20';
-  displayName = '即梦 文生视频 S2.0 Pro';
+  displayName = '即梦 文生视频 S2.0 Pro(文生视频)';
   description = '专业文生视频模型';
   parameterLimits = {
     aspectRatio: ['16:9', '9:16', '4:3', '3:4', '21:9'],

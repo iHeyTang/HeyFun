@@ -40,6 +40,14 @@ const aigcProviderConfigSchema = z.object({
   wan: dashscopeWanServiceConfigSchema.optional(),
 });
 
+export const GENERATION_TYPES: { value: GenerationType; label: string; description: string }[] = [
+  { value: 'text-to-image', label: 'Text to Image', description: 'Generate images from text descriptions' },
+  { value: 'image-to-image', label: 'Image to Image', description: 'Generate new images from reference images and text descriptions' },
+  { value: 'text-to-video', label: 'Text to Video', description: 'Generate videos from text descriptions' },
+  { value: 'image-to-video', label: 'Image to Video', description: 'Generate videos from reference images and text descriptions' },
+  { value: 'keyframe-to-video', label: 'Keyframe to Video', description: 'Generate videos from first and last frames and text descriptions' },
+];
+
 class AIGCHost {
   private models: Map<string, BaseAigcModel> = new Map();
   public providers: {

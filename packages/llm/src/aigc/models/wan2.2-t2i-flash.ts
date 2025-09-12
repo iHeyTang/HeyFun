@@ -8,7 +8,7 @@ import { GenerationTaskResult, GenerationType } from '../types';
  */
 export class Wan22T2iFlash extends BaseAigcModel {
   name = 'wan2.2-t2i-flash';
-  displayName = '万相 T2I Flash';
+  displayName = '万相 2.2 Flash(文生图)';
   description = '快速文生图模型';
   parameterLimits = {
     aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],

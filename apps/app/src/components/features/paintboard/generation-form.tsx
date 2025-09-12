@@ -3,6 +3,7 @@
 import { getSignedUploadUrl, getSignedUrl } from '@/actions/oss';
 import { getAllServiceModelInfos, submitGenerationTask } from '@/actions/paintboard';
 import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,22 +17,12 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-// Generation type options
-const generationTypes: { value: GenerationType; label: string; description: string }[] = [
-  { value: 'text-to-image', label: 'Text to Image', description: 'Generate images from text descriptions' },
-  { value: 'image-to-image', label: 'Image to Image', description: 'Generate new images from reference images and text descriptions' },
-  { value: 'text-to-video', label: 'Text to Video', description: 'Generate videos from text descriptions' },
-  { value: 'image-to-video', label: 'Image to Video', description: 'Generate videos from reference images and text descriptions' },
-  { value: 'keyframe-to-video', label: 'Keyframe to Video', description: 'Generate videos from first and last frames and text descriptions' },
-];
-
 // Dynamic form schema
 const createFormSchema = () => {
   const baseSchema = z.object({
-    generationType: z.enum(['text-to-image', 'image-to-image', 'text-to-video', 'image-to-video', 'keyframe-to-video']),
-    serviceModel: z.string().min(1, 'Please select AI service and model'),
+    serviceModel: z.string().min(1, 'Please select model'),
     prompt: z.string().min(1, 'Please enter prompt'),
-    aspectRatio: z.string().min(1, 'Please select aspect ratio'),
+    aspectRatio: z.string().optional(),
     // Video related parameters
     duration: z.number().optional(),
     referenceImage: z.string().optional(),
@@ -49,7 +40,6 @@ interface UnifiedGenerationFormProps {
 }
 
 export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) {
-  const [selectedGenerationType, setSelectedGenerationType] = useState<GenerationType>('text-to-image');
   const [availableModels, setAvailableModels] = useState<BaseAigcModelInfo[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState<number>(5);
@@ -60,7 +50,6 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
   const form = useForm<FormData>({
     resolver: zodResolver(createFormSchema()),
     defaultValues: {
-      generationType: 'text-to-image',
       serviceModel: '',
       prompt: '',
       aspectRatio: '',
@@ -69,15 +58,16 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
   });
 
   const watchedServiceModel = form.watch('serviceModel');
-  const watchedAspectRatio = form.watch('aspectRatio');
-
-  const filteredAvailableModels = useMemo(() => {
-    return availableModels.filter(model => model.parameterLimits?.generationType?.includes(selectedGenerationType));
-  }, [availableModels, selectedGenerationType]);
 
   const selectedServiceModel = useMemo(() => {
     return availableModels.find(model => `${model.name}` === watchedServiceModel);
   }, [availableModels, watchedServiceModel]);
+
+  // Get generation type from selected model
+  const selectedGenerationType = useMemo(() => {
+    if (!selectedServiceModel?.parameterLimits?.generationType) return null;
+    return selectedServiceModel.parameterLimits.generationType[0] as GenerationType;
+  }, [selectedServiceModel]);
 
   // Initialize and get all service models
   useEffect(() => {
@@ -90,24 +80,19 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
     loadModels();
   }, []);
 
-  // Reset form when generation type changes
+  // Reset form when model changes
   useEffect(() => {
-    const defaultValues: Record<string, unknown> = {
-      generationType: selectedGenerationType,
-      serviceModel: '',
-      prompt: '',
-      canvasSize: { width: 1024, height: 1024 },
-      duration: 5,
-    };
-
-    form.reset(defaultValues);
-    setSelectedDuration(5);
-    // Clear file states when generation type changes
-    setReferenceImageFiles([]);
-    setFirstFrameFiles([]);
-    setLastFrameFiles([]);
-    setUploadedFiles({});
-  }, [form, selectedGenerationType]);
+    if (watchedServiceModel) {
+      // Clear file states when model changes
+      setReferenceImageFiles([]);
+      setFirstFrameFiles([]);
+      setLastFrameFiles([]);
+      setUploadedFiles({});
+      setSelectedDuration(5);
+      form.setValue('duration', 5);
+      form.setValue('aspectRatio', '');
+    }
+  }, [form, watchedServiceModel]);
 
   const handleSubmit = async (data: FormData) => {
     try {
@@ -121,9 +106,10 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
         return;
       }
 
-      // Prepare form data with uploaded file URLs
+      // Prepare form data with uploaded file URLs and generation type
       const formData = {
         ...data,
+        generationType: selectedGenerationType,
         referenceImage: uploadedFiles['referenceImage'] || '',
         firstFrame: uploadedFiles['firstFrame'] || '',
         lastFrame: uploadedFiles['lastFrame'] || '',
@@ -149,45 +135,38 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
     }
   };
 
-  const handleGenerationTypeChange = (type: GenerationType) => {
-    setSelectedGenerationType(type);
-  };
-
-  const handleCanvasSizeChange = (ratio: string) => {
-    if (!selectedServiceModel?.parameterLimits?.aspectRatio?.length) return;
-    form.setValue('aspectRatio', ratio);
-  };
-
-  const handleDurationChange = (duration: string) => {
-    const durationNum = parseInt(duration, 10);
-    if (!isNaN(durationNum)) {
-      form.setValue('duration', durationNum);
-      setSelectedDuration(durationNum);
-    }
-  };
-
   const renderCanvasSizeInputs = () => {
     if (!selectedServiceModel?.parameterLimits?.aspectRatio?.length) return null;
     const { aspectRatio } = selectedServiceModel.parameterLimits;
     return (
-      <div className="space-y-4">
-        <Label>Canvas Size</Label>
-        {/* Preset aspect ratios */}
-        {aspectRatio && aspectRatio.length > 0 && (
-          <ToggleGroup type="single" value={watchedAspectRatio} onValueChange={handleCanvasSizeChange} variant="outline">
-            {aspectRatio.map((ratio: string) => {
-              return (
-                <ToggleGroupItem key={ratio} value={ratio} className="cursor-pointer data-[state=on]:bg-primary data-[state=on]:text-primary-foreground w-12 h-16">
-                  <div className="flex flex-col items-center gap-1">
-                    <SquareIcon />
-                    <span className="text-xs">{ratio}</span>
-                  </div>
-                </ToggleGroupItem>
-              );
-            })}
-          </ToggleGroup>
+      <FormField
+        control={form.control}
+        name="aspectRatio"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Canvas Size</FormLabel>
+            <FormControl>
+              <ToggleGroup type="single" value={field.value} onValueChange={field.onChange} variant="outline">
+                {aspectRatio.map((ratio: string) => {
+                  return (
+                    <ToggleGroupItem
+                      key={ratio}
+                      value={ratio}
+                      className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground h-16 w-12 cursor-pointer"
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <SquareIcon />
+                        <span className="text-xs">{ratio}</span>
+                      </div>
+                    </ToggleGroupItem>
+                  );
+                })}
+              </ToggleGroup>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
         )}
-      </div>
+      />
     );
   };
 
@@ -197,16 +176,36 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
     const { duration } = selectedServiceModel.parameterLimits;
 
     return (
-      <div className="space-y-4">
-        <Label>Duration (seconds)</Label>
-        <ToggleGroup type="single" value={selectedDuration.toString()} onValueChange={handleDurationChange} variant="outline">
-          {duration.map(d => (
-            <ToggleGroupItem key={d} value={d.toString()} className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground w-16">
-              {d}s
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      </div>
+      <FormField
+        control={form.control}
+        name="duration"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Duration (seconds)</FormLabel>
+            <FormControl>
+              <ToggleGroup
+                type="single"
+                value={field.value?.toString()}
+                onValueChange={value => {
+                  const durationNum = parseInt(value, 10);
+                  if (!isNaN(durationNum)) {
+                    field.onChange(durationNum);
+                    setSelectedDuration(durationNum);
+                  }
+                }}
+                variant="outline"
+              >
+                {duration.map(d => (
+                  <ToggleGroupItem key={d} value={d.toString()} className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground w-16">
+                    {d}s
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     );
   };
 
@@ -242,108 +241,117 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
     };
 
     return (
-      <div className="space-y-2">
-        <Label>{label}</Label>
-        <Upload
-          accept="image/*"
-          maxSize={10 * 1024 * 1024} // 10MB
-          maxFiles={1}
-          value={files}
-          onChange={setFiles}
-          onUpload={handleUpload}
-          size="sm"
-          showPreview={true}
-          className="max-w-16"
-        />
-      </div>
+      <FormField
+        control={form.control}
+        name={fileKey as keyof FormData}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{label}</FormLabel>
+            <FormControl>
+              <Upload
+                accept="image/*"
+                maxSize={10 * 1024 * 1024} // 10MB
+                maxFiles={1}
+                value={files}
+                onChange={setFiles}
+                onUpload={handleUpload}
+                size="sm"
+                showPreview={true}
+                className="max-w-16"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     );
   };
 
   return (
     <div className="h-full overflow-y-auto p-4">
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Generation type selection */}
-        <div className="space-y-2">
-          <Label>Task Type</Label>
-          <Select onValueChange={value => handleGenerationTypeChange(value as GenerationType)} value={selectedGenerationType}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Generation Type" />
-            </SelectTrigger>
-            <SelectContent>
-              {generationTypes.map(type => (
-                <SelectItem key={type.value} value={type.value}>
-                  <span className="font-medium">{type.label}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          {/* AI service and model selection */}
+          <FormField
+            control={form.control}
+            name="serviceModel"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Model</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Model" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {availableModels.map(model => (
+                      <SelectItem key={`${model.name}`} value={`${model.name}`}>
+                        <div>{model.displayName}</div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {/* AI service and model selection */}
-        <div className="space-y-2">
-          <Label>Service & Model</Label>
-          <Select onValueChange={value => form.setValue('serviceModel', value)} value={form.watch('serviceModel')}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Service & Model" />
-            </SelectTrigger>
-            <SelectContent>
-              {filteredAvailableModels.map(model => (
-                <SelectItem key={`${model.name}`} value={`${model.name}`}>
-                  <div className="flex items-center gap-2">
-                    <div>{model.displayName}</div>
-                    {model.description && <div className="text-muted-foreground text-xs">({model.description})</div>}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          {/* Prompt input */}
+          <FormField
+            control={form.control}
+            name="prompt"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Prompt</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Please enter detailed description..." className="min-h-[100px]" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {/* Prompt input */}
-        <div className="space-y-2">
-          <Label htmlFor="prompt">Prompt</Label>
-          <Textarea id="prompt" placeholder="Please enter detailed description..." className="min-h-[100px]" {...form.register('prompt')} />
-        </div>
+          {/* Dynamic parameter inputs based on selected model */}
+          {selectedGenerationType === 'text-to-image' && <>{renderCanvasSizeInputs()}</>}
 
-        {/* Dynamic parameter inputs */}
-        {selectedGenerationType === 'text-to-image' && <>{renderCanvasSizeInputs()}</>}
+          {selectedGenerationType === 'image-to-image' && (
+            <>
+              {renderImageUpload('Reference Image', referenceImageFiles, setReferenceImageFiles, 'referenceImage')}
+              {renderCanvasSizeInputs()}
+            </>
+          )}
 
-        {selectedGenerationType === 'image-to-image' && (
-          <>
-            {renderImageUpload('Reference Image', referenceImageFiles, setReferenceImageFiles, 'referenceImage')}
-            {renderCanvasSizeInputs()}
-          </>
-        )}
+          {selectedGenerationType === 'text-to-video' && (
+            <>
+              {renderCanvasSizeInputs()}
+              {renderDurationInput()}
+            </>
+          )}
 
-        {selectedGenerationType === 'text-to-video' && (
-          <>
-            {renderCanvasSizeInputs()}
-            {renderDurationInput()}
-          </>
-        )}
+          {selectedGenerationType === 'image-to-video' && (
+            <>
+              {renderImageUpload('Reference Image', referenceImageFiles, setReferenceImageFiles, 'referenceImage')}
+              {renderCanvasSizeInputs()}
+              {renderDurationInput()}
+            </>
+          )}
 
-        {selectedGenerationType === 'image-to-video' && (
-          <>
-            {renderImageUpload('Reference Image', referenceImageFiles, setReferenceImageFiles, 'referenceImage')}
-            {renderCanvasSizeInputs()}
-            {renderDurationInput()}
-          </>
-        )}
+          {selectedGenerationType === 'keyframe-to-video' && (
+            <>
+              {renderImageUpload('First Frame', firstFrameFiles, setFirstFrameFiles, 'firstFrame')}
+              {renderImageUpload('Last Frame', lastFrameFiles, setLastFrameFiles, 'lastFrame')}
+              {renderCanvasSizeInputs()}
+              {renderDurationInput()}
+            </>
+          )}
 
-        {selectedGenerationType === 'keyframe-to-video' && (
-          <>
-            {renderImageUpload('First Frame', firstFrameFiles, setFirstFrameFiles, 'firstFrame')}
-            {renderImageUpload('Last Frame', lastFrameFiles, setLastFrameFiles, 'lastFrame')}
-            {renderCanvasSizeInputs()}
-            {renderDurationInput()}
-          </>
-        )}
-
-        {/* Submit button */}
-        <Button type="submit" className="w-full" disabled={isSubmitting || !watchedServiceModel}>
-          {isSubmitting ? 'Submitting...' : 'Start Generation'}
-        </Button>
-      </form>
+          {/* Submit button */}
+          <Button type="submit" className="w-full" disabled={isSubmitting || !watchedServiceModel}>
+            {isSubmitting ? 'Submitting...' : 'Start Generation'}
+          </Button>
+        </form>
+      </Form>
     </div>
   );
 }

@@ -8,7 +8,7 @@ import { GenerationTaskResult, GenerationType } from '../types';
  */
 export class JimengT2iV30 extends BaseAigcModel {
   name = 'jimeng-t2i-v30';
-  displayName = '即梦 文生图 3.0';
+  displayName = '即梦 3.0(文生图)';
   description = '高质量文生图模型';
   parameterLimits = {
     aspectRatio: ['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1', '21:9'],

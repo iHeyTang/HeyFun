@@ -8,7 +8,7 @@ import { GenerationTaskResult, GenerationType } from '../types';
  */
 export class Wanx21T2iTurbo extends BaseAigcModel {
   name = 'wanx2.1-t2i-turbo';
-  displayName = '万相 2.1 T2I Turbo';
+  displayName = '万相 2.1 Turbo(文生图)';
   description = '快速文生图模型';
   parameterLimits = {
     aspectRatio: ['1:1', '16:9', '4:3', '9:16', '3:4'],

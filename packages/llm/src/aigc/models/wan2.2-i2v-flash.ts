@@ -8,7 +8,7 @@ import { GenerationTaskResult, GenerationType } from '../types';
  */
 export class Wan22I2vFlash extends BaseAigcModel {
   name = 'wan2.2-i2v-flash';
-  displayName = '万相 I2V Flash';
+  displayName = '万相 2.2 Flash(图生视频)';
   description = '快速图生视频模型';
   parameterLimits = {
     aspectRatio: ['1:1', '16:9', '9:16'],

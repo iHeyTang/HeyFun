@@ -7,7 +7,7 @@ import { GenerationTaskResult, GenerationType } from '../types';
  */
 export class DoubaoSeedance10LiteI2v250428 extends BaseAigcModel {
   name = 'doubao-seedance-1-0-lite-i2v-250428';
-  displayName = 'Doubao-Seedance-1.0-lite-i2v';
+  displayName = '豆包1.0 Lite(图生视频)';
   description = '精准响应，性价比高';
   parameterLimits = {
     aspectRatio: ['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9'],

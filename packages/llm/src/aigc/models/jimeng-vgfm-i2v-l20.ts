@@ -14,7 +14,7 @@ import { downloadFile } from '../utils/downloader';
  */
 export class JimengVgfmI2vL20 extends BaseAigcModel {
   name = 'jimeng-vgfm-i2v-l20';
-  displayName = '即梦 图生视频 S2.0 Pro';
+  displayName = '即梦 图生视频 S2.0 Pro(图生视频)';
   description = '专业图生视频模型';
   parameterLimits = {
     aspectRatio: [],

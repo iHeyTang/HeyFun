@@ -10,7 +10,7 @@ import z from 'zod';
  */
 export class Wan22T2vPlus extends BaseAigcModel {
   name = 'wan2.2-t2v-plus';
-  displayName = '万相 T2V Plus';
+  displayName = '万相 2.2 Plus(文生视频)';
   description = '高质量文生视频模型';
   parameterLimits = {
     aspectRatio: ['1:1', '16:9', '9:16'],

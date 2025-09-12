@@ -10,7 +10,7 @@ const toAsync = new ToAsyncTaskManager<Awaited<ReturnType<VolcengineArkProvider[
  */
 export class DoubaoSeedream30T2i250415 extends BaseAigcModel {
   name = 'doubao-seedream-3-0-t2i-250415';
-  displayName = 'Doubao-Seedream-3.0-t2i';
+  displayName = '豆包3.0(文生图)';
   description = '影视质感，文字更准，直出 2K 高清图';
   parameterLimits = {
     aspectRatio: ['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9'],
