@@ -1,17 +1,59 @@
+import { ImageUpload, MultiImageUpload } from '@/components/block/image-upload';
+import { Button } from '@/components/ui/button';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Slider } from '@/components/ui/slider';
-import { ImageUpload, MultiImageUpload } from '@/components/block/image-upload';
 import { JSONSchema } from 'json-schema-to-ts';
-import { UseFormReturn, useFieldArray } from 'react-hook-form';
-import { Plus, Trash2, SquareIcon } from 'lucide-react';
-import { useState } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
 import * as React from 'react';
+import { useState } from 'react';
+import { UseFormReturn, useFieldArray } from 'react-hook-form';
+
+// 自定义矩形图标组件，根据比例动态调整宽高
+const RatioIcon = ({ ratio }: { ratio: string }) => {
+  // 解析比例字符串，如 "16:9", "1:1", "4:3" 等
+  const parseRatio = (ratioStr: string) => {
+    const parts = ratioStr.split(':');
+    if (parts.length === 2 && parts[0] && parts[1]) {
+      const width = parseFloat(parts[0]);
+      const height = parseFloat(parts[1]);
+      return { width, height };
+    }
+    return { width: 1, height: 1 }; // 默认正方形
+  };
+
+  const { width, height } = parseRatio(ratio);
+
+  // 计算显示尺寸，保持最大尺寸为16px
+  const maxSize = 24;
+  const aspectRatio = width / height;
+
+  let displayWidth = maxSize;
+  let displayHeight = maxSize;
+
+  if (aspectRatio > 1) {
+    // 宽大于高
+    displayHeight = maxSize / aspectRatio;
+  } else if (aspectRatio < 1) {
+    // 高大于宽
+    displayWidth = maxSize * aspectRatio;
+  }
+
+  return (
+    <div className="flex h-8 w-8 items-center justify-center">
+      <div
+        className="rounded-[4px] border-2 border-current/80"
+        style={{
+          width: `${displayWidth}px`,
+          height: `${displayHeight}px`,
+        }}
+      />
+    </div>
+  );
+};
 
 interface GenerationSchemaFormProps {
   schema: Exclude<JSONSchema, boolean>;
@@ -153,7 +195,7 @@ const StringForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaForm
         control={form.control}
         name={formFieldPath}
         render={() => (
-          <FormItem className="space-y-2">
+          <FormItem className="space-y-1">
             {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
             <FormControl>
               <Input value={schema.const as string} readOnly className="bg-muted/50 cursor-not-allowed" />
@@ -173,7 +215,7 @@ const StringForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaForm
         control={form.control}
         name={formFieldPath}
         render={({ field: formField }) => (
-          <FormItem className="space-y-2">
+          <FormItem className="space-y-1">
             {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
             <Select onValueChange={formField.onChange} defaultValue={formField.value}>
               <FormControl>
@@ -204,7 +246,7 @@ const StringForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaForm
         control={form.control}
         name={formFieldPath}
         render={({ field: formField }) => (
-          <FormItem>
+          <FormItem className="space-y-1">
             {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
             <FormControl>
               <ImageUpload
@@ -238,7 +280,7 @@ const StringForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaForm
         control={form.control}
         name={formFieldPath}
         render={({ field: formField }) => (
-          <FormItem>
+          <FormItem className="space-y-1">
             {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
             <FormControl>
               <Textarea
@@ -261,7 +303,7 @@ const StringForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaForm
       control={form.control}
       name={formFieldPath}
       render={({ field: formField }) => (
-        <FormItem>
+        <FormItem className="space-y-1">
           {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
           <FormControl>
             <Input placeholder={`输入${displayLabel}`} {...formField} />
@@ -289,7 +331,7 @@ const RatioForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormP
       control={form.control}
       name={formFieldPath}
       render={({ field }) => (
-        <FormItem>
+        <FormItem className="space-y-1">
           {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
           <FormControl>
             <div className="grid grid-cols-[repeat(auto-fit,48px)] justify-start gap-2">
@@ -302,7 +344,7 @@ const RatioForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormP
                   className="h-16 w-12 justify-self-center px-2 py-3"
                 >
                   <div className="flex flex-col items-center gap-1">
-                    <SquareIcon className="h-4 w-4" />
+                    <RatioIcon ratio={ratio} />
                     <span className="text-xs">{ratio}</span>
                   </div>
                 </Button>
@@ -337,7 +379,7 @@ const NumberForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaForm
       control={form.control}
       name={formFieldPath}
       render={({ field: formField }) => (
-        <FormItem className="space-y-2">
+        <FormItem className="space-y-1">
           {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
           <FormControl>
             {hasRange && !isFixedValue ? (
@@ -404,7 +446,7 @@ const BooleanForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFor
       control={form.control}
       name={formFieldPath}
       render={({ field: formField }) => (
-        <FormItem>
+        <FormItem className="space-y-1">
           {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
           <FormControl>
             <Switch checked={formField.value} onCheckedChange={formField.onChange} />
@@ -450,7 +492,7 @@ const AnyOfForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormP
   }
 
   return (
-    <FormItem className="space-y-3">
+    <FormItem className="space-y-1">
       {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
 
       <div className="space-y-2">
@@ -563,7 +605,7 @@ const ArrayForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormP
   };
 
   return (
-    <FormItem className="space-y-3">
+    <FormItem className="space-y-1">
       {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
       <div className="space-y-3">
         {fields.length === 0 ? (
@@ -600,7 +642,7 @@ const ImageArrayForm: React.FC<GenerationSchemaFormProps> = ({ schema, form, fie
   };
 
   return (
-    <FormItem className="space-y-3">
+    <FormItem className="space-y-1">
       {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
 
       <MultiImageUpload
