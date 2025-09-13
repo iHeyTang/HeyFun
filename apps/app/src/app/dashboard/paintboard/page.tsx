@@ -8,8 +8,7 @@ import { useRef } from 'react';
 export default function GeneralGenerationPage() {
   const taskHistoryRef = useRef<TaskHistoryRef>(null);
 
-  const handleFormSubmit = async (data: unknown) => {
-    console.log('Generation task submitted:', data);
+  const handleFormSubmitSuccess = async () => {
     // 提交成功后立即刷新任务列表
     if (taskHistoryRef.current) {
       await taskHistoryRef.current.triggerRefresh();
@@ -19,7 +18,7 @@ export default function GeneralGenerationPage() {
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full w-full">
       <ResizablePanel defaultSize={24} minSize={10}>
-        <UnifiedGenerationForm onSubmit={handleFormSubmit} />
+        <UnifiedGenerationForm onSubmitSuccess={handleFormSubmitSuccess} />
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel defaultSize={76} minSize={50}>

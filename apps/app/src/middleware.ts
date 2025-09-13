@@ -9,6 +9,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/share(.*)',
   '/api/webhooks/(.*)',
   '/api/tools/refresh-stars',
+  '/api/queue/(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

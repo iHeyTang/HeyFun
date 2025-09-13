@@ -262,6 +262,7 @@ model PaintboardTasks {
   service        String // 服务提供商：wan, doubao, jimeng
   model          String // 模型名称
   generationType String // 生成类型：text-to-image, image-to-image, text-to-video, image-to-video, keyframe-to-video
+  /// [PaintboardTaskStatus]
   status         String @default("pending") // 任务状态：pending, processing, completed, failed
 
   // 任务参数和结果

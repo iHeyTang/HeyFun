@@ -11,6 +11,7 @@ declare global {
       name: string;
     };
 
+    type PaintboardTaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
     type PaintboardTaskParams = Record<string, any>;
     type PaintboardTaskResult = { bucket: string; key: string }[];
   }

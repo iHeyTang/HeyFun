@@ -21,7 +21,7 @@ const baseFormSchema = z.object({
 type FormData = z.infer<typeof baseFormSchema>;
 
 interface UnifiedGenerationFormProps {
-  onSubmit?: (data: unknown) => void;
+  onSubmitSuccess?: () => void;
 }
 
 // 基础默认值，不包含动态参数
@@ -30,7 +30,7 @@ const baseDefaultValues: FormData = {
   params: {},
 };
 
-export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) {
+export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationFormProps) {
   const [availableModels, setAvailableModels] = useState<Awaited<ReturnType<typeof getAllAigcModelInfos>>['data']>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const previousModelRef = useRef<string>('');
@@ -97,23 +97,13 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
         return;
       }
 
-      // Use the params from the form data
-      const formData = {
-        ...data.params,
-      };
-
-      const result = await submitGenerationTask({ model, params: formData });
-
-      if (result.data) {
-        if (result.data.success) {
-          toast.success('Task submitted successfully');
-          onSubmit?.(result);
-        } else {
-          toast.error('Task submission failed');
-        }
-      } else {
+      const result = await submitGenerationTask({ model, params: data.params });
+      if (result.error) {
         toast.error(`Task submission failed: ${result?.error || 'Unknown error'}`);
+        return;
       }
+      toast.success('Task submitted successfully');
+      onSubmitSuccess?.();
     } catch (error) {
       console.error('Failed to submit task:', error);
       toast.error('Failed to submit task');
