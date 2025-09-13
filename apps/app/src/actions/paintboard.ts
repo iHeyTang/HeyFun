@@ -18,22 +18,28 @@ enum PaintboardTaskStatus {
 }
 
 // 获取所有服务模型信息
-export const getAllAigcModelInfos = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>): Promise<{
-  name: string;
-  displayName: string;
-  description?: string;
-  generationTypes: string[];
-  paramsSchema: any;
-}[]> => {
-  const models = await AIGC.getAllServiceModels();
-  return models.map(model => ({
-    name: model.name,
-    displayName: model.displayName,
-    description: model.description,
-    generationTypes: model.generationTypes,
-    paramsSchema: zodToJsonSchema(model.paramsSchema),
-  }));
-});
+export const getAllAigcModelInfos = withUserAuth(
+  async ({
+    orgId,
+  }: AuthWrapperContext<{}>): Promise<
+    {
+      name: string;
+      displayName: string;
+      description?: string;
+      generationTypes: string[];
+      paramsSchema: any;
+    }[]
+  > => {
+    const models = await AIGC.getAllServiceModels();
+    return models.map(model => ({
+      name: model.name,
+      displayName: model.displayName,
+      description: model.description,
+      generationTypes: model.generationTypes,
+      paramsSchema: zodToJsonSchema(model.paramsSchema),
+    }));
+  },
+);
 
 // 获取用户的所有画板任务
 export const getUserPaintboardTasks = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
@@ -70,7 +76,6 @@ export const getPaintboardTask = withUserAuth(async ({ args }: AuthWrapperContex
 // 提交生成任务
 export const submitGenerationTask = withUserAuth(async ({ args, orgId }: AuthWrapperContext<{ model: string; params: any }>) => {
   const { model, params } = args;
-  console.log('submitGenerationTask', args);
   // 1. 创建数据库任务记录
   const taskRecord = await prisma.paintboardTasks.create({
     data: {
