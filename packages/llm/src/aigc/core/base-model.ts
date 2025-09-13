@@ -58,6 +58,7 @@ export abstract class BaseAigcModel {
   public abstract name: string;
   public abstract displayName: string;
   public abstract description?: string;
+  public abstract costDescription?: string;
   public abstract generationTypes: GenerationType[];
 
   public abstract paramsSchema: z.ZodSchema;
@@ -65,6 +66,8 @@ export abstract class BaseAigcModel {
   abstract submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string>;
 
   abstract getTaskResult(params: { model: string; taskId: string }): Promise<GenerationTaskResult>;
+
+  abstract calculateCost(params: z.infer<typeof this.paramsSchema>): number;
 
   // 通用错误处理方法
   protected handleError(error: unknown, operation: string): GenerationTaskResponse {

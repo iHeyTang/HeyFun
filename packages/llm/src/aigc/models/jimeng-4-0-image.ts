@@ -11,6 +11,7 @@ export class Jimeng40 extends BaseAigcModel {
   name = 'jimeng-4-0-image';
   displayName = '即梦图片生成 4.0';
   description = '高质量文生图和图生图模型';
+  costDescription = '0.3 Credits / image';
   generationTypes = ['text-to-image', 'image-to-image'] as GenerationType[];
 
   paramsSchema = z.object({
@@ -101,6 +102,10 @@ export class Jimeng40 extends BaseAigcModel {
       default:
         return 'failed';
     }
+  }
+
+  calculateCost(params: z.infer<typeof this.paramsSchema>): number {
+    return 0.3;
   }
 
   /**

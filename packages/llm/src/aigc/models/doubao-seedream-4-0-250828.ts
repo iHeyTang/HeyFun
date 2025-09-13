@@ -13,6 +13,7 @@ export class DoubaoSeedream40 extends BaseAigcModel {
   name = 'doubao-seedream-4-0-250828';
   displayName = '豆包图片生成 4.0';
   description = '4k超高清直出，超强主体一致性，支持多参考图、组图生成';
+  costDescription = '0.3 Credits / image';
   generationTypes = ['image-to-image', 'text-to-image'] as GenerationType[];
 
   paramsSchema = z.object({
@@ -63,6 +64,10 @@ export class DoubaoSeedream40 extends BaseAigcModel {
       usage: { image_count: result.result?.data?.length || 0 },
       error: result.error || undefined,
     };
+  }
+
+  calculateCost(params: z.infer<typeof this.paramsSchema>): number {
+    return 0.3;
   }
 
   /**

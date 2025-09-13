@@ -13,6 +13,7 @@ export class DoubaoSeedream30T2i250415 extends BaseAigcModel {
   name = 'doubao-seedream-3-0-t2i-250415';
   displayName = '豆包文生图 3.0';
   description = '影视质感，文字更准，直出 2K 高清图';
+  costDescription = '0.285 Credits / image';
   generationTypes = ['text-to-image'] as GenerationType[];
 
   paramsSchema = z.object({
@@ -54,6 +55,10 @@ export class DoubaoSeedream30T2i250415 extends BaseAigcModel {
       usage: { image_count: result.result?.data?.length || 0 },
       error: result.error || undefined,
     };
+  }
+
+  calculateCost(params: z.infer<typeof this.paramsSchema>): number {
+    return 0.285;
   }
 
   /**

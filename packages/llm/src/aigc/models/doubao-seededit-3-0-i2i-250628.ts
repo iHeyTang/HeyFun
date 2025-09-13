@@ -13,6 +13,7 @@ export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
   name = 'doubao-seededit-3-0-i2i-250628';
   displayName = '豆包图片编辑 3.0';
   description = '准确遵循编辑指令，有效保留图像内容';
+  costDescription = '0.33 Credits / image';
   generationTypes = ['image-to-image'] as GenerationType[];
 
   paramsSchema = z.object({
@@ -54,5 +55,9 @@ export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
       usage: { image_count: result.result?.data?.length || 0 },
       error: result.error || undefined,
     };
+  }
+
+  calculateCost(params: z.infer<typeof this.paramsSchema>): number {
+    return 0.33;
   }
 }

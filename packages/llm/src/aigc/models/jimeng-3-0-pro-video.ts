@@ -11,6 +11,7 @@ export class Jimeng30ProVideo extends BaseAigcModel {
   name = 'jimeng-3-0-pro-video';
   displayName = '即梦视频生成 3.0 Pro';
   description = '专业图生视频模型';
+  costDescription = '1.10 Credits / second';
   generationTypes = ['image-to-video'] as GenerationType[];
 
   paramsSchema = z.object({
@@ -79,6 +80,13 @@ export class Jimeng30ProVideo extends BaseAigcModel {
         video_count: 1,
       },
     };
+  }
+
+  calculateCost(params: z.infer<typeof this.paramsSchema>): number {
+    // 即梦AI-视频生成3.0 Pro: 1.1元/秒
+    const pricePerSecond = 1.1;
+    const duration = parseInt(params.duration);
+    return pricePerSecond * duration;
   }
 
   private getStatus(status: 'in_queue' | 'generating' | 'done' | 'not_found' | 'expired'): 'pending' | 'processing' | 'completed' | 'failed' {

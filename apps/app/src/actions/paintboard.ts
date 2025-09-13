@@ -14,6 +14,7 @@ export const getAllAigcModelInfos = withUserAuth(
       name: string;
       displayName: string;
       description?: string;
+      costDescription?: string;
       generationTypes: string[];
       paramsSchema: any;
     }[]
@@ -23,6 +24,7 @@ export const getAllAigcModelInfos = withUserAuth(
       name: model.name,
       displayName: model.displayName,
       description: model.description,
+      costDescription: model.costDescription,
       generationTypes: model.generationTypes,
       paramsSchema: zodToJsonSchema(model.paramsSchema),
     }));

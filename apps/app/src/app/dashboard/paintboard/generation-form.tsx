@@ -118,14 +118,7 @@ export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationForm
         <form onSubmit={form.handleSubmit(handleSubmit)} className="h-full space-y-6">
           {/* Model selection */}
           <AigcModelSelector
-            models={
-              availableModels?.map(model => ({
-                name: model.name,
-                displayName: model.displayName,
-                description: model.description,
-                generationTypes: model.generationTypes,
-              })) || []
-            }
+            models={availableModels || []}
             selectedModel={watchedModelName}
             onModelSelect={value => form.setValue('serviceModel', value)}
             placeholder="选择模型"

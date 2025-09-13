@@ -1,5 +1,6 @@
 'use client';
 
+import { getAllAigcModelInfos } from '@/actions/paintboard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,15 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Image, Video, Palette, Sparkles } from 'lucide-react';
+import { Search, Image, Video, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-interface ModelInfo {
-  name: string;
-  displayName: string;
-  description?: string;
-  generationTypes: string[];
-}
+type ModelInfo = NonNullable<Awaited<ReturnType<typeof getAllAigcModelInfos>>['data']>[number];
 
 interface ModelSelectorProps {
   models: ModelInfo[];
@@ -151,7 +147,7 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
                     {filteredModels.map(model => (
                       <Card
                         key={model.name}
-                        className={`h-42 cursor-pointer overflow-hidden shadow-none transition-all hover:shadow-md ${selectedModel === model.name ? 'border-primary border-2' : ''}`}
+                        className={`h-48 cursor-pointer overflow-hidden shadow-none transition-all hover:shadow-md ${selectedModel === model.name ? 'border-primary border-2' : ''}`}
                         onClick={() => handleModelSelect(model.name)}
                       >
                         <CardHeader>
@@ -169,9 +165,15 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
                               );
                             })}
                           </div>
+                          {model.costDescription && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Sparkles className="text-muted-foreground h-4 w-4" />
+                              {model.costDescription}
+                            </Badge>
+                          )}
                         </CardHeader>
                         <CardContent className="overflow-hidden">
-                          {model.description && <CardDescription className="mb-3 text-sm">{model.description}</CardDescription>}
+                          {model.description && <CardDescription className="line-clamp-2 text-sm">{model.description}</CardDescription>}
                         </CardContent>
                       </Card>
                     ))}
