@@ -1,16 +1,16 @@
 'use client';
 
 import { getAllAigcModelInfos, submitGenerationTask } from '@/actions/paintboard';
-import { GenerationSchemaForm, extractDefaultValuesFromSchema } from './generation-schema-form';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { GenerationSchemaForm, extractDefaultValuesFromSchema } from './generation-schema-form';
 
 // Base form schema for model selection
 const baseFormSchema = z.object({

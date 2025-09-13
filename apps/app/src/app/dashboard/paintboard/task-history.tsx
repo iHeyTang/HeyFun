@@ -1,12 +1,12 @@
+import { MediaPreview } from '@/components/block/media-preview';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { isImageExtension, isVideoExtension } from '@/lib/shared/file-type';
 import { formatDate } from 'date-fns';
 import { Check, Clock, Copy, Download } from 'lucide-react';
-import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import { MediaPreview } from './media-preview';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { usePaintboardTasks, type PaintboardTask } from './use-paintboard-tasks';
-import { isImageExtension, isVideoExtension } from '@/lib/shared/file-type';
 
 export interface TaskHistoryRef {
   triggerRefresh: () => Promise<void>;
@@ -209,12 +209,26 @@ interface ResultCardProps {
 function ResultCard({ result, onDownload }: ResultCardProps) {
   const isVideo = isVideoExtension(result.key);
   const isImage = isImageExtension(result.key);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleMouseEnter = () => {
+    if (videoRef.current) {
+      videoRef.current.play();
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0; // 重置到开始位置
+    }
+  };
 
   if (isVideo) {
     return (
       <MediaPreview src={result.url} alt={result.key} type="video" filename={result.key} onDownload={onDownload}>
-        <div className="h-48 overflow-hidden rounded-lg">
-          <video src={result.url} controls className="h-full w-full object-contain">
+        <div className="h-48 overflow-hidden rounded-lg" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+          <video ref={videoRef} src={result.url} controls={false} className="h-full w-full object-contain" muted loop>
             Your browser does not support the video tag.
           </video>
         </div>

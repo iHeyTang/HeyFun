@@ -78,7 +78,7 @@ export function usePaintboardTasks() {
       } catch (err) {
         console.error('Error in real-time polling:', err);
       }
-    }, 5000); // 每5秒轮询一次
+    }, 30000); // 每30秒轮询一次
   }, [fetchTasks, isPolling]);
 
   // 停止实时轮询

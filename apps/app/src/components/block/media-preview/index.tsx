@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Download, X, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { Download, RotateCw, X, ZoomIn, ZoomOut } from 'lucide-react';
 import React from 'react';
 
 // ==================== Types ====================
@@ -26,7 +26,7 @@ export interface DragState {
 }
 
 // ==================== Hooks ====================
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export function useMediaPreview(isOpen: boolean) {
   const [scale, setScale] = useState(1);
@@ -323,7 +323,7 @@ interface MediaContentProps {
 function MediaContent({ src, alt, type, scale, rotation, position, isDragging, onWheel, onMouseDown }: MediaContentProps) {
   return (
     <div
-      className="flex h-[calc(100vh-12rem)] w-[calc(100vw-8rem)] items-center justify-center overflow-hidden"
+      className="flex h-[calc(100vh-12rem)] w-[calc(100vw-8rem)] items-center justify-center overflow-hidden rounded-md"
       onWheel={onWheel}
       onMouseDown={onMouseDown}
       style={{
@@ -336,7 +336,7 @@ function MediaContent({ src, alt, type, scale, rotation, position, isDragging, o
         <img
           src={src}
           alt={alt}
-          className="h-full w-full object-contain transition-transform duration-75 ease-out"
+          className="h-full w-fit overflow-hidden rounded-md object-contain transition-transform duration-75 ease-out"
           style={{
             transform: `scale(${scale}) rotate(${rotation}deg) translate(${position.x / scale}px, ${position.y / scale}px)`,
             transformOrigin: 'center center',
@@ -346,7 +346,18 @@ function MediaContent({ src, alt, type, scale, rotation, position, isDragging, o
           onDragStart={e => e.preventDefault()}
         />
       ) : (
-        <video src={src} controls className="h-full w-full object-contain" autoPlay={false} onDragStart={e => e.preventDefault()}>
+        <video
+          src={src}
+          controls
+          className="h-full w-fit rounded-md object-contain"
+          autoPlay={true}
+          onDragStart={e => e.preventDefault()}
+          style={{
+            transform: `scale(${scale}) rotate(${rotation}deg) translate(${position.x / scale}px, ${position.y / scale}px)`,
+            transformOrigin: 'center center',
+            willChange: 'transform',
+          }}
+        >
           Your browser does not support the video tag.
         </video>
       )}
@@ -373,7 +384,7 @@ interface PreviewTriggerProps {
 
 function PreviewTrigger({ children, onClick }: PreviewTriggerProps) {
   return (
-    <div className="cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:opacity-80" onClick={onClick}>
+    <div className="cursor-pointer transition-all duration-200 hover:scale-[1.02]" onClick={onClick}>
       {children}
     </div>
   );
