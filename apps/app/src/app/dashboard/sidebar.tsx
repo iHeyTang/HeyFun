@@ -15,29 +15,29 @@ const navItems = [
     label: 'Chat',
     path: '/dashboard/chat',
   },
-  {
-    icon: Bot,
-    label: 'Tasks',
-    path: '/dashboard/tasks',
-  },
+  // {
+  //   icon: Bot,
+  //   label: 'Tasks',
+  //   path: '/dashboard/tasks',
+  // },
   {
     icon: Palette,
     label: 'Paintboard',
     path: '/dashboard/paintboard',
   },
-  {
-    icon: FolderOpen,
-    label: 'Workspace',
-    path: '/dashboard/workspace',
-  },
+  // {
+  //   icon: FolderOpen,
+  //   label: 'Workspace',
+  //   path: '/dashboard/workspace',
+  // },
 ];
 
 const bottomNavItems = [
-  {
-    icon: BoxIcon,
-    label: 'Tools',
-    path: '/dashboard/tools',
-  },
+  // {
+  //   icon: BoxIcon,
+  //   label: 'Tools',
+  //   path: '/dashboard/tools',
+  // },
   {
     icon: SettingsIcon,
     label: 'Settings',
