@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Download, RotateCw, X, ZoomIn, ZoomOut } from 'lucide-react';
+import Image from 'next/image';
 import React from 'react';
 
 // ==================== Types ====================
@@ -333,7 +334,7 @@ function MediaContent({ src, alt, type, scale, rotation, position, isDragging, o
       }}
     >
       {type === 'image' ? (
-        <img
+        <Image
           src={src}
           alt={alt}
           className="h-full w-fit overflow-hidden rounded-md object-contain transition-transform duration-75 ease-out"

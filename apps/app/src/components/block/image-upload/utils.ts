@@ -22,8 +22,13 @@ export const uploadFile = async (file: File, path: string): Promise<string> => {
   // 获取上传URL
   const res = await getSignedUploadUrl({ extension: path.split('.').pop()! });
 
+  // 检查上传URL是否存在
+  if (!res.data?.uploadUrl) {
+    throw new Error('Failed to get upload URL');
+  }
+
   // 上传文件
-  const response = await fetch(res.data?.uploadUrl!, {
+  const response = await fetch(res.data.uploadUrl, {
     method: 'PUT',
     body: file,
     headers: {
@@ -35,8 +40,19 @@ export const uploadFile = async (file: File, path: string): Promise<string> => {
     throw new Error(`Upload failed: ${response.statusText}`);
   }
 
-  const url = await getSignedUrl({ filePath: res.data?.fileKey! });
-  return url.data!;
+  // 检查文件键是否存在
+  if (!res.data.fileKey) {
+    throw new Error('Failed to get file key');
+  }
+
+  const url = await getSignedUrl({ filePath: res.data.fileKey });
+
+  // 检查URL是否存在
+  if (!url.data) {
+    throw new Error('Failed to get signed URL');
+  }
+
+  return url.data;
 };
 
 /**
