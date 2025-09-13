@@ -52,7 +52,7 @@ export function withUserAuth<T = unknown, R = unknown>(fn: AuthWrapped<T, R>): A
       });
       return { data: res, error: undefined };
     } catch (error) {
-      throw error;
+      return { data: undefined, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   };
 }
