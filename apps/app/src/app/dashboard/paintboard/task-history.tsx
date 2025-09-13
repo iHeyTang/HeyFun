@@ -13,24 +13,12 @@ export interface TaskHistoryRef {
 }
 
 export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => {
-  const { tasks, loading, error, fetchTasks, downloadFile, startRealTimePolling, triggerRefresh } = usePaintboardTasks();
+  const { tasks, loading, error, fetchTasks, downloadFile, triggerRefresh } = usePaintboardTasks();
 
   // 暴露给父组件的方法
   useImperativeHandle(ref, () => ({
     triggerRefresh,
   }));
-
-  // 检查是否有进行中的任务，如果有则开始实时轮询
-  useEffect(() => {
-    const hasInProgressTasks = tasks.some(task => {
-      const statusNotCompleted = task.status === 'processing' || task.status === 'pending';
-      return statusNotCompleted;
-    });
-
-    if (hasInProgressTasks) {
-      startRealTimePolling();
-    }
-  }, [tasks, startRealTimePolling]);
 
   const handleDownload = async (result: PaintboardTask['results'][number], organizationId: string) => {
     await downloadFile(result.url, organizationId, result.key);
@@ -213,7 +201,9 @@ function ResultCard({ result, onDownload }: ResultCardProps) {
 
   const handleMouseEnter = () => {
     if (videoRef.current) {
-      videoRef.current.play();
+      videoRef.current.play().catch(() => {
+        // 忽略播放错误，避免控制台报错
+      });
     }
   };
 

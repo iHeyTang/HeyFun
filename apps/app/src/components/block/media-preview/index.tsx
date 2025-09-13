@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/ui/button';
 import { Download, RotateCw, X, ZoomIn, ZoomOut } from 'lucide-react';
-import Image from 'next/image';
 import React from 'react';
 
 // ==================== Types ====================
@@ -334,7 +333,7 @@ function MediaContent({ src, alt, type, scale, rotation, position, isDragging, o
       }}
     >
       {type === 'image' ? (
-        <Image
+        <img
           src={src}
           alt={alt}
           className="h-full w-fit overflow-hidden rounded-md object-contain transition-transform duration-75 ease-out"
@@ -352,7 +351,12 @@ function MediaContent({ src, alt, type, scale, rotation, position, isDragging, o
           controls
           className="h-full w-fit rounded-md object-contain"
           autoPlay={true}
+          muted
           onDragStart={e => e.preventDefault()}
+          onError={e => {
+            // 忽略自动播放错误
+            console.warn('Video autoplay failed:', e);
+          }}
           style={{
             transform: `scale(${scale}) rotate(${rotation}deg) translate(${position.x / scale}px, ${position.y / scale}px)`,
             transformOrigin: 'center center',

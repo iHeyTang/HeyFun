@@ -7,6 +7,7 @@ import { getLocale } from 'next-intl/server';
 import { ThemeProvider } from 'next-themes';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { Toaster } from '@/components/ui/sonner';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -118,6 +119,7 @@ export default async function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <NextIntlClientProvider>
               <div className="h-full flex-1 overflow-hidden">{children}</div>
+              <Toaster />
             </NextIntlClientProvider>
           </ThemeProvider>
           <Analytics />
