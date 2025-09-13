@@ -3,6 +3,7 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
 import storage, { downloadFile, getBucket } from '@/lib/server/storage';
+import { to } from '@/lib/shared/to';
 import { PaintboardTasks } from '@prisma/client';
 import AIGC from '@repo/llm/aigc';
 import { nanoid } from 'nanoid';
@@ -78,7 +79,7 @@ export const submitGenerationTask = withUserAuth(async ({ args, orgId }: AuthWra
   const taskId = taskRecord.id;
 
   // 2. 使用统一接口提交任务到外部服务
-  const externalTaskId = await AIGC.submitGenerationTask(model, params);
+  const [error, externalTaskId] = await to(AIGC.submitGenerationTask(model, params));
 
   // 3. 检查提交结果并更新数据库
   if (externalTaskId) {
@@ -116,9 +117,8 @@ export const submitGenerationTask = withUserAuth(async ({ args, orgId }: AuthWra
   } else {
     await prisma.paintboardTasks.update({
       where: { id: taskId },
-      data: { status: PaintboardTaskStatus.FAILED, error: 'Unknown error' },
+      data: { status: PaintboardTaskStatus.FAILED, error: error?.message || 'Unknown error' },
     });
-    throw new Error('Failed to submit task to external service');
   }
 });
 

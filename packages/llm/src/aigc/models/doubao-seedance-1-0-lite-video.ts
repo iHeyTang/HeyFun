@@ -1,6 +1,6 @@
 import z from 'zod';
 import { BaseAigcModel } from '../core/base-model';
-import { seedance10ProSubmitParamsSchema, VolcengineArkProvider } from '../providers/volcengine-ark';
+import { seedanceSubmitParamsSchema, VolcengineArkProvider } from '../providers/volcengine-ark';
 import { GenerationTaskResult, GenerationType } from '../types';
 
 /**
@@ -39,19 +39,19 @@ export class DoubaoSeedance10LiteVideo extends BaseAigcModel {
   async submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string> {
     const modelName = this.detectModelName(params);
 
-    const images: z.infer<typeof seedance10ProSubmitParamsSchema>['content'] = [];
+    const images: z.infer<typeof seedanceSubmitParamsSchema>['content'] = [];
 
     if (modelName === 'doubao-seedance-1-0-lite-i2v-250428') {
       if (params.firstFrame) {
-        images.push({ type: 'image', image_url: { url: params.firstFrame }, role: 'first_frame' });
+        images.push({ type: 'image_url', image_url: { url: params.firstFrame }, role: 'first_frame' });
       }
       if (params.lastFrame) {
-        images.push({ type: 'image', image_url: { url: params.lastFrame }, role: 'last_frame' });
+        images.push({ type: 'image_url', image_url: { url: params.lastFrame }, role: 'last_frame' });
       }
       if (params.referenceImage?.length) {
         images.push(
           ...params.referenceImage.map(image => ({
-            type: 'image' as const,
+            type: 'image_url' as const,
             image_url: { url: image },
             role: 'reference_image' as const,
           })),
@@ -59,17 +59,14 @@ export class DoubaoSeedance10LiteVideo extends BaseAigcModel {
       }
     }
 
+    const promptParameter = `--rs ${params.resolution} --rt ${params.aspectRatio} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.camerafixed}`;
     const task = await this.provider.seedanceSubmit({
       model: modelName as 'doubao-seedance-1-0-lite-i2v-250428' | 'doubao-seedance-1-0-lite-t2v-250428',
-      content: [
-        { type: 'text', text: params.prompt },
-        {
-          type: 'text',
-          text: `--rs ${params.resolution} --rt ${params.aspectRatio} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.camerafixed}`,
-        },
-        ...images,
-      ],
+      content: [{ type: 'text', text: `${params.prompt}\n${promptParameter}` }, ...images],
     });
+    if ('error' in task) {
+      throw new Error(task.error.message);
+    }
     return task.id;
   }
 

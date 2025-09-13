@@ -22,14 +22,14 @@ export interface SeedEdit30I2iResponse {
   };
 }
 
-export const seedance10ProSubmitParamsSchema = z.object({
+export const seedanceSubmitParamsSchema = z.object({
   model: z.enum(['doubao-seedance-1-0-pro-250528', 'doubao-seedance-1-0-lite-t2v-250428', 'doubao-seedance-1-0-lite-i2v-250428']),
   /** 模型有文本命令，如 --rs 720p --rt 16:9 --dur 5 --fps 24 --wm true --seed 11 --cf false */
   content: z.array(
     z.discriminatedUnion('type', [
       z.object({ type: z.literal('text'), text: z.string() }),
       z.object({
-        type: z.literal('image'),
+        type: z.literal('image_url'),
         image_url: z.object({ url: z.string() }),
         role: z.enum(['first_frame', 'last_frame', 'reference_image']),
       }),
@@ -38,9 +38,13 @@ export const seedance10ProSubmitParamsSchema = z.object({
   callback_url: z.string().optional(),
 });
 
-export interface Seedance10ProSubmitResponse {
-  id: string;
-}
+export type SeedanceSubmitResponse =
+  | {
+      id: string;
+    }
+  | {
+      error: { code: string; message: string };
+    };
 
 export const seedance10ProGetResultParamsSchema = z.object({
   id: z.string(),
@@ -92,9 +96,11 @@ export const seedream40ParamsSchema = z.object({
   image: z.array(z.string()).optional(),
   response_format: z.enum(['url', 'b64_json']).default('url'),
   sequential_image_generation: z.enum(['auto', 'disabled']).default('auto'),
-  sequential_image_generation_options: z.object({
-    max_images: z.number().min(1).max(15).default(15).optional(),
-  }).optional(),
+  sequential_image_generation_options: z
+    .object({
+      max_images: z.number().min(1).max(15).default(15).optional(),
+    })
+    .optional(),
   size: z.literal('adaptive').default('adaptive'),
   seed: z.number().default(-1),
   guidance_scale: z.number().min(1).max(10).default(5.5).optional(),
@@ -129,7 +135,7 @@ export class VolcengineArkProvider {
    * doubao-seaweed-241128 官网标记为【下线中】，故不再支持
    * https://www.volcengine.com/docs/82379/1330310#%E8%A7%86%E9%A2%91%E7%94%9F%E6%88%90%E8%83%BD%E5%8A%9B
    */
-  async seedanceSubmit(params: z.infer<typeof seedance10ProSubmitParamsSchema>): Promise<Seedance10ProSubmitResponse> {
+  async seedanceSubmit(params: z.infer<typeof seedanceSubmitParamsSchema>): Promise<SeedanceSubmitResponse> {
     const url = 'https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks';
     const response = await fetch(url, {
       method: 'POST',
