@@ -18,12 +18,19 @@ enum PaintboardTaskStatus {
 }
 
 // 获取所有服务模型信息
-export const getAllAigcModelInfos = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
+export const getAllAigcModelInfos = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>): Promise<{
+  name: string;
+  displayName: string;
+  description?: string;
+  generationTypes: string[];
+  paramsSchema: any;
+}[]> => {
   const models = await AIGC.getAllServiceModels();
   return models.map(model => ({
     name: model.name,
     displayName: model.displayName,
     description: model.description,
+    generationTypes: model.generationTypes,
     paramsSchema: zodToJsonSchema(model.paramsSchema),
   }));
 });

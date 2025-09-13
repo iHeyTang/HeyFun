@@ -4,7 +4,7 @@ import { getAllAigcModelInfos, submitGenerationTask } from '@/actions/paintboard
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AigcModelSelector } from '@/components/features/aigc-model-selector';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -127,21 +127,19 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="h-full space-y-6">
           {/* Model selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Model</label>
-            <Select onValueChange={value => form.setValue('serviceModel', value)} value={watchedModelName}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Model" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableModels?.map(model => (
-                  <SelectItem key={`${model.name}`} value={`${model.name}`}>
-                    <div>{model.displayName}</div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <AigcModelSelector
+            models={
+              availableModels?.map(model => ({
+                name: model.name,
+                displayName: model.displayName,
+                description: model.description,
+                generationTypes: model.generationTypes,
+              })) || []
+            }
+            selectedModel={watchedModelName}
+            onModelSelect={value => form.setValue('serviceModel', value)}
+            placeholder="选择模型"
+          />
 
           {/* Dynamic form fields based on selected model's JSON schema */}
           {selectedModelSchema && <GenerationSchemaForm key={`${watchedModelName}-${formKey}`} schema={selectedModelSchema as any} form={form} />}
