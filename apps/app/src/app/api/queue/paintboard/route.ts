@@ -26,7 +26,7 @@ export const POST = async (req: Request) => {
 
   const timeoutMs = 5 * 60 * 1000; // 5分钟
 
-  await processPaintboardTaskResult({
+  const result = await processPaintboardTaskResult({
     orgId: task.organizationId,
     taskId: task.id,
     model: task.model,
@@ -34,6 +34,30 @@ export const POST = async (req: Request) => {
     timeoutMs,
     retryDelay: 2000, // 每次重试间隔2秒
   });
+
+  if (result?.success) {
+    // 获取模型实例并计算费用
+    const model = AIGC.getModel(task.model);
+    if (!model) {
+      console.error(`Model not found: ${task.model}`);
+    } else {
+      try {
+        // 计算任务费用
+        const cost = model.calculateCost(task.params as any);
+
+        // 扣除费用
+        await prisma.credit.update({
+          where: { organizationId: task.organizationId },
+          data: { amount: { decrement: cost } },
+        });
+
+        console.log(`Deducted ${cost} credits from organization ${task.organizationId} for task ${task.id}`);
+      } catch (error) {
+        console.error(`Failed to deduct credits for task ${task.id}:`, error);
+        // 即使扣费失败，也不应该影响任务结果
+      }
+    }
+  }
 
   return NextResponse.json({});
 };
@@ -97,7 +121,7 @@ const processPaintboardTaskResult = async (args: {
               data: { results: results as any, status: 'completed' },
             });
             console.log(`Task ${taskId} completed successfully with ${results.length} results`);
-            return results;
+            return { success: true, results };
           } else {
             throw new Error('No valid results found');
           }

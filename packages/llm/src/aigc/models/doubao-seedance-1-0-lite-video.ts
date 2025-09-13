@@ -115,7 +115,7 @@ export class DoubaoSeedance10LiteVideo extends BaseAigcModel {
     const aspectRatio = params.aspectRatio;
     const duration = params.duration;
     const fps = 24; // 固定帧率24fps
-    const pricePerMillionTokens = 11.0; // 11.00元/百万token
+    const pricePerMillionTokens = 11000; // 11.00元/百万token
 
     const dimensions = resolutionMap[resolution]?.[aspectRatio];
 
@@ -136,7 +136,7 @@ export class DoubaoSeedance10LiteVideo extends BaseAigcModel {
     // 计算价格：token数 / 1000000 * 11.00元
     const cost = (tokens / 1000000) * pricePerMillionTokens;
 
-    return cost;
+    return Math.round(cost);
   }
 
   private detectModelName(params: z.infer<typeof this.paramsSchema>): string {

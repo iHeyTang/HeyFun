@@ -58,7 +58,7 @@ export class DoubaoSeedream30T2i250415 extends BaseAigcModel {
   }
 
   calculateCost(params: z.infer<typeof this.paramsSchema>): number {
-    return 0.285;
+    return 285;
   }
 
   /**

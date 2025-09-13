@@ -84,7 +84,7 @@ export class Jimeng30ProVideo extends BaseAigcModel {
 
   calculateCost(params: z.infer<typeof this.paramsSchema>): number {
     // 即梦AI-视频生成3.0 Pro: 1.1元/秒
-    const pricePerSecond = 1.1;
+    const pricePerSecond = 1100;
     const duration = parseInt(params.duration);
     return pricePerSecond * duration;
   }

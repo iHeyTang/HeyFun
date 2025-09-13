@@ -77,6 +77,11 @@ class AIGCHost {
     }
     this.models.set(model.name, model);
   }
+
+  // 获取模型实例
+  public getModel(modelName: string): BaseAigcModel | null {
+    return this.models.get(modelName) || null;
+  }
 }
 
 const AIGC = new AIGCHost({

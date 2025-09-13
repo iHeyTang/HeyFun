@@ -105,7 +105,7 @@ export class Jimeng40 extends BaseAigcModel {
   }
 
   calculateCost(params: z.infer<typeof this.paramsSchema>): number {
-    return 0.3;
+    return 300;
   }
 
   /**

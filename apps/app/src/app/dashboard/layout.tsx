@@ -11,6 +11,7 @@ import Link from 'next/link';
 import NotificationEn from './notification-en';
 import NotificationZh from './notification-zh';
 import { AppSidebar } from './sidebar';
+import { CreditBadge } from '@/components/features/credit-badge';
 
 export const metadata: Metadata = {
   title: 'HeyFun',
@@ -30,6 +31,7 @@ const Header = ({ className }: { className?: string }) => {
           </div>
         </Link>
         <OrganizationSwitcher hidePersonal />
+        <CreditBadge />
         <Dialog>
           <DialogTrigger asChild>
             <Badge className="cursor-pointer bg-yellow-50 text-yellow-500 transition hover:scale-101">EARLY ACCESS</Badge>

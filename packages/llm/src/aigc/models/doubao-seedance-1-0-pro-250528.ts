@@ -97,7 +97,7 @@ export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
     const aspectRatio = params.aspectRatio;
     const duration = params.duration;
     const fps = 24; // 固定帧率24fps
-    const pricePerMillionTokens = 16.5; // 16.50元/百万token
+    const pricePerMillionTokens = 16500; // 16.50元/百万token
 
     const dimensions = resolutionMap[resolution]?.[aspectRatio];
 

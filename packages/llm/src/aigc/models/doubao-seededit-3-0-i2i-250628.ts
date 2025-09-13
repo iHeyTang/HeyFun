@@ -58,6 +58,6 @@ export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
   }
 
   calculateCost(params: z.infer<typeof this.paramsSchema>): number {
-    return 0.33;
+    return 330;
   }
 }

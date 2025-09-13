@@ -66,6 +66,13 @@ export const getPaintboardTask = withUserAuth(async ({ args }: AuthWrapperContex
 // 提交生成任务
 export const submitGenerationTask = withUserAuth(async ({ args, orgId }: AuthWrapperContext<{ model: string; params: any }>) => {
   const { model, params } = args;
+
+  // 检查余额
+  const credit = await prisma.credit.findUnique({ where: { organizationId: orgId } });
+  if (!credit || credit.amount <= 0) {
+    throw new Error('Insufficient balance');
+  }
+
   // 创建数据库任务记录
   const res = await prisma.paintboardTasks.create({
     data: {
