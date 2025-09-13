@@ -24,7 +24,6 @@ export const getAllAigcModelInfos = withUserAuth(async ({ orgId }: AuthWrapperCo
     displayName: model.displayName,
     description: model.description,
     paramsSchema: zodToJsonSchema(model.paramsSchema),
-    parameterLimits: model.parameterLimits,
   }));
 });
 

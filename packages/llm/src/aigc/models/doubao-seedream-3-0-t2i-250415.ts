@@ -11,12 +11,9 @@ const toAsync = new ToAsyncTaskManager<Awaited<ReturnType<VolcengineArkProvider[
  */
 export class DoubaoSeedream30T2i250415 extends BaseAigcModel {
   name = 'doubao-seedream-3-0-t2i-250415';
-  displayName = '豆包3.0(文生图)';
+  displayName = '豆包文生图 3.0';
   description = '影视质感，文字更准，直出 2K 高清图';
-  parameterLimits = {
-    aspectRatio: ['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9'],
-    generationType: ['text-to-image'] as GenerationType[],
-  };
+  generationTypes = ['text-to-image'] as GenerationType[];
 
   paramsSchema = z.object({
     prompt: z.string().describe('[title:提示词][renderType:textarea]'),

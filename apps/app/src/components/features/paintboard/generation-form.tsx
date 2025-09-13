@@ -1,7 +1,7 @@
 'use client';
 
 import { getAllAigcModelInfos, submitGenerationTask } from '@/actions/paintboard';
-import { GenerationSchemaForm } from './generation-schema-form';
+import { GenerationSchemaForm, extractDefaultValuesFromSchema } from './generation-schema-form';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,7 +24,8 @@ interface UnifiedGenerationFormProps {
   onSubmit?: (data: unknown) => void;
 }
 
-const defaultValues: FormData = {
+// 基础默认值，不包含动态参数
+const baseDefaultValues: FormData = {
   serviceModel: '',
   params: {},
 };
@@ -36,9 +37,11 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
 
   // Force form re-render by updating the key
   const [formKey, setFormKey] = useState(0);
+
+  // 初始化表单，使用基础默认值
   const form = useForm<FormData>({
     resolver: zodResolver(baseFormSchema),
-    defaultValues: defaultValues,
+    defaultValues: baseDefaultValues,
   });
 
   const watchedModelName = form.watch('serviceModel');
@@ -65,15 +68,23 @@ export function UnifiedGenerationForm({ onSubmit }: UnifiedGenerationFormProps) 
 
   // Reset form when model changes
   useEffect(() => {
-    if (watchedModelName && watchedModelName !== previousModelRef.current) {
-      // Reset the entire form to ensure complete cleanup
-      form.reset({ serviceModel: watchedModelName, params: {} });
+    if (watchedModelName && watchedModelName !== previousModelRef.current && selectedModelSchema) {
+      // 计算新模型的默认值
+      const schemaDefaults = extractDefaultValuesFromSchema(selectedModelSchema as any);
+      const newDefaultValues = {
+        serviceModel: watchedModelName,
+        params: schemaDefaults,
+      };
+      console.log('New default values:', newDefaultValues);
+
+      // Reset the entire form with new default values
+      form.reset(newDefaultValues);
       // Force form re-render by updating the key
       setFormKey(prev => prev + 1);
       // Update the previous model reference
       previousModelRef.current = watchedModelName;
     }
-  }, [form, watchedModelName]);
+  }, [form, watchedModelName, selectedModelSchema]);
 
   const handleSubmit = async (data: FormData) => {
     try {

@@ -11,16 +11,14 @@ const toAsync = new ToAsyncTaskManager<Awaited<ReturnType<VolcengineArkProvider[
  */
 export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
   name = 'doubao-seededit-3-0-i2i-250628';
-  displayName = '豆包3.0(图生图)';
+  displayName = '豆包图片编辑 3.0';
   description = '准确遵循编辑指令，有效保留图像内容';
-  parameterLimits = {
-    generationType: ['image-to-image'] as GenerationType[],
-  };
+  generationTypes = ['image-to-image'] as GenerationType[];
 
   paramsSchema = z.object({
     prompt: z.string().describe('[title:提示词][renderType:textarea]'),
     image: z.string().describe('[title:参考图片][renderType:image]'),
-    guidance_scale: z.number().min(1).max(10).default(5.5).optional().describe('[title:提示词引导强度]'),
+    guidance_scale: z.number().min(1).max(10).step(0.1).default(5.5).optional().describe('[title:提示词引导强度]'),
   });
 
   provider: VolcengineArkProvider;

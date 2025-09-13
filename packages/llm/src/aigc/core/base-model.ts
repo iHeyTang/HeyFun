@@ -58,13 +58,13 @@ export abstract class BaseAigcModel {
   public abstract name: string;
   public abstract displayName: string;
   public abstract description?: string;
-  public abstract parameterLimits?: ModelParameterLimits;
+  public abstract generationTypes: GenerationType[];
 
   public abstract paramsSchema: z.ZodSchema;
 
   abstract submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string>;
 
-  abstract getTaskResult(params: { generationType: string; model: string; taskId: string }): Promise<GenerationTaskResult>;
+  abstract getTaskResult(params: { model: string; taskId: string }): Promise<GenerationTaskResult>;
 
   // 通用错误处理方法
   protected handleError(error: unknown, operation: string): GenerationTaskResponse {

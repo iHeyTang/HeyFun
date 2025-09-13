@@ -103,6 +103,97 @@ const shouldShowField = (showWhen: string | undefined, form: UseFormReturn<any>)
   return actualValue === expectedValue;
 };
 
+// 从 JSON schema 或 zod schema 中提取默认值
+export const extractDefaultValuesFromSchema = (schema: any, fieldPath = ''): Record<string, any> => {
+  const defaultValues: Record<string, any> = {};
+
+  if (!schema) {
+    return defaultValues;
+  }
+
+  // 处理 allOf 类型
+  if (schema.allOf && Array.isArray(schema.allOf)) {
+    for (const subSchema of schema.allOf) {
+      if (typeof subSchema !== 'boolean' && subSchema) {
+        Object.assign(defaultValues, extractDefaultValuesFromSchema(subSchema, fieldPath));
+      }
+    }
+    return defaultValues;
+  }
+
+  // 处理 anyOf 类型 - 使用第一个选项的默认值
+  if (schema.anyOf && Array.isArray(schema.anyOf) && schema.anyOf.length > 0) {
+    const firstSchema = schema.anyOf[0];
+    if (typeof firstSchema !== 'boolean' && firstSchema) {
+      return extractDefaultValuesFromSchema(firstSchema, fieldPath);
+    }
+    return defaultValues;
+  }
+
+  // 处理 object 类型
+  if (schema.type === 'object' && schema.properties) {
+    for (const [propertyName, propertySchema] of Object.entries(schema.properties)) {
+      if (typeof propertySchema === 'boolean' || !propertySchema) continue;
+
+      const currentFieldPath = fieldPath ? `${fieldPath}.${propertyName}` : propertyName;
+      const propertyDefaults = extractDefaultValuesFromSchema(propertySchema, currentFieldPath);
+      Object.assign(defaultValues, propertyDefaults);
+    }
+    return defaultValues;
+  }
+
+  // 处理 array 类型
+  if (schema.type === 'array') {
+    // 数组默认值为空数组
+    const fieldName = schema.title || fieldPath || 'value';
+    defaultValues[fieldName] = [];
+    return defaultValues;
+  }
+
+  // 处理其他类型的默认值
+  const fieldName = schema.title || fieldPath || 'value';
+
+  // 优先使用 schema.default
+  if (schema.default !== undefined) {
+    defaultValues[fieldName] = schema.default;
+    return defaultValues;
+  }
+
+  // 根据类型设置默认值
+  switch (schema.type) {
+    case 'string':
+      // 对于 const 字段，使用 const 值
+      if (schema.const !== undefined) {
+        defaultValues[fieldName] = schema.const;
+      }
+      // 对于枚举，使用第一个选项
+      else if (schema.enum && Array.isArray(schema.enum) && schema.enum.length > 0) {
+        defaultValues[fieldName] = schema.enum[0];
+      }
+      break;
+
+    case 'number':
+    case 'integer':
+      // 使用最小值或 0
+      if (schema.minimum !== undefined) {
+        defaultValues[fieldName] = schema.minimum;
+      } else {
+        defaultValues[fieldName] = 0;
+      }
+      break;
+
+    case 'boolean':
+      defaultValues[fieldName] = false;
+      break;
+
+    case 'object':
+      defaultValues[fieldName] = {};
+      break;
+  }
+
+  return defaultValues;
+};
+
 export const GenerationSchemaForm = (props: GenerationSchemaFormProps) => {
   const { schema, form, fieldPath = '', hideLabel = false } = props;
 

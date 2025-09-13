@@ -11,11 +11,9 @@ const toAsync = new ToAsyncTaskManager<Awaited<ReturnType<VolcengineArkProvider[
  */
 export class DoubaoSeedream40 extends BaseAigcModel {
   name = 'doubao-seedream-4-0-250828';
-  displayName = '豆包4.0';
+  displayName = '豆包图片生成 4.0';
   description = '4k超高清直出，超强主体一致性，支持多参考图、组图生成';
-  parameterLimits = {
-    generationType: ['image-to-image', 'text-to-image'] as GenerationType[],
-  };
+  generationTypes = ['image-to-image', 'text-to-image'] as GenerationType[];
 
   paramsSchema = z.object({
     prompt: z.string().describe('[title:提示词][renderType:textarea]'),
