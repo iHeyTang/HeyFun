@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Image, Video, Sparkles } from 'lucide-react';
+import { Search, Image, Video, Sparkles, Mic } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 type ModelInfo = NonNullable<Awaited<ReturnType<typeof getAllAigcModelInfos>>['data']>[number];
@@ -27,6 +27,7 @@ const generationTypeIcons = {
   'text-to-video': Video,
   'image-to-video': Video,
   'keyframe-to-video': Video,
+  'text-to-speech': Mic,
 };
 
 // 生成类型中文名称映射
@@ -36,6 +37,7 @@ const generationTypeNames = {
   'text-to-video': 'Text to Video',
   'image-to-video': 'Image to Video',
   'keyframe-to-video': 'Keyframe to Video',
+  'text-to-speech': 'Speech',
 };
 
 // 分类配置
@@ -44,6 +46,7 @@ const categories = [
   { key: 'text-to-image', label: 'Text to Image', icon: Image },
   { key: 'image-to-image', label: 'Image to Image', icon: Image },
   { key: 'video', label: 'Video Generation', icon: Video },
+  { key: 'speech', label: 'Speech Generation', icon: Mic },
 ];
 
 export function AigcModelSelector({ models, selectedModel, onModelSelect, placeholder = '选择模型' }: ModelSelectorProps) {
@@ -76,6 +79,8 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
         filtered = filtered.filter(model =>
           model.generationTypes.some(type => ['text-to-video', 'image-to-video', 'keyframe-to-video'].includes(type)),
         );
+      } else if (activeCategory === 'speech') {
+        filtered = filtered.filter(model => model.generationTypes.some(type => ['text-to-speech'].includes(type)));
       } else {
         filtered = filtered.filter(model => model.generationTypes.includes(activeCategory));
       }
@@ -129,7 +134,7 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
 
             {/* 分类标签页 */}
             <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 {categories.map(category => {
                   const Icon = category.icon;
                   return (
@@ -143,7 +148,7 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
 
               <TabsContent value={activeCategory} className="mt-4">
                 <ScrollArea className="h-[60vh]">
-                  <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,320px))] gap-4">
                     {filteredModels.map(model => (
                       <Card
                         key={model.name}

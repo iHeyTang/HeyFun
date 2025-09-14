@@ -9,8 +9,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { JSONSchema } from 'json-schema-to-ts';
 import { Plus, Trash2 } from 'lucide-react';
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
+import { getVoiceList } from '@/actions/paintboard';
+
+// Voice 类型定义
+type Voice = NonNullable<Awaited<ReturnType<typeof getVoiceList>>['data']>[number];
 
 // 自定义矩形图标组件，根据比例动态调整宽高
 const RatioIcon = ({ ratio }: { ratio: string }) => {
@@ -60,6 +64,7 @@ interface GenerationSchemaFormProps {
   form: UseFormReturn<any>;
   fieldPath?: string;
   hideLabel?: boolean;
+  modelName?: string;
 }
 
 // 解析 description 中的特殊格式 [key:value]
@@ -82,6 +87,77 @@ const parseDescription = (description?: string) => {
   }
 
   return result;
+};
+
+// VoiceSelector 组件
+interface VoiceSelectorProps {
+  form: UseFormReturn<any>;
+  formFieldPath: string;
+  displayLabel: string;
+  hideLabel: boolean;
+  modelName: string;
+}
+
+const VoiceSelector = ({ form, formFieldPath, displayLabel, hideLabel, modelName }: VoiceSelectorProps) => {
+  const [voices, setVoices] = useState<Voice[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadVoices = async () => {
+      if (!modelName) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await getVoiceList({ modelName });
+        if (result.error) {
+          setError(result.error);
+        } else {
+          console.log('result.data', result.data);
+          setVoices(result.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to load voices:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load voices');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadVoices();
+  }, [modelName]);
+
+  return (
+    <FormField
+      control={form.control}
+      name={formFieldPath}
+      render={({ field: formField }) => (
+        <FormItem className="space-y-1">
+          {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
+          <Select onValueChange={formField.onChange} value={formField.value}>
+            <FormControl>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={loading ? '加载中...' : error ? '加载失败' : `选择${displayLabel}`} />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              {voices.map(voice => (
+                <SelectItem key={voice.id} value={voice.id}>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{voice.name}</span>
+                    <span className="text-muted-foreground text-xs">{voice.description}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
 };
 
 // 检查字段是否应该显示
@@ -195,7 +271,7 @@ export const extractDefaultValuesFromSchema = (schema: any, fieldPath = ''): Rec
 };
 
 export const GenerationSchemaForm = (props: GenerationSchemaFormProps) => {
-  const { schema, form, fieldPath = '', hideLabel = false } = props;
+  const { schema, form, fieldPath = '', hideLabel = false, modelName } = props;
 
   if (!schema) {
     return null;
@@ -226,17 +302,17 @@ export const GenerationSchemaForm = (props: GenerationSchemaFormProps) => {
 
   switch (schema.type) {
     case 'string':
-      return <StringForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
+      return <StringForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} modelName={modelName} />;
 
     case 'number':
     case 'integer':
-      return <NumberForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
+      return <NumberForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} modelName={modelName} />;
 
     case 'boolean':
-      return <BooleanForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
+      return <BooleanForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} modelName={modelName} />;
 
     case 'array':
-      return <ArrayForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
+      return <ArrayForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} modelName={modelName} />;
 
     case 'object':
       return Object.entries(schema.properties || {}).map(([fieldName, fieldSchema]) => {
@@ -252,7 +328,7 @@ export const GenerationSchemaForm = (props: GenerationSchemaFormProps) => {
           return null;
         }
 
-        return <GenerationSchemaForm key={fieldName} schema={fieldSchema} form={form} fieldPath={currentFieldPath} />;
+        return <GenerationSchemaForm key={fieldName} schema={fieldSchema} form={form} fieldPath={currentFieldPath} modelName={modelName} />;
       });
 
     default:
@@ -267,7 +343,7 @@ export const GenerationSchemaForm = (props: GenerationSchemaFormProps) => {
 };
 
 // String 表单组件
-const StringForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormProps) => {
+const StringForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   const fieldName = schema.title || fieldPath || 'value';
   const formFieldPath = `params.${fieldName}`;
   const descriptionMeta = parseDescription(schema.description);
@@ -275,7 +351,20 @@ const StringForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaForm
 
   // 优先检查 renderType
   if (descriptionMeta.renderType === 'ratio') {
-    return <RatioForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
+    return <RatioForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} modelName={modelName} />;
+  }
+
+  // 检查是否为声音选择器
+  if (descriptionMeta.renderType === 'voice-selector') {
+    return (
+      <VoiceSelector
+        form={form}
+        formFieldPath={formFieldPath}
+        displayLabel={displayLabel}
+        hideLabel={hideLabel || false}
+        modelName={modelName || ''}
+      />
+    );
   }
 
   // 优先检查 const 字段
@@ -407,7 +496,7 @@ const StringForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaForm
 };
 
 // 比例选择组件
-const RatioForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormProps) => {
+const RatioForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   const fieldName = schema.title || fieldPath || 'value';
   const formFieldPath = `params.${fieldName}`;
   const descriptionMeta = parseDescription(schema.description);
@@ -450,7 +539,7 @@ const RatioForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormP
 };
 
 // 数字表单组件
-const NumberForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormProps) => {
+const NumberForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   const fieldName = schema.title || fieldPath || 'value';
   const formFieldPath = `params.${fieldName}`;
   const descriptionMeta = parseDescription(schema.description);
@@ -525,7 +614,7 @@ const NumberForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaForm
 };
 
 // 布尔表单组件
-const BooleanForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormProps) => {
+const BooleanForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   const fieldName = schema.title || fieldPath || 'value';
   const formFieldPath = `params.${fieldName}`;
   const descriptionMeta = parseDescription(schema.description);
@@ -549,7 +638,7 @@ const BooleanForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFor
 };
 
 // AllOf 表单组件
-const AllOfForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormProps) => {
+const AllOfForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   if (!schema.allOf || !Array.isArray(schema.allOf) || schema.allOf.length === 0) {
     return null;
   }
@@ -560,14 +649,14 @@ const AllOfForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormP
         if (typeof subSchema === 'boolean' || !subSchema) {
           return null;
         }
-        return <GenerationSchemaForm key={index} schema={subSchema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
+        return <GenerationSchemaForm key={index} schema={subSchema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} modelName={modelName} />;
       })}
     </div>
   );
 };
 
 // AnyOf 表单组件
-const AnyOfForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormProps) => {
+const AnyOfForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   const [selectedSchemaIndex, setSelectedSchemaIndex] = useState(0);
   const fieldName = schema.title || fieldPath || 'value';
   const descriptionMeta = parseDescription(schema.description);
@@ -610,14 +699,14 @@ const AnyOfForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormP
       </div>
 
       <div className="border-border/30 bg-muted/20 rounded-md border p-3">
-        <GenerationSchemaForm schema={selectedSchema} form={form} fieldPath={fieldPath} hideLabel={true} />
+        <GenerationSchemaForm schema={selectedSchema} form={form} fieldPath={fieldPath} hideLabel={true} modelName={modelName} />
       </div>
     </FormItem>
   );
 };
 
 // Array 表单组件
-const ArrayForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormProps) => {
+const ArrayForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   const fieldName = schema.title || fieldPath || 'value';
   const formFieldPath = `params.${fieldName}`;
   const descriptionMeta = parseDescription(schema.description);
@@ -686,7 +775,7 @@ const ArrayForm = ({ schema, form, fieldPath, hideLabel }: GenerationSchemaFormP
     return (
       <div key={index} className="flex items-center justify-between gap-2">
         <div className={`flex-1 ${isComplexType ? 'border-border/30 bg-muted/20 rounded-md border p-3' : ''}`}>
-          <GenerationSchemaForm schema={actualSchema} form={form} fieldPath={`${fieldPath}.${index}`} hideLabel={true} />
+          <GenerationSchemaForm schema={actualSchema} form={form} fieldPath={`${fieldPath}.${index}`} hideLabel={true} modelName={modelName} />
         </div>
         <div className="flex gap-1">
           <Trash2 className="text-destructive/50 hover:text-destructive h-4 w-4 cursor-pointer transition-colors" onClick={() => deleteItem(index)} />

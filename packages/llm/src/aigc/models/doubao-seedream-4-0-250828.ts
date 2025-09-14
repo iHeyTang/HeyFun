@@ -60,7 +60,7 @@ export class DoubaoSeedream40 extends BaseAigcModel {
     }
     return {
       status: result.status === 'succeeded' ? 'completed' : result.status === 'failed' ? 'failed' : 'pending',
-      data: result.result?.data?.map(item => ({ url: item.url, type: 'image' })) || [],
+      data: result.result?.data?.map(item => ({ data: item.url, sourceType: 'url', type: 'image' })) || [],
       usage: { image_count: result.result?.data?.length || 0 },
       error: result.error || undefined,
     };

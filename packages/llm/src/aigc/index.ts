@@ -1,9 +1,12 @@
 import z from 'zod';
 import { BaseAigcModel, ModelParameterLimits, SubmitTaskParams } from './core/base-model';
 import { DashscopeWanProvider, dashscopeWanServiceConfigSchema } from './providers/aliyun-dashscope';
+import { MinimaxProvider, minimaxServiceConfigSchema } from './providers/minimax';
 import { VolcengineArkProvider, volcengineArkServiceConfigSchema } from './providers/volcengine-ark';
 import { VolcengineJimengProvider, volcengineJimengServiceConfigSchema } from './providers/volcengine-jimeng';
 import { GenerationTaskResult, GenerationType } from './types';
+export type { Voice } from './core/base-model';
+export type { BaseAigcModel, GenerationType, ModelParameterLimits };
 
 // 豆包模型
 import { DoubaoSeedance10LiteVideo } from './models/doubao-seedance-1-0-lite-video';
@@ -13,13 +16,15 @@ import { DoubaoSeedream30T2i250415 } from './models/doubao-seedream-3-0-t2i-2504
 import { DoubaoSeedream40 } from './models/doubao-seedream-4-0-250828';
 
 // 即梦模型
-import { Jimeng40 } from './models/jimeng-4-0-image';
-import { Jimeng30ProVideo } from './models/jimeng-3-0-pro-video';
+
+// Minimax
+import { Minimax25Speech } from './models/minimax-2-5-speech';
 
 const aigcProviderConfigSchema = z.object({
   doubao: volcengineArkServiceConfigSchema.optional(),
   jimeng: volcengineJimengServiceConfigSchema.optional(),
   wan: dashscopeWanServiceConfigSchema.optional(),
+  minimax: minimaxServiceConfigSchema.optional(),
 });
 
 class AIGCHost {
@@ -28,6 +33,7 @@ class AIGCHost {
     'dashscope-wan'?: DashscopeWanProvider;
     'volcengine-ark'?: VolcengineArkProvider;
     'volcengine-jimeng'?: VolcengineJimengProvider;
+    minimax?: MinimaxProvider;
   } = {};
 
   constructor(config: z.infer<typeof aigcProviderConfigSchema>) {
@@ -42,6 +48,10 @@ class AIGCHost {
     if (config.jimeng) {
       const provider = new VolcengineJimengProvider(config.jimeng);
       this.providers['volcengine-jimeng'] = provider;
+    }
+    if (config.minimax) {
+      const provider = new MinimaxProvider(config.minimax);
+      this.providers['minimax'] = provider;
     }
   }
 
@@ -95,6 +105,9 @@ const AIGC = new AIGCHost({
     accessKeyId: process.env.VOLCENGINE_JIMENG_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.VOLCENGINE_JIMENG_SECRET_ACCESS_KEY || '',
   },
+  minimax: {
+    apiKey: process.env.MINIMAX_API_KEY || '',
+  },
 });
 
 // 豆包模型注册
@@ -105,8 +118,11 @@ AIGC.registerModel(providers => (providers['volcengine-ark'] ? new DoubaoSeedrea
 AIGC.registerModel(providers => (providers['volcengine-ark'] ? new DoubaoSeedream40(providers['volcengine-ark']) : null));
 
 // 即梦模型注册
-AIGC.registerModel(providers => (providers['volcengine-jimeng'] ? new Jimeng40(providers['volcengine-jimeng']) : null));
-AIGC.registerModel(providers => (providers['volcengine-jimeng'] ? new Jimeng30ProVideo(providers['volcengine-jimeng']) : null));
+// TODO: 即梦模型暂时不可用，存在 bug，待修复后重新启用
+// AIGC.registerModel(providers => (providers['volcengine-jimeng'] ? new Jimeng40(providers['volcengine-jimeng']) : null));
+// AIGC.registerModel(providers => (providers['volcengine-jimeng'] ? new Jimeng30ProVideo(providers['volcengine-jimeng']) : null));
+
+// Minimax模型注册
+AIGC.registerModel(providers => (providers['minimax'] ? new Minimax25Speech(providers['minimax']) : null));
 
 export default AIGC;
-export type { GenerationType, BaseAigcModel, ModelParameterLimits };

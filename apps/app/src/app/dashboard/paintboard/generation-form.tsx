@@ -125,7 +125,7 @@ export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationForm
           />
 
           {/* Dynamic form fields based on selected model's JSON schema */}
-          {selectedModelSchema && <GenerationSchemaForm key={`${watchedModelName}-${formKey}`} schema={selectedModelSchema as any} form={form} />}
+          {selectedModelSchema && <GenerationSchemaForm key={`${watchedModelName}-${formKey}`} schema={selectedModelSchema as any} form={form} modelName={watchedModelName} />}
 
           {/* Submit button */}
           <Button type="submit" className="w-full" disabled={isSubmitting || !watchedModelName}>

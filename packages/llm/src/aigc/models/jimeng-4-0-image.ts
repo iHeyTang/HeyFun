@@ -80,7 +80,7 @@ export class Jimeng40 extends BaseAigcModel {
     }
     return {
       status: this.getStatus(data.data.status),
-      data: data.data.image_urls?.map(url => ({ url, type: 'image' })) || [],
+      data: data.data.image_urls?.map(url => ({ data: url, sourceType: 'url', type: 'image' })) || [],
       usage: {
         image_count: data.data.image_urls?.length || 0,
       },

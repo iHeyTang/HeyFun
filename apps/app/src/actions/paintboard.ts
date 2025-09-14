@@ -63,6 +63,30 @@ export const getPaintboardTask = withUserAuth(async ({ args }: AuthWrapperContex
   }
 });
 
+// 获取指定模型的声音列表
+export const getVoiceList = withUserAuth(async ({ args }: AuthWrapperContext<{ modelName: string }>) => {
+  const { modelName } = args;
+
+  try {
+    const model = AIGC.getModel(modelName);
+
+    if (!model) {
+      throw new Error('Model not found');
+    }
+
+    // 检查模型是否有 getVoiceList 方法
+    if (typeof model.getVoiceList !== 'function') {
+      throw new Error('Model does not support voice selection');
+    }
+
+    const voices = await model.getVoiceList();
+    return voices;
+  } catch (error) {
+    console.error('Error getting voice list:', error);
+    throw new Error((error as Error).message);
+  }
+});
+
 // 提交生成任务
 export const submitGenerationTask = withUserAuth(async ({ args, orgId }: AuthWrapperContext<{ model: string; params: any }>) => {
   const { model, params } = args;

@@ -2,9 +2,9 @@ import { MediaPreview } from '@/components/block/media-preview';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { isImageExtension, isVideoExtension } from '@/lib/shared/file-type';
+import { isAudioExtension, isImageExtension, isVideoExtension } from '@/lib/shared/file-type';
 import { formatDate } from 'date-fns';
-import { Check, Clock, Copy, Download } from 'lucide-react';
+import { Check, Clock, Copy, Download, Link } from 'lucide-react';
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { usePaintboardTasks, type PaintboardTask } from './use-paintboard-tasks';
 
@@ -19,10 +19,6 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
   useImperativeHandle(ref, () => ({
     triggerRefresh,
   }));
-
-  const handleDownload = async (result: PaintboardTask['results'][number], organizationId: string) => {
-    await downloadFile(result.url, organizationId, result.key);
-  };
 
   if (loading && tasks.length === 0) {
     return (
@@ -70,7 +66,7 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
         <div className="h-full overflow-y-auto">
           <div className="px-6 py-4">
             {tasks.map(task => (
-              <TaskCard key={task.id} task={task} onDownload={handleDownload} />
+              <TaskCard key={task.id} task={task} />
             ))}
           </div>
         </div>
@@ -83,10 +79,9 @@ PaintboardTaskHistory.displayName = 'PaintboardTaskHistory';
 
 interface TaskCardProps {
   task: PaintboardTask;
-  onDownload: (result: any, organizationId: string) => void;
 }
 
-function TaskCard({ task, onDownload }: TaskCardProps) {
+function TaskCard({ task }: TaskCardProps) {
   const [copied, setCopied] = React.useState(false);
   const prompt = task.params?.prompt || task.params?.text || '';
   const ratio = task.params?.aspectRatio;
@@ -146,7 +141,7 @@ function TaskCard({ task, onDownload }: TaskCardProps) {
       ) : task.results && task.results.length > 0 ? (
         <div className="flex gap-4">
           {task.results.map(result => (
-            <ResultCard key={result.key} result={result} onDownload={() => onDownload(result, task.organizationId)} />
+            <ResultCard key={result.key} result={result} />
           ))}
         </div>
       ) : (
@@ -191,12 +186,12 @@ function LoadingPlaceholder({ task }: LoadingPlaceholderProps) {
 
 interface ResultCardProps {
   result: PaintboardTask['results'][number];
-  onDownload: () => void;
 }
 
-function ResultCard({ result, onDownload }: ResultCardProps) {
+function ResultCard({ result }: ResultCardProps) {
   const isVideo = isVideoExtension(result.key);
   const isImage = isImageExtension(result.key);
+  const isAudio = isAudioExtension(result.key);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleMouseEnter = () => {
@@ -216,7 +211,7 @@ function ResultCard({ result, onDownload }: ResultCardProps) {
 
   if (isVideo) {
     return (
-      <MediaPreview src={result.url} alt={result.key} type="video" filename={result.key} onDownload={onDownload}>
+      <MediaPreview src={result.url} alt={result.key} type="video" filename={result.key}>
         <div className="h-48 overflow-hidden rounded-lg" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
           <video ref={videoRef} src={result.url} controls={false} className="h-full w-full object-contain" muted loop>
             Your browser does not support the video tag.
@@ -228,7 +223,7 @@ function ResultCard({ result, onDownload }: ResultCardProps) {
 
   if (isImage) {
     return (
-      <MediaPreview src={result.url} alt={result.key} type="image" filename={result.key} onDownload={onDownload}>
+      <MediaPreview src={result.url} alt={result.key} type="image" filename={result.key}>
         <div className="h-48 overflow-hidden rounded-lg">
           <img src={result.url} alt={result.key} className="h-full w-full object-contain" />
         </div>
@@ -236,13 +231,23 @@ function ResultCard({ result, onDownload }: ResultCardProps) {
     );
   }
 
+  if (isAudio) {
+    return (
+      <div className="overflow-hidden rounded-lg">
+        <audio src={result.url} controls />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2 rounded-lg border p-3">
-      <div className="overflow-hidden text-sm text-ellipsis whitespace-nowrap">{result.key}</div>
-      <Button onClick={onDownload} size="sm" variant="outline">
-        <Download className="h-3 w-3" />
-        Download
-      </Button>
+      <div className="overflow-hidden text-sm text-ellipsis whitespace-nowrap">{result.key.split('/').pop()}</div>
+      <a href={result.url} download={result.key.split('/').pop()}>
+        <Button size="sm" variant="outline" className="w-full">
+          <Download className="h-3 w-3" />
+          Download
+        </Button>
+      </a>
     </div>
   );
 }

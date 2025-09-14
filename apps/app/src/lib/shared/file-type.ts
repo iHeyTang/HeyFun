@@ -104,3 +104,8 @@ export const isImageExtension = (filename: string): boolean => {
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
   return imageExtensions.some(ext => filename.toLowerCase().endsWith(ext));
 };
+
+export const isAudioExtension = (filename: string): boolean => {
+  const audioExtensions = ['.mp3', '.wav', '.aac', '.ogg', '.m4a', '.flac', '.wma'];
+  return audioExtensions.some(ext => filename.toLowerCase().endsWith(ext));
+};

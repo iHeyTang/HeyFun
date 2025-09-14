@@ -1,8 +1,5 @@
 import z from 'zod';
-import { GenerationTaskResponse, GenerationTaskResult } from '../types';
-
-// 生成类型枚举
-export type GenerationType = 'text-to-image' | 'image-to-image' | 'text-to-video' | 'image-to-video' | 'keyframe-to-video';
+import { GenerationTaskResponse, GenerationTaskResult, GenerationType } from '../types';
 
 // 模型参数限制
 export interface ModelParameterLimits {
@@ -53,6 +50,12 @@ export interface KeyframeToVideoParams extends BaseGenerationParams {
 
 export type SubmitTaskParams = TextToImageParams | ImageToImageParams | TextToVideoParams | ImageToVideoParams | KeyframeToVideoParams;
 
+export interface Voice {
+  id: string;
+  name: string;
+  description: string;
+}
+
 // 基础适配器抽象类
 export abstract class BaseAigcModel {
   public abstract name: string;
@@ -68,6 +71,10 @@ export abstract class BaseAigcModel {
   abstract getTaskResult(params: { model: string; taskId: string }): Promise<GenerationTaskResult>;
 
   abstract calculateCost(params: z.infer<typeof this.paramsSchema>): number;
+
+  getVoiceList(): Promise<Voice[]> {
+    return Promise.resolve([]);
+  }
 
   // 通用错误处理方法
   protected handleError(error: unknown, operation: string): GenerationTaskResponse {

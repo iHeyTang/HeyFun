@@ -75,7 +75,7 @@ export class Jimeng30ProVideo extends BaseAigcModel {
     }
     return {
       status: this.getStatus(data.data.status),
-      data: [{ url: data.data.video_url, type: 'video' }],
+      data: [{ data: data.data.video_url, sourceType: 'url', type: 'video' }],
       usage: {
         video_count: 1,
       },

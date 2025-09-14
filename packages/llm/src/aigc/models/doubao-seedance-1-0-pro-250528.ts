@@ -53,7 +53,7 @@ export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
     }
     return {
       status: result.status === 'succeeded' ? 'completed' : result.status === 'failed' ? 'failed' : 'pending',
-      data: result.content?.video_url ? [{ url: result.content.video_url, type: 'video' }] : [],
+      data: result.content?.video_url ? [{ data: result.content.video_url, sourceType: 'url', type: 'video' }] : [],
       usage: { video_count: result.content?.video_url ? 1 : 0 },
     };
   }
