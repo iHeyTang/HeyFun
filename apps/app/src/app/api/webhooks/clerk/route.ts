@@ -50,34 +50,15 @@ export async function POST(req: NextRequest) {
   // Handle the webhook
   const eventType = evt.type;
 
-  if (eventType === 'user.created') {
-    const { id, email_addresses } = evt.data;
-    const email = email_addresses[0]?.email_address;
-
-    try {
-      // Create a personal organization for the new user
-      await prisma.organizations.create({
-        data: {
-          id: id, // Use Clerk user ID as organization ID for personal org
-          name: `${email}'s Organization`,
-          ownerId: id,
-          personal: true,
-        },
-      });
-
-      console.log('Created organization for user:', id);
-
-      await prisma.credit.create({
-        data: {
-          organizationId: id,
-          amount: 5000,
-        },
-      });
-      console.log('Created credit for organization:', id, 5000);
-    } catch (error) {
-      console.error('Error creating organization:', error);
-      return new Response('Error creating organization', { status: 500 });
-    }
+  if (eventType === 'organization.created') {
+    const { id } = evt.data;
+    await prisma.credit.create({
+      data: {
+        organizationId: id,
+        amount: 5000,
+      },
+    });
+    console.log('Created credit for organization:', id, 5000);
   }
 
   return NextResponse.json({ message: 'Webhook processed successfully' });
