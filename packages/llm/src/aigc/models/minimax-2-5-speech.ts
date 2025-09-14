@@ -19,11 +19,11 @@ export class Minimax25Speech extends BaseAigcModel {
   paramsSchema = z.object({
     text: z.string().describe('[title:文本][renderType:textarea]'),
     voice_id: z.string().describe('[title:声音][renderType:voice-selector]'),
-    mode: z.enum(['hd', 'turbo']),
-    speed: z.number().min(0.5).max(2).default(1).optional(),
-    vol: z.number().min(0).max(10).default(1.0).optional(),
-    pitch: z.number().int().min(-12).max(12).default(0).optional(),
-    emotion: z.enum(['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'calm']).optional(),
+    mode: z.enum(['hd', 'turbo']).describe('[title:模式]'),
+    speed: z.number().min(0.5).max(2).step(0.1).default(1).optional().describe('[title:语速]'),
+    vol: z.number().min(0).max(10).step(0.1).default(1.0).optional().describe('[title:音量]'),
+    pitch: z.number().int().min(-12).max(12).default(0).optional().describe('[title:音高]'),
+    emotion: z.enum(['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'calm']).optional().describe('[title:情感]'),
   });
 
   provider: MinimaxProvider;

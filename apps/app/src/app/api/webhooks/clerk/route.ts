@@ -66,25 +66,17 @@ export async function POST(req: NextRequest) {
       });
 
       console.log('Created organization for user:', id);
+
+      await prisma.credit.create({
+        data: {
+          organizationId: id,
+          amount: 5000,
+        },
+      });
+      console.log('Created credit for organization:', id, 5000);
     } catch (error) {
       console.error('Error creating organization:', error);
       return new Response('Error creating organization', { status: 500 });
-    }
-  }
-
-  if (eventType === 'user.deleted') {
-    const { id } = evt.data;
-
-    try {
-      // Delete user's organizations and related data
-      await prisma.organizations.deleteMany({
-        where: { ownerId: id },
-      });
-
-      console.log('Deleted organizations for user:', id);
-    } catch (error) {
-      console.error('Error deleting organizations:', error);
-      return new Response('Error deleting user data', { status: 500 });
     }
   }
 
