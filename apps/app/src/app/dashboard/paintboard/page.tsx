@@ -8,10 +8,16 @@ import { useRef } from 'react';
 export default function GeneralGenerationPage() {
   const taskHistoryRef = useRef<TaskHistoryRef>(null);
 
-  const handleFormSubmitSuccess = async () => {
+  const handleFormSubmitSuccess = async (newTask?: any) => {
     // 提交成功后立即刷新任务列表
     if (taskHistoryRef.current) {
-      await taskHistoryRef.current.triggerRefresh();
+      if (newTask) {
+        // 如果有新任务信息，直接添加到列表顶部
+        await taskHistoryRef.current.addNewTask(newTask);
+      } else {
+        // 否则使用原来的刷新方式
+        await taskHistoryRef.current.triggerRefresh();
+      }
     }
   };
 

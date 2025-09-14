@@ -5,21 +5,42 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { isAudioExtension, isImageExtension, isVideoExtension } from '@/lib/shared/file-type';
 import { useSignedUrl } from '@/hooks/use-signed-url';
 import { formatDate } from 'date-fns';
-import { Check, Clock, Copy, Download, Link } from 'lucide-react';
+import { Check, Clock, Copy, Download } from 'lucide-react';
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { usePaintboardTasks, type PaintboardTask } from './use-paintboard-tasks';
 
 export interface TaskHistoryRef {
   triggerRefresh: () => Promise<void>;
+  addNewTask: (newTask: PaintboardTask) => void;
 }
 
 export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => {
-  const { tasks, loading, error, fetchTasks, downloadFile, triggerRefresh } = usePaintboardTasks();
+  const { tasks, loading, loadingMore, error, hasMore, fetchTasks, loadMore, triggerRefresh, addNewTask } = usePaintboardTasks();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // 暴露给父组件的方法
   useImperativeHandle(ref, () => ({
     triggerRefresh,
+    addNewTask,
   }));
+
+  // 滚动监听，接近底部时自动加载更多
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+      const threshold = 100; // 距离底部100px时触发加载
+
+      if (scrollHeight - scrollTop - clientHeight < threshold && hasMore && !loadingMore && !loading) {
+        loadMore();
+      }
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll);
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
+  }, [hasMore, loadingMore, loading, loadMore]);
 
   if (loading && tasks.length === 0) {
     return (
@@ -64,11 +85,28 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
           </div>
         </div>
       ) : (
-        <div className="h-full overflow-y-auto">
+        <div ref={scrollContainerRef} className="h-full overflow-y-auto">
           <div className="px-6 py-4">
             {tasks.map(task => (
               <TaskCard key={task.id} task={task} />
             ))}
+
+            {/* 加载更多指示器 */}
+            {loadingMore && (
+              <div className="flex justify-center py-4">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+                  加载更多...
+                </div>
+              </div>
+            )}
+
+            {/* 没有更多数据提示 */}
+            {!hasMore && tasks.length > 0 && (
+              <div className="flex justify-center py-4">
+                <div className="text-sm text-gray-400">没有更多任务了</div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -141,7 +179,7 @@ function TaskCard({ task }: TaskCardProps) {
         <div className="mt-2 text-xs text-gray-400">{task.error}</div>
       ) : task.results && task.results.length > 0 ? (
         <div className="flex gap-4">
-          {task.results.map(result => (
+          {task.results.map((result: any) => (
             <ResultCard key={result.key} result={result} />
           ))}
         </div>

@@ -21,7 +21,7 @@ const baseFormSchema = z.object({
 type FormData = z.infer<typeof baseFormSchema>;
 
 interface UnifiedGenerationFormProps {
-  onSubmitSuccess?: () => void;
+  onSubmitSuccess?: (newTask?: any) => void;
 }
 
 // 基础默认值，不包含动态参数
@@ -103,7 +103,7 @@ export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationForm
         return;
       }
       toast.success('Task submitted successfully');
-      onSubmitSuccess?.();
+      onSubmitSuccess?.(result.data);
     } catch (error) {
       console.error('Failed to submit task:', error);
       toast.error('Failed to submit task');
@@ -125,7 +125,14 @@ export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationForm
           />
 
           {/* Dynamic form fields based on selected model's JSON schema */}
-          {selectedModelSchema && <GenerationSchemaForm key={`${watchedModelName}-${formKey}`} schema={selectedModelSchema as any} form={form} modelName={watchedModelName} />}
+          {selectedModelSchema && (
+            <GenerationSchemaForm
+              key={`${watchedModelName}-${formKey}`}
+              schema={selectedModelSchema as any}
+              form={form}
+              modelName={watchedModelName}
+            />
+          )}
 
           {/* Submit button */}
           <Button type="submit" className="w-full" disabled={isSubmitting || !watchedModelName}>

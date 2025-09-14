@@ -94,7 +94,6 @@ const processPaintboardTaskResult = async (args: {
 
         // 使用统一接口获取任务结果
         const result = await AIGC.getTaskResult({ modelName: model, taskId: externalTaskId });
-        console.log('result', result);
         // 检查任务是否完成
         if (result.status === 'completed' && result.data?.length) {
           const results: PaintboardTasks['results'] = [];
