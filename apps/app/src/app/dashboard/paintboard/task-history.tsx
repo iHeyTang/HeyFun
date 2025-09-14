@@ -3,9 +3,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { isAudioExtension, isImageExtension, isVideoExtension } from '@/lib/shared/file-type';
+import { useSignedUrl } from '@/hooks/use-signed-url';
 import { formatDate } from 'date-fns';
 import { Check, Clock, Copy, Download, Link } from 'lucide-react';
-import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { usePaintboardTasks, type PaintboardTask } from './use-paintboard-tasks';
 
 export interface TaskHistoryRef {
@@ -194,8 +195,34 @@ function ResultCard({ result }: ResultCardProps) {
   const isAudio = isAudioExtension(result.key);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // 使用简化后的 signed URL hook
+  const { getSignedUrl, error } = useSignedUrl();
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [errorState, setErrorState] = useState<string | null>(null);
+
+  // 获取签名 URL
+  useEffect(() => {
+    const fetchSignedUrl = async () => {
+      try {
+        setLoading(true);
+        setErrorState(null);
+        const url = await getSignedUrl(result.key);
+        setSignedUrl(url);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load media';
+        setErrorState(errorMessage);
+        console.error('Failed to get signed URL:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSignedUrl();
+  }, [result.key, getSignedUrl]);
+
   const handleMouseEnter = () => {
-    if (videoRef.current) {
+    if (videoRef.current && signedUrl) {
       videoRef.current.play().catch(() => {
         // 忽略播放错误，避免控制台报错
       });
@@ -209,11 +236,33 @@ function ResultCard({ result }: ResultCardProps) {
     }
   };
 
+  // 加载状态
+  if (loading) {
+    return (
+      <div className="flex h-48 w-full animate-pulse items-center justify-center rounded-lg bg-gray-100">
+        <div className="text-sm text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  // 错误状态
+  const errorMsg = errorState || error(result.key);
+  if (errorMsg || !signedUrl) {
+    return (
+      <div className="flex h-48 w-full items-center justify-center rounded-lg border border-red-200 bg-red-50">
+        <div className="text-center">
+          <div className="mb-1 text-sm text-red-600">Failed to load</div>
+          <div className="text-xs text-red-500">{errorMsg || 'Unknown error'}</div>
+        </div>
+      </div>
+    );
+  }
+
   if (isVideo) {
     return (
-      <MediaPreview src={result.url} alt={result.key} type="video" filename={result.key}>
+      <MediaPreview src={signedUrl} alt={result.key} type="video" filename={result.key}>
         <div className="h-48 overflow-hidden rounded-lg" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-          <video ref={videoRef} src={result.url} controls={false} className="h-full w-full object-contain" muted loop>
+          <video ref={videoRef} src={signedUrl} controls={false} className="h-full w-full object-contain" muted loop>
             Your browser does not support the video tag.
           </video>
         </div>
@@ -223,9 +272,9 @@ function ResultCard({ result }: ResultCardProps) {
 
   if (isImage) {
     return (
-      <MediaPreview src={result.url} alt={result.key} type="image" filename={result.key}>
+      <MediaPreview src={signedUrl} alt={result.key} type="image" filename={result.key}>
         <div className="h-48 overflow-hidden rounded-lg">
-          <img src={result.url} alt={result.key} className="h-full w-full object-contain" />
+          <img src={signedUrl} alt={result.key} className="h-full w-full object-contain" />
         </div>
       </MediaPreview>
     );
@@ -234,7 +283,7 @@ function ResultCard({ result }: ResultCardProps) {
   if (isAudio) {
     return (
       <div className="overflow-hidden rounded-lg">
-        <audio src={result.url} controls />
+        <audio src={signedUrl} controls />
       </div>
     );
   }
@@ -242,7 +291,7 @@ function ResultCard({ result }: ResultCardProps) {
   return (
     <div className="flex flex-col gap-2 rounded-lg border p-3">
       <div className="overflow-hidden text-sm text-ellipsis whitespace-nowrap">{result.key.split('/').pop()}</div>
-      <a href={result.url} download={result.key.split('/').pop()}>
+      <a href={signedUrl} download={result.key.split('/').pop()}>
         <Button size="sm" variant="outline" className="w-full">
           <Download className="h-3 w-3" />
           Download

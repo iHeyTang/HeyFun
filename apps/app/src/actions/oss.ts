@@ -10,7 +10,11 @@ export const getSignedUploadUrl = withUserAuth(async ({ orgId, args }: AuthWrapp
   return { fileKey: `${orgId}/${key}`, uploadUrl: url };
 });
 
-export const getSignedUrl = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ filePath: string }>) => {
-  const key = args.filePath.startsWith(orgId) ? args.filePath : `${orgId}/${args.filePath}`;
+export const getSignedUrl = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ fileKey: string }>) => {
+  const key = args.fileKey.startsWith(orgId) ? args.fileKey : `${orgId}/${args.fileKey}`;
   return await storage.getSignedUrl(key, { expiresIn: 3600 });
+});
+
+export const getSignedUrls = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ fileKeys: string[] }>) => {
+  return await Promise.all(args.fileKeys.map(key => storage.getSignedUrl(key.startsWith(orgId) ? key : `${orgId}/${key}`, { expiresIn: 3600 })));
 });

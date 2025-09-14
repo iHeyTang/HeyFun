@@ -45,7 +45,7 @@ export const uploadFile = async (file: File, path: string): Promise<string> => {
     throw new Error('Failed to get file key');
   }
 
-  const url = await getSignedUrl({ filePath: res.data.fileKey });
+  const url = await getSignedUrl({ fileKey: res.data.fileKey });
 
   // 检查URL是否存在
   if (!url.data) {

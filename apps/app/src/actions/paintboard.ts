@@ -34,13 +34,7 @@ export const getAllAigcModelInfos = withUserAuth(
 // 获取用户的所有画板任务
 export const getUserPaintboardTasks = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
   const tasks = await prisma.paintboardTasks.findMany({ where: { organizationId: orgId }, orderBy: { createdAt: 'desc' }, take: 100 });
-  const list = await Promise.all(
-    tasks.map(async task => {
-      const results = await Promise.all(task.results.map(async result => ({ ...result, url: await storage.getSignedUrl(result.key) })));
-      return { ...task, results };
-    }),
-  );
-  return list;
+  return tasks;
 });
 
 // 获取特定任务
