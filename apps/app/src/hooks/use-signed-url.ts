@@ -1,28 +1,30 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 /**
  * Signed URL 缓存 Store (底层实现)
- * 
+ *
  * 功能特性：
  * 1. 本地缓存：避免重复请求相同的文件
  * 2. 防重复请求：同时请求相同文件时，共享同一个 Promise
- * 3. 过期管理：自动处理 URL 过期，默认 1 小时
- * 4. 错误处理：记录和获取错误状态
- * 5. 类型安全：完整的 TypeScript 类型定义
- * 
+ * 3. 过期管理：自动处理 URL 过期，默认 40 分钟
+ * 4. 持久化存储：使用 localStorage 保存缓存，页面刷新后仍然有效
+ * 5. 错误处理：记录和获取错误状态
+ * 6. 类型安全：完整的 TypeScript 类型定义
+ *
  * 使用示例：
  * ```tsx
  * const { getSignedUrl, setSignedUrl, clearCache, getError } = useSignedUrlStore();
- * 
+ *
  * // 获取签名 URL（自动缓存）
  * const url = await getSignedUrl('file-key');
- * 
+ *
  * // 手动设置 URL（预加载）
- * setSignedUrl('file-key', 'https://...', 3600);
- * 
+ * setSignedUrl('file-key', 'https://...', 2400); // 40分钟
+ *
  * // 清除特定缓存
  * clearCache('file-key');
- * 
+ *
  * // 获取错误信息
  * const error = getError('file-key');
  * ```
@@ -34,11 +36,11 @@ interface SignedUrlCache {
 }
 
 interface SignedUrlState {
-  // 缓存已获取的 URL
-  signedUrlMap: Map<string, SignedUrlCache>;
-  // 正在进行的请求，避免重复请求
+  // 缓存已获取的 URL (持久化存储)
+  signedUrlMap: Record<string, SignedUrlCache>;
+  // 正在进行的请求，避免重复请求 (不持久化)
   pendingRequests: Map<string, Promise<string>>;
-  // 错误状态
+  // 错误状态 (不持久化)
   errors: Map<string, string>;
 }
 
@@ -55,128 +57,138 @@ interface SignedUrlActions {
   getError: (fileKey: string) => string | undefined;
 }
 
-export const useSignedUrlStore = create<SignedUrlState & SignedUrlActions>((set, get) => ({
-  signedUrlMap: new Map(),
-  pendingRequests: new Map(),
-  errors: new Map(),
-
-  getSignedUrl: async (fileKey: string) => {
-    const state = get();
-    
-    // 检查缓存中是否已有有效的 URL
-    const cached = state.signedUrlMap.get(fileKey);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.url;
-    }
-
-    // 检查是否已有正在进行的请求
-    const pendingRequest = state.pendingRequests.get(fileKey);
-    if (pendingRequest) {
-      return pendingRequest;
-    }
-
-    // 创建新的请求
-    const requestPromise = (async () => {
-      try {
-        // 清除之前的错误
-        set(state => ({
-          errors: new Map(state.errors).set(fileKey, ''),
-        }));
-
-        // 动态导入 getSignedUrl action
-        const { getSignedUrl: getSignedUrlAction } = await import('@/actions/oss');
-        const result = await getSignedUrlAction({ fileKey });
-        
-        // 处理 action 的返回结果
-        const url = typeof result === 'string' ? result : result.data;
-        if (!url) {
-          throw new Error(typeof result === 'string' ? 'Unknown error' : result.error);
-        }
-        
-        // 缓存 URL，默认 1 小时过期
-        const expiresAt = Date.now() + 3600 * 1000;
-        const newPendingRequests = new Map(state.pendingRequests);
-        newPendingRequests.delete(fileKey);
-        
-        set(state => ({
-          signedUrlMap: new Map(state.signedUrlMap).set(fileKey, { url, expiresAt }),
-          pendingRequests: newPendingRequests,
-        }));
-
-        return url;
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        
-        // 记录错误
-        const newPendingRequests = new Map(state.pendingRequests);
-        newPendingRequests.delete(fileKey);
-        
-        set(state => ({
-          errors: new Map(state.errors).set(fileKey, errorMessage),
-          pendingRequests: newPendingRequests,
-        }));
-
-        throw error;
-      }
-    })();
-
-    // 记录正在进行的请求
-    set(state => ({
-      pendingRequests: new Map(state.pendingRequests).set(fileKey, requestPromise),
-    }));
-
-    return requestPromise;
-  },
-
-  setSignedUrl: (fileKey: string, url: string, expiresIn: number = 3600) => {
-    const expiresAt = Date.now() + expiresIn * 1000;
-    set(state => ({
-      signedUrlMap: new Map(state.signedUrlMap).set(fileKey, { url, expiresAt }),
-    }));
-  },
-
-  clearCache: (fileKey: string) => {
-    set(state => {
-      const newMap = new Map(state.signedUrlMap);
-      newMap.delete(fileKey);
-      return { signedUrlMap: newMap };
-    });
-  },
-
-  clearAllCache: () => {
-    set({
-      signedUrlMap: new Map(),
+export const useSignedUrlStore = create<SignedUrlState & SignedUrlActions>()(
+  persist(
+    (set, get) => ({
+      signedUrlMap: {},
       pendingRequests: new Map(),
       errors: new Map(),
-    });
-  },
 
-  getError: (fileKey: string) => {
-    return get().errors.get(fileKey);
-  },
-}));
+      getSignedUrl: async (fileKey: string) => {
+        const state = get();
+
+        // 检查缓存中是否已有有效的 URL
+        const cached = state.signedUrlMap[fileKey];
+        if (cached && cached.expiresAt > Date.now()) {
+          return cached.url;
+        }
+
+        // 检查是否已有正在进行的请求
+        const pendingRequest = state.pendingRequests.get(fileKey);
+        if (pendingRequest) {
+          return pendingRequest;
+        }
+
+        // 创建新的请求
+        const requestPromise = (async () => {
+          try {
+            // 清除之前的错误
+            set(state => ({
+              errors: new Map(state.errors).set(fileKey, ''),
+            }));
+
+            // 动态导入 getSignedUrl action
+            const { getSignedUrl: getSignedUrlAction } = await import('@/actions/oss');
+            const result = await getSignedUrlAction({ fileKey });
+
+            // 处理 action 的返回结果
+            const url = typeof result === 'string' ? result : result.data;
+            if (!url) {
+              throw new Error(typeof result === 'string' ? 'Unknown error' : result.error);
+            }
+
+            // 缓存 URL，默认 40 分钟过期
+            const expiresAt = Date.now() + 40 * 60 * 1000; // 40分钟
+            const newPendingRequests = new Map(state.pendingRequests);
+            newPendingRequests.delete(fileKey);
+
+            set(state => ({
+              signedUrlMap: { ...state.signedUrlMap, [fileKey]: { url, expiresAt } },
+              pendingRequests: newPendingRequests,
+            }));
+
+            return url;
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+            // 记录错误
+            const newPendingRequests = new Map(state.pendingRequests);
+            newPendingRequests.delete(fileKey);
+
+            set(state => ({
+              errors: new Map(state.errors).set(fileKey, errorMessage),
+              pendingRequests: newPendingRequests,
+            }));
+
+            throw error;
+          }
+        })();
+
+        // 记录正在进行的请求
+        set(state => ({
+          pendingRequests: new Map(state.pendingRequests).set(fileKey, requestPromise),
+        }));
+
+        return requestPromise;
+      },
+
+      setSignedUrl: (fileKey: string, url: string, expiresIn: number = 2400) => {
+        const expiresAt = Date.now() + expiresIn * 1000;
+        set(state => ({
+          signedUrlMap: { ...state.signedUrlMap, [fileKey]: { url, expiresAt } },
+        }));
+      },
+
+      clearCache: (fileKey: string) => {
+        set(state => {
+          const { [fileKey]: removed, ...rest } = state.signedUrlMap;
+          return { signedUrlMap: rest };
+        });
+      },
+
+      clearAllCache: () => {
+        set({
+          signedUrlMap: {},
+          pendingRequests: new Map(),
+          errors: new Map(),
+        });
+      },
+
+      getError: (fileKey: string) => {
+        return get().errors.get(fileKey);
+      },
+    }),
+    {
+      name: 'signed-url-cache', // localStorage key
+      partialize: state => ({
+        signedUrlMap: state.signedUrlMap,
+      }), // 只持久化 signedUrlMap，不持久化 pendingRequests 和 errors
+    },
+  ),
+);
 
 /**
  * 高级 Signed URL Hook (推荐使用)
- * 
+ *
  * 这是一个更简洁的 API，自动处理缓存逻辑：
  * - 自动检查缓存，有缓存直接返回
  * - 无缓存时自动获取并存入缓存
  * - 防重复请求，相同文件同时请求时共享 Promise
  * - 自动处理过期和错误
- * 
+ * - 持久化存储：页面刷新后缓存仍然有效（40分钟过期）
+ *
  * 使用示例：
  * ```tsx
  * const { getSignedUrl, isLoading, error, clearCache } = useSignedUrl();
- * 
+ *
  * // 简单获取 URL，自动处理缓存
  * const url = await getSignedUrl('file-key');
- * 
+ *
  * // 检查加载状态
  * if (isLoading('file-key')) {
  *   return <div>Loading...</div>;
  * }
- * 
+ *
  * // 检查错误
  * const errorMsg = error('file-key');
  * if (errorMsg) {
@@ -186,31 +198,31 @@ export const useSignedUrlStore = create<SignedUrlState & SignedUrlActions>((set,
  */
 export const useSignedUrl = () => {
   const store = useSignedUrlStore();
-  
+
   return {
     /**
      * 获取签名 URL
      * 自动处理缓存：有缓存用缓存，无缓存获取后存入缓存
      */
     getSignedUrl: store.getSignedUrl,
-    
+
     /**
      * 检查指定文件是否正在加载
      */
     isLoading: (fileKey: string) => {
       return store.pendingRequests.has(fileKey);
     },
-    
+
     /**
      * 获取指定文件的错误信息
      */
     error: store.getError,
-    
+
     /**
      * 清除指定文件的缓存
      */
     clearCache: store.clearCache,
-    
+
     /**
      * 清除所有缓存
      */
