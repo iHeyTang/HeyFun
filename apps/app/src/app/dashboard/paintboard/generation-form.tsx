@@ -113,9 +113,9 @@ export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationForm
   };
 
   return (
-    <ScrollArea className="h-full p-4">
+    <ScrollArea className="h-full">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="h-full space-y-6">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="h-full space-y-6 p-4">
           {/* Model selection */}
           <AigcModelSelector
             models={availableModels || []}
