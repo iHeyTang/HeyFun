@@ -80,6 +80,7 @@ export default function ChatSharePage() {
 
     messagesQueueRef.current = res.data.progresses.map(step => ({
       ...step,
+      key: step.id,
       index: step.index! || 0,
       type: step.type as any,
       role: 'assistant' as const,
