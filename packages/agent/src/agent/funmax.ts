@@ -119,7 +119,7 @@ export class FunMax extends ReActAgent {
   /**
    * 思考阶段 - 处理当前状态并决定下一步行动
    */
-  public async *think(): AsyncGenerator<ToolSelectionProgress, boolean, unknown> {
+  public async *think(): AsyncGenerator<ToolSelectionProgress, { prompt: string; result: boolean }, unknown> {
     // 更新下一步提示词
     const next_step_prompt = renderTemplate(NEXT_STEP_PROMPT, {
       max_steps: this.max_steps,
@@ -141,7 +141,7 @@ export class FunMax extends ReActAgent {
       result = iteratorResult.value;
     }
 
-    return result;
+    return { prompt: next_step_prompt, result };
   }
 
   /**

@@ -66,7 +66,7 @@ export abstract class ReActAgent extends BaseAgent {
    * Think phase - 处理当前状态并决定下一步行动
    * 必须由子类实现
    */
-  public abstract think(): AsyncGenerator<ToolSelectionProgress, boolean, unknown>;
+  public abstract think(): AsyncGenerator<ToolSelectionProgress, { prompt: string; result: boolean }, unknown>;
 
   /**
    * Act phase - 执行决定的行动（流式版本）
@@ -81,6 +81,7 @@ export abstract class ReActAgent extends BaseAgent {
   public async *step(): AsyncGenerator<StepProgress | ToolExecutionProgress | ToolSelectionProgress, StepResult, unknown> {
     const usage: StepResult['usage'] = { think: { input: 0, completion: 0 }, act: { input: 0, completion: 0 }, total: { input: 0, completion: 0 } };
 
+    let nextStepPrompt = '';
     try {
       // Step开始 - 通过yield输出进度状态
       yield {
@@ -97,13 +98,14 @@ export abstract class ReActAgent extends BaseAgent {
       // 使用流式工具选择
       const thinkStream = this.think();
       let thinkIteratorResult;
-      
+
       while (!(thinkIteratorResult = await thinkStream.next()).done) {
         const toolSelectionProgress = thinkIteratorResult.value;
         yield toolSelectionProgress;
       }
-      
-      const shouldAct = thinkIteratorResult.value;
+
+      const { prompt, result: shouldAct } = thinkIteratorResult.value;
+      nextStepPrompt = prompt;
 
       // 计算Think阶段的token使用量
       const totalInputTokens = this.llm.totalInputTokens;
@@ -155,12 +157,12 @@ export abstract class ReActAgent extends BaseAgent {
       // 使用流式工具执行
       const actStream = this.act();
       let actIteratorResult;
-      
+
       while (!(actIteratorResult = await actStream.next()).done) {
         const toolProgress = actIteratorResult.value;
         yield toolProgress;
       }
-      
+
       const result = actIteratorResult.value;
 
       // 计算Act阶段的token使用量
@@ -201,10 +203,10 @@ export abstract class ReActAgent extends BaseAgent {
         data: {},
       };
 
-      const finalResult = { success: true, result, usage, terminated: this.state === AgentState.FINISHED };
+      const finalResult = { prompt: nextStepPrompt, success: true, result, usage, terminated: this.state === AgentState.FINISHED };
       return finalResult;
     } catch (error) {
-      const errorResult = { success: false, result: error instanceof Error ? error.message : String(error), usage };
+      const errorResult = { prompt: nextStepPrompt, success: false, result: error instanceof Error ? error.message : String(error), usage };
       return errorResult;
     }
   }

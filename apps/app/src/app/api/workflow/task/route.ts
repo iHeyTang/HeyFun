@@ -38,7 +38,14 @@ export const { POST } = serve<FunMaxConfig>(async context => {
       }
       const previousResult = await redis.get<string>(`agent-step:${orgId}:${taskId}`);
       const previousResultJson = toJson<StepResult[]>(previousResult);
-      await agent.memory.addMessages(previousResultJson?.map(item => ({ role: 'assistant', content: item.result || '' })) || []);
+      await agent.memory.addMessages(
+        previousResultJson?.flatMap(item => {
+          return [
+            { role: 'user', content: item.prompt || '' },
+            { role: 'assistant', content: item.result || '' },
+          ];
+        }) || [],
+      );
 
       // 使用流式步骤处理 - 通过yield获取进度更新，通过return获取最终结果
       const stepStream = agent.step();

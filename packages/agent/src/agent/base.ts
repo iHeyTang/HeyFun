@@ -25,6 +25,7 @@ export interface TokenUsage {
 
 export interface StepResult {
   success?: boolean;
+  prompt?: string;
   result?: string;
   usage?: {
     think: TokenUsage;
