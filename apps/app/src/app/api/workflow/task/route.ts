@@ -56,7 +56,7 @@ export const { POST } = serve<FunMaxConfig>(async context => {
       const finalResult = iteratorResult.value;
 
       // 更新最终步骤结果到Redis
-      await redis.set(`agent-step:${orgId}:${taskId}`, JSON.stringify([...(previousResultJson || []), finalResult]));
+      await redis.set(`agent-step:${orgId}:${taskId}`, JSON.stringify([...(previousResultJson || []), finalResult]), { ex: 60 * 60 * 24 });
 
       return finalResult;
     });
