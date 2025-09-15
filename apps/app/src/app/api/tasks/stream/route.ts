@@ -13,7 +13,7 @@ export const GET = withUserAuthApi<{}, { taskId: string }, {}>(async (request: N
   let isClosed = false;
   const stream = new ReadableStream({
     start(controller) {
-      let lastProgressIndex = -1;
+      let lastProgressCreatedAt = new Date('1970-01-01');
       const sendProgress = async () => {
         if (isClosed) return;
 
@@ -29,29 +29,22 @@ export const GET = withUserAuthApi<{}, { taskId: string }, {}>(async (request: N
             return;
           }
 
-          // Get new progress data using index optimization
+          // Get new progress data using createdAt optimization
           const newProgresses = await prisma.taskProgresses.findMany({
             where: {
               taskId,
               organizationId: ctx.orgId,
-              index: { gt: lastProgressIndex },
+              createdAt: { gt: lastProgressCreatedAt },
             },
-            orderBy: { index: 'asc' },
+            orderBy: { createdAt: 'asc' },
           });
 
           // Send new progress data if any
           if (newProgresses.length > 0) {
             for (const progress of newProgresses) {
               if (isClosed) return;
-              controller.enqueue(
-                encoder.encode(
-                  `data: ${JSON.stringify({
-                    type: 'progress',
-                    data: progress,
-                  })}\n\n`,
-                ),
-              );
-              lastProgressIndex = progress.index;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'progress', data: progress })}\n\n`));
+              lastProgressCreatedAt = progress.createdAt;
             }
           }
 
@@ -64,14 +57,7 @@ export const GET = withUserAuthApi<{}, { taskId: string }, {}>(async (request: N
           if (currentTask.status === 'completed' || currentTask.status === 'failed') {
             clearInterval(pollInterval);
             if (!isClosed) {
-              controller.enqueue(
-                encoder.encode(
-                  `data: ${JSON.stringify({
-                    type: 'end',
-                    data: { status: currentTask.status },
-                  })}\n\n`,
-                ),
-              );
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'end', data: { status: currentTask.status } })}\n\n`));
               controller.close();
             }
             isClosed = true;
@@ -79,14 +65,7 @@ export const GET = withUserAuthApi<{}, { taskId: string }, {}>(async (request: N
         } catch (error) {
           console.error('Error fetching task progress:', error);
           if (!isClosed) {
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({
-                  type: 'error',
-                  error: 'Failed to fetch progress',
-                })}\n\n`,
-              ),
-            );
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', error: 'Failed to fetch progress' })}\n\n`));
             clearInterval(pollInterval);
             controller.close();
           }

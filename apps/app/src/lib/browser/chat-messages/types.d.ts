@@ -69,6 +69,7 @@ type AggregatedMessageType =
  * agent:step:complete
  */
 export type Message<T = any> = {
+  key: string;
   index?: number;
   role: 'user' | 'assistant';
   createdAt?: Date;
@@ -78,4 +79,4 @@ export type Message<T = any> = {
 };
 
 export type AggregatedMessage = Omit<Message, 'type'> &
-  ({ type?: AggregatedMessageType; messages: (Message | AggregatedMessage)[] } | { type?: AgentLifecycleType });
+  ({ key: string; type?: AggregatedMessageType; messages: (Message | AggregatedMessage)[] } | { type?: AgentLifecycleType });

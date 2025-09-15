@@ -38,6 +38,8 @@
     "@repo/llm": "*",
     "@types/ws": "^8.18.0",
     "@upstash/qstash": "^2.8.2",
+    "@upstash/redis": "^1.35.3",
+    "@upstash/workflow": "^0.2.19",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "archiver": "^7.0.1",

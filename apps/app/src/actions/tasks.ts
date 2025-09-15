@@ -3,17 +3,18 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
 import { prisma } from '@/lib/server/prisma';
-import { TaskRuntime } from '@/lib/server/runtime';
+import { workflow } from '@/lib/server/workflow';
 import { mcpServerSchema } from '@/lib/shared/tools';
 import type { AddMcpConfig } from '@repo/agent';
 import { FunMaxConfig } from '@repo/agent';
 import { Chat } from '@repo/llm/chat';
+import { union } from 'lodash';
 
 export const getTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ taskId: string }>) => {
   const { taskId } = args;
   const task = await prisma.tasks.findUnique({
     where: { id: taskId, organizationId: orgId },
-    include: { progresses: { orderBy: { index: 'asc' } } },
+    include: { progresses: { orderBy: { createdAt: 'asc' } } },
   });
   return task;
 });
@@ -38,10 +39,76 @@ type CreateTaskArgs = {
   prompt: string;
   toolIds: string[];
   files: File[];
-  shouldPlan: boolean;
 };
+
+const getAgent = async (
+  orgId: string,
+  agentId: string | undefined,
+): Promise<{ name: string; tools: string[]; systemPromptTemplate: string | undefined }> => {
+  if (!agentId) {
+    return {
+      name: 'FunMax',
+      tools: [],
+      systemPromptTemplate: undefined,
+    };
+  }
+  const agent = await prisma.agents.findUnique({
+    where: { id: agentId, organizationId: orgId },
+  });
+  if (!agent) throw new Error('Agent not found');
+  return {
+    name: agent.name,
+    tools: agent.tools as string[],
+    systemPromptTemplate: agent.systemPromptTemplate || undefined,
+  };
+};
+
+const getTools = async (orgId: string, toolIds: string[]) => {
+  const agentTools = await prisma.agentTools.findMany({ where: { organizationId: orgId, id: { in: toolIds } }, include: { schema: true } });
+  const tools = agentTools.map(agentTool => {
+    if (agentTool.source === 'STANDARD' && agentTool.schema) {
+      const env = agentTool.env ? JSON.parse(decryptTextWithPrivateKey(agentTool.env)) : {};
+      const query = agentTool.query ? JSON.parse(decryptTextWithPrivateKey(agentTool.query)) : {};
+      const fullUrl = buildMcpSseFullUrl(agentTool.schema.url, query);
+      const headers = agentTool.headers ? JSON.parse(decryptTextWithPrivateKey(agentTool.headers)) : {};
+
+      const tool: AddMcpConfig = {
+        id: agentTool.id,
+        name: agentTool.name || agentTool.schema?.name,
+        version: '',
+        command: agentTool.schema?.command,
+        args: agentTool.schema?.args || [],
+        env: env,
+        url: fullUrl,
+        headers: headers,
+      };
+      return tool;
+    } else if (agentTool.source === 'CUSTOM') {
+      const customConfig = agentTool.customConfig ? JSON.parse(decryptTextWithPrivateKey(agentTool.customConfig)) : {};
+      const validationResult = mcpServerSchema.safeParse(customConfig);
+      if (!validationResult.success) {
+        throw new Error(`Invalid config: ${validationResult.error.message}`);
+      }
+      const server = validationResult.data;
+      const fullUrl = buildMcpSseFullUrl(server.url || '', server.query || {});
+      const tool: AddMcpConfig = {
+        id: agentTool.id,
+        name: agentTool.name || agentTool.id,
+        version: '',
+        command: server.command || '',
+        args: server.args || [],
+        env: server.env || {},
+        url: fullUrl,
+        headers: server.headers || {},
+      };
+      return tool;
+    }
+  });
+  return tools.filter(tool => tool !== undefined) as AddMcpConfig[];
+};
+
 export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<CreateTaskArgs>) => {
-  const { taskId, agentId, modelProvider, modelId, prompt, toolIds, files, shouldPlan } = args;
+  const { taskId, agentId, modelProvider, modelId, prompt, toolIds, files } = args;
   const crpytedProviderConfig = await prisma.modelProviderConfigs.findFirst({ where: { provider: modelProvider, organizationId: orgId } });
   const providerConfig = crpytedProviderConfig?.config ? JSON.parse(decryptTextWithPrivateKey(crpytedProviderConfig.config)) : {};
   const preferences = await prisma.preferences.findUnique({
@@ -49,83 +116,19 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
   });
 
   // Get agent configuration if agentId is provided
-  let agent = null;
-  let finalToolIds = toolIds;
-  let systemPromptTemplate = undefined;
-
-  if (agentId) {
-    agent = await prisma.agents.findUnique({
-      where: { id: agentId, organizationId: orgId },
-    });
-    if (!agent) throw new Error('Agent not found');
-
-    // Use agent's tools if no tools specified
-    if (toolIds.length === 0 && agent.tools) {
-      finalToolIds = agent.tools as string[];
-    }
-
-    // Use agent's prompt templates
-    systemPromptTemplate = agent.systemPromptTemplate || undefined;
-  }
-
-  // Query tool configurations
-  const agentTools = await prisma.agentTools.findMany({
-    where: { organizationId: orgId, id: { in: finalToolIds } },
-    include: { schema: true },
-  });
+  const agent = await getAgent(orgId, agentId);
 
   // Build tool list, use configuration if available, otherwise use tool name
-  const processedTools = finalToolIds.map(tool => {
-    const agentTool = agentTools.find(at => at.id === tool);
-    if (agentTool) {
-      if (agentTool.source === 'STANDARD' && agentTool.schema) {
-        const env = agentTool.env ? JSON.parse(decryptTextWithPrivateKey(agentTool.env)) : {};
-        const query = agentTool.query ? JSON.parse(decryptTextWithPrivateKey(agentTool.query)) : {};
-        const fullUrl = buildMcpSseFullUrl(agentTool.schema.url, query);
-        const headers = agentTool.headers ? JSON.parse(decryptTextWithPrivateKey(agentTool.headers)) : {};
-
-        const tool: AddMcpConfig = {
-          id: agentTool.id,
-          name: agentTool.name || agentTool.schema?.name,
-          version: '',
-          command: agentTool.schema?.command,
-          args: agentTool.schema?.args || [],
-          env: env,
-          url: fullUrl,
-          headers: headers,
-        };
-        return tool;
-      } else if (agentTool.source === 'CUSTOM') {
-        const customConfig = agentTool.customConfig ? JSON.parse(decryptTextWithPrivateKey(agentTool.customConfig)) : {};
-        const validationResult = mcpServerSchema.safeParse(customConfig);
-        if (!validationResult.success) {
-          throw new Error(`Invalid config: ${validationResult.error.message}`);
-        }
-        const server = validationResult.data;
-        const fullUrl = buildMcpSseFullUrl(server.url || '', server.query || {});
-        const tool: AddMcpConfig = {
-          id: agentTool.id,
-          name: agentTool.name || agentTool.id,
-          version: '',
-          command: server.command || '',
-          args: server.args || [],
-          env: server.env || {},
-          url: fullUrl,
-          headers: server.headers || {},
-        };
-        return tool;
-      }
-    }
-  });
+  const processedTools = await getTools(orgId, union([...agent.tools, ...toolIds]));
 
   // Create task or restart task
-  const { task, history } = await createOrFetchTask(orgId, { taskId, prompt, llmId: modelId, tools: finalToolIds });
+  const { task, history } = await createOrFetchTask(orgId, { taskId, prompt, llmId: modelId, tools: processedTools.map(tool => tool.id) });
   if (task.status === 'completed' || task.status === 'terminated' || task.status === 'failed') {
     throw new Error('Task already exists');
   }
 
   const body: FunMaxConfig = {
-    name: agent?.name || 'FunMax',
+    name: agent.name,
     task_id: `${orgId}/${task.id}`,
     task_request: prompt,
     language: preferences?.language || 'en',
@@ -136,28 +139,14 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
       providerId: modelProvider,
       modelId: modelId,
     },
-    should_plan: shouldPlan,
     tools: processedTools.filter(tool => tool !== undefined) as AddMcpConfig[],
     history: history as Chat.ChatCompletionMessageParam[],
-    systemPromptTemplate: systemPromptTemplate,
+    systemPromptTemplate: agent.systemPromptTemplate,
     sandboxId: orgId,
   };
 
-  // 创建任务
-  if (!body.task_id) {
-    await prisma.tasks.update({ where: { id: task.id }, data: { status: 'failed' } });
-    throw new Error('Unkown Error');
-  }
-
-  await prisma.tasks.update({ where: { id: task.id }, data: { outId: body.task_id, status: 'processing' } });
-
-  const taskRuntime = TaskRuntime.createTask(body);
-
-  // Handle event stream in background - completely detached from current request
-  setImmediate(async () => {
-    handleTaskEvents(orgId, task.id, taskRuntime);
-    await taskRuntime.run(body.task_request);
-  });
+  const workflowRunId = await workflow.trigger({ url: '/api/workflow/task', body });
+  console.log('workflowRunId', workflowRunId);
 
   return { id: task.id, outId: body.task_id };
 });
@@ -182,7 +171,7 @@ export const shareTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext
 export const getSharedTask = async ({ taskId }: { taskId: string }) => {
   const task = await prisma.tasks.findUnique({
     where: { id: taskId },
-    include: { progresses: { orderBy: { index: 'asc' } } },
+    include: { progresses: { orderBy: { createdAt: 'asc' } } },
   });
   if (!task) throw new Error('Task not found');
   if (task.shareExpiresAt && task.shareExpiresAt < new Date()) {
@@ -190,54 +179,6 @@ export const getSharedTask = async ({ taskId }: { taskId: string }) => {
   }
   return { data: task, error: null };
 };
-
-// Handle event stream in background
-function handleTaskEvents(orgId: string, taskId: string, taskRuntime: TaskRuntime) {
-  const round = 1;
-  let messageIndex = 0;
-  taskRuntime.on('agent:*', async event => {
-    const type = event.name;
-    const { step, content } = event;
-
-    if (type === 'agent:lifecycle:summary') {
-      await prisma.tasks.update({
-        where: { id: taskId },
-        data: { summary: content.summary },
-      });
-    } else {
-      // Write message to database
-      await prisma.taskProgresses.create({
-        data: { taskId, organizationId: orgId, index: messageIndex++, step, round, type, content },
-      });
-    }
-
-    // If complete message, update task status
-    if (type === 'agent:lifecycle:complete') {
-      await prisma.tasks.update({
-        where: { id: taskId },
-        data: { status: 'completed' },
-      });
-    }
-    if (type === 'agent:lifecycle:terminating') {
-      await prisma.tasks.update({
-        where: { id: taskId },
-        data: { status: 'terminating' },
-      });
-    }
-    if (type === 'agent:lifecycle:terminated') {
-      await prisma.tasks.update({
-        where: { id: taskId },
-        data: { status: 'terminated' },
-      });
-    }
-    if (type === 'agent:lifecycle:error') {
-      await prisma.tasks.update({
-        where: { id: taskId },
-        data: { status: 'failed' },
-      });
-    }
-  });
-}
 
 async function createOrFetchTask(organizationId: string, config: { taskId: string } | { prompt: string; llmId: string; tools: string[] }) {
   if (!('taskId' in config) || !config.taskId) {
@@ -261,7 +202,7 @@ async function createOrFetchTask(organizationId: string, config: { taskId: strin
   const progresses = await prisma.taskProgresses.findMany({
     where: { taskId: task.id, type: { in: ['agent:lifecycle:start', 'agent:lifecycle:complete', 'agent:lifecycle:error'] } },
     select: { type: true, content: true },
-    orderBy: { index: 'asc' },
+    orderBy: { createdAt: 'asc' },
   });
 
   const history = progresses.reduce(

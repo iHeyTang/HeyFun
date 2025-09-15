@@ -146,7 +146,7 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
   const renderFooter = ({ message }: { message: string; handleSend: () => void | Promise<void>; disabled: boolean }) => (
     <div className="flex items-center justify-between px-4 py-2">
       <div className="flex items-center gap-2">
-        <Tooltip>
+        {/* <Tooltip>
           <TooltipTrigger>
             <Badge
               variant={shouldPlan ? 'default' : 'secondary'}
@@ -160,7 +160,7 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
           <TooltipContent>
             <p>Agent will plan the task before executing</p>
           </TooltipContent>
-        </Tooltip>
+        </Tooltip> */}
         <Badge variant="secondary" className="flex cursor-pointer items-center gap-1" onClick={() => modelSelectorRef.current?.open()}>
           <Wrench className="h-3 w-3" />
           <span>{selectedModel?.name || 'Select Model'}</span>

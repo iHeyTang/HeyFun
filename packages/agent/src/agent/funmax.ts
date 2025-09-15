@@ -1,15 +1,12 @@
 import { Chat } from '@repo/llm/chat';
-import os from 'os';
 import NEXT_STEP_PROMPT from '../prompts/next';
-import PLAN_PROMPT from '../prompts/plan';
 import SYSTEM_PROMPT from '../prompts/system';
-import sandboxManager from '../sandbox';
-import { ToolCallContextHelper } from '../tools/toolcall';
+import { ToolCallContextHelper, ToolExecutionProgress, ToolSelectionProgress } from '../tools/toolcall';
 import type { AddMcpConfig } from '../tools/types';
 import { createMessage } from '../utils/message';
 import { renderTemplate } from '../utils/template';
-import { BaseAgentEvents } from './base';
 import { ReActAgent, ReActAgentConfig } from './react';
+import { BaseAgentEvents } from './base';
 
 export interface FunMaxConfig extends ReActAgentConfig {
   task_request: string;
@@ -50,19 +47,9 @@ export class FunMax extends ReActAgent {
   /**
    * 准备代理执行
    */
-  public async prepare(): Promise<void> {
-    await super.prepare();
-    // 获取进程用户信息
-    console.log('👤 Process User Info:');
-    console.log(`   User ID: ${process.getuid ? process.getuid() : 'N/A (Windows)'}`);
-    console.log(`   Group ID: ${process.getgid ? process.getgid() : 'N/A (Windows)'}`);
-    console.log(`   Username: ${os.userInfo().username}`);
-    console.log(`   Home Directory: ${os.homedir()}`);
-    console.log(`   Platform: ${os.platform()}`);
-    console.log(`   Architecture: ${os.arch()}`);
-    console.log(`   Node.js Version: ${process.version}`);
-    console.log(`   Process ID: ${process.pid}`);
-    console.log(`   Current Working Directory: ${process.cwd()}`);
+  public async *prepare(): AsyncGenerator<{ phase: string; data: any }, void, unknown> {
+    yield { phase: BaseAgentEvents.LIFECYCLE_PREPARE_START, data: {} };
+    yield* super.prepare();
 
     // 添加系统提示词到内存
     const system_prompt = renderTemplate(this.system_prompt_template, {
@@ -80,20 +67,14 @@ export class FunMax extends ReActAgent {
       }
     }
 
-    // 初始化沙盒
-    this.sandbox = await sandboxManager.getOrCreateOneById(this.sandboxId);
-
     // 初始化上下文助手
     this._tool_call_context_helper = new ToolCallContextHelper(this);
 
     // 初始化工具集合
+    yield { phase: BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, data: { progress: 'Initializing tools...' } };
     await this.initializeTools();
-
-    // 生成任务摘要
-    setImmediate(async () => {
-      const summary = await this.generateTaskSummary();
-      this.emit(BaseAgentEvents.LIFECYCLE_SUMMARY, { summary });
-    });
+    yield { phase: BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, data: { progress: 'Tools initialized' } };
+    yield { phase: BaseAgentEvents.LIFECYCLE_PREPARE_COMPLETE, data: {} };
   }
 
   /**
@@ -117,7 +98,7 @@ export class FunMax extends ReActAgent {
   /**
    * 生成任务摘要
    */
-  private async generateTaskSummary(): Promise<string> {
+  async generateTaskSummary(): Promise<string> {
     try {
       const response = await this.llm.chat({
         messages: [
@@ -136,42 +117,9 @@ export class FunMax extends ReActAgent {
   }
 
   /**
-   * 制定计划
-   */
-  public async plan(): Promise<string> {
-    this.emit(BaseAgentEvents.LIFECYCLE_PLAN_START, {});
-
-    const planPrompt = renderTemplate(PLAN_PROMPT, {
-      language: this.language || 'English',
-      max_steps: this.max_steps,
-      available_tools:
-        this._tool_call_context_helper?.availableTools.tools.map(tool => `- ${tool.name}: ${tool.description}`).join('\n') || 'No tools available',
-    });
-
-    try {
-      const response = await this.llm.chat({
-        messages: [createMessage.system(planPrompt), createMessage.user(this.task_request)],
-      });
-
-      const planningMessage = response.choices[0]?.message?.content || 'Unable to create plan';
-
-      // 将计划添加到内存
-      await this.updateMemory(createMessage.user(planningMessage));
-      this.emit(BaseAgentEvents.LIFECYCLE_PLAN_COMPLETE, {
-        plan: planningMessage,
-      });
-
-      return planningMessage;
-    } catch (error) {
-      console.error('Error creating plan:', error);
-      throw error;
-    }
-  }
-
-  /**
    * 思考阶段 - 处理当前状态并决定下一步行动
    */
-  public async think(): Promise<boolean> {
+  public async *think(): AsyncGenerator<ToolSelectionProgress, boolean, unknown> {
     // 更新下一步提示词
     const next_step_prompt = renderTemplate(NEXT_STEP_PROMPT, {
       max_steps: this.max_steps,
@@ -182,34 +130,38 @@ export class FunMax extends ReActAgent {
 
     let result = false;
     if (this._tool_call_context_helper) {
-      result = await this._tool_call_context_helper.askTool(next_step_prompt);
+      const askToolStream = this._tool_call_context_helper.askToolStream(next_step_prompt);
+      let iteratorResult;
+
+      while (!(iteratorResult = await askToolStream.next()).done) {
+        const toolSelectionProgress = iteratorResult.value;
+        yield toolSelectionProgress;
+      }
+
+      result = iteratorResult.value;
     }
 
     return result;
   }
 
   /**
-   * 行动阶段 - 执行决定的行动
+   * 行动阶段 - 执行决定的行动（流式版本）
    */
-  public async act(): Promise<string> {
+  public async *act(): AsyncGenerator<ToolExecutionProgress, string, unknown> {
     if (!this._tool_call_context_helper) {
       return 'No tool context helper available';
     }
 
-    const results = await this._tool_call_context_helper.executeTool();
+    const toolStream = this._tool_call_context_helper.executeToolStream();
+    let iteratorResult;
+
+    while (!(iteratorResult = await toolStream.next()).done) {
+      const progress = iteratorResult.value;
+      yield progress;
+    }
+
+    const results = iteratorResult.value;
     return results.join('\n\n');
-  }
-
-  /**
-   * 检查浏览器是否在最近使用
-   */
-  private checkBrowserInUseRecently(): boolean {
-    const recentMessages = this.memory.messages.slice(-3);
-
-    // 这里简化实现，实际需要检查消息中的tool_calls
-    // const browserInUse = recentMessages.some(...);
-
-    return false; // 暂时返回false
   }
 
   /**

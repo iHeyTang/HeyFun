@@ -56,7 +56,6 @@ export default function ChatPage() {
         prompt: value.prompt,
         toolIds: enabledTools,
         files: value.files,
-        shouldPlan: value.shouldPlan,
       });
       if (res.error || !res.data) {
         throw new Error('Failed to create task');

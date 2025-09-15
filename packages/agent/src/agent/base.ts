@@ -2,9 +2,9 @@ import { Chat, LLMClient, LLMClientConfig } from '@repo/llm/chat';
 import type { EventHandler, EventItem } from '../event';
 import { AgentEvent, createEventItem } from '../event';
 import { BaseAgentEvents, ReActAgentEvents, ToolCallAgentEvents } from '../event/constants';
+import sandboxManager, { SandboxRunner } from '../sandbox';
 import { Memory } from '../utils/memory';
 import { createMessage } from '../utils/message';
-import sandboxManager, { SandboxRunner } from '../sandbox';
 
 // 导出事件相关类型和常量，便于其他地方使用
 export { BaseAgentEvents, ReActAgentEvents, ToolCallAgentEvents };
@@ -16,6 +16,22 @@ export enum AgentState {
   RUNNING = 'RUNNING',
   FINISHED = 'FINISHED',
   ERROR = 'ERROR',
+}
+
+export interface TokenUsage {
+  input: number;
+  completion: number;
+}
+
+export interface StepResult {
+  success?: boolean;
+  result?: string;
+  usage?: {
+    think: TokenUsage;
+    act: TokenUsage;
+    total: TokenUsage;
+  };
+  terminated?: boolean;
 }
 
 // BaseAgent配置接口
@@ -91,41 +107,6 @@ export abstract class BaseAgent {
   protected async cleanup(): Promise<void> {}
 
   /**
-   * Context manager for safe agent state transitions
-   */
-  public async withStateContext<T>(new_state: AgentState, operation: () => Promise<T>): Promise<T> {
-    if (!Object.values(AgentState).includes(new_state)) {
-      throw new Error(`Invalid state: ${new_state}`);
-    }
-
-    const previous_state = this.state;
-    this.state = new_state;
-
-    try {
-      this.emit(BaseAgentEvents.STATE_CHANGE, {
-        old_state: previous_state,
-        new_state: this.state,
-      });
-
-      const result = await operation();
-      return result;
-    } catch (error) {
-      this.state = AgentState.ERROR;
-      this.emit(BaseAgentEvents.STATE_CHANGE, {
-        old_state: this.state,
-        new_state: AgentState.ERROR,
-      });
-      throw error;
-    } finally {
-      this.state = previous_state;
-      this.emit(BaseAgentEvents.STATE_CHANGE, {
-        old_state: this.state,
-        new_state: previous_state,
-      });
-    }
-  }
-
-  /**
    * Add a message to the agent's memory - 直接使用OpenAI类型
    */
   public async updateMemory(message: Chat.ChatCompletionMessageParam): Promise<void> {
@@ -168,95 +149,18 @@ export abstract class BaseAgent {
   /**
    * Prepare the agent for execution
    */
-  public async prepare(): Promise<void> {
+  public async *prepare(): AsyncGenerator<{ phase: string; data: any }, void, unknown> {
     // For now, it's a placeholder
-    this.emit(BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, { message: 'Preparing sandbox...' });
+    yield { phase: BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, data: { progress: 'Preparing agent...' } };
     this.sandbox = await sandboxManager.getOrCreateOneById(this.sandboxId);
-    this.emit(BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, { message: 'sandbox ready' });
+    yield { phase: BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, data: { progress: 'Agent prepared' } };
   }
 
   /**
-   * Plan the agent's actions for the given request
+   * Execute a single step with streaming output.
+   * Must be implemented by subclasses to define specific streaming behavior.
    */
-  public async plan(): Promise<string> {
-    return '';
-  }
-
-  /**
-   * Execute the agent's main loop asynchronously
-   */
-  public async run(request: string): Promise<string> {
-    try {
-      if (this.state !== AgentState.IDLE) {
-        throw new Error(`Cannot run agent from state: ${this.state}`);
-      }
-
-      this.emit(BaseAgentEvents.LIFECYCLE_START, { request });
-
-      const results: string[] = [];
-      this.emit(BaseAgentEvents.LIFECYCLE_PREPARE_START, {});
-      await this.prepare();
-      this.emit(BaseAgentEvents.LIFECYCLE_PREPARE_COMPLETE, {});
-
-      await this.withStateContext(AgentState.RUNNING, async () => {
-        if (request) {
-          await this.addUserMessage(request);
-          if (this.should_plan) {
-            await this.plan();
-          }
-        }
-
-        while (this.current_step < this.max_steps && this.state !== AgentState.FINISHED) {
-          this.current_step += 1;
-          console.log(`Executing step ${this.current_step}/${this.max_steps}`);
-
-          const step_result = await this.step();
-
-          // Check for stuck state
-          if (this.isStuck()) {
-            this.emit(BaseAgentEvents.STATE_STUCK_DETECTED, {});
-            this.handleStuckState();
-          }
-
-          results.push(`Step ${this.current_step}: ${step_result}`);
-
-          if (this.signalUserTerminate) {
-            this.state = AgentState.FINISHED;
-          }
-        }
-
-        if (this.current_step >= this.max_steps) {
-          this.current_step = 0;
-          this.state = AgentState.IDLE;
-          this.emit(BaseAgentEvents.STEP_MAX_REACHED, {
-            max_steps: this.max_steps,
-          });
-          results.push(`Terminated: Reached max steps (${this.max_steps})`);
-        }
-      });
-
-      if (this.signalUserTerminate) {
-        this.emit(BaseAgentEvents.LIFECYCLE_TERMINATED, {});
-      } else {
-        this.emit(BaseAgentEvents.LIFECYCLE_COMPLETE, { results });
-      }
-
-      return results.length > 0 ? results.join('\n') : 'No steps executed';
-    } catch (error) {
-      this.emit(BaseAgentEvents.LIFECYCLE_ERROR, { error: error instanceof Error ? error.message : String(error) });
-      throw error;
-    } finally {
-      console.log(`🧹Cleaning up resources for agent '${this.name}'...`);
-      await this.cleanup();
-      console.log(`✨ Cleanup complete for agent '${this.name}'.`);
-    }
-  }
-
-  /**
-   * Execute a single step in the agent's workflow.
-   * Must be implemented by subclasses to define specific behavior.
-   */
-  public abstract step(): Promise<string>;
+  public abstract step(): AsyncGenerator<{ phase: string; data: any }, StepResult, unknown>;
 
   /**
    * Handle stuck state by adding a prompt to change strategy

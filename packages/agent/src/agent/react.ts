@@ -1,8 +1,53 @@
-import { BaseAgent, BaseAgentConfig, ReActAgentEvents } from './base';
+import { ToolExecutionProgress, ToolSelectionProgress } from '../tools/toolcall';
+import { AgentState, BaseAgent, BaseAgentConfig, ReActAgentEvents, StepResult } from './base';
 
 export interface ReActAgentConfig extends BaseAgentConfig {
   // ReActAgent特有配置可以在这里扩展
 }
+
+export type StepProgress =
+  | {
+      phase: typeof ReActAgentEvents.STEP_START;
+      data: {};
+    }
+  | {
+      phase: typeof ReActAgentEvents.THINK_START;
+      data: {};
+    }
+  | {
+      phase: typeof ReActAgentEvents.THINK_COMPLETE;
+      data: {};
+    }
+  | {
+      phase: typeof ReActAgentEvents.ACT_START;
+      data: {};
+    }
+  | {
+      phase: typeof ReActAgentEvents.ACT_COMPLETE;
+      data: {};
+    }
+  | {
+      phase: typeof ReActAgentEvents.STEP_COMPLETE;
+      data: {};
+    }
+  | {
+      phase: typeof ReActAgentEvents.THINK_TOKEN_COUNT;
+      data: {
+        input: number;
+        completion: number;
+        total_input: number;
+        total_completion: number;
+      };
+    }
+  | {
+      phase: typeof ReActAgentEvents.ACT_TOKEN_COUNT;
+      data: {
+        input: number;
+        completion: number;
+        total_input: number;
+        total_completion: number;
+      };
+    };
 
 /**
  * Abstract ReAct (Reasoning and Acting) Agent
@@ -21,27 +66,44 @@ export abstract class ReActAgent extends BaseAgent {
    * Think phase - 处理当前状态并决定下一步行动
    * 必须由子类实现
    */
-  public abstract think(): Promise<boolean>;
+  public abstract think(): AsyncGenerator<ToolSelectionProgress, boolean, unknown>;
 
   /**
-   * Act phase - 执行决定的行动
+   * Act phase - 执行决定的行动（流式版本）
    * 必须由子类实现
    */
-  public abstract act(): Promise<string>;
+  public abstract act(): AsyncGenerator<ToolExecutionProgress, string, unknown>;
 
   /**
-   * Execute a single step: think and act.
-   * 执行单个步骤：思考和行动的完整流程
+   * Execute a single step with streaming output.
+   * 执行单个步骤并流式输出状态更新
    */
-  public async step(): Promise<string> {
+  public async *step(): AsyncGenerator<StepProgress | ToolExecutionProgress | ToolSelectionProgress, StepResult, unknown> {
+    const usage: StepResult['usage'] = { think: { input: 0, completion: 0 }, act: { input: 0, completion: 0 }, total: { input: 0, completion: 0 } };
+
     try {
-      // Step开始事件
-      this.emit(ReActAgentEvents.STEP_START, {});
+      // Step开始 - 通过yield输出进度状态
+      yield {
+        phase: ReActAgentEvents.STEP_START,
+        data: {},
+      };
 
-      // Think阶段开始
-      this.emit(ReActAgentEvents.THINK_START, {});
+      // Think阶段开始 - 通过yield输出进度状态
+      yield {
+        phase: ReActAgentEvents.THINK_START,
+        data: {},
+      };
 
-      const shouldAct = await this.think();
+      // 使用流式工具选择
+      const thinkStream = this.think();
+      let thinkIteratorResult;
+      
+      while (!(thinkIteratorResult = await thinkStream.next()).done) {
+        const toolSelectionProgress = thinkIteratorResult.value;
+        yield toolSelectionProgress;
+      }
+      
+      const shouldAct = thinkIteratorResult.value;
 
       // 计算Think阶段的token使用量
       const totalInputTokens = this.llm.totalInputTokens;
@@ -49,32 +111,57 @@ export abstract class ReActAgent extends BaseAgent {
       const inputTokens = totalInputTokens - this.preStepInputTokens;
       const completionTokens = totalCompletionTokens - this.preStepCompletionTokens;
 
-      this.emit(ReActAgentEvents.THINK_TOKEN_COUNT, {
-        input: inputTokens,
-        completion: completionTokens,
-        total_input: totalInputTokens,
-        total_completion: totalCompletionTokens,
-      });
+      usage.think.input = inputTokens;
+      usage.think.completion = completionTokens;
+      usage.total.input = totalInputTokens;
+      usage.total.completion = totalCompletionTokens;
+
+      // Think阶段token统计 - 通过yield输出进度状态
+      yield {
+        phase: ReActAgentEvents.THINK_TOKEN_COUNT,
+        data: {
+          input: inputTokens,
+          completion: completionTokens,
+          total_input: totalInputTokens,
+          total_completion: totalCompletionTokens,
+        },
+      };
 
       // 更新token计数器
       this.preStepInputTokens = totalInputTokens;
       this.preStepCompletionTokens = totalCompletionTokens;
 
-      this.emit(ReActAgentEvents.THINK_COMPLETE, {});
+      // Think阶段完成 - 通过yield输出进度状态
+      yield {
+        phase: ReActAgentEvents.THINK_COMPLETE,
+        data: {},
+      };
 
       // 如果不需要执行行动直接返回
       if (!shouldAct) {
-        return 'Thinking complete - no action needed';
+        return { success: true, result: 'Thinking complete - no action needed', usage };
       }
 
       if (this.signalUserTerminate) {
-        return 'User Terminated';
+        return { success: false, result: 'User Terminated', usage, terminated: this.signalUserTerminate };
       }
 
-      // Act阶段开始
-      this.emit(ReActAgentEvents.ACT_START, {});
+      // Act阶段开始 - 通过yield输出进度状态
+      yield {
+        phase: ReActAgentEvents.ACT_START,
+        data: {},
+      };
 
-      const result = await this.act();
+      // 使用流式工具执行
+      const actStream = this.act();
+      let actIteratorResult;
+      
+      while (!(actIteratorResult = await actStream.next()).done) {
+        const toolProgress = actIteratorResult.value;
+        yield toolProgress;
+      }
+      
+      const result = actIteratorResult.value;
 
       // 计算Act阶段的token使用量
       const finalInputTokens = this.llm.totalInputTokens;
@@ -82,24 +169,43 @@ export abstract class ReActAgent extends BaseAgent {
       const actInputTokens = finalInputTokens - this.preStepInputTokens;
       const actCompletionTokens = finalCompletionTokens - this.preStepCompletionTokens;
 
-      this.emit(ReActAgentEvents.ACT_TOKEN_COUNT, {
-        input: actInputTokens,
-        completion: actCompletionTokens,
-        total_input: finalInputTokens,
-        total_completion: finalCompletionTokens,
-      });
+      usage.act.input = actInputTokens;
+      usage.act.completion = actCompletionTokens;
+      usage.total.input = finalInputTokens;
+      usage.total.completion = finalCompletionTokens;
+
+      // Act阶段token统计 - 通过yield输出进度状态
+      yield {
+        phase: ReActAgentEvents.ACT_TOKEN_COUNT,
+        data: {
+          input: actInputTokens,
+          completion: actCompletionTokens,
+          total_input: finalInputTokens,
+          total_completion: finalCompletionTokens,
+        },
+      };
 
       // 更新token计数器
       this.preStepInputTokens = finalInputTokens;
       this.preStepCompletionTokens = finalCompletionTokens;
 
-      this.emit(ReActAgentEvents.ACT_COMPLETE, {});
-      this.emit(ReActAgentEvents.STEP_COMPLETE, {});
+      // Act阶段完成 - 通过yield输出进度状态
+      yield {
+        phase: ReActAgentEvents.ACT_COMPLETE,
+        data: {},
+      };
 
-      return result;
+      // 步骤完成 - 通过yield输出最终进度状态
+      yield {
+        phase: ReActAgentEvents.STEP_COMPLETE,
+        data: {},
+      };
+
+      const finalResult = { success: true, result, usage, terminated: this.state === AgentState.FINISHED };
+      return finalResult;
     } catch (error) {
-      this.emit(ReActAgentEvents.STEP_ERROR, { error: error instanceof Error ? error.message : String(error) });
-      throw error;
+      const errorResult = { success: false, result: error instanceof Error ? error.message : String(error), usage };
+      return errorResult;
     }
   }
 }

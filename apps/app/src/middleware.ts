@@ -10,6 +10,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks/(.*)',
   '/api/tools/refresh-stars',
   '/api/queue/(.*)',
+  '/api/workflow/(.*)',
   '/api/system/(.*)',
 ]);
 

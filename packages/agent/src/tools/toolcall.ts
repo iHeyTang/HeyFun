@@ -1,13 +1,35 @@
 import type { Chat } from '@repo/llm/chat';
 import { AgentState, type BaseAgent } from '../agent/base';
-import { BaseAgentEvents, ToolCallAgentEvents } from '../event/constants';
+import { ToolCallAgentEvents } from '../event/constants';
 import { createMessage } from '../utils/message';
-import { to } from '../utils/to';
 import { ToolCollection } from './collection';
 import { FileSystemTool } from './tools/file-system';
+import { TerminalTool } from './tools/terminal';
 import { TerminateTool } from './tools/terminate';
 import type { AddMcpConfig, BaseTool } from './types';
-import { TerminalTool } from './tools/terminal';
+
+export type ToolSelectionProgress = {
+  phase: typeof ToolCallAgentEvents.TOOL_SELECTED;
+  data: { thoughts: string; tool_calls: Chat.ChatCompletionMessageToolCall[] };
+};
+
+export type ToolExecutionProgress =
+  | {
+      phase: typeof ToolCallAgentEvents.TOOL_START;
+      data: { tool_calls: Chat.ChatCompletionMessageToolCall[] };
+    }
+  | {
+      phase: typeof ToolCallAgentEvents.TOOL_EXECUTE_START;
+      data: { id: string; name: string; args: any };
+    }
+  | {
+      phase: typeof ToolCallAgentEvents.TOOL_EXECUTE_COMPLETE;
+      data: { id: string; name: string; args: any; result: any; error: string | null };
+    }
+  | {
+      phase: typeof ToolCallAgentEvents.TOOL_COMPLETE;
+      data: { results: string[] };
+    };
 
 /**
  * 工具调用上下文助手实现
@@ -36,9 +58,7 @@ export class ToolCallContextHelper {
   }
 
   async initiate() {
-    this.agent.emit(BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, { message: 'Initializing tools...' });
     await this.availableTools.initiate(this.agent.sandbox!);
-    this.agent.emit(BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, { message: 'Tools initialized' });
   }
 
   /**
@@ -52,15 +72,13 @@ export class ToolCallContextHelper {
    * 添加MCP
    */
   async addMcp(config: AddMcpConfig): Promise<void> {
-    this.agent.emit(BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, { message: `Adding MCP: ${config.name}` });
     await this.availableTools.addMcp(config);
-    this.agent.emit(BaseAgentEvents.LIFECYCLE_PREPARE_PROGRESS, { message: `MCP ${config.name} added` });
   }
 
   /**
-   * 询问工具 - 让LLM选择要使用的工具
+   * 询问工具 - 让LLM选择要使用的工具（流式版本）
    */
-  async askTool(prompt: string): Promise<boolean> {
+  async *askToolStream(prompt: string): AsyncGenerator<ToolSelectionProgress, boolean, unknown> {
     // 添加next_step_prompt作为用户消息
     if (prompt) {
       await this.agent.updateMemory(createMessage.user(prompt));
@@ -80,18 +98,14 @@ export class ToolCallContextHelper {
     this.toolCalls = this.extractToolCalls(response);
     const content = response.choices[0]?.message?.content || '';
 
-    // 发射工具选择事件
-    this.agent.emit(ToolCallAgentEvents.TOOL_SELECTED, {
-      thoughts: content,
-      tool_calls: this.toolCalls,
-    });
-
-    if (this.toolCalls.length > 0) {
-      const toolInfo = {
-        tools: this.toolCalls.map(call => call.function.name),
-        arguments: this.toolCalls[0]?.function?.arguments,
-      };
-    }
+    // 流式输出工具选择进度
+    yield {
+      phase: ToolCallAgentEvents.TOOL_SELECTED,
+      data: {
+        thoughts: content,
+        tool_calls: this.toolCalls,
+      },
+    };
 
     // 处理不同的工具选择模式
     return this.handleToolChoiceResponse(content);
@@ -100,11 +114,7 @@ export class ToolCallContextHelper {
   /**
    * 执行工具调用
    */
-  async executeTool(): Promise<string[]> {
-    this.agent.emit(ToolCallAgentEvents.TOOL_START, {
-      tool_calls: this.toolCalls,
-    });
-
+  async *executeTool(): AsyncGenerator<ToolExecutionProgress, string[], unknown> {
     if (this.toolCalls.length === 0) {
       if (this.toolChoice === 'required') {
         throw new Error('Tool calls required but none provided');
@@ -119,7 +129,13 @@ export class ToolCallContextHelper {
     const results: string[] = [];
 
     for (const toolCall of this.toolCalls) {
-      const result = await this.executeToolCommand(toolCall);
+      const resultStream = this.executeToolCommand(toolCall);
+      let iteratorResult;
+      while (!(iteratorResult = await resultStream.next()).done) {
+        const progress = iteratorResult.value;
+        yield progress;
+      }
+      const result = iteratorResult.value;
 
       // 限制观察长度
       const truncatedResult = this.maxObserve ? result.substring(0, this.maxObserve) : result;
@@ -137,9 +153,63 @@ export class ToolCallContextHelper {
   }
 
   /**
+   * 执行工具调用（流式版本）
+   */
+  async *executeToolStream(): AsyncGenerator<ToolExecutionProgress, string[], unknown> {
+    this.agent.emit(ToolCallAgentEvents.TOOL_START, {
+      tool_calls: this.toolCalls,
+    });
+
+    yield {
+      phase: ToolCallAgentEvents.TOOL_START,
+      data: { tool_calls: this.toolCalls },
+    };
+
+    if (this.toolCalls.length === 0) {
+      if (this.toolChoice === 'required') {
+        throw new Error('Tool calls required but none provided');
+      }
+
+      // 返回最后一条消息的内容
+      const lastMessage = this.agent.memory.messages[this.agent.memory.messages.length - 1];
+      const content = this.extractStringContent(lastMessage?.content);
+      return [content || 'No content or commands to execute'];
+    }
+
+    const results: string[] = [];
+
+    for (const toolCall of this.toolCalls) {
+      const resultStream = this.executeToolCommand(toolCall);
+      let iteratorResult;
+      while (!(iteratorResult = await resultStream.next()).done) {
+        const progress = iteratorResult.value;
+        yield progress;
+      }
+      const result = iteratorResult.value;
+
+      // 限制观察长度
+      const truncatedResult = this.maxObserve ? result.substring(0, this.maxObserve) : result;
+
+      console.log(`🎯 Tool '${toolCall.function.name}' completed! Result: ${truncatedResult.slice(0, 100)}`);
+
+      // 添加工具响应到内存
+      await this.agent.updateMemory(createMessage.tool(result, toolCall.id));
+
+      results.push(result);
+    }
+
+    yield {
+      phase: ToolCallAgentEvents.TOOL_COMPLETE,
+      data: { results },
+    };
+
+    return results;
+  }
+
+  /**
    * 执行单个工具命令
    */
-  private async executeToolCommand(toolCall: Chat.ChatCompletionMessageToolCall): Promise<string> {
+  private async *executeToolCommand(toolCall: Chat.ChatCompletionMessageToolCall): AsyncGenerator<ToolExecutionProgress, string, unknown> {
     if (!toolCall?.function?.name) {
       return 'Error: Invalid command format';
     }
@@ -154,21 +224,27 @@ export class ToolCallContextHelper {
 
       console.log(`🔧 Activating tool: '${toolCall.function.name}' (internal: '${toolInfo.name}')...`);
 
-      this.agent.emit(ToolCallAgentEvents.TOOL_EXECUTE_START, {
-        id: toolCall.id,
-        name: toolInfo.name,
-        args,
-      });
+      yield {
+        phase: ToolCallAgentEvents.TOOL_EXECUTE_START,
+        data: {
+          id: toolCall.id,
+          name: toolInfo.name,
+          args,
+        },
+      };
 
       const result = await this.availableTools.execute(toolCall.function.name, args);
 
-      this.agent.emit(ToolCallAgentEvents.TOOL_EXECUTE_COMPLETE, {
-        id: toolCall.id,
-        name: toolInfo.name,
-        args,
-        result: result,
-        error: result.isError ? result.content[0]?.text : undefined,
-      });
+      yield {
+        phase: ToolCallAgentEvents.TOOL_EXECUTE_COMPLETE,
+        data: {
+          id: toolCall.id,
+          name: toolInfo.name,
+          args,
+          result: result,
+          error: null,
+        },
+      };
 
       // 处理特殊工具
       await this.handleSpecialTool(toolInfo.name, result);
@@ -191,12 +267,16 @@ export class ToolCallContextHelper {
         console.error(errorMsg, error);
       }
 
-      this.agent.emit(ToolCallAgentEvents.TOOL_EXECUTE_COMPLETE, {
-        id: toolCall.id,
-        name: toolInfo.name,
-        args: {},
-        error: errorMsg,
-      });
+      yield {
+        phase: ToolCallAgentEvents.TOOL_EXECUTE_COMPLETE,
+        data: {
+          id: toolCall.id,
+          name: toolInfo.name,
+          args: {},
+          result: null,
+          error: errorMsg,
+        },
+      };
 
       return `Error: ${errorMsg}`;
     }

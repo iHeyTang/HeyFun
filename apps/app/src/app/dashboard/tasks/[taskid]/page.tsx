@@ -49,8 +49,8 @@ export default function ChatPage() {
   const handleProgressUpdate = useCallback(
     (progress: any) => {
       setMessages(prev => {
-        const newMessage = { ...progress, index: progress.index || 0, type: progress.type as any, role: 'assistant' as const };
-        const existingIndex = prev.findIndex(m => m.index === newMessage.index);
+        const newMessage = { ...progress, key: progress.id, index: progress.index || 0, type: progress.type as any, role: 'assistant' as const };
+        const existingIndex = prev.findIndex(m => m.key === newMessage.key);
         if (existingIndex >= 0) {
           const updated = [...prev];
           updated[existingIndex] = newMessage;
@@ -123,7 +123,9 @@ export default function ChatPage() {
       console.error('Error fetching task:', res.error);
       return;
     }
-    setMessages(res.data.progresses.map(step => ({ ...step, index: step.index! || 0, type: step.type as any, role: 'assistant' as const })));
+    setMessages(
+      res.data.progresses.map(step => ({ ...step, key: step.id, index: step.index! || 0, type: step.type as any, role: 'assistant' as const })),
+    );
     setIsThinking(res.data!.status !== 'completed' && res.data!.status !== 'failed' && res.data!.status !== 'terminated');
     setIsTerminating(res.data!.status === 'terminating');
   }, [taskId]);
@@ -178,7 +180,6 @@ export default function ChatPage() {
         prompt: value.prompt,
         toolIds: enabledTools,
         files: value.files,
-        shouldPlan: value.shouldPlan,
       });
       if (res.error) {
         console.error('Error restarting task:', res.error);
