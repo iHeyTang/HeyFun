@@ -28,7 +28,7 @@ export const { POST } = serve<FunMaxConfig>(async context => {
 
   let stepCount = 0;
 
-  while (stepCount < (context.requestPayload.max_steps || 3)) {
+  while (stepCount < (context.requestPayload.max_steps || 20)) {
     console.log('stepCount', stepCount);
     const result = await context.run(`agent-step-${stepCount}`, async () => {
       const { orgId, taskId } = parseTaskId(context.requestPayload.task_id);
