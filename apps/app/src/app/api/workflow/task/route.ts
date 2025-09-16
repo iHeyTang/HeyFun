@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/server/prisma';
 import redis from '@/lib/server/redis';
+import { toJson } from '@/lib/utils';
 import { BaseAgentEvents, FunMax, FunMaxConfig, StepResult } from '@repo/agent';
 import { serve } from '@upstash/workflow/nextjs';
 
@@ -29,7 +30,6 @@ export const { POST } = serve<FunMaxConfig>(async context => {
   let stepCount = 0;
 
   while (stepCount < (context.requestPayload.max_steps || 20)) {
-    console.log('stepCount', stepCount);
     const result = await context.run(`agent-step-${stepCount}`, async () => {
       const { orgId, taskId } = parseTaskId(context.requestPayload.task_id);
       const agent = new FunMax(context.requestPayload);
@@ -38,6 +38,7 @@ export const { POST } = serve<FunMaxConfig>(async context => {
       }
       const previousResult = await redis.get<string>(`agent-step:${orgId}:${taskId}`);
       const previousResultJson = toJson<StepResult[]>(previousResult);
+      await agent.memory.addMessage({ role: 'user', content: context.requestPayload.task_request });
       await agent.memory.addMessages(
         previousResultJson?.flatMap(item => {
           return [
@@ -88,21 +89,6 @@ export const { POST } = serve<FunMaxConfig>(async context => {
     await prisma.tasks.update({ where: { id: taskId }, data: { status: 'completed' } });
   });
 });
-
-const toJson = <T>(result: any) => {
-  try {
-    if (result === null) {
-      return null;
-    }
-    if (typeof result === 'object') {
-      return result as T;
-    }
-    return JSON.parse(result) as T;
-  } catch (error) {
-    console.log('error', error);
-    return null;
-  }
-};
 
 const parseTaskId = (taskId: string) => {
   return { orgId: taskId.split('/')[0]!, taskId: taskId.split('/')[1]! };

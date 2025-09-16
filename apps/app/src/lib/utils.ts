@@ -54,3 +54,18 @@ export function formatFileSize(size: number): string {
   }
   return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
+
+export const toJson = <T>(result: any) => {
+  try {
+    if (result === null) {
+      return null;
+    }
+    if (typeof result === 'object') {
+      return result as T;
+    }
+    return JSON.parse(result) as T;
+  } catch (error) {
+    console.log('error', error);
+    return null;
+  }
+};

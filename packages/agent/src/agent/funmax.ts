@@ -102,10 +102,10 @@ export class FunMax extends ReActAgent {
     try {
       const response = await this.llm.chat({
         messages: [
-          createMessage.user(this.task_request),
           createMessage.system(
-            "Summarize the requirements or tasks provided by the user, Ensure that the core of the task can be reflected, answer in the user's language within 15 characters",
+            "Generate a concise title that captures the essence of the user's request or task. Do not answer the question or provide solutions - only create a descriptive title. Use the user's language and keep it within 15 characters.",
           ),
+          createMessage.user(this.task_request),
         ],
       });
 
