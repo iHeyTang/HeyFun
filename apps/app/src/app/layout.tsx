@@ -59,12 +59,12 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/logo.png',
-    shortcut: '/logo.png',
-    apple: '/logo.png',
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
     other: {
       rel: 'apple-touch-icon-precomposed',
-      url: '/logo.png',
+      url: '/favicon.png',
     },
   },
   openGraph: {
@@ -74,7 +74,7 @@ export const metadata: Metadata = {
     siteName: 'HeyFun',
     images: [
       {
-        url: '/logo.png',
+        url: '/favicon.png',
         width: 1200,
         height: 630,
         alt: 'HeyFun - Universal AI Studio',
@@ -87,7 +87,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'HeyFun - Universal AI Studio',
     description: 'The creative platform that connects all AI services',
-    images: ['/logo.png'],
+    images: ['/favicon.png'],
     creator: '@HeyFunAI',
   },
   robots: {
