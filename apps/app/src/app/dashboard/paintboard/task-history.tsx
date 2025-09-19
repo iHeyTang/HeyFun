@@ -46,14 +46,14 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
     return (
       <div className="px-6 py-4">
         {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="border-b border-gray-100 py-4 last:border-b-0">
+          <div key={index} className="border-b border-theme-border py-4 last:border-b-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-6 w-16 animate-pulse rounded bg-gray-100"></div>
-                <div className="h-6 w-12 animate-pulse rounded bg-gray-100"></div>
-                <div className="h-6 w-32 animate-pulse rounded bg-gray-100"></div>
+                <div className="h-6 w-16 animate-pulse rounded bg-theme-secondary"></div>
+                <div className="h-6 w-12 animate-pulse rounded bg-theme-secondary"></div>
+                <div className="h-6 w-32 animate-pulse rounded bg-theme-secondary"></div>
               </div>
-              <div className="h-4 w-24 animate-pulse rounded bg-gray-100"></div>
+              <div className="h-4 w-24 animate-pulse rounded bg-theme-secondary"></div>
             </div>
           </div>
         ))}
@@ -64,7 +64,7 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="mb-4 text-red-500">{error}</p>
+        <p className="mb-4 text-theme-destructive">{error}</p>
         <Button onClick={() => fetchTasks()} variant="outline">
           Retry
         </Button>
@@ -77,11 +77,11 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
       {tasks.length === 0 ? (
         <div className="flex h-full items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-              <Clock className="h-5 w-5 text-slate-400" />
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-theme-secondary">
+              <Clock className="h-5 w-5 text-theme-tertiary" />
             </div>
-            <p className="text-sm font-medium text-slate-600">No task records</p>
-            <p className="mt-1 text-xs text-slate-400">Your generation tasks will appear here</p>
+            <p className="text-sm font-medium text-theme-secondary">No task records</p>
+            <p className="mt-1 text-xs text-theme-tertiary">Your generation tasks will appear here</p>
           </div>
         </div>
       ) : (
@@ -94,8 +94,8 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
             {/* 加载更多指示器 */}
             {loadingMore && (
               <div className="flex justify-center py-4">
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+                <div className="flex items-center gap-2 text-sm text-theme-tertiary">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-theme-border border-t-theme-primary"></div>
                   加载更多...
                 </div>
               </div>
@@ -104,7 +104,7 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
             {/* 没有更多数据提示 */}
             {!hasMore && tasks.length > 0 && (
               <div className="flex justify-center py-4">
-                <div className="text-sm text-gray-400">没有更多任务了</div>
+                <div className="text-sm text-theme-quaternary">没有更多任务了</div>
               </div>
             )}
           </div>
@@ -127,17 +127,17 @@ function TaskCard({ task }: TaskCardProps) {
   const model = task.model;
 
   return (
-    <div className="space-y-4 border-b border-gray-100 py-4 last:border-b-0">
+    <div className="space-y-4 border-b border-theme-border py-4 last:border-b-0">
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {model && (
-            <Badge variant="secondary" className="bg-gray-100 font-mono text-xs text-gray-700 hover:bg-gray-100">
+            <Badge variant="secondary" className="bg-theme-secondary font-mono text-xs text-theme-secondary hover:bg-theme-secondary">
               {model}
             </Badge>
           )}
 
           {ratio && (
-            <Badge variant="secondary" className="bg-gray-100 text-xs text-gray-700 hover:bg-gray-100">
+            <Badge variant="secondary" className="bg-theme-secondary text-xs text-theme-secondary hover:bg-theme-secondary">
               {ratio}
             </Badge>
           )}
@@ -147,7 +147,7 @@ function TaskCard({ task }: TaskCardProps) {
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
-                    <Badge variant="secondary" className="max-w-xs bg-gray-100 text-xs text-gray-700 group-hover:pr-7 hover:bg-gray-100">
+                    <Badge variant="secondary" className="max-w-xs bg-theme-secondary text-xs text-theme-secondary group-hover:pr-7 hover:bg-theme-secondary">
                       <span className="truncate">{prompt}</span>
                     </Badge>
                   </TooltipTrigger>
@@ -157,10 +157,10 @@ function TaskCard({ task }: TaskCardProps) {
                 </Tooltip>
               </TooltipProvider>
               {copied ? (
-                <Check className="absolute top-[calc(50%+1px)] right-2 h-3 w-3 -translate-y-1/2 text-gray-500 opacity-100" />
+                <Check className="absolute top-[calc(50%+1px)] right-2 h-3 w-3 -translate-y-1/2 text-theme-tertiary opacity-100" />
               ) : (
                 <Copy
-                  className="absolute top-[calc(50%+1px)] right-2 h-3 w-3 -translate-y-1/2 cursor-pointer text-gray-500 opacity-0 transition-opacity group-hover:opacity-60 hover:opacity-100"
+                  className="absolute top-[calc(50%+1px)] right-2 h-3 w-3 -translate-y-1/2 cursor-pointer text-theme-tertiary opacity-0 transition-opacity group-hover:opacity-60 hover:opacity-100"
                   onClick={e => {
                     e.stopPropagation();
                     navigator.clipboard.writeText(prompt);
@@ -172,11 +172,11 @@ function TaskCard({ task }: TaskCardProps) {
           )}
         </div>
 
-        <span className="ml-4 flex-shrink-0 text-xs text-gray-500">{formatDate(new Date(task.createdAt), 'yyyy-MM-dd HH:mm:ss')}</span>
+        <span className="ml-4 flex-shrink-0 text-xs text-theme-tertiary">{formatDate(new Date(task.createdAt), 'yyyy-MM-dd HH:mm:ss')}</span>
       </div>
 
       {task.error ? (
-        <div className="mt-2 text-xs text-gray-400">{task.error}</div>
+        <div className="mt-2 text-xs text-theme-quaternary">{task.error}</div>
       ) : task.results && task.results.length > 0 ? (
         <div className="flex gap-4">
           {task.results.map((result: any) => (
@@ -214,7 +214,7 @@ function LoadingPlaceholder({ task }: LoadingPlaceholderProps) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-lg border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100"
+      className="relative overflow-hidden rounded-lg border border-theme-border bg-gradient-to-br from-theme-secondary to-theme-tertiary"
       style={{ width: `${size.width}px`, height: `${size.height}px` }}
     >
       {/* 渐变银色流动动效 */}
@@ -277,8 +277,8 @@ function ResultCard({ result }: ResultCardProps) {
   // 加载状态
   if (loading) {
     return (
-      <div className="flex h-48 w-full animate-pulse items-center justify-center rounded-lg bg-gray-100">
-        <div className="text-sm text-gray-500">Loading...</div>
+      <div className="flex h-48 w-full animate-pulse items-center justify-center rounded-lg bg-theme-secondary">
+        <div className="text-sm text-theme-tertiary">Loading...</div>
       </div>
     );
   }
@@ -287,10 +287,10 @@ function ResultCard({ result }: ResultCardProps) {
   const errorMsg = errorState || error(result.key);
   if (errorMsg || !signedUrl) {
     return (
-      <div className="flex h-48 w-full items-center justify-center rounded-lg border border-red-200 bg-red-50">
+      <div className="flex h-48 w-full items-center justify-center rounded-lg border border-theme-destructive bg-theme-destructive/5">
         <div className="text-center">
-          <div className="mb-1 text-sm text-red-600">Failed to load</div>
-          <div className="text-xs text-red-500">{errorMsg || 'Unknown error'}</div>
+          <div className="mb-1 text-sm text-theme-destructive">Failed to load</div>
+          <div className="text-xs text-theme-destructive">{errorMsg || 'Unknown error'}</div>
         </div>
       </div>
     );

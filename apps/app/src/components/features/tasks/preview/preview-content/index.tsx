@@ -24,7 +24,7 @@ export const PreviewContent = ({ messages, className }: { messages: Message[]; c
 const NotPreview = () => {
   return (
     <div className="flex h-full items-center justify-center">
-      <div className="animate-pulse text-gray-500">FunMax is not using the computer right now...</div>
+      <div className="animate-pulse text-theme-tertiary">FunMax is not using the computer right now...</div>
     </div>
   );
 };

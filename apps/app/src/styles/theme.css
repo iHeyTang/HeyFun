@@ -1,0 +1,500 @@
+/* 主题颜色变量定义 */
+:root {
+  /* 基础颜色 */
+  --theme-background: oklch(1 0 0);
+  --theme-foreground: oklch(0.145 0 0);
+  --theme-card: oklch(1 0 0);
+  --theme-card-foreground: oklch(0.145 0 0);
+  --theme-popover: oklch(1 0 0);
+  --theme-popover-foreground: oklch(0.145 0 0);
+
+  /* 主要颜色 */
+  --theme-primary: oklch(0.205 0 0);
+  --theme-primary-foreground: oklch(0.985 0 0);
+  --theme-secondary: oklch(0.97 0 0);
+  --theme-secondary-foreground: oklch(0.205 0 0);
+
+  /* 辅助颜色 */
+  --theme-muted: oklch(0.97 0 0);
+  --theme-muted-foreground: oklch(0.556 0 0);
+  --theme-accent: oklch(0.97 0 0);
+  --theme-accent-foreground: oklch(0.205 0 0);
+
+  /* 状态颜色 */
+  --theme-destructive: oklch(0.577 0.245 27.325);
+  --theme-destructive-foreground: oklch(0.985 0 0);
+  --theme-success: oklch(0.6 0.15 142);
+  --theme-success-foreground: oklch(0.985 0 0);
+  --theme-success-bg: oklch(0.95 0.05 142);
+
+  /* 边框和输入 */
+  --theme-border: oklch(0.922 0 0);
+  --theme-input: oklch(0.922 0 0);
+  --theme-ring: oklch(0.708 0 0);
+
+  /* 图表颜色 */
+  --theme-chart-1: oklch(0.646 0.222 41.116);
+  --theme-chart-2: oklch(0.6 0.118 184.704);
+  --theme-chart-3: oklch(0.398 0.07 227.392);
+  --theme-chart-4: oklch(0.828 0.189 84.429);
+  --theme-chart-5: oklch(0.769 0.188 70.08);
+
+  /* 侧边栏颜色 */
+  --theme-sidebar: oklch(0.985 0 0);
+  --theme-sidebar-foreground: oklch(0.145 0 0);
+  --theme-sidebar-primary: oklch(0.205 0 0);
+  --theme-sidebar-primary-foreground: oklch(0.985 0 0);
+  --theme-sidebar-accent: oklch(0.97 0 0);
+  --theme-sidebar-accent-foreground: oklch(0.205 0 0);
+  --theme-sidebar-border: oklch(0.922 0 0);
+  --theme-sidebar-ring: oklch(0.708 0 0);
+
+  /* 特殊效果颜色 */
+  --theme-silver-gradient-start: #f7f8fa;
+  --theme-silver-gradient-end: #f3f4f7;
+  --theme-silver-gradient-hover-start: #eceef0;
+  --theme-silver-gradient-hover-end: #e9eaed;
+
+  /* 网格和图案颜色 */
+  --theme-grid-color: #e5e7eb;
+  --theme-mesh-color: rgba(0, 0, 0, 0.02);
+
+  /* 动画效果颜色 */
+  --theme-glow-color: rgba(107, 114, 128, 0.3);
+  --theme-glow-color-hover: rgba(107, 114, 128, 0.5);
+  --theme-luxury-glow-light: rgba(107, 114, 128, 0.1);
+  --theme-luxury-glow-medium: rgba(156, 163, 175, 0.05);
+  --theme-luxury-glow-dark: rgba(209, 213, 219, 0.1);
+
+  /* 文字效果颜色 */
+  --theme-typewriter-border: #4b5563;
+  --theme-shimmer-start: #374151;
+  --theme-shimmer-middle: #6b7280;
+  --theme-shimmer-end: #374151;
+
+  /* 粒子效果颜色 */
+  --theme-particle-color: #d1d5db;
+
+  /* 阴影颜色 */
+  --theme-shadow-light: rgba(0, 0, 0, 0.1);
+  --theme-shadow-medium: rgba(0, 0, 0, 0.15);
+
+  /* 文字颜色层级 */
+  --theme-text-primary: oklch(0.145 0 0);
+  --theme-text-secondary: oklch(0.556 0 0);
+  --theme-text-tertiary: oklch(0.708 0 0);
+  --theme-text-quaternary: oklch(0.8 0 0);
+
+  /* 背景颜色层级 */
+  --theme-bg-primary: oklch(1 0 0);
+  --theme-bg-secondary: oklch(0.985 0 0);
+  --theme-bg-tertiary: oklch(0.97 0 0);
+  --theme-bg-quaternary: oklch(0.95 0 0);
+
+  /* 边框颜色层级 */
+  --theme-border-primary: oklch(0.922 0 0);
+  --theme-border-secondary: oklch(0.9 0 0);
+  --theme-border-tertiary: oklch(0.85 0 0);
+
+  /* 装饰元素颜色 */
+  --theme-decoration-light: oklch(0.95 0 0);
+  --theme-decoration-medium: oklch(0.9 0 0);
+  --theme-decoration-dark: oklch(0.8 0 0);
+
+  /* 按钮颜色 */
+  --theme-button-primary: oklch(0.145 0 0);
+  --theme-button-primary-hover: oklch(0.1 0 0);
+  --theme-button-secondary: oklch(0.97 0 0);
+  --theme-button-secondary-hover: oklch(0.95 0 0);
+
+  /* 徽章颜色 */
+  --theme-badge-bg: oklch(0.97 0 0);
+  --theme-badge-border: oklch(0.9 0 0);
+  --theme-badge-text: oklch(0.556 0 0);
+
+  /* 特殊徽章颜色 */
+  --theme-badge-amber-bg: oklch(0.95 0.05 60);
+  --theme-badge-amber-text: oklch(0.6 0.1 60);
+  --theme-badge-blue-bg: oklch(0.95 0.05 240);
+  --theme-badge-blue-text: oklch(0.6 0.1 240);
+  --theme-badge-green-bg: oklch(0.95 0.05 142);
+  --theme-badge-green-text: oklch(0.4 0.1 142);
+  --theme-badge-purple-bg: oklch(0.95 0.05 300);
+  --theme-badge-purple-text: oklch(0.4 0.1 300);
+
+  /* 代码高亮颜色 */
+  --theme-code-bg: oklch(0.98 0 0);
+  --theme-code-border: oklch(0.9 0 0);
+  --theme-code-text: oklch(0.2 0 0);
+  --theme-code-comment: oklch(0.6 0 0);
+  --theme-code-keyword: oklch(0.3 0.15 280);
+  --theme-code-string: oklch(0.4 0.15 120);
+  --theme-code-number: oklch(0.4 0.15 60);
+  --theme-code-function: oklch(0.3 0.15 200);
+  --theme-code-variable: oklch(0.3 0.15 30);
+  --theme-code-type: oklch(0.3 0.15 300);
+  --theme-code-constant: oklch(0.3 0.15 180);
+}
+
+/* 暗色主题 */
+.dark {
+  /* 基础颜色 - 更深的黑色，保持呼吸感 */
+  --theme-background: oklch(0.08 0 0);
+  --theme-foreground: oklch(0.985 0 0);
+  --theme-card: oklch(0.12 0 0);
+  --theme-card-foreground: oklch(0.985 0 0);
+  --theme-popover: oklch(0.12 0 0);
+  --theme-popover-foreground: oklch(0.985 0 0);
+
+  /* 主要颜色 */
+  --theme-primary: oklch(0.922 0 0);
+  --theme-primary-foreground: oklch(0.205 0 0);
+  --theme-secondary: oklch(0.18 0 0);
+  --theme-secondary-foreground: oklch(0.985 0 0);
+
+  /* 辅助颜色 - 减少白灰色掺杂 */
+  --theme-muted: oklch(0.15 0 0);
+  --theme-muted-foreground: oklch(0.708 0 0);
+  --theme-accent: oklch(0.15 0 0);
+  --theme-accent-foreground: oklch(0.985 0 0);
+
+  /* 状态颜色 */
+  --theme-destructive: oklch(0.704 0.191 22.216);
+  --theme-destructive-foreground: oklch(0.985 0 0);
+  --theme-success: oklch(0.7 0.15 142);
+  --theme-success-foreground: oklch(0.985 0 0);
+  --theme-success-bg: oklch(0.2 0.05 142);
+
+  /* 边框和输入 */
+  --theme-border: oklch(1 0 0 / 10%);
+  --theme-input: oklch(1 0 0 / 15%);
+  --theme-ring: oklch(0.556 0 0);
+
+  /* 图表颜色 */
+  --theme-chart-1: oklch(0.488 0.243 264.376);
+  --theme-chart-2: oklch(0.696 0.17 162.48);
+  --theme-chart-3: oklch(0.769 0.188 70.08);
+  --theme-chart-4: oklch(0.627 0.265 303.9);
+  --theme-chart-5: oklch(0.645 0.246 16.439);
+
+  /* 侧边栏颜色 - 更深的黑色 */
+  --theme-sidebar: oklch(0.12 0 0);
+  --theme-sidebar-foreground: oklch(0.985 0 0);
+  --theme-sidebar-primary: oklch(0.488 0.243 264.376);
+  --theme-sidebar-primary-foreground: oklch(0.985 0 0);
+  --theme-sidebar-accent: oklch(0.18 0 0);
+  --theme-sidebar-accent-foreground: oklch(0.985 0 0);
+  --theme-sidebar-border: oklch(1 0 0 / 8%);
+  --theme-sidebar-ring: oklch(0.556 0 0);
+
+  /* 特殊效果颜色 - 更深的黑色 */
+  --theme-silver-gradient-start: #0a0a0a;
+  --theme-silver-gradient-end: #050505;
+  --theme-silver-gradient-hover-start: #1a1a1a;
+  --theme-silver-gradient-hover-end: #0f0f0f;
+
+  /* 网格和图案颜色 - 减少白灰色掺杂 */
+  --theme-grid-color: #1a1a1a;
+  --theme-mesh-color: rgba(255, 255, 255, 0.01);
+
+  /* 动画效果颜色 */
+  --theme-glow-color: rgba(156, 163, 175, 0.3);
+  --theme-glow-color-hover: rgba(156, 163, 175, 0.5);
+  --theme-luxury-glow-light: rgba(156, 163, 175, 0.1);
+  --theme-luxury-glow-medium: rgba(107, 114, 128, 0.05);
+  --theme-luxury-glow-dark: rgba(75, 85, 99, 0.1);
+
+  /* 文字效果颜色 */
+  --theme-typewriter-border: #9ca3af;
+  --theme-shimmer-start: #d1d5db;
+  --theme-shimmer-middle: #9ca3af;
+  --theme-shimmer-end: #d1d5db;
+
+  /* 粒子效果颜色 */
+  --theme-particle-color: #6b7280;
+
+  /* 阴影颜色 */
+  --theme-shadow-light: rgba(0, 0, 0, 0.3);
+  --theme-shadow-medium: rgba(0, 0, 0, 0.4);
+
+  /* 文字颜色层级 */
+  --theme-text-primary: oklch(0.985 0 0);
+  --theme-text-secondary: oklch(0.708 0 0);
+  --theme-text-tertiary: oklch(0.556 0 0);
+  --theme-text-quaternary: oklch(0.4 0 0);
+
+  /* 背景颜色层级 - 更深的黑色，减少白灰色掺杂 */
+  --theme-bg-primary: oklch(0.08 0 0);
+  --theme-bg-secondary: oklch(0.12 0 0);
+  --theme-bg-tertiary: oklch(0.16 0 0);
+  --theme-bg-quaternary: oklch(0.2 0 0);
+
+  /* 边框颜色层级 */
+  --theme-border-primary: oklch(1 0 0 / 10%);
+  --theme-border-secondary: oklch(1 0 0 / 15%);
+  --theme-border-tertiary: oklch(1 0 0 / 20%);
+
+  /* 装饰元素颜色 - 更深的黑色 */
+  --theme-decoration-light: oklch(0.15 0 0);
+  --theme-decoration-medium: oklch(0.2 0 0);
+  --theme-decoration-dark: oklch(0.25 0 0);
+
+  /* 按钮颜色 */
+  --theme-button-primary: oklch(0.985 0 0);
+  --theme-button-primary-hover: oklch(0.9 0 0);
+  --theme-button-secondary: oklch(0.18 0 0);
+  --theme-button-secondary-hover: oklch(0.22 0 0);
+
+  /* 徽章颜色 - 更深的黑色 */
+  --theme-badge-bg: oklch(0.18 0 0);
+  --theme-badge-border: oklch(1 0 0 / 12%);
+  --theme-badge-text: oklch(0.708 0 0);
+
+  /* 特殊徽章颜色 - 更深的黑色 */
+  --theme-badge-amber-bg: oklch(0.18 0.05 60);
+  --theme-badge-amber-text: oklch(0.7 0.1 60);
+  --theme-badge-blue-bg: oklch(0.18 0.05 240);
+  --theme-badge-blue-text: oklch(0.7 0.1 240);
+  --theme-badge-green-bg: oklch(0.18 0.05 142);
+  --theme-badge-green-text: oklch(0.6 0.1 142);
+  --theme-badge-purple-bg: oklch(0.18 0.05 300);
+  --theme-badge-purple-text: oklch(0.6 0.1 300);
+
+  /* 代码高亮颜色 - 更深的黑色 */
+  --theme-code-bg: oklch(0.12 0 0);
+  --theme-code-border: oklch(0.18 0 0);
+  --theme-code-text: oklch(0.9 0 0);
+  --theme-code-comment: oklch(0.5 0 0);
+  --theme-code-keyword: oklch(0.7 0.15 280);
+  --theme-code-string: oklch(0.7 0.15 120);
+  --theme-code-number: oklch(0.7 0.15 60);
+  --theme-code-function: oklch(0.7 0.15 200);
+  --theme-code-variable: oklch(0.7 0.15 30);
+  --theme-code-type: oklch(0.7 0.15 300);
+  --theme-code-constant: oklch(0.7 0.15 180);
+}
+
+/* 主题工具类 */
+.bg-theme-background {
+  background-color: var(--theme-background);
+}
+.text-theme-foreground {
+  color: var(--theme-foreground);
+}
+.bg-theme-card {
+  background-color: var(--theme-card);
+}
+.text-theme-card-foreground {
+  color: var(--theme-card-foreground);
+}
+.bg-theme-popover {
+  background-color: var(--theme-popover);
+}
+.text-theme-popover-foreground {
+  color: var(--theme-popover-foreground);
+}
+.bg-theme-primary {
+  background-color: var(--theme-primary);
+}
+.text-theme-primary-foreground {
+  color: var(--theme-primary-foreground);
+}
+.bg-theme-secondary {
+  background-color: var(--theme-secondary);
+}
+.text-theme-secondary-foreground {
+  color: var(--theme-secondary-foreground);
+}
+.bg-theme-muted {
+  background-color: var(--theme-muted);
+}
+.text-theme-muted-foreground {
+  color: var(--theme-muted-foreground);
+}
+.bg-theme-accent {
+  background-color: var(--theme-accent);
+}
+.text-theme-accent-foreground {
+  color: var(--theme-accent-foreground);
+}
+.bg-theme-destructive {
+  background-color: var(--theme-destructive);
+}
+.text-theme-destructive-foreground {
+  color: var(--theme-destructive-foreground);
+}
+.bg-theme-success {
+  background-color: var(--theme-success);
+}
+.text-theme-success-foreground {
+  color: var(--theme-success-foreground);
+}
+.bg-theme-success-bg {
+  background-color: var(--theme-success-bg);
+}
+.border-theme-success {
+  border-color: var(--theme-success);
+}
+.border-theme-border {
+  border-color: var(--theme-border);
+}
+.bg-theme-input {
+  background-color: var(--theme-input);
+}
+.ring-theme-ring {
+  --tw-ring-color: var(--theme-ring);
+}
+
+/* 特殊效果工具类 */
+.bg-theme-silver-gradient {
+  background: linear-gradient(135deg, var(--theme-silver-gradient-start) 0%, var(--theme-silver-gradient-end) 100%);
+}
+
+.bg-theme-silver-gradient-hover {
+  background: linear-gradient(135deg, var(--theme-silver-gradient-hover-start) 0%, var(--theme-silver-gradient-hover-end) 100%);
+}
+
+.bg-theme-grid {
+  background-image:
+    linear-gradient(to right, var(--theme-grid-color) 1px, transparent 1px), linear-gradient(to bottom, var(--theme-grid-color) 1px, transparent 1px);
+}
+
+.bg-theme-mesh {
+  background-image: radial-gradient(circle at 50% 50%, var(--theme-mesh-color) 1px, transparent 1px);
+}
+
+.shadow-theme-glow {
+  box-shadow: 0 0 5px var(--theme-glow-color);
+}
+
+.shadow-theme-glow-hover {
+  box-shadow: 0 0 15px var(--theme-glow-color-hover);
+}
+
+.shadow-theme-luxury {
+  box-shadow:
+    0 0 20px var(--theme-luxury-glow-light),
+    0 0 40px var(--theme-luxury-glow-medium),
+    0 0 60px var(--theme-luxury-glow-dark);
+}
+
+.border-theme-typewriter {
+  border-color: var(--theme-typewriter-border);
+}
+
+.bg-theme-shimmer {
+  background: linear-gradient(90deg, var(--theme-shimmer-start), var(--theme-shimmer-middle), var(--theme-shimmer-end));
+}
+
+.bg-theme-particle {
+  background-color: var(--theme-particle-color);
+}
+
+.shadow-theme-light {
+  box-shadow: 0 0 10px var(--theme-shadow-light);
+}
+
+.shadow-theme-medium {
+  box-shadow: 0 0 15px var(--theme-shadow-medium);
+}
+
+/* 文字颜色工具类 */
+.text-theme-primary {
+  color: var(--theme-text-primary);
+}
+.text-theme-secondary {
+  color: var(--theme-text-secondary);
+}
+.text-theme-tertiary {
+  color: var(--theme-text-tertiary);
+}
+.text-theme-quaternary {
+  color: var(--theme-text-quaternary);
+}
+
+/* 背景颜色工具类 */
+.bg-theme-primary {
+  background-color: var(--theme-bg-primary);
+}
+.bg-theme-secondary {
+  background-color: var(--theme-bg-secondary);
+}
+.bg-theme-tertiary {
+  background-color: var(--theme-bg-tertiary);
+}
+.bg-theme-quaternary {
+  background-color: var(--theme-bg-quaternary);
+}
+
+/* 边框颜色工具类 */
+.border-theme-primary {
+  border-color: var(--theme-border-primary);
+}
+.border-theme-secondary {
+  border-color: var(--theme-border-secondary);
+}
+.border-theme-tertiary {
+  border-color: var(--theme-border-tertiary);
+}
+
+/* 装饰元素工具类 */
+.bg-theme-decoration-light {
+  background-color: var(--theme-decoration-light);
+}
+.bg-theme-decoration-medium {
+  background-color: var(--theme-decoration-medium);
+}
+.bg-theme-decoration-dark {
+  background-color: var(--theme-decoration-dark);
+}
+
+/* 按钮颜色工具类 */
+.bg-theme-button-primary {
+  background-color: var(--theme-button-primary);
+}
+.bg-theme-button-primary-hover:hover {
+  background-color: var(--theme-button-primary-hover);
+}
+.bg-theme-button-secondary {
+  background-color: var(--theme-button-secondary);
+}
+.bg-theme-button-secondary-hover:hover {
+  background-color: var(--theme-button-secondary-hover);
+}
+
+/* 徽章颜色工具类 */
+.bg-theme-badge {
+  background-color: var(--theme-badge-bg);
+}
+.border-theme-badge {
+  border-color: var(--theme-badge-border);
+}
+.text-theme-badge {
+  color: var(--theme-badge-text);
+}
+
+/* 特殊徽章工具类 */
+.bg-theme-badge-amber {
+  background-color: var(--theme-badge-amber-bg);
+}
+.text-theme-badge-amber {
+  color: var(--theme-badge-amber-text);
+}
+.bg-theme-badge-blue {
+  background-color: var(--theme-badge-blue-bg);
+}
+.text-theme-badge-blue {
+  color: var(--theme-badge-blue-text);
+}
+.bg-theme-badge-green {
+  background-color: var(--theme-badge-green-bg);
+}
+.text-theme-badge-green {
+  color: var(--theme-badge-green-text);
+}
+.bg-theme-badge-purple {
+  background-color: var(--theme-badge-purple-bg);
+}
+.text-theme-badge-purple {
+  color: var(--theme-badge-purple-text);
+}

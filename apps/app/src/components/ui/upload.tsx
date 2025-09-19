@@ -25,7 +25,7 @@ const uploadVariants = cva(
         dragOver: 'border-primary bg-primary/10 scale-[1.02] shadow-lg',
         uploading: 'border-primary bg-primary/5',
         error: 'border-destructive bg-destructive/5',
-        success: 'border-green-500 bg-green-50 dark:bg-green-950/20',
+        success: 'border-theme-success bg-theme-success-bg',
       },
     },
     defaultVariants: {
@@ -43,7 +43,7 @@ const fileItemVariants = cva(
       status: {
         pending: 'border-border',
         uploading: 'border-primary bg-primary/5',
-        success: 'border-green-500 bg-green-50 dark:bg-green-950/20',
+        success: 'border-theme-success bg-theme-success-bg',
         error: 'border-destructive bg-destructive/5',
       },
     },
@@ -335,7 +335,7 @@ const UploadComponent = React.forwardRef<HTMLDivElement, UploadProps>(
                       e.stopPropagation();
                       removeFile(currentFile.id);
                     }}
-                    className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1.5 text-white opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:bg-red-600"
+                    className="absolute -top-2 -right-2 rounded-full bg-theme-destructive p-1.5 text-theme-destructive-foreground opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:bg-theme-destructive"
                     disabled={currentFile.status === 'uploading'}
                   >
                     <X className="h-3 w-3" />

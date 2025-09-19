@@ -6,12 +6,13 @@ import { OrganizationList, OrganizationSwitcher, SignedIn, UserButton } from '@c
 import { auth } from '@clerk/nextjs/server';
 import { Github } from 'lucide-react';
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import NotificationEn from './notification-en';
 import NotificationZh from './notification-zh';
 import { AppSidebar } from './sidebar';
 import { CreditBadge } from '@/components/features/credit-badge';
+import { ThemeToggle } from '@/components/features/theme-toggle';
+import { ThemeLogo } from '@/components/features/theme-logo';
 
 export const metadata: Metadata = {
   title: 'HeyFun',
@@ -27,14 +28,14 @@ const Header = ({ className }: { className?: string }) => {
       <div className="flex items-center gap-2">
         <Link href="/">
           <div className="from-primary/20 to-primary/5 ml-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border bg-gradient-to-br">
-            <Image src="/logo.png" alt="Fun Studio" width={20} height={20} className="object-contain opacity-80" />
+            <ThemeLogo width={20} height={20} alt="Fun Studio" className="object-contain opacity-80" />
           </div>
         </Link>
         <OrganizationSwitcher hidePersonal />
         <CreditBadge />
         <Dialog>
           <DialogTrigger asChild>
-            <Badge className="cursor-pointer bg-yellow-50 text-yellow-500 transition hover:scale-101">EARLY ACCESS</Badge>
+            <Badge className="bg-theme-badge text-theme-badge cursor-pointer transition hover:scale-101">EARLY ACCESS</Badge>
           </DialogTrigger>
           <DialogContent showCloseButton={false}>
             <DialogHeader>
@@ -58,7 +59,10 @@ const Header = ({ className }: { className?: string }) => {
           <Github className="text-muted-foreground h-3 w-3 cursor-pointer" />
         </Link>
       </div>
-      <UserButton />
+      <div className="flex items-center gap-4">
+        <ThemeToggle />
+        <UserButton />
+      </div>
     </div>
   );
 };
@@ -73,11 +77,11 @@ export default async function RootLayout({
   return (
     <SignedIn>
       {!orgId ? (
-        <div className="flex h-full flex-col items-center justify-center">
+        <div className="flex h-full flex-col items-center justify-center text-theme-foreground">
           <OrganizationList hidePersonal />
         </div>
       ) : (
-        <div className="flex h-full flex-col">
+        <div className="flex h-full flex-col bg-secondary">
           <Header className="h-12" />
           <div className="flex h-[calc(100vh-48px)] w-full">
             <AppSidebar />

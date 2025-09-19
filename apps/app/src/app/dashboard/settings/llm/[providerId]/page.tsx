@@ -65,7 +65,7 @@ export default function ProviderDetailsPanel() {
         </div>
         <div className="mt-2">
           <Link href={providerInfo.homepage!} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block" title="Homepage">
-            <Badge className="rounded-lg border-none bg-blue-100 px-3 py-1 font-light text-blue-700 shadow-none backdrop-blur-sm" variant="secondary">
+            <Badge className="rounded-lg border-none bg-theme-badge-blue px-3 py-1 font-light text-theme-badge-blue shadow-none backdrop-blur-sm" variant="secondary">
               <Globe className="h-5 w-5" /> {providerInfo.homepage}
             </Badge>
           </Link>

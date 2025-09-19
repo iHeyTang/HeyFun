@@ -163,7 +163,7 @@ const StepMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:
           <div className="container mx-auto max-w-4xl">
             <div className="mb-2 flex items-center justify-between">
               <div className="text-lg font-bold">✨ FunMax</div>
-              <div className="text-xs font-medium text-gray-500 italic opacity-0 transition-opacity duration-300 group-hover:opacity-100 hover:opacity-100">
+              <div className="text-xs font-medium text-theme-tertiary italic opacity-0 transition-opacity duration-300 group-hover:opacity-100 hover:opacity-100">
                 {thinkMessage.createdAt
                   ? new Date(thinkMessage.createdAt).toLocaleString('zh-CN', {
                       year: 'numeric',

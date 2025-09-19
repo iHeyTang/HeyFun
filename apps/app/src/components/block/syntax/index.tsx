@@ -1,7 +1,7 @@
 import { useAsync } from '@/hooks/use-async';
 import { LoaderIcon } from 'lucide-react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
-import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { createThemeCodeStyle } from '@/styles/code-theme';
 
 export const Syntax = ({ language, content, src }: { language?: string; content?: string; src?: string }) => {
   const { data, isLoading } = useAsync(
@@ -30,7 +30,7 @@ export const Syntax = ({ language, content, src }: { language?: string; content?
     <SyntaxHighlighter
       language={data?.language}
       showLineNumbers
-      style={githubGist}
+      style={createThemeCodeStyle()}
       customStyle={{
         fontSize: '0.875rem',
         lineHeight: '1.5',

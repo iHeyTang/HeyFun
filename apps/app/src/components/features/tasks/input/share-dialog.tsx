@@ -70,7 +70,7 @@ export const ShareDialog = ({ ref }: ShareDialogProps) => {
 
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <label htmlFor="expiration" className="mb-1 block text-sm text-gray-500">
+              <label htmlFor="expiration" className="mb-1 block text-sm text-theme-tertiary">
                 Duration
               </label>
               <Select value={shareExpiration} onValueChange={setShareExpiration}>

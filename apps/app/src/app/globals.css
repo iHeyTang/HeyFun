@@ -2,6 +2,7 @@
 @import 'tw-animate-css';
 @import 'github-markdown-css/github-markdown.css';
 @import '../styles/animations.css';
+@import '../styles/theme.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -47,71 +48,38 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: var(--theme-background);
+  --foreground: var(--theme-foreground);
+  --card: var(--theme-card);
+  --card-foreground: var(--theme-card-foreground);
+  --popover: var(--theme-popover);
+  --popover-foreground: var(--theme-popover-foreground);
+  --primary: var(--theme-primary);
+  --primary-foreground: var(--theme-primary-foreground);
+  --secondary: var(--theme-secondary);
+  --secondary-foreground: var(--theme-secondary-foreground);
+  --muted: var(--theme-muted);
+  --muted-foreground: var(--theme-muted-foreground);
+  --accent: var(--theme-accent);
+  --accent-foreground: var(--theme-accent-foreground);
+  --destructive: var(--theme-destructive);
+  --destructive-foreground: var(--theme-destructive-foreground);
+  --border: var(--theme-border);
+  --input: var(--theme-input);
+  --ring: var(--theme-ring);
+  --chart-1: var(--theme-chart-1);
+  --chart-2: var(--theme-chart-2);
+  --chart-3: var(--theme-chart-3);
+  --chart-4: var(--theme-chart-4);
+  --chart-5: var(--theme-chart-5);
+  --sidebar: var(--theme-sidebar);
+  --sidebar-foreground: var(--theme-sidebar-foreground);
+  --sidebar-primary: var(--theme-sidebar-primary);
+  --sidebar-primary-foreground: var(--theme-sidebar-primary-foreground);
+  --sidebar-accent: var(--theme-sidebar-accent);
+  --sidebar-accent-foreground: var(--theme-sidebar-accent-foreground);
+  --sidebar-border: var(--theme-sidebar-border);
+  --sidebar-ring: var(--theme-sidebar-ring);
 }
 
 @layer base {
@@ -144,6 +112,90 @@
   @apply overflow-x-auto;
   background-color: transparent;
   font-size: 0.875rem;
+  color: var(--theme-text-primary);
+}
+
+/* 覆盖github-markdown-css的硬编码颜色 */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  color: var(--theme-text-primary);
+}
+
+.markdown-body p {
+  color: var(--theme-text-secondary);
+}
+
+.markdown-body a {
+  color: var(--theme-primary);
+}
+
+.markdown-body a:hover {
+  color: var(--theme-primary);
+  text-decoration: underline;
+}
+
+.markdown-body code {
+  background-color: var(--theme-muted);
+  color: var(--theme-text-primary);
+  border: 1px solid var(--theme-border);
+}
+
+.markdown-body pre {
+  background-color: var(--theme-muted);
+  border: 1px solid var(--theme-border);
+}
+
+.markdown-body pre code {
+  background-color: transparent;
+  border: none;
+}
+
+.markdown-body blockquote {
+  border-left: 4px solid var(--theme-border);
+  background-color: var(--theme-muted);
+  color: var(--theme-text-secondary);
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  width: 100%;
+  background-color: transparent;
+}
+
+.markdown-body th {
+  background-color: var(--theme-muted);
+  color: var(--theme-text-primary);
+  border: 1px solid var(--theme-border);
+  padding: 0.5rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.markdown-body td {
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text-secondary);
+  padding: 0.5rem;
+}
+
+.markdown-body tr:nth-child(even) {
+  background-color: var(--theme-bg-secondary);
+}
+
+.markdown-body tr:nth-child(odd) {
+  background-color: var(--theme-bg-primary);
+}
+
+.markdown-body tr:hover {
+  background-color: var(--theme-bg-tertiary);
+}
+
+.markdown-body hr {
+  border-color: var(--theme-border);
 }
 
 .markdown-body.chat {
@@ -160,14 +212,14 @@
 /* Silver Gradient */
 .bg-silver-gradient {
   position: relative;
-  background: linear-gradient(135deg, #f7f8fa 0%, #fbfbfd 40%, #f9f9fb 80%, #f3f4f7 100%);
+  background: linear-gradient(135deg, var(--theme-silver-gradient-start) 0%, var(--theme-silver-gradient-end) 100%);
   overflow: hidden;
 }
 .bg-silver-gradient::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #eceef0 0%, #f5f6fa 40%, #f7f7fa 80%, #e9eaed 100%);
+  background: linear-gradient(135deg, var(--theme-silver-gradient-hover-start) 0%, var(--theme-silver-gradient-hover-end) 100%);
   opacity: 0;
   transition: opacity 0.2s;
   pointer-events: none;
@@ -274,22 +326,36 @@
 }
 
 .markdown-body.compact table {
-  @apply mb-2 max-w-full rounded border text-xs;
+  @apply mb-2 max-w-full rounded text-xs;
+  border-collapse: collapse;
+  background-color: transparent;
 }
 
 .markdown-body.compact table tr {
   @apply border-t-0;
 }
 
+.markdown-body.compact table tr:nth-child(even) {
+  background-color: var(--theme-bg-secondary);
+}
+
+.markdown-body.compact table tr:hover {
+  background-color: var(--theme-bg-tertiary);
+}
+
 .markdown-body.compact th,
 .markdown-body.compact td {
   @apply border-none px-2 py-1 text-left;
+  border: 1px solid var(--theme-border);
 }
 
 .markdown-body.compact th {
   @apply bg-muted text-foreground font-semibold;
+  background-color: var(--theme-muted);
+  color: var(--theme-text-primary);
 }
 
 .markdown-body.compact td {
   @apply text-muted-foreground;
+  color: var(--theme-text-secondary);
 }

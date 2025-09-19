@@ -24,7 +24,7 @@ export const WorkspaceDirectory = ({ items, currentPath, onItemClick }: Workspac
             onClick={() => onItemClick(item.name)}
           >
             <div className="flex items-center gap-2">
-              {item.isDirectory ? <FolderIcon className="h-4 w-4 text-gray-500" /> : <FileIcon className="h-4 w-4 text-gray-500" />}
+              {item.isDirectory ? <FolderIcon className="h-4 w-4 text-theme-tertiary" /> : <FileIcon className="h-4 w-4 text-theme-tertiary" />}
               <span className="text-sm font-medium">{item.name}</span>
             </div>
             <div className="flex items-center gap-4">

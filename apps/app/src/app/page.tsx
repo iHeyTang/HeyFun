@@ -1,7 +1,8 @@
+import { ThemeToggle } from '@/components/features/theme-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ThemeLogo } from '@/components/features/theme-logo';
 import { Blocks, Github, Layers, Menu, Network, Workflow } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import './page.css';
 
@@ -14,33 +15,34 @@ export default function HomePage() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <Image src="/logo.png" alt="HeyFun" width={24} height={24} className="object-contain" />
-              <span className="text-lg font-bold tracking-wide text-gray-900">HeyFun</span>
+              <ThemeLogo width={24} height={24} alt="HeyFun" className="object-contain" />
+              <span className="text-theme-primary text-lg font-bold tracking-wide">HeyFun</span>
             </div>
 
             {/* Navigation Links */}
             <div className="hidden flex-1 items-center justify-center gap-8 md:flex">
-              <Link href="/" className="text-sm font-normal text-gray-600 transition-colors hover:text-gray-900">
+              <Link href="/" className="text-theme-secondary hover:text-theme-primary text-sm font-normal transition-colors">
                 Home
               </Link>
-              <Link href="/" className="text-sm font-normal text-gray-600 transition-colors hover:text-gray-900">
+              <Link href="/" className="text-theme-secondary hover:text-theme-primary text-sm font-normal transition-colors">
                 Features
               </Link>
-              <Link href="/" className="text-sm font-normal text-gray-600 transition-colors hover:text-gray-900">
+              <Link href="/" className="text-theme-secondary hover:text-theme-primary text-sm font-normal transition-colors">
                 Open Source
               </Link>
-              <Link href="/" className="text-sm font-normal text-gray-600 transition-colors hover:text-gray-900">
+              <Link href="/" className="text-theme-secondary hover:text-theme-primary text-sm font-normal transition-colors">
                 Pricing
               </Link>
             </div>
 
             {/* Right Section */}
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               {/* GitHub Info */}
               <Link
                 href="https://github.com/iHeyTang/HeyFun"
                 target="_blank"
-                className="hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-normal text-gray-600 transition-all hover:text-gray-900 sm:flex"
+                className="text-theme-secondary hover:text-theme-primary hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-normal transition-all sm:flex"
               >
                 <Github className="h-3 w-3" />
                 <span>GitHub</span>
@@ -56,7 +58,7 @@ export default function HomePage() {
               </Link>
 
               {/* Mobile Menu */}
-              <Button size="sm" variant="ghost" className="text-gray-600 hover:bg-gray-50 hover:text-gray-900 md:hidden">
+              <Button size="sm" variant="ghost" className="text-theme-secondary hover:bg-theme-secondary hover:text-theme-primary md:hidden">
                 <Menu className="h-4 w-4" />
               </Button>
             </div>
@@ -69,83 +71,99 @@ export default function HomePage() {
         <div className="relative mx-auto w-full max-w-7xl">
           <div className="flex items-center justify-center">
             {/* Main Content - Centered */}
-            <div className="max-w-4xl text-center">
+            <div className="max-w-5xl text-center">
               {/* Product Introduction */}
-              <div className="space-y-8">
+              <div className="space-y-12">
                 {/* Main Title */}
-                <div className="animate-fade-in-title space-y-4">
-                  <h1 className="text-5xl font-bold tracking-tight text-gray-900">
-                    <span className="shimmer-text-dark">HeyFun</span>
-                  </h1>
-                  <div className="mx-auto h-px w-24 bg-gradient-to-r from-gray-300 via-gray-500 to-gray-300"></div>
-
-                  {/* Badge */}
-                  <div className="flex justify-center pt-2">
-                    <Badge className="cursor-default border-gray-200 bg-gray-50/50 px-6 py-1 text-sm font-normal text-gray-600 backdrop-blur-sm">
-                      Universal AI Studio
-                    </Badge>
+                <div className="animate-fade-in-title space-y-6">
+                  <div className="relative px-4 py-8">
+                    <h1 className="text-theme-primary text-6xl leading-none font-bold tracking-tight md:text-7xl lg:text-8xl">
+                      <span className="shimmer-text-dark relative inline-block py-2">
+                        HeyFun
+                        <div className="via-theme-primary/20 absolute -inset-2 bg-gradient-to-r from-transparent to-transparent opacity-50 blur-sm"></div>
+                      </span>
+                    </h1>
+                    {/* Floating particles around title */}
+                    <div className="bg-theme-primary/15 absolute -top-8 -left-8 h-2 w-2 animate-pulse rounded-full"></div>
+                    <div
+                      className="bg-theme-secondary/20 absolute -top-6 -right-8 h-1 w-1 animate-pulse rounded-full"
+                      style={{ animationDelay: '1s' }}
+                    ></div>
+                    <div
+                      className="bg-theme-primary/12 absolute -bottom-6 -left-6 h-1.5 w-1.5 animate-pulse rounded-full"
+                      style={{ animationDelay: '2s' }}
+                    ></div>
+                    <div
+                      className="bg-theme-secondary/17 absolute -right-8 -bottom-8 h-1 w-1 animate-pulse rounded-full"
+                      style={{ animationDelay: '0.5s' }}
+                    ></div>
                   </div>
-                </div>
 
-                {/* Subtitle */}
-                <div className="animate-fade-in-subtitle space-y-4">
-                  <p className="text-xl leading-relaxed font-light text-gray-600 md:text-2xl">The creative platform that connects all AI services</p>
-                  <p className="mx-auto max-w-lg text-base leading-relaxed font-normal text-gray-500">Customizable • Fully Connected • AI Studio</p>
-                </div>
+                  {/* Enhanced divider with glow effect */}
+                  <div className="relative mx-auto w-32">
+                    <div className="via-theme-primary/30 h-px bg-gradient-to-r from-transparent to-transparent"></div>
+                    <div className="via-theme-primary/15 absolute inset-0 h-px bg-gradient-to-r from-transparent to-transparent blur-sm"></div>
+                  </div>
 
-                {/* Core Features */}
-                <div className="animate-fade-in-subtitle mx-auto max-w-lg">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 shadow-sm/3">
-                        <Blocks className="h-5 w-5 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Customizable</p>
-                        <p className="text-xs font-normal text-gray-500">Tailored AI Agents</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 shadow-sm/3">
-                        <Network className="h-5 w-5 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Fully Connected</p>
-                        <p className="text-xs font-normal text-gray-500">Unified AI Services</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 shadow-sm/3">
-                        <Workflow className="h-5 w-5 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Workflow</p>
-                        <p className="text-xs font-normal text-gray-500">Intelligent Task Orchestration</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 shadow-sm/3">
-                        <Layers className="h-5 w-5 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">AI Studio</p>
-                        <p className="text-xs font-normal text-gray-500">Creative Productivity Platform</p>
-                      </div>
+                  {/* Enhanced Badge */}
+                  <div className="flex justify-center pt-4">
+                    <div className="group relative">
+                      <Badge className="border-theme-border bg-theme-badge text-theme-badge cursor-default px-8 py-2 text-sm font-medium backdrop-blur-sm transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg">
+                        AI Studio
+                      </Badge>
+                      <div className="from-theme-primary/5 to-theme-secondary/5 absolute inset-0 rounded-full bg-gradient-to-r opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100"></div>
                     </div>
                   </div>
                 </div>
 
-                {/* CTA Buttons */}
-                <div className="animate-fade-in-buttons flex flex-col justify-center gap-4 sm:flex-row">
+                {/* Enhanced Subtitle */}
+                <div className="animate-fade-in-subtitle space-y-6">
+                  <div className="relative">
+                    <div className="via-theme-secondary/2.5 absolute -inset-2 bg-gradient-to-r from-transparent to-transparent blur-xl"></div>
+                  </div>
+                  <p className="text-theme-tertiary mx-auto max-w-2xl text-lg leading-relaxed font-normal">
+                    Intelligent Agents • Automated Workflows • Creative AI Platform
+                  </p>
+                </div>
+
+                {/* Enhanced Core Features */}
+                <div className="animate-fade-in-subtitle mx-auto max-w-4xl">
+                  <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+                    {[
+                      { icon: Blocks, title: 'AI Agents', desc: 'Intelligent Autonomous Agents', delay: '0s' },
+                      { icon: Workflow, title: 'Workflows', desc: 'Automated Task Orchestration', delay: '0.2s' },
+                      { icon: Network, title: 'Integration', desc: 'Seamless AI Service Connection', delay: '0.4s' },
+                      { icon: Layers, title: 'Studio', desc: 'Creative AI Development Platform', delay: '0.6s' },
+                    ].map((feature, index) => (
+                      <div
+                        key={index}
+                        className="group flex flex-col items-center gap-4 text-center transition-all duration-300 hover:scale-105"
+                        style={{ animationDelay: feature.delay }}
+                      >
+                        <div className="relative">
+                          <div className="bg-theme-secondary group-hover:bg-theme-primary/10 flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg transition-all duration-300 group-hover:shadow-xl">
+                            <feature.icon className="text-theme-primary h-7 w-7 transition-all duration-300 group-hover:scale-110" />
+                          </div>
+                          <div className="from-theme-primary/10 absolute inset-0 rounded-2xl bg-gradient-to-br to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-theme-primary text-base font-semibold">{feature.title}</p>
+                          <p className="text-theme-tertiary text-sm font-normal">{feature.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Enhanced CTA Buttons */}
+                <div className="animate-fade-in-buttons flex flex-col justify-center gap-6 sm:flex-row">
                   <Link href="/dashboard">
                     <Button
                       size="lg"
-                      className="group border-0 bg-gray-900 px-8 py-3 text-base font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-gray-800 hover:shadow-xl"
+                      className="group bg-theme-button-primary text-theme-primary-foreground hover:bg-theme-button-primary-hover relative overflow-hidden border-0 px-10 py-4 text-lg font-medium shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl"
                     >
-                      Get Started
+                      <span className="relative z-10">Get Started</span>
+                      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-full"></div>
                     </Button>
                   </Link>
                 </div>
@@ -154,227 +172,89 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Animated Background Elements */}
+        {/* Enhanced Animated Background Elements */}
         <div className="absolute inset-0 -z-10">
-          {/* Enhanced Side Glow Effects */}
+          {/* Minimal Grid System */}
+          <div className="bg-theme-grid absolute inset-0 bg-[size:8rem_8rem] opacity-1"></div>
+
+          {/* Subtle Radial Gradients */}
           <div
-            className="absolute top-0 left-0 h-full w-0.5 animate-pulse bg-gradient-to-b from-transparent via-gray-300 to-transparent opacity-80"
-            style={{ animationDuration: '2s' }}
+            className="bg-gradient-radial from-theme-primary/0.5 absolute top-1/4 left-1/4 h-96 w-96 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full via-transparent to-transparent"
+            style={{ animationDuration: '12s' }}
           ></div>
           <div
-            className="absolute top-0 right-0 h-full w-0.5 animate-pulse bg-gradient-to-b from-transparent via-gray-300 to-transparent opacity-80"
-            style={{ animationDuration: '2s', animationDelay: '1s' }}
+            className="bg-gradient-radial from-theme-secondary/0.8 absolute top-3/4 right-1/4 h-80 w-80 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full via-transparent to-transparent"
+            style={{ animationDuration: '10s', animationDelay: '3s' }}
+          ></div>
+          <div
+            className="bg-gradient-radial from-theme-primary/0.3 absolute top-1/2 left-1/6 h-64 w-64 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full via-transparent to-transparent"
+            style={{ animationDuration: '15s', animationDelay: '6s' }}
           ></div>
 
-          {/* Enhanced Side Effects */}
-          {/* Left side layered effects */}
+          {/* Minimal Floating Elements */}
           <div
-            className="absolute top-0 left-0 h-full w-32 animate-pulse bg-gradient-to-r from-gray-50/20 to-transparent"
+            className="bg-theme-primary/3 absolute top-20 left-20 h-2 w-2 rotate-45 animate-pulse rounded-sm"
             style={{ animationDuration: '6s' }}
           ></div>
           <div
-            className="absolute top-0 left-0 h-full w-8 animate-pulse bg-gradient-to-r from-gray-100/15 to-transparent"
-            style={{ animationDuration: '4s', animationDelay: '1s' }}
-          ></div>
-
-          {/* Right side layered effects */}
-          <div
-            className="absolute top-0 right-0 h-full w-32 animate-pulse bg-gradient-to-l from-gray-50/20 to-transparent"
-            style={{ animationDuration: '6s', animationDelay: '3s' }}
-          ></div>
-          <div
-            className="absolute top-0 right-0 h-full w-8 animate-pulse bg-gradient-to-l from-gray-100/15 to-transparent"
+            className="bg-theme-secondary/4 absolute top-40 right-32 h-1.5 w-1.5 animate-bounce rounded-full"
             style={{ animationDuration: '4s', animationDelay: '2s' }}
           ></div>
-
-          {/* Vertical rhythm lines */}
           <div
-            className="absolute top-0 left-4 h-full w-px animate-pulse bg-gradient-to-b from-transparent via-gray-200/40 to-transparent"
-            style={{ animationDuration: '5s' }}
-          ></div>
-          <div
-            className="absolute top-0 left-12 h-full w-px animate-pulse bg-gradient-to-b from-transparent via-gray-200/30 to-transparent"
-            style={{ animationDuration: '7s', animationDelay: '2s' }}
-          ></div>
-          <div
-            className="absolute top-0 right-4 h-full w-px animate-pulse bg-gradient-to-b from-transparent via-gray-200/40 to-transparent"
-            style={{ animationDuration: '5s', animationDelay: '1.5s' }}
-          ></div>
-          <div
-            className="absolute top-0 right-12 h-full w-px animate-pulse bg-gradient-to-b from-transparent via-gray-200/30 to-transparent"
-            style={{ animationDuration: '7s', animationDelay: '3.5s' }}
-          ></div>
-
-          {/* Radial Glow from Center */}
-          <div
-            className="bg-gradient-radial absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full from-gray-100/20 via-gray-50/10 to-transparent opacity-60"
-            style={{ animationDuration: '6s' }}
-          ></div>
-
-          {/* Dynamic Grid Pattern */}
-          <div
-            className="absolute inset-0 animate-pulse bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:8rem_8rem] opacity-20"
-            style={{ animationDuration: '4s' }}
-          ></div>
-
-          {/* Matrix-like falling particles */}
-          <div
-            className="absolute top-0 left-[10%] h-full w-px animate-pulse bg-gradient-to-b from-transparent via-gray-300 to-transparent opacity-20"
-            style={{ animationDelay: '0s', animationDuration: '3s' }}
-          ></div>
-          <div
-            className="absolute top-0 left-[25%] h-full w-px animate-pulse bg-gradient-to-b from-transparent via-gray-200 to-transparent opacity-15"
-            style={{ animationDelay: '1s', animationDuration: '4s' }}
-          ></div>
-          <div
-            className="absolute top-0 left-[40%] h-full w-px animate-pulse bg-gradient-to-b from-transparent via-gray-300 to-transparent opacity-18"
-            style={{ animationDelay: '2s', animationDuration: '3.5s' }}
-          ></div>
-          <div
-            className="absolute top-0 left-[60%] h-full w-px animate-pulse bg-gradient-to-b from-transparent via-gray-200 to-transparent opacity-22"
-            style={{ animationDelay: '0.5s', animationDuration: '4.5s' }}
-          ></div>
-          <div
-            className="absolute top-0 left-[75%] h-full w-px animate-pulse bg-gradient-to-b from-transparent via-gray-300 to-transparent opacity-16"
-            style={{ animationDelay: '1.5s', animationDuration: '3s' }}
-          ></div>
-          <div
-            className="absolute top-0 left-[90%] h-full w-px animate-pulse bg-gradient-to-b from-transparent via-gray-200 to-transparent opacity-25"
-            style={{ animationDelay: '2.5s', animationDuration: '4s' }}
-          ></div>
-
-          {/* Floating geometric elements with enhanced effects */}
-          <div className="absolute top-20 left-20 h-2 w-2 animate-ping rounded-full bg-gray-300 opacity-15"></div>
-          <div className="absolute top-40 right-32 h-1 w-1 animate-pulse rounded-full bg-gray-400 opacity-20"></div>
-          <div
-            className="absolute bottom-32 left-40 h-3 w-3 rotate-45 animate-spin border border-gray-300 opacity-15"
+            className="border-theme-primary/2.5 absolute bottom-32 left-40 h-2 w-2 rotate-45 animate-spin rounded-sm border"
             style={{ animationDuration: '20s' }}
           ></div>
-          <div className="absolute top-60 right-20 h-2 w-2 animate-bounce rounded-full bg-gray-300 opacity-10" style={{ animationDelay: '2s' }}></div>
 
-          {/* Left side details */}
+          {/* Subtle Side Accents */}
           <div
-            className="absolute top-1/4 left-2 h-0.5 w-12 animate-pulse bg-gradient-to-r from-gray-200 to-transparent opacity-50"
-            style={{ animationDuration: '4s' }}
+            className="via-theme-primary/3 absolute top-0 left-0 h-full w-px animate-pulse bg-gradient-to-b from-transparent to-transparent"
+            style={{ animationDuration: '8s' }}
           ></div>
           <div
-            className="absolute top-1/2 left-6 h-0.5 w-8 animate-pulse bg-gradient-to-r from-gray-300 to-transparent opacity-40"
-            style={{ animationDuration: '5s', animationDelay: '1s' }}
-          ></div>
-          <div
-            className="absolute top-3/4 left-2 h-0.5 w-10 animate-pulse bg-gradient-to-r from-gray-200 to-transparent opacity-45"
-            style={{ animationDuration: '6s', animationDelay: '2s' }}
+            className="via-theme-secondary/3 absolute top-0 right-0 h-full w-px animate-pulse bg-gradient-to-b from-transparent to-transparent"
+            style={{ animationDuration: '8s', animationDelay: '4s' }}
           ></div>
 
-          {/* Right side details */}
+          {/* Gentle Light Beams */}
           <div
-            className="absolute top-1/4 right-2 h-0.5 w-12 animate-pulse bg-gradient-to-l from-gray-200 to-transparent opacity-50"
-            style={{ animationDuration: '4s', animationDelay: '2s' }}
+            className="via-theme-primary/2.5 absolute top-0 left-1/4 h-full w-px animate-pulse bg-gradient-to-b from-transparent to-transparent"
+            style={{ animationDuration: '10s' }}
           ></div>
           <div
-            className="absolute top-1/2 right-6 h-0.5 w-8 animate-pulse bg-gradient-to-l from-gray-300 to-transparent opacity-40"
-            style={{ animationDuration: '5s', animationDelay: '3s' }}
-          ></div>
-          <div
-            className="absolute top-3/4 right-2 h-0.5 w-10 animate-pulse bg-gradient-to-l from-gray-200 to-transparent opacity-45"
-            style={{ animationDuration: '6s', animationDelay: '4s' }}
+            className="via-theme-secondary/2.5 absolute top-0 left-3/4 h-full w-px animate-pulse bg-gradient-to-b from-transparent to-transparent"
+            style={{ animationDuration: '10s', animationDelay: '5s' }}
           ></div>
 
-          {/* Side floating elements */}
-          <div className="absolute top-1/3 left-8 h-1 w-1 animate-pulse rounded-full bg-gray-300/60" style={{ animationDuration: '3s' }}></div>
-          <div
-            className="absolute top-2/3 left-16 h-0.5 w-0.5 animate-pulse rounded-full bg-gray-400/50"
-            style={{ animationDuration: '4s', animationDelay: '1s' }}
-          ></div>
-          <div
-            className="absolute top-1/3 right-8 h-1 w-1 animate-pulse rounded-full bg-gray-300/60"
-            style={{ animationDuration: '3s', animationDelay: '1.5s' }}
-          ></div>
-          <div
-            className="absolute top-2/3 right-16 h-0.5 w-0.5 animate-pulse rounded-full bg-gray-400/50"
-            style={{ animationDuration: '4s', animationDelay: '2.5s' }}
-          ></div>
-
-          {/* Floating dots with movement */}
-          <div
-            className="floating-dot absolute top-1/3 right-1/3 h-2 w-2 animate-bounce rounded-full bg-gray-400/60"
-            style={{ animationDuration: '3s' }}
-          ></div>
-          <div
-            className="floating-dot absolute top-2/3 left-1/3 h-1.5 w-1.5 animate-bounce rounded-full bg-gray-300/50"
-            style={{ animationDuration: '4s', animationDelay: '1s' }}
-          ></div>
-
-          {/* Corner accent lines */}
-          <div className="absolute top-0 left-0 h-24 w-px bg-gradient-to-b from-gray-200 to-transparent opacity-40"></div>
-          <div className="absolute top-0 left-0 h-px w-24 bg-gradient-to-r from-gray-200 to-transparent opacity-40"></div>
-          <div className="absolute top-0 right-0 h-24 w-px bg-gradient-to-b from-gray-200 to-transparent opacity-40"></div>
-          <div className="absolute top-0 right-0 h-px w-24 bg-gradient-to-l from-gray-200 to-transparent opacity-40"></div>
-
-          {/* Orbiting elements around center */}
-          <div
-            className="absolute top-1/2 left-1/2 h-96 w-96 animate-spin rounded-full border border-gray-200 opacity-10"
-            style={{ animationDuration: '60s', transform: 'translate(-50%, -50%)' }}
-          ></div>
-          <div
-            className="absolute top-1/2 left-1/2 h-80 w-80 animate-spin rounded-full border border-gray-300 opacity-15"
-            style={{ animationDuration: '45s', animationDirection: 'reverse', transform: 'translate(-50%, -50%)' }}
-          ></div>
-          <div
-            className="border-gray-350 absolute top-1/2 left-1/2 h-64 w-64 animate-spin rounded-full border opacity-20"
-            style={{ animationDuration: '30s', transform: 'translate(-50%, -50%)' }}
-          ></div>
-
-          {/* Scanning beam effect */}
-          <div className="absolute top-0 left-0 h-full w-full">
+          {/* Soft Scanning Effect */}
+          <div className="absolute top-0 left-0 h-full w-full overflow-hidden">
             <div
-              className="absolute top-0 left-0 h-full w-1 animate-pulse bg-gradient-to-b from-transparent via-gray-300 to-transparent opacity-10"
-              style={{
-                animation: 'scanBeam 8s linear infinite',
-                transform: 'translateX(-100%)',
-              }}
+              className="via-theme-primary/3 absolute top-0 left-0 h-full w-1 animate-pulse bg-gradient-to-b from-transparent to-transparent"
+              style={{ animation: 'scanBeam 20s linear infinite' }}
             ></div>
           </div>
 
-          {/* Enhanced Gradient Overlays for Transparency */}
-          <div className="absolute top-0 left-0 h-full w-full bg-gradient-to-br from-gray-50/20 via-transparent to-gray-100/10"></div>
-          <div className="absolute bottom-0 left-0 h-48 w-full bg-gradient-to-t from-white via-white/90 to-transparent"></div>
-          <div className="absolute top-0 left-0 h-48 w-full bg-gradient-to-b from-white via-white/90 to-transparent"></div>
+          {/* Subtle Mesh Pattern */}
+          <div className="bg-theme-mesh absolute inset-0 bg-[length:128px_128px] opacity-2"></div>
 
-          {/* Floating light effects */}
-          <div className="absolute top-1/4 left-1/4 h-24 w-24 animate-pulse rounded-full bg-gray-100/40" style={{ animationDuration: '5s' }}></div>
-          <div
-            className="absolute top-3/4 right-1/4 h-16 w-16 animate-pulse rounded-full bg-gray-200/50"
-            style={{ animationDuration: '4s', animationDelay: '2s' }}
-          ></div>
-          <div
-            className="absolute top-1/2 left-1/6 h-12 w-12 animate-pulse rounded-full bg-gray-200/30"
-            style={{ animationDuration: '6s', animationDelay: '1s' }}
-          ></div>
+          {/* Refined Corner Accents */}
+          <div className="from-theme-primary/6 absolute top-0 left-0 h-24 w-px bg-gradient-to-b to-transparent"></div>
+          <div className="from-theme-primary/6 absolute top-0 left-0 h-px w-24 bg-gradient-to-r to-transparent"></div>
+          <div className="from-theme-secondary/6 absolute top-0 right-0 h-24 w-px bg-gradient-to-b to-transparent"></div>
+          <div className="from-theme-secondary/6 absolute top-0 right-0 h-px w-24 bg-gradient-to-l to-transparent"></div>
+          <div className="from-theme-primary/6 absolute bottom-0 left-0 h-24 w-px bg-gradient-to-t to-transparent"></div>
+          <div className="from-theme-primary/6 absolute bottom-0 left-0 h-px w-24 bg-gradient-to-r to-transparent"></div>
+          <div className="from-theme-secondary/6 absolute right-0 bottom-0 h-24 w-px bg-gradient-to-t to-transparent"></div>
+          <div className="from-theme-secondary/6 absolute right-0 bottom-0 h-px w-24 bg-gradient-to-l to-transparent"></div>
 
-          {/* Subtle mesh pattern */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[length:32px_32px] opacity-60"></div>
+          {/* Crystal Clear Gradient Overlays */}
+          <div className="via-theme-primary/0.8 absolute inset-0 bg-gradient-to-br from-transparent to-transparent"></div>
+          <div className="from-theme-bg-primary/2 absolute inset-0 bg-gradient-to-t via-transparent to-transparent"></div>
+          <div className="from-theme-bg-primary/2 absolute inset-0 bg-gradient-to-b via-transparent to-transparent"></div>
 
-          {/* Noise texture overlay */}
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20256%20256%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cfilter%20id%3D%22noiseFilter%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.9%22%20numOctaves%3D%224%22%20stitchTiles%3D%22stitch%22/%3E%3C/filter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23noiseFilter)%22/%3E%3C/svg%3E')] opacity-2"></div>
-
-          {/* Floating particles */}
-          <div className="particle particle-1 opacity-20"></div>
-          <div className="particle particle-2 opacity-15"></div>
-          <div className="particle particle-3 opacity-25"></div>
-          <div className="particle particle-4 opacity-18"></div>
-          <div className="particle particle-5 opacity-22"></div>
-
-          {/* Additional animated elements */}
-          <div className="absolute top-32 right-16 h-8 w-8 animate-ping border border-gray-300 opacity-15" style={{ animationDuration: '4s' }}></div>
-          <div
-            className="absolute bottom-40 left-32 h-6 w-6 rotate-45 animate-pulse border border-gray-300 opacity-12"
-            style={{ animationDuration: '3s' }}
-          ></div>
-          <div
-            className="absolute top-48 left-16 h-4 w-4 animate-bounce rounded-full bg-gray-300 opacity-18"
-            style={{ animationDuration: '5s' }}
-          ></div>
+          {/* Ethereal Light Reflections */}
+          <div className="bg-gradient-radial from-theme-primary/0.6 absolute top-1/4 left-1/4 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full via-transparent to-transparent opacity-20"></div>
+          <div className="bg-gradient-radial from-theme-secondary/0.8 absolute top-3/4 right-1/4 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full via-transparent to-transparent opacity-15"></div>
+          <div className="bg-gradient-radial from-theme-primary/0.4 absolute top-1/2 left-1/6 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full via-transparent to-transparent opacity-12"></div>
         </div>
       </div>
     </div>

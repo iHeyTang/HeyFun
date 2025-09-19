@@ -139,7 +139,7 @@ export default function ChatSharePage() {
             <ChatMessages messages={aggregateMessages(messages)} />
           </div>
           <div className="fixed bottom-4 left-4 z-50">
-            <Button onClick={() => router.push('/')} className="flex items-center gap-2 bg-neutral-900 text-white shadow-lg hover:bg-neutral-800">
+            <Button onClick={() => router.push('/')} className="flex items-center gap-2 bg-theme-button-primary text-theme-primary shadow-lg hover:bg-theme-button-primary-hover">
               <Sparkles className="h-4 w-4" />
               Try it now!
             </Button>

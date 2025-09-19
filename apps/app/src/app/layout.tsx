@@ -113,7 +113,43 @@ export default async function RootLayout({
   const locale = await getLocale();
 
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        baseTheme: undefined,
+        variables: {
+          colorPrimary: 'hsl(var(--theme-primary))',
+          colorBackground: 'hsl(var(--theme-background))',
+          colorText: 'hsl(var(--theme-foreground))',
+          colorTextSecondary: 'hsl(var(--theme-muted-foreground))',
+          colorNeutral: 'hsl(var(--theme-foreground))',
+          colorSuccess: 'hsl(var(--theme-success))',
+          colorWarning: '#f59e0b',
+          colorDanger: 'hsl(var(--theme-destructive))',
+          borderRadius: '0.5rem',
+        },
+        elements: {
+          formButtonPrimary: {
+            backgroundColor: 'hsl(var(--theme-primary))',
+            color: 'hsl(var(--theme-primary-foreground))',
+          },
+          card: {
+            backgroundColor: 'hsl(var(--theme-card))',
+            color: 'hsl(var(--theme-card-foreground))',
+          },
+          headerTitle: {
+            color: 'hsl(var(--theme-foreground))',
+          },
+          headerSubtitle: {
+            color: 'hsl(var(--theme-muted-foreground))',
+          },
+          formFieldInput: {
+            backgroundColor: 'hsl(var(--theme-input))',
+            color: 'hsl(var(--theme-foreground))',
+            borderColor: 'hsl(var(--theme-border))',
+          },
+        },
+      }}
+    >
       <html lang={locale} suppressHydrationWarning>
         <body className={`${geistSans.variable} ${geistMono.variable} h-screen w-screen overflow-hidden antialiased`}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

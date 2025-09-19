@@ -62,7 +62,7 @@ export function AppSidebar() {
   }
 
   return (
-    <div className="flex w-14 flex-col items-center justify-between shadow">
+    <div className="flex w-14 flex-col items-center justify-between shadow bg-sidebar">
       <div className="flex flex-1 flex-col items-center space-y-2 pt-4">
         <TooltipProvider>
           {navItems.map(item => (

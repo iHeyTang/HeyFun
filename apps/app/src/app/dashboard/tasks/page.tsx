@@ -11,7 +11,7 @@ import { useRecentTasks } from './sidebar';
 
 const EmptyState = () => (
   <div className="flex h-full items-center justify-center gap-4 opacity-50">
-    <Image src="/logo.png" alt="HeyFun" width={64} height={64} />
+    <Image src="/logo-white.png" alt="HeyFun" width={64} height={64} />
     <div className="flex flex-col">
       <div className="text-2xl font-bold">HeyFun</div>
       <div className="text-muted-foreground text-sm">Hey! Let&apos;s bring a little fun to this world together.</div>

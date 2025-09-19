@@ -1,7 +1,7 @@
 'use client';
 
 import { createChatSession, getChatSessions, sendMessage } from '@/actions/chat';
-import Image from 'next/image';
+import { ThemeLogo } from '@/components/features/theme-logo';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -254,7 +254,7 @@ export const ChatContainer = ({ sessionId, existingSession, loading }: ChatConta
           </div>
         ) : messages.length === 0 ? (
           <div className="flex h-full items-center justify-center gap-4 opacity-50">
-            <Image src="/logo.png" alt="HeyFun" width={64} height={64} />
+            <ThemeLogo width={64} height={64} alt="HeyFun" />
             <div className="flex flex-col">
               <div className="text-2xl font-bold">HeyFun</div>
               <div className="text-muted-foreground text-sm">Hey! Let&apos;s bring a little fun to this world together.</div>
