@@ -2,8 +2,13 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { decryptTextWithPrivateKey, encryptTextWithPublicKey } from '@/lib/server/crypto';
 import { prisma } from '@/lib/server/prisma';
+import AIGC from '@repo/llm/aigc';
 import { LLMFactory } from '@repo/llm/chat';
+import zodToJsonSchema from 'zod-to-json-schema';
 
+/**
+ * Get all model providers
+ */
 export const getModelProviders = withUserAuth(async ({}: AuthWrapperContext<{}>) => {
   const providers = LLMFactory.getAvailableProviders();
   return Object.keys(providers).map(provider => ({
@@ -13,19 +18,10 @@ export const getModelProviders = withUserAuth(async ({}: AuthWrapperContext<{}>)
   }));
 });
 
-export const getModelProviderInfo = withUserAuth(async ({ args }: AuthWrapperContext<{ provider: string }>) => {
-  const provider = LLMFactory.getAvailableProviders()[args.provider];
-  if (!provider) {
-    return { success: false, error: 'Provider not found' };
-  }
-  return {
-    provider: provider.provider,
-    displayName: provider.displayName,
-    homepage: provider.homepage,
-  };
-});
-
-export const getModelProviderModels = withUserAuth(async ({ args }: AuthWrapperContext<{ provider: string }>) => {
+/**
+ * Get all models of a provider by provider id
+ */
+export const getModelsByProvider = withUserAuth(async ({ args }: AuthWrapperContext<{ provider: string }>) => {
   const provider = LLMFactory.getAvailableProviders()[args.provider];
   if (!provider) {
     return;
@@ -33,7 +29,10 @@ export const getModelProviderModels = withUserAuth(async ({ args }: AuthWrapperC
   return await provider.getModels();
 });
 
-export const getAllAvailableModelProviderModels = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
+/**
+ * Get all available models
+ */
+export const getAvailableModels = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
   const providers = LLMFactory.getAvailableProviders();
   const configs = await prisma.modelProviderConfigs.findMany({
     where: { organizationId: orgId },
@@ -45,6 +44,9 @@ export const getAllAvailableModelProviderModels = withUserAuth(async ({ orgId }:
   return models.filter(model => model !== undefined).flat();
 });
 
+/**
+ * Get all model provider configs
+ */
 export const getModelProviderConfigs = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
   const configs = await prisma.modelProviderConfigs.findMany({
     where: { organizationId: orgId },
@@ -56,13 +58,9 @@ export const getModelProviderConfigs = withUserAuth(async ({ orgId }: AuthWrappe
   return [{ id: '', provider: 'builtin', config: {} }, ...configs];
 });
 
-export const getModelProviderConfig = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ provider: string }>) => {
-  const config = await prisma.modelProviderConfigs.findFirst({
-    where: { organizationId: orgId, provider: args.provider },
-  });
-  return config ? JSON.parse(decryptTextWithPrivateKey(config.config)) : null;
-});
-
+/**
+ * Update model provider config
+ */
 export const updateModelProviderConfig = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ provider: string; config: any }>) => {
   const encryptedConfig = args.config ? encryptTextWithPublicKey(JSON.stringify(args.config)) : '';
 
@@ -81,6 +79,9 @@ export const updateModelProviderConfig = withUserAuth(async ({ orgId, args }: Au
   return config;
 });
 
+/**
+ * Test model provider connection
+ */
 export const testModelProviderConnection = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ provider: string }>) => {
   const config = await prisma.modelProviderConfigs.findFirst({
     where: { organizationId: orgId, provider: args.provider },
@@ -100,4 +101,45 @@ export const testModelProviderConnection = withUserAuth(async ({ orgId, args }: 
     return { success: true, error: null };
   }
   return { success: false, error: res.error };
+});
+
+/**
+ * Get all AIGC models
+ */
+export const getAigcModels = withUserAuth(async () => {
+  const models = await AIGC.getAllServiceModels();
+  return models.map(model => ({
+    name: model.name,
+    displayName: model.displayName,
+    description: model.description,
+    costDescription: model.costDescription,
+    generationTypes: model.generationTypes,
+    paramsSchema: zodToJsonSchema(model.paramsSchema),
+  }));
+});
+
+/**
+ * Get all voices of a model
+ */
+export const getAigcVoiceList = withUserAuth(async ({ args }: AuthWrapperContext<{ modelName: string }>) => {
+  const { modelName } = args;
+
+  try {
+    const model = AIGC.getModel(modelName);
+
+    if (!model) {
+      throw new Error('Model not found');
+    }
+
+    // 检查模型是否有 getAigcVoiceList 方法
+    if (typeof model.getVoiceList !== 'function') {
+      throw new Error('Model does not support voice selection');
+    }
+
+    const voices = await model.getVoiceList();
+    return voices;
+  } catch (error) {
+    console.error('Error getting voice list:', error);
+    throw new Error((error as Error).message);
+  }
 });

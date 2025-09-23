@@ -6,15 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { getAigcVoiceList } from '@/actions/llm';
 import { JSONSchema } from 'json-schema-to-ts';
 import { Plus, Trash2 } from 'lucide-react';
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
-import { getVoiceList } from '@/actions/paintboard';
 
 // Voice 类型定义
-type Voice = NonNullable<Awaited<ReturnType<typeof getVoiceList>>['data']>[number];
+type Voice = NonNullable<Awaited<ReturnType<typeof getAigcVoiceList>>['data']>[number];
 
 // 自定义矩形图标组件，根据比例动态调整宽高
 const RatioIcon = ({ ratio }: { ratio: string }) => {
@@ -111,7 +111,7 @@ const VoiceSelector = ({ form, formFieldPath, displayLabel, hideLabel, modelName
       setError(null);
 
       try {
-        const result = await getVoiceList({ modelName });
+        const result = await getAigcVoiceList({ modelName });
         if (result.error) {
           setError(result.error);
         } else {

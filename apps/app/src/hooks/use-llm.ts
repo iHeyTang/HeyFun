@@ -1,15 +1,8 @@
-import {
-  getAllAvailableModelProviderModels,
-  getModelProviderConfig,
-  getModelProviderConfigs,
-  getModelProviderInfo,
-  getModelProviderModels,
-  getModelProviders,
-} from '@/actions/llm';
+import { getAvailableModels, getModelProviderConfigs, getModelsByProvider, getModelProviders, getAigcModels } from '@/actions/llm';
 import { useCallback, useRef } from 'react';
 import { create } from 'zustand';
 
-type ProviderModelInfo = NonNullable<Awaited<ReturnType<typeof getModelProviderModels>>['data']>[number];
+type ProviderModelInfo = NonNullable<Awaited<ReturnType<typeof getModelsByProvider>>['data']>[number];
 
 export const useProvidersStore = create<{
   providerInfos: Awaited<ReturnType<typeof getModelProviders>>['data'];
@@ -18,14 +11,12 @@ export const useProvidersStore = create<{
   refreshAvailableModels: () => Promise<void>;
   refreshProviderInfos: () => Promise<void>;
   refreshProviderConfigs: () => Promise<void>;
-  getProviderInfo: (providerId: string) => Awaited<ReturnType<typeof getModelProviderInfo>>['data'];
-  getProviderConfig: (providerId: string) => Awaited<ReturnType<typeof getModelProviderConfig>>['data'];
 }>((set, get) => ({
   providerInfos: [],
   providerConfigs: [],
   availableModels: [],
   refreshAvailableModels: async () => {
-    const res = await getAllAvailableModelProviderModels({});
+    const res = await getAvailableModels({});
     set({ availableModels: res.data || [] });
   },
   refreshProviderInfos: async () => {
@@ -36,11 +27,16 @@ export const useProvidersStore = create<{
     const res = await getModelProviderConfigs({});
     set({ providerConfigs: res.data || [] });
   },
-  getProviderInfo: (providerId: string) => {
-    return get().providerInfos?.find(info => info.provider === providerId);
-  },
-  getProviderConfig: (providerId: string) => {
-    return get().providerConfigs?.find(config => config.provider === providerId);
+}));
+
+export const useAigcStore = create<{
+  availableModels: Awaited<ReturnType<typeof getAigcModels>>['data'];
+  refreshAvailableModels: () => Promise<void>;
+}>((set, get) => ({
+  availableModels: [],
+  refreshAvailableModels: async () => {
+    const res = await getAigcModels({});
+    set({ availableModels: res.data || [] });
   },
 }));
 
@@ -57,6 +53,23 @@ export const useLLM = () => {
       initiated.current = true;
     });
   }, [store.refreshAvailableModels, store.refreshProviderInfos, store.refreshProviderConfigs]);
+
+  return { ...store, initiate, initiated: initiated.current };
+};
+
+export const useAigc = () => {
+  const store = useAigcStore();
+  const initiated = useRef(false);
+
+  const initiate = useCallback(() => {
+    console.log('initiate-aigc');
+    if (initiated.current) {
+      return;
+    }
+    store.refreshAvailableModels().then(() => {
+      initiated.current = true;
+    });
+  }, [store.refreshAvailableModels]);
 
   return { ...store, initiate, initiated: initiated.current };
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import { getModelProviderModels } from '@/actions/llm';
+import { getModelsByProvider } from '@/actions/llm';
 import { Markdown } from '@/components/block/markdown/markdown';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ export default function ProviderDetailsPanel() {
     if (!providerId) {
       return;
     }
-    getModelProviderModels({ provider: providerId }).then(p => {
+    getModelsByProvider({ provider: providerId }).then(p => {
       if (!p.data) {
         return;
       }

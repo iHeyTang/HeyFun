@@ -1,7 +1,9 @@
 'use server';
 
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
+import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
 import { prisma } from '@/lib/server/prisma';
+import { LLMClient } from '@repo/llm/chat';
 
 // 创建聊天会话
 export const createChatSession = withUserAuth(
@@ -206,4 +208,22 @@ export const deleteMessage = withUserAuth(async ({ orgId, args }: AuthWrapperCon
     console.error('Error deleting message:', error);
     throw error;
   }
+});
+
+// 一次性聊天
+export const chatOnce = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ modelProvider: string; modelId: string; content: string }>) => {
+  const { modelProvider, modelId, content } = args;
+
+  const providerConfig = await prisma.modelProviderConfigs.findFirst({
+    where: { provider: modelProvider, organizationId: orgId },
+  });
+  const config = providerConfig ? JSON.parse(decryptTextWithPrivateKey(providerConfig.config)) : {};
+
+  const llmClient = new LLMClient({ ...config, providerId: modelProvider, modelId });
+
+  const result = await llmClient.chat({
+    messages: [{ role: 'user', content }],
+  });
+
+  return result;
 });

@@ -4,12 +4,17 @@ import { pageTasks } from '@/actions/tasks';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tasks } from '@prisma/client';
-import { MessageSquare, Palette, SettingsIcon, Bot, FolderOpen, BoxIcon } from 'lucide-react';
+import { Bot, BoxIcon, Flower, FolderOpen, MessageSquare, Palette, SettingsIcon } from 'lucide-react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { create } from 'zustand';
-import Link from 'next/link';
 
 const navItems = [
+  {
+    icon: Flower,
+    label: 'Flowcanvas',
+    path: '/dashboard/flowcanvas',
+  },
   {
     icon: MessageSquare,
     label: 'Chat',
@@ -62,7 +67,7 @@ export function AppSidebar() {
   }
 
   return (
-    <div className="flex w-14 flex-col items-center justify-between shadow bg-sidebar">
+    <div className="bg-sidebar flex w-14 flex-col items-center justify-between shadow">
       <div className="flex flex-1 flex-col items-center space-y-2 pt-4">
         <TooltipProvider>
           {navItems.map(item => (

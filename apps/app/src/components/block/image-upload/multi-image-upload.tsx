@@ -1,11 +1,11 @@
 'use client';
 
+import { uploadFile, validateFile } from '@/lib/browser/file';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Plus, Upload, X } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
-import { uploadFile, validateFile } from './utils';
 
 export interface MultiImageUploadProps {
   value?: string[]; // 上传后的文件URL数组

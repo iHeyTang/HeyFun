@@ -1,6 +1,6 @@
 'use client';
 
-import { getAllAigcModelInfos } from '@/actions/paintboard';
+import { getAigcModels } from '@/actions/llm';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,10 +8,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Image, Video, Sparkles, Mic } from 'lucide-react';
+import { GenerationType } from '@repo/llm/aigc';
+import { Image, Mic, Search, Sparkles, Video } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-type ModelInfo = NonNullable<Awaited<ReturnType<typeof getAllAigcModelInfos>>['data']>[number];
+type ModelInfo = NonNullable<Awaited<ReturnType<typeof getAigcModels>>['data']>[number];
 
 interface ModelSelectorProps {
   models: ModelInfo[];
@@ -82,7 +83,7 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
       } else if (activeCategory === 'speech') {
         filtered = filtered.filter(model => model.generationTypes.some(type => ['text-to-speech'].includes(type)));
       } else {
-        filtered = filtered.filter(model => model.generationTypes.includes(activeCategory));
+        filtered = filtered.filter(model => model.generationTypes.includes(activeCategory as GenerationType));
       }
     }
 

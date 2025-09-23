@@ -1,10 +1,11 @@
 'use client';
 
-import { getAllAigcModelInfos, submitGenerationTask } from '@/actions/paintboard';
+import { getAigcModels } from '@/actions/llm';
+import { submitGenerationTask } from '@/actions/paintboard';
+import { AigcModelSelector } from '@/components/features/aigc-model-selector';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AigcModelSelector } from '@/components/features/aigc-model-selector';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -31,7 +32,7 @@ const baseDefaultValues: FormData = {
 };
 
 export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationFormProps) {
-  const [availableModels, setAvailableModels] = useState<Awaited<ReturnType<typeof getAllAigcModelInfos>>['data']>([]);
+  const [availableModels, setAvailableModels] = useState<Awaited<ReturnType<typeof getAigcModels>>['data']>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const previousModelRef = useRef<string>('');
 
@@ -58,7 +59,7 @@ export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationForm
   // Initialize and get all service models
   useEffect(() => {
     const loadModels = async () => {
-      const result = await getAllAigcModelInfos({});
+      const result = await getAigcModels({});
       if (result.data) {
         setAvailableModels(result.data);
       }

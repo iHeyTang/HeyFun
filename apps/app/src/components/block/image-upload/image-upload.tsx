@@ -1,12 +1,12 @@
 'use client';
 
 import { uploadVariants } from '@/components/ui/upload';
+import { uploadFile, validateFile } from '@/lib/browser/file';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Upload, X } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
-import { uploadFile, validateFile } from './utils';
 
 export interface ImageUploadProps {
   value?: string; // 上传后的文件URL
@@ -131,7 +131,7 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
                     e.stopPropagation();
                     handleRemove();
                   }}
-                  className="absolute -top-2 -right-2 rounded-full bg-theme-destructive p-1.5 text-theme-destructive-foreground opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:bg-theme-destructive"
+                  className="bg-theme-destructive text-theme-destructive-foreground hover:bg-theme-destructive absolute -top-2 -right-2 rounded-full p-1.5 opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110"
                   disabled={uploading}
                 >
                   <X className="h-3 w-3" />
