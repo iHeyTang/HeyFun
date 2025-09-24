@@ -37,7 +37,7 @@ export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
         model: 'doubao-seededit-3-0-i2i-250628',
         prompt: params.prompt,
         image: params.referenceImage[0]!,
-        guidance_scale: params.advanced.guidance_scale,
+        guidance_scale: params.advanced?.guidance_scale,
         size: 'adaptive',
         seed: -1,
         response_format: 'url',

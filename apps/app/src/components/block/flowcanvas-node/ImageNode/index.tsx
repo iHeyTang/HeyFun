@@ -16,7 +16,7 @@ interface ImageNodeProps {
 
 export { ImageNodeProcessor } from './processor';
 
-export default function ImageNode({ data, id }: ImageNodeProps) {
+export default function ImageNode({ id, data }: ImageNodeProps) {
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(false);

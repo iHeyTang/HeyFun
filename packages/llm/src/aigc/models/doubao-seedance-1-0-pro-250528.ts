@@ -39,7 +39,7 @@ export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
       images.push({ type: 'image_url', image_url: { url: params.firstFrame }, role: 'first_frame' });
     }
 
-    const promptParameter = `--rs ${params.resolution} --rt ${params.aspectRatio} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.advanced.camerafixed}`;
+    const promptParameter = `--rs ${params.resolution} --rt ${params.aspectRatio} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.advanced?.camerafixed}`;
     const task = await this.provider.seedanceSubmit({
       model: 'doubao-seedance-1-0-pro-250528',
       content: [{ type: 'text', text: `${params.prompt}\n${promptParameter}` }, ...images],

@@ -4,7 +4,7 @@ import { decryptTextWithPrivateKey, encryptTextWithPublicKey } from '@/lib/serve
 import { prisma } from '@/lib/server/prisma';
 import AIGC from '@repo/llm/aigc';
 import { LLMFactory } from '@repo/llm/chat';
-import zodToJsonSchema from 'zod-to-json-schema';
+import zodToJsonSchema, { JsonSchema7ArrayType, JsonSchema7EnumType, JsonSchema7ObjectType, JsonSchema7StringType } from 'zod-to-json-schema';
 
 /**
  * Get all model providers
@@ -114,7 +114,14 @@ export const getAigcModels = withUserAuth(async () => {
     description: model.description,
     costDescription: model.costDescription,
     generationTypes: model.generationTypes,
-    paramsSchema: zodToJsonSchema(model.paramsSchema),
+    paramsSchema: zodToJsonSchema(model.paramsSchema) as JsonSchema7ObjectType & {
+      properties: {
+        prompt: JsonSchema7StringType;
+        referenceImage: JsonSchema7ArrayType;
+        aspectRatio: JsonSchema7EnumType;
+        duration: JsonSchema7EnumType;
+      };
+    },
   }));
 });
 

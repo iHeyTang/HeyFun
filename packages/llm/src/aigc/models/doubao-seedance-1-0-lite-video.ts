@@ -55,7 +55,7 @@ export class DoubaoSeedance10LiteVideo extends BaseAigcModel {
       }
     }
 
-    const promptParameter = `--rs ${params.resolution} --rt ${params.aspectRatio} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.advanced.camerafixed}`;
+    const promptParameter = `--rs ${params.resolution} --rt ${params.aspectRatio} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.advanced?.camerafixed}`;
     const task = await this.provider.seedanceSubmit({
       model: modelName as 'doubao-seedance-1-0-lite-i2v-250428' | 'doubao-seedance-1-0-lite-t2v-250428',
       content: [{ type: 'text', text: `${params.prompt}\n${promptParameter}` }, ...images],

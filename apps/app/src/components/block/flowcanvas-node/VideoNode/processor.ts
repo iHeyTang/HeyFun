@@ -1,8 +1,12 @@
+import { getSignedUrl, getSignedUrls } from '@/actions/oss';
+import { getPaintboardTask, submitGenerationTask } from '@/actions/paintboard';
 import { BaseNodeProcessor, FlowGraphNode, NodeExecutorExecuteResult } from '@/components/block/flowcanvas';
 
 export type VideoNodeActionData = {
   prompt?: string;
   selectedModel?: string;
+  aspectRatio?: string;
+  duration?: number;
 };
 
 // 视频节点处理器
@@ -11,6 +15,7 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
     const startTime = Date.now();
     const { images, texts } = this.parseInputs(node);
     const { actionData } = node.data;
+    const { prompt, selectedModel, aspectRatio, duration } = actionData || {};
 
     // 如果输入全部为空，则直接返回
     if (images.length === 0 && texts.length === 0 && !actionData?.prompt) {
@@ -20,12 +25,72 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
         data: node.data.output,
       };
     }
+
+    if (!prompt || !selectedModel || !aspectRatio || !duration) {
+      return {
+        success: false,
+        timestamp: new Date(),
+        executionTime: Date.now() - startTime,
+        error: 'Invalid prompt, model, aspect ratio, or duration',
+      };
+    }
+
+    const result = await submitGenerationTask({
+      model: selectedModel,
+      params: { prompt, aspectRatio, duration, referenceImage: images },
+    });
+
+    console.log('video generation result', result);
+
+    if (result.error || !result.data?.id) {
+      return {
+        success: false,
+        timestamp: new Date(),
+        executionTime: Date.now() - startTime,
+        error: result.error,
+        data: { videos: [] },
+      };
+    }
+
+    const expiredTime = startTime + 10 * 60 * 1000; // 视频生成需要更长时间，10分钟
+
+    while (Date.now() < expiredTime) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
+      const taskResult = await getPaintboardTask({ taskId: result.data.id });
+      console.log('video taskResult', taskResult);
+      if (taskResult.data?.status === 'completed') {
+        const urls = await getSignedUrls({ fileKeys: taskResult.data.results.map(result => result.key) });
+
+        return {
+          success: true,
+          timestamp: new Date(),
+          executionTime: Date.now() - startTime,
+          data: { videos: urls.data?.map(url => ({ url })) },
+        };
+      }
+
+      if (taskResult.data?.status === 'pending') {
+        continue;
+      }
+
+      if (taskResult.data?.status === 'failed') {
+        return {
+          success: false,
+          timestamp: new Date(),
+          executionTime: Date.now() - startTime,
+          error: taskResult.data.error || 'Failed to generate video',
+          data: { videos: [] },
+        };
+      }
+    }
+
     return {
       success: false,
       timestamp: new Date(),
       executionTime: Date.now() - startTime,
       error: 'Failed to generate video',
-      data: { images: [] },
+      data: { videos: [] },
     };
   }
 }

@@ -37,7 +37,7 @@ export class DoubaoSeedream30T2i250415 extends BaseAigcModel {
       this.provider.seedream30T2i({
         model: 'doubao-seedream-3-0-t2i-250415',
         prompt: params.prompt,
-        guidance_scale: params.advanced.guidance_scale,
+        guidance_scale: params.advanced?.guidance_scale,
         size: size as z.infer<typeof seedream30T2iParamsSchema>['size'],
         seed: -1,
         response_format: 'url',
