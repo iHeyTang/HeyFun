@@ -56,6 +56,35 @@ export interface Voice {
   description: string;
 }
 
+// 基础参数接口 - 定义所有可能的字段
+export interface BaseVideoParams {
+  prompt: string;
+  firstFrame?: string;
+  lastFrame?: string;
+  referenceImage?: string[];
+  resolution?: string;
+  aspectRatio: string;
+  duration?: number | `${number}`;
+  advanced?: Record<string, any>;
+}
+
+export interface BaseImageParams {
+  prompt: string;
+  referenceImage: string[];
+  aspectRatio?: string;
+  advanced?: Record<string, any>;
+}
+
+export interface BaseSpeechParams {
+  text: string;
+  voice_id: string;
+  mode: string;
+  speed?: number;
+  vol?: number;
+  pitch?: number;
+  emotion?: string;
+}
+
 // 基础适配器抽象类
 export abstract class BaseAigcModel {
   public abstract name: string;
@@ -64,7 +93,8 @@ export abstract class BaseAigcModel {
   public abstract costDescription?: string;
   public abstract generationTypes: GenerationType[];
 
-  public abstract paramsSchema: z.ZodSchema;
+  // 抽象方法：子类必须实现自己的参数验证规则
+  public abstract paramsSchema: z.ZodSchema<BaseVideoParams | BaseImageParams | BaseSpeechParams>;
 
   abstract submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string>;
 

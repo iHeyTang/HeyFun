@@ -61,5 +61,26 @@
       "agents": "Agents",
       "preferences": "Preferences"
     }
+  },
+  "paintboard": {
+    "form": {
+      "fields": {
+        "prompt": "Prompt",
+        "text": "Text",
+        "aspectRatio": "Aspect Ratio",
+        "duration": "Duration",
+        "firstFrame": "First Frame",
+        "lastFrame": "Last Frame",
+        "referenceImage": "Reference Images",
+        "voice_id": "Voice",
+        "mode": "Mode",
+        "speed": "Speed",
+        "vol": "Volume",
+        "pitch": "Pitch",
+        "emotion": "Emotion",
+        "resolution": "Resolution",
+        "advanced": "Advanced Settings"
+      }
+    }
   }
 }

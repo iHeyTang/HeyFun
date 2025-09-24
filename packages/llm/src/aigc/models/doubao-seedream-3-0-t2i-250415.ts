@@ -17,9 +17,12 @@ export class DoubaoSeedream30T2i250415 extends BaseAigcModel {
   generationTypes = ['text-to-image'] as GenerationType[];
 
   paramsSchema = z.object({
-    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
-    aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']).describe('[title:画面比例][renderType:ratio]'),
-    guidance_scale: z.number().min(1).max(10).default(2.5).optional().describe('[title:提示词引导强度]'),
+    prompt: z.string(),
+    aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']),
+    referenceImage: z.undefined().optional(),
+    advanced: z.object({
+      guidance_scale: z.number().min(1).max(10).default(2.5).optional().describe('[title:提示词引导强度]'),
+    }),
   });
 
   provider: VolcengineArkProvider;
@@ -34,7 +37,7 @@ export class DoubaoSeedream30T2i250415 extends BaseAigcModel {
       this.provider.seedream30T2i({
         model: 'doubao-seedream-3-0-t2i-250415',
         prompt: params.prompt,
-        guidance_scale: params.guidance_scale,
+        guidance_scale: params.advanced.guidance_scale,
         size: size as z.infer<typeof seedream30T2iParamsSchema>['size'],
         seed: -1,
         response_format: 'url',

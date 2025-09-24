@@ -15,11 +15,13 @@ export class Jimeng40 extends BaseAigcModel {
   generationTypes = ['text-to-image', 'image-to-image'] as GenerationType[];
 
   paramsSchema = z.object({
-    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
-    referenceImage: z.array(z.string()).describe('[title:参考图片][renderType:imageArray]').min(0).max(10).optional(),
-    aspectRatio: z.enum(['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1', '21:9']).describe('[title:画面比例][renderType:ratio]'),
-    guidance_scale: z.number().min(0).max(1).step(0.1).default(0.5).optional().describe('[title:提示词引导强度]'),
-    force_single: z.boolean().default(false).optional().describe('[title:强制单图生成]'),
+    prompt: z.string(),
+    referenceImage: z.array(z.string()).min(0).max(10).optional(),
+    aspectRatio: z.enum(['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1', '21:9']),
+    advanced: z.object({
+      guidance_scale: z.number().min(0).max(1).step(0.1).default(0.5).optional().describe('[title:提示词引导强度]'),
+      force_single: z.boolean().default(false).optional().describe('[title:强制单图生成]'),
+    }),
   });
 
   provider: VolcengineJimengProvider;
@@ -40,12 +42,12 @@ export class Jimeng40 extends BaseAigcModel {
       body: JSON.stringify({
         req_key: 'jimeng_t2i_v40',
         prompt: params.prompt,
-        guidance_scale: params.guidance_scale || 0.5,
-        force_single: params.force_single || false,
+        guidance_scale: params.advanced.guidance_scale || 0.5,
+        force_single: params.advanced.force_single || false,
         seed: -1,
         width: size?.width || 1024,
         height: size?.height || 1024,
-        scale: params.guidance_scale || 0.5,
+        scale: params.advanced.guidance_scale || 0.5,
         image_urls: params.referenceImage || [],
       }),
       serviceName: 'cv',

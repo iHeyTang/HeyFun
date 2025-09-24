@@ -8,10 +8,11 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { getAigcVoiceList } from '@/actions/llm';
 import { JSONSchema } from 'json-schema-to-ts';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 
 // Voice 类型定义
 type Voice = NonNullable<Awaited<ReturnType<typeof getAigcVoiceList>>['data']>[number];
@@ -67,26 +68,38 @@ interface GenerationSchemaFormProps {
   modelName?: string;
 }
 
-// 解析 description 中的特殊格式 [key:value]
-const parseDescription = (description?: string) => {
-  const result: { [key: string]: string } = {};
+// 字段渲染方式映射表
+const FIELD_RENDER_MAP = new Map([
+  // 文本区域字段
+  ['prompt', 'textarea'],
+  ['text', 'textarea'],
 
-  if (!description) return result;
+  // 比例选择器字段
+  ['aspectRatio', 'ratio'],
 
-  // 提取所有 [key:value] 格式的内容
-  const matches = description.match(/\[([^:]+):([^\]]+)\]/g);
+  // 声音选择器字段
+  ['voice_id', 'voice-selector'],
 
-  if (matches) {
-    matches.forEach(match => {
-      const content = match.slice(1, -1); // 移除 [ 和 ]
-      const [key, value] = content.split(':');
-      if (key && value) {
-        result[key.trim()] = value.trim();
-      }
-    });
-  }
+  // 数字滑块字段
+  ['duration', 'slider'],
+  ['speed', 'slider'],
+  ['vol', 'slider'],
+  ['pitch', 'slider'],
 
-  return result;
+  // 图片上传字段
+  ['referenceImage', 'image-array'], // 图片数组
+  ['firstFrame', 'image'], // 单张图片
+  ['lastFrame', 'image'], // 单张图片
+]);
+
+// 获取字段渲染方式
+const getFieldRenderType = (fieldName: string): string | null => {
+  return FIELD_RENDER_MAP.get(fieldName) || null;
+};
+
+// 检查字段是否为特定渲染类型
+const isFieldRenderType = (fieldName: string, renderType: string): boolean => {
+  return FIELD_RENDER_MAP.get(fieldName) === renderType;
 };
 
 // VoiceSelector 组件
@@ -158,25 +171,6 @@ const VoiceSelector = ({ form, formFieldPath, displayLabel, hideLabel, modelName
       )}
     />
   );
-};
-
-// 检查字段是否应该显示
-const shouldShowField = (showWhen: string | undefined, form: UseFormReturn<any>) => {
-  if (!showWhen) return true;
-
-  // 解析 showWhen 条件，格式：fieldName=value
-  const [fieldName, expectedValue] = showWhen.split('=');
-  if (!fieldName || expectedValue === undefined) return true;
-
-  const fieldPath = `params.${fieldName.trim()}`;
-  const actualValue = form.watch(fieldPath);
-
-  // 处理布尔值
-  if (expectedValue === 'true') return actualValue === true;
-  if (expectedValue === 'false') return actualValue === false;
-
-  // 处理其他值
-  return actualValue === expectedValue;
 };
 
 // 从 JSON schema 或 zod schema 中提取默认值
@@ -272,25 +266,20 @@ export const extractDefaultValuesFromSchema = (schema: any, fieldPath = ''): Rec
 
 export const GenerationSchemaForm = (props: GenerationSchemaFormProps) => {
   const { schema, form, fieldPath = '', hideLabel = false, modelName } = props;
+  const t = useTranslations('paintboard.form.fields');
 
   if (!schema) {
     return null;
   }
 
-  // 检查字段依赖条件
-  const descriptionMeta = parseDescription(schema.description);
-  if (!shouldShowField(descriptionMeta.showWhen, form)) {
-    return null;
-  }
-
   // 处理 allOf 类型
   if (schema.allOf && Array.isArray(schema.allOf) && schema.allOf.length > 0) {
-    return <AllOfForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
+    return <AllOfForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} modelName={modelName} />;
   }
 
   // 处理 anyOf 类型
   if (schema.anyOf && Array.isArray(schema.anyOf) && schema.anyOf.length > 0) {
-    return <AnyOfForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
+    return <AnyOfForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} modelName={modelName} />;
   }
 
   if (!schema.type) {
@@ -315,21 +304,64 @@ export const GenerationSchemaForm = (props: GenerationSchemaFormProps) => {
       return <ArrayForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} modelName={modelName} />;
 
     case 'object':
-      return Object.entries(schema.properties || {}).map(([fieldName, fieldSchema]) => {
-        const currentFieldPath = fieldPath ? `${fieldPath}.${fieldName}` : fieldName;
+      const fields = Object.entries(schema.properties || {});
+      const promptFields: Array<[string, any]> = [];
+      const keyframeFields: Array<[string, any]> = [];
+      const advancedFields: Array<[string, any]> = [];
+      const otherFields: Array<[string, any]> = [];
 
+      // 分离提示词字段、首尾帧字段、高级字段和其他字段
+      fields.forEach(([fieldName, fieldSchema]) => {
         if (typeof fieldSchema === 'boolean' || !fieldSchema || typeof fieldSchema !== 'object') {
-          return null;
+          return;
         }
 
-        // 检查每个子字段的依赖条件
-        const fieldDescriptionMeta = parseDescription(fieldSchema.description);
-        if (!shouldShowField(fieldDescriptionMeta.showWhen, form)) {
-          return null;
+        if (fieldName === 'prompt') {
+          promptFields.push([fieldName, fieldSchema]);
+        } else if (fieldName === 'firstFrame' || fieldName === 'lastFrame') {
+          keyframeFields.push([fieldName, fieldSchema]);
+        } else if (fieldName === 'advanced') {
+          advancedFields.push([fieldName, fieldSchema]);
+        } else {
+          otherFields.push([fieldName, fieldSchema]);
         }
-
-        return <GenerationSchemaForm key={fieldName} schema={fieldSchema} form={form} fieldPath={currentFieldPath} modelName={modelName} />;
       });
+
+      const elements: React.ReactNode[] = [];
+
+      // 渲染提示词字段（最上面）
+      promptFields.forEach(([fieldName, fieldSchema]) => {
+        const currentFieldPath = fieldPath ? `${fieldPath}.${fieldName}` : fieldName;
+        elements.push(<GenerationSchemaForm key={fieldName} schema={fieldSchema} form={form} fieldPath={currentFieldPath} modelName={modelName} />);
+      });
+
+      // 渲染首尾帧字段（如果存在）
+      if (keyframeFields.length > 0) {
+        elements.push(
+          <div key="keyframes" className="space-y-2">
+            <div className="grid grid-cols-2 gap-4">
+              {keyframeFields.map(([fieldName, fieldSchema]) => {
+                const currentFieldPath = fieldPath ? `${fieldPath}.${fieldName}` : fieldName;
+                return <GenerationSchemaForm key={fieldName} schema={fieldSchema} form={form} fieldPath={currentFieldPath} modelName={modelName} />;
+              })}
+            </div>
+          </div>,
+        );
+      }
+
+      // 渲染其他字段
+      otherFields.forEach(([fieldName, fieldSchema]) => {
+        const currentFieldPath = fieldPath ? `${fieldPath}.${fieldName}` : fieldName;
+        elements.push(<GenerationSchemaForm key={fieldName} schema={fieldSchema} form={form} fieldPath={currentFieldPath} modelName={modelName} />);
+      });
+
+      // 渲染高级字段（折叠状态）
+      advancedFields.forEach(([fieldName, fieldSchema]) => {
+        const currentFieldPath = fieldPath ? `${fieldPath}.${fieldName}` : fieldName;
+        elements.push(<AdvancedFieldsForm key={fieldName} schema={fieldSchema} form={form} fieldPath={currentFieldPath} modelName={modelName} />);
+      });
+
+      return elements;
 
     default:
       return (
@@ -346,16 +378,21 @@ export const GenerationSchemaForm = (props: GenerationSchemaFormProps) => {
 const StringForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   const fieldName = schema.title || fieldPath || 'value';
   const formFieldPath = `params.${fieldName}`;
-  const descriptionMeta = parseDescription(schema.description);
-  const displayLabel = descriptionMeta.title || fieldName;
+  const t = useTranslations('paintboard.form.fields');
+  // advanced 内部的子字段不参与多语言，直接使用字段名
+  const isAdvancedSubField = fieldPath?.includes('advanced.') || fieldPath?.startsWith('advanced.');
+  const displayLabel = schema.title || (isAdvancedSubField ? fieldName : t(fieldName as any)) || fieldName;
+  const renderType = getFieldRenderType(fieldName);
 
-  // 优先检查 renderType
-  if (descriptionMeta.renderType === 'ratio') {
+  // 基于字段渲染类型选择组件
+
+  // 比例选择器 (aspectRatio)
+  if (renderType === 'ratio' && schema.enum) {
     return <RatioForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} modelName={modelName} />;
   }
 
-  // 检查是否为声音选择器
-  if (descriptionMeta.renderType === 'voice-selector') {
+  // 声音选择器 (voice_id)
+  if (renderType === 'voice-selector') {
     return (
       <VoiceSelector
         form={form}
@@ -418,8 +455,37 @@ const StringForm = ({ schema, form, fieldPath, hideLabel, modelName }: Generatio
     );
   }
 
-  // 检查是否为图片上传字段
-  if (descriptionMeta.renderType === 'image') {
+  // 图片数组上传字段 (referenceImage)
+  if (renderType === 'image-array') {
+    return (
+      <FormField
+        key={fieldName}
+        control={form.control}
+        name={formFieldPath}
+        render={({ field: formField }) => (
+          <FormItem className="space-y-1">
+            {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
+            <FormControl>
+              <MultiImageUpload
+                value={formField.value || []}
+                onChange={formField.onChange}
+                accept="image/*"
+                maxSize={10 * 1024 * 1024} // 10MB
+                maxFiles={10}
+                uploadPath="paintboard"
+                itemSize="sm"
+                gridCols={4}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+
+  // 单张图片上传字段 (firstFrame, lastFrame)
+  if (renderType === 'image') {
     return (
       <FormField
         key={fieldName}
@@ -447,9 +513,9 @@ const StringForm = ({ schema, form, fieldPath, hideLabel, modelName }: Generatio
     );
   }
 
-  // 根据 renderType 或 format 判断是否使用文本区域
+  // 文本区域字段 (prompt, text) 或特定格式
   if (
-    descriptionMeta.renderType === 'textarea' ||
+    renderType === 'textarea' ||
     schema.format === 'textarea' ||
     schema.format === 'multiline' ||
     (schema.contentEncoding === 'base64' && schema.format === 'data-url')
@@ -499,8 +565,10 @@ const StringForm = ({ schema, form, fieldPath, hideLabel, modelName }: Generatio
 const RatioForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   const fieldName = schema.title || fieldPath || 'value';
   const formFieldPath = `params.${fieldName}`;
-  const descriptionMeta = parseDescription(schema.description);
-  const displayLabel = descriptionMeta.title || fieldName;
+  const t = useTranslations('paintboard.form.fields');
+  // advanced 内部的子字段不参与多语言，直接使用字段名
+  const isAdvancedSubField = fieldPath?.includes('advanced.') || fieldPath?.startsWith('advanced.');
+  const displayLabel = schema.title || (isAdvancedSubField ? fieldName : t(fieldName as any)) || fieldName;
 
   if (!schema.enum || !Array.isArray(schema.enum)) {
     return null;
@@ -542,9 +610,14 @@ const RatioForm = ({ schema, form, fieldPath, hideLabel, modelName }: Generation
 const NumberForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   const fieldName = schema.title || fieldPath || 'value';
   const formFieldPath = `params.${fieldName}`;
-  const descriptionMeta = parseDescription(schema.description);
-  const displayLabel = descriptionMeta.title || fieldName;
-  const unit = descriptionMeta.unit;
+  const t = useTranslations('paintboard.form.fields');
+  // advanced 内部的子字段不参与多语言，直接使用字段名
+  const isAdvancedSubField = fieldPath?.includes('advanced.') || fieldPath?.startsWith('advanced.');
+  const displayLabel = schema.title || (isAdvancedSubField ? fieldName : t(fieldName as any)) || fieldName;
+  const renderType = getFieldRenderType(fieldName);
+
+  // 根据字段名称设置单位信息
+  const unit = fieldName === 'duration' ? '秒' : fieldName === 'speed' || fieldName === 'vol' || fieldName === 'pitch' ? '' : '';
 
   // 检查是否有范围限制
   const hasRange = schema.minimum !== undefined || schema.maximum !== undefined;
@@ -562,7 +635,7 @@ const NumberForm = ({ schema, form, fieldPath, hideLabel, modelName }: Generatio
         <FormItem className="space-y-1">
           {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
           <FormControl>
-            {hasRange && !isFixedValue ? (
+            {hasRange && !isFixedValue && renderType === 'slider' ? (
               <div className="space-y-3">
                 <Slider
                   value={[formField.value ?? min]}
@@ -617,8 +690,10 @@ const NumberForm = ({ schema, form, fieldPath, hideLabel, modelName }: Generatio
 const BooleanForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   const fieldName = schema.title || fieldPath || 'value';
   const formFieldPath = `params.${fieldName}`;
-  const descriptionMeta = parseDescription(schema.description);
-  const displayLabel = descriptionMeta.title || fieldName;
+  const t = useTranslations('paintboard.form.fields');
+  // advanced 内部的子字段不参与多语言，直接使用字段名
+  const isAdvancedSubField = fieldPath?.includes('advanced.') || fieldPath?.startsWith('advanced.');
+  const displayLabel = schema.title || (isAdvancedSubField ? fieldName : t(fieldName as any)) || fieldName;
 
   return (
     <FormField
@@ -659,8 +734,10 @@ const AllOfForm = ({ schema, form, fieldPath, hideLabel, modelName }: Generation
 const AnyOfForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   const [selectedSchemaIndex, setSelectedSchemaIndex] = useState(0);
   const fieldName = schema.title || fieldPath || 'value';
-  const descriptionMeta = parseDescription(schema.description);
-  const displayLabel = descriptionMeta.title || fieldName;
+  const t = useTranslations('paintboard.form.fields');
+  // advanced 内部的子字段不参与多语言，直接使用字段名
+  const isAdvancedSubField = fieldPath?.includes('advanced.') || fieldPath?.startsWith('advanced.');
+  const displayLabel = schema.title || (isAdvancedSubField ? fieldName : t(fieldName as any)) || fieldName;
 
   if (!schema.anyOf || !Array.isArray(schema.anyOf) || schema.anyOf.length === 0) {
     return null;
@@ -709,16 +786,19 @@ const AnyOfForm = ({ schema, form, fieldPath, hideLabel, modelName }: Generation
 const ArrayForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
   const fieldName = schema.title || fieldPath || 'value';
   const formFieldPath = `params.${fieldName}`;
-  const descriptionMeta = parseDescription(schema.description);
-  const displayLabel = descriptionMeta.title || fieldName;
+  const t = useTranslations('paintboard.form.fields');
+  // advanced 内部的子字段不参与多语言，直接使用字段名
+  const isAdvancedSubField = fieldPath?.includes('advanced.') || fieldPath?.startsWith('advanced.');
+  const displayLabel = schema.title || (isAdvancedSubField ? fieldName : t(fieldName as any)) || fieldName;
+  const renderType = getFieldRenderType(fieldName);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: formFieldPath,
   });
 
-  // 检查是否为图片数组
-  const isImageArray = descriptionMeta.renderType === 'imageArray';
+  // 检查是否为图片数组 (基于字段渲染类型)
+  const isImageArray = renderType === 'image' || renderType === 'image-array';
 
   if (isImageArray) {
     return <ImageArrayForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} />;
@@ -807,8 +887,10 @@ const ArrayForm = ({ schema, form, fieldPath, hideLabel, modelName }: Generation
 const ImageArrayForm: React.FC<GenerationSchemaFormProps> = ({ schema, form, fieldPath, hideLabel }) => {
   const fieldName = schema.title || fieldPath || 'value';
   const formFieldPath = `params.${fieldName}`;
-  const descriptionMeta = parseDescription(schema.description);
-  const displayLabel = descriptionMeta.title || fieldName;
+  const t = useTranslations('paintboard.form.fields');
+  // advanced 内部的子字段不参与多语言，直接使用字段名
+  const isAdvancedSubField = fieldPath?.includes('advanced.') || fieldPath?.startsWith('advanced.');
+  const displayLabel = schema.title || (isAdvancedSubField ? fieldName : t(fieldName as any)) || fieldName;
 
   // 获取最大图片数量限制
   const maxItems = schema.maxItems || 10; // 默认最大10张图片
@@ -838,5 +920,33 @@ const ImageArrayForm: React.FC<GenerationSchemaFormProps> = ({ schema, form, fie
 
       <FormMessage />
     </FormItem>
+  );
+};
+
+// 高级字段折叠组件
+const AdvancedFieldsForm: React.FC<GenerationSchemaFormProps> = ({ schema, form, fieldPath, modelName }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const t = useTranslations('paintboard.form.fields');
+  const fieldName = schema.title || fieldPath || 'value';
+  const displayLabel = schema.title || t(fieldName as any) || fieldName;
+
+  return (
+    <div className="space-y-2">
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex w-full items-center justify-between p-2 text-left"
+      >
+        <span className="text-sm font-medium">{displayLabel}</span>
+        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+      </Button>
+
+      {isExpanded && (
+        <div className="border-border/30 bg-muted/20 space-y-4 rounded-md border p-3">
+          <GenerationSchemaForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={true} modelName={modelName} />
+        </div>
+      )}
+    </div>
   );
 };

@@ -14,14 +14,16 @@ export class DoubaoSeedance10LiteVideo extends BaseAigcModel {
   generationTypes = ['text-to-video', 'image-to-video'] as GenerationType[];
 
   paramsSchema = z.object({
-    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
-    firstFrame: z.string().describe('[title:首帧图片][renderType:image]').optional(),
-    lastFrame: z.string().describe('[title:尾帧图片][renderType:image]').optional(),
-    referenceImage: z.array(z.string()).describe('[title:参考图片][renderType:imageArray]').min(1).max(4).optional(),
-    resolution: z.enum(['480p', '720p', '1080p']).default('720p').describe('[title:分辨率]'),
-    aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']).describe('[title:画面比例][renderType:ratio]'),
-    duration: z.number().min(3).max(12).default(5).describe('[title:视频时长(秒)][unit:s]'),
-    camerafixed: z.boolean().default(false).describe('[title:固定镜头]'),
+    prompt: z.string(),
+    firstFrame: z.string().optional(),
+    lastFrame: z.string().optional(),
+    referenceImage: z.array(z.string()).min(1).max(4).optional(),
+    resolution: z.enum(['480p', '720p', '1080p']).default('720p'),
+    aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']),
+    duration: z.number().min(3).max(12).default(5),
+    advanced: z.object({
+      camerafixed: z.boolean().default(false).describe('[title:固定镜头]'),
+    }),
   });
 
   provider: VolcengineArkProvider;
@@ -53,7 +55,7 @@ export class DoubaoSeedance10LiteVideo extends BaseAigcModel {
       }
     }
 
-    const promptParameter = `--rs ${params.resolution} --rt ${params.aspectRatio} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.camerafixed}`;
+    const promptParameter = `--rs ${params.resolution} --rt ${params.aspectRatio} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.advanced.camerafixed}`;
     const task = await this.provider.seedanceSubmit({
       model: modelName as 'doubao-seedance-1-0-lite-i2v-250428' | 'doubao-seedance-1-0-lite-t2v-250428',
       content: [{ type: 'text', text: `${params.prompt}\n${promptParameter}` }, ...images],

@@ -61,5 +61,26 @@
       "agents": "智能体",
       "preferences": "偏好设置"
     }
+  },
+  "paintboard": {
+    "form": {
+      "fields": {
+        "prompt": "提示词",
+        "text": "文本",
+        "aspectRatio": "宽高比",
+        "duration": "时长",
+        "firstFrame": "首帧",
+        "lastFrame": "尾帧",
+        "referenceImage": "参考图片",
+        "voice_id": "声音",
+        "mode": "模式",
+        "speed": "语速",
+        "vol": "音量",
+        "pitch": "音调",
+        "emotion": "情感",
+        "resolution": "分辨率",
+        "advanced": "高级设置"
+      }
+    }
   }
 }

@@ -14,12 +14,16 @@ export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
   generationTypes = ['image-to-video', 'text-to-video'] as GenerationType[];
 
   paramsSchema = z.object({
-    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
-    firstFrame: z.string().describe('[title:首帧图片][renderType:image]'),
-    resolution: z.enum(['480p', '720p', '1080p']).default('720p').describe('[title:分辨率]'),
-    aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']).describe('[title:画面比例][renderType:ratio]'),
-    duration: z.number().min(3).max(12).default(5).describe('[title:视频时长(秒)][unit:s]'),
-    camerafixed: z.boolean().default(false).describe('[title:固定镜头]'),
+    prompt: z.string(),
+    firstFrame: z.string().optional(),
+    lastFrame: z.undefined(),
+    referenceImage: z.undefined(),
+    resolution: z.enum(['480p', '720p', '1080p']).default('720p'),
+    aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']),
+    duration: z.number().min(3).max(12).default(5),
+    advanced: z.object({
+      camerafixed: z.boolean().default(false).describe('[title:固定镜头]'),
+    }),
   });
 
   provider: VolcengineArkProvider;
@@ -35,7 +39,7 @@ export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
       images.push({ type: 'image_url', image_url: { url: params.firstFrame }, role: 'first_frame' });
     }
 
-    const promptParameter = `--rs ${params.resolution} --rt ${params.aspectRatio} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.camerafixed}`;
+    const promptParameter = `--rs ${params.resolution} --rt ${params.aspectRatio} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.advanced.camerafixed}`;
     const task = await this.provider.seedanceSubmit({
       model: 'doubao-seedance-1-0-pro-250528',
       content: [{ type: 'text', text: `${params.prompt}\n${promptParameter}` }, ...images],

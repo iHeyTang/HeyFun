@@ -17,16 +17,18 @@ export class DoubaoSeedream40 extends BaseAigcModel {
   generationTypes = ['image-to-image', 'text-to-image'] as GenerationType[];
 
   paramsSchema = z.object({
-    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
-    image: z.array(z.string()).describe('[title:参考图][renderType:imageArray]').min(1).max(10).optional(),
-    aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']).describe('[title:画面比例][renderType:ratio]'),
-    sequential_image_generation: z.boolean().default(false).describe('[title:组图模式]'),
-    sequential_image_generation_options: z
-      .object({
-        max_images: z.number().min(1).max(15).default(15).optional().describe('[title:最大图片数量]'),
-      })
-      .optional()
-      .describe('[title:组图设置][showWhen:sequential_image_generation=true]'),
+    prompt: z.string(),
+    aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']),
+    referenceImage: z.array(z.string()).min(1).max(10).optional(),
+    advanced: z.object({
+      sequential_image_generation: z.boolean().default(false).describe('[title:组图模式]'),
+      sequential_image_generation_options: z
+        .object({
+          max_images: z.number().min(1).max(15).default(15).optional().describe('[title:最大图片数量]'),
+        })
+        .optional()
+        .describe('[title:组图设置][showWhen:sequential_image_generation=true]'),
+    }),
   });
 
   provider: VolcengineArkProvider;
@@ -41,9 +43,9 @@ export class DoubaoSeedream40 extends BaseAigcModel {
       this.provider.seedream40({
         model: 'doubao-seedream-4-0-250828',
         prompt: params.prompt,
-        image: params.image,
-        sequential_image_generation: params.sequential_image_generation ? 'auto' : 'disabled',
-        sequential_image_generation_options: params.sequential_image_generation_options,
+        image: params.referenceImage,
+        sequential_image_generation: params.advanced.sequential_image_generation ? 'auto' : 'disabled',
+        sequential_image_generation_options: params.advanced.sequential_image_generation_options,
         size: size as z.infer<typeof seedream40ParamsSchema>['size'],
         seed: -1,
         response_format: 'url',

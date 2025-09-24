@@ -17,9 +17,12 @@ export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
   generationTypes = ['image-to-image'] as GenerationType[];
 
   paramsSchema = z.object({
-    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
-    image: z.string().describe('[title:参考图片][renderType:image]'),
-    guidance_scale: z.number().min(1).max(10).step(0.1).default(5.5).optional().describe('[title:提示词引导强度]'),
+    prompt: z.string(),
+    referenceImage: z.array(z.string()),
+    aspectRatio: z.undefined(),
+    advanced: z.object({
+      guidance_scale: z.number().min(1).max(10).step(0.1).default(5.5).optional().describe('[title:提示词引导强度]'),
+    }),
   });
 
   provider: VolcengineArkProvider;
@@ -33,8 +36,8 @@ export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
       this.provider.seedEdit30I2i({
         model: 'doubao-seededit-3-0-i2i-250628',
         prompt: params.prompt,
-        image: params.image,
-        guidance_scale: params.guidance_scale,
+        image: params.referenceImage[0]!,
+        guidance_scale: params.advanced.guidance_scale,
         size: 'adaptive',
         seed: -1,
         response_format: 'url',

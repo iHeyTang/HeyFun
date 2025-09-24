@@ -15,10 +15,13 @@ export class Jimeng30ProVideo extends BaseAigcModel {
   generationTypes = ['image-to-video'] as GenerationType[];
 
   paramsSchema = z.object({
-    prompt: z.string().describe('[title:提示词][renderType:textarea]'),
-    firstFrame: z.string().describe('[title:首帧图片][renderType:image]'),
-    aspectRatio: z.enum(['16:9', '9:16', '4:3', '3:4', '21:9']).describe('[title:画面比例]'),
-    duration: z.enum(['5', '10']).describe('[title:视频时长(秒)][unit:s]'),
+    prompt: z.string(),
+    firstFrame: z.string().optional(),
+    lastFrame: z.undefined(),
+    resolution: z.undefined(),
+    referenceImage: z.undefined(),
+    aspectRatio: z.enum(['16:9', '9:16', '4:3', '3:4', '21:9']),
+    duration: z.enum(['5', '10']),
   });
 
   provider: VolcengineJimengProvider;
