@@ -271,7 +271,7 @@ function FlowCanvasCore({
     setFocusedNodeId(node.id);
   }, []);
 
-  const handleClick = useCallback((event: React.MouseEvent<Element, MouseEvent>) => {
+  const handlePaneClick = useCallback((event: React.MouseEvent<Element, MouseEvent>) => {
     setFocusedNodeId(null);
   }, []);
 
@@ -374,7 +374,7 @@ function FlowCanvasCore({
         zoomOnScroll={true}
         fitView
         onNodeClick={handleNodeClick}
-        onClick={handleClick}
+        onPaneClick={handlePaneClick}
       >
         {showBackground && <Background />}
         {showControls && <Controls />}
