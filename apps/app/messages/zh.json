@@ -105,7 +105,20 @@
       "createFirst": "创建第一个项目"
     },
     "project": {
-      "updatedAt": "更新于"
+      "updatedAt": "更新于",
+      "unnamed": "未命名模板",
+      "namePlaceholder": "输入模板名称",
+      "errors": {
+        "loadFailed": "加载项目失败",
+        "updateFailed": "更新项目失败",
+        "updateNameFailed": "更新项目名称失败",
+        "syncFailed": "同步失败",
+        "importFailed": "导入失败"
+      },
+      "messages": {
+        "dataImport": "Canvas数据导入",
+        "importSuccess": "Canvas数据导入成功"
+      }
     },
     "toast": {
       "createSuccess": "项目创建成功",

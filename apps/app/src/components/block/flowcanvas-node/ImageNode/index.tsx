@@ -110,7 +110,7 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
             <ImagePreview
               src={imageUrl}
               alt="Node image"
-              className="mx-auto block max-h-[200px] min-h-[100px] max-w-full rounded object-contain"
+              className="mx-auto block max-h-[200px] min-h-[100px] max-w-[200px] min-w-[100px] rounded object-contain"
               onLoad={() => setIsImageLoading(false)}
             />
           ) : (

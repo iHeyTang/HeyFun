@@ -105,7 +105,20 @@
       "createFirst": "Create first project"
     },
     "project": {
-      "updatedAt": "Updated on"
+      "updatedAt": "Updated on",
+      "unnamed": "Untitled Template",
+      "namePlaceholder": "Enter template name",
+      "errors": {
+        "loadFailed": "Failed to load project",
+        "updateFailed": "Failed to update project",
+        "updateNameFailed": "Failed to update project name",
+        "syncFailed": "Sync failed",
+        "importFailed": "Import failed"
+      },
+      "messages": {
+        "dataImport": "Canvas data import",
+        "importSuccess": "Canvas data imported successfully"
+      }
     },
     "toast": {
       "createSuccess": "Project created successfully",

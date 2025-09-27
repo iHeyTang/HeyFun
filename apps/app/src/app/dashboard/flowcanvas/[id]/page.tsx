@@ -11,7 +11,7 @@ import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
-const useProjectSchema = () => {
+const useProjectSchema = (ft: any) => {
   const { id } = useParams<{ id: string }>();
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -25,14 +25,14 @@ const useProjectSchema = () => {
       if (result.data) {
         setProject(result.data);
       } else {
-        throw new Error(result.error || '加载项目失败');
+        throw new Error(result.error || ft('errors.loadFailed'));
       }
     } catch (error) {
-      console.error('加载项目失败:', error);
+      console.error(ft('errors.loadFailed'), error);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, ft]);
 
   const updateSchema = useCallback(
     async (newSchema: CanvasSchema) => {
@@ -46,14 +46,14 @@ const useProjectSchema = () => {
         if (result.data) {
           setProject(result.data);
         } else {
-          throw new Error(result.error || '更新项目失败');
+          throw new Error(result.error || ft('errors.updateFailed'));
         }
       } catch (error) {
-        console.error('更新项目失败:', error);
+        console.error(ft('errors.updateFailed'), error);
         throw error;
       }
     },
-    [id],
+    [id, ft],
   );
 
   const updateName = useCallback(
@@ -68,14 +68,14 @@ const useProjectSchema = () => {
         if (result.data) {
           setProject(result.data);
         } else {
-          throw new Error(result.error || '更新项目名称失败');
+          throw new Error(result.error || ft('errors.updateNameFailed'));
         }
       } catch (error) {
-        console.error('更新项目名称失败:', error);
+        console.error(ft('errors.updateNameFailed'), error);
         throw error;
       }
     },
-    [id],
+    [id, ft],
   );
 
   useEffect(() => {
@@ -96,11 +96,12 @@ const useProjectSchema = () => {
 const FlowCanvasPage = () => {
   const { id } = useParams<{ id: string }>();
   const t = useTranslations('common');
+  const ft = useTranslations('flowcanvas.project');
 
   const canvasRef = useRef<FlowCanvasRef>(null);
 
   // 使用schema hook获取云端数据
-  const { schema, refreshSchema, updateSchema, name, updateName, updatedAt, loading } = useProjectSchema();
+  const { schema, refreshSchema, updateSchema, name, updateName, updatedAt, loading } = useProjectSchema(ft);
   const [isLocalChange, setIsLocalChange] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const lastUpdateTimeRef = useRef<number>(0);
@@ -181,7 +182,7 @@ const FlowCanvasPage = () => {
             await updateSchema(newSchema);
             setIsSyncing(false);
           } catch (error) {
-            console.error('同步失败:', error);
+            console.error(ft('errors.syncFailed'), error);
             setIsSyncing(false);
           } finally {
             setIsLocalChange(false);
@@ -222,11 +223,11 @@ const FlowCanvasPage = () => {
           try {
             const json = JSON.parse(content);
             const schema = { nodes: json.nodes, edges: json.edges } as CanvasSchema;
-            console.log('Canvas数据导入', schema);
+            console.log(ft('messages.dataImport'), schema);
             canvasRef.current?.importCanvas(JSON.stringify(schema));
-            console.log('Canvas数据导入成功');
+            console.log(ft('messages.importSuccess'));
           } catch (error) {
-            console.error('导入失败:', error);
+            console.error(ft('errors.importFailed'), error);
           }
         };
         reader.readAsText(file);
@@ -253,7 +254,7 @@ const FlowCanvasPage = () => {
         setIsEditingName(false);
         setEditingName('');
       } catch (error) {
-        console.error('更新名称失败:', error);
+        console.error(ft('errors.updateNameFailed'), error);
       }
     } else {
       handleCancelEditName();
@@ -276,7 +277,7 @@ const FlowCanvasPage = () => {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-muted-foreground">加载中...</div>
+        <div className="text-muted-foreground">{t('loading')}</div>
       </div>
     );
   }
@@ -302,20 +303,20 @@ const FlowCanvasPage = () => {
                     onKeyDown={handleKeyDown}
                     className="h-9 rounded-md border border-gray-300 px-3 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     autoFocus
-                    placeholder="输入模板名称"
+                    placeholder={ft('namePlaceholder')}
                   />
                   <Button size="sm" variant="outline" onClick={handleSaveName}>
-                    保存
+                    {t('save')}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={handleCancelEditName}>
-                    取消
+                    {t('cancel')}
                   </Button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2" onClick={handleStartEditName}>
                     <span className="flex h-9 max-w-[200px] items-center truncate px-3 text-sm font-medium" title={name}>
-                      {name || '未命名模板'}
+                      {name || ft('unnamed')}
                     </span>
                   </div>
                   {isSyncing ? (

@@ -214,7 +214,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
             )}
             <div
               className={cn(
-                'bg-theme-card rounded-lg border p-2',
+                'bg-card rounded-sm p-1 shadow-sm',
                 getStatusStyle(status),
                 focusedNodeId === id ? 'border-theme-primary' : selected ? 'border-theme-chart-1' : '',
                 className,
