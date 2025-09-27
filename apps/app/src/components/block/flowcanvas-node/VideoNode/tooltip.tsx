@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useAigc } from '@/hooks/use-llm';
-import { ArrowUp } from 'lucide-react';
+import { WandSparkles } from 'lucide-react';
 import { memo, useEffect, useMemo, useState } from 'react';
 import { VideoNodeActionData, VideoNodeProcessor } from './processor';
 import { RatioIcon } from '../../ratio-icon';
@@ -104,7 +104,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       />
 
       {/* 下半部分：Footer - 模型选择和提交按钮 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex items-center justify-start gap-2">
           {/* 左侧：模型选择 */}
           <Select
@@ -148,16 +148,30 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
               </SelectContent>
             </Select>
           )}
+          {selectedModel?.paramsSchema?.properties?.duration?.enum?.length && (
+            <Select
+              value={selectedDuration?.toString()}
+              onValueChange={(v: string) => {
+                setSelectedDuration(v);
+                onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio, duration: v });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Duration" />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedModel.paramsSchema.properties.duration.enum.map((option: string) => (
+                  <SelectItem key={option} value={option}>
+                    {option}s
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         {/* 右侧：提交按钮 */}
-        <Button
-          onClick={handleSubmit}
-          onMouseDown={(e: React.MouseEvent) => e.stopPropagation()}
-          className="cursor-pointer"
-          size="icon"
-          variant="ghost"
-        >
-          <ArrowUp />
+        <Button onClick={handleSubmit} onMouseDown={(e: React.MouseEvent) => e.stopPropagation()} className="cursor-pointer" size="icon">
+          <WandSparkles />
         </Button>
       </div>
     </div>

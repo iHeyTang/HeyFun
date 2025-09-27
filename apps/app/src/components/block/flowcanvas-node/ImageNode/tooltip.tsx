@@ -1,7 +1,7 @@
 import { NodeOutput, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowUp } from 'lucide-react';
+import { WandSparkles } from 'lucide-react';
 import { memo, useEffect, useMemo, useState } from 'react';
 import { ImageNodeActionData, ImageNodeProcessor } from './processor';
 import { useAigc } from '@/hooks/use-llm';
@@ -101,7 +101,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       />
 
       {/* 下半部分：Footer - 模型选择和提交按钮 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex items-center justify-start gap-2">
           {/* 左侧：模型选择 */}
           <Select
@@ -147,14 +147,8 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           )}
         </div>
         {/* 右侧：提交按钮 */}
-        <Button
-          onClick={handleSubmit}
-          onMouseDown={(e: React.MouseEvent) => e.stopPropagation()}
-          className="cursor-pointer"
-          size="icon"
-          variant="ghost"
-        >
-          <ArrowUp />
+        <Button onClick={handleSubmit} onMouseDown={(e: React.MouseEvent) => e.stopPropagation()} className="cursor-pointer" size="icon">
+          <WandSparkles />
         </Button>
       </div>
     </div>

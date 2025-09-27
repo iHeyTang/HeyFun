@@ -6,8 +6,6 @@ interface NodeType {
   type: string;
   label: string;
   description: string;
-  icon?: string;
-  category?: string;
   defaultData?: Record<string, any>;
 }
 
@@ -17,8 +15,6 @@ const AVAILABLE_NODE_TYPES: NodeType[] = [
     type: 'text',
     label: 'Text Node',
     description: '用于显示和处理文本内容',
-    icon: '📝',
-    category: 'Text',
     defaultData: {
       label: 'Text Node',
       description: '双击编辑文本内容',
@@ -29,8 +25,6 @@ const AVAILABLE_NODE_TYPES: NodeType[] = [
     type: 'image',
     label: 'Image Node',
     description: '用于上传和显示图片',
-    icon: '🖼️',
-    category: 'Media',
     defaultData: {
       label: 'Image Node',
       description: '点击上传图片',
@@ -42,8 +36,6 @@ const AVAILABLE_NODE_TYPES: NodeType[] = [
     type: 'video',
     label: 'Video Node',
     description: '用于上传和播放视频',
-    icon: '🎥',
-    category: 'Media',
     defaultData: {
       label: 'Video Node',
       description: '点击上传视频',
@@ -66,9 +58,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
   // 过滤节点类型
   const filteredNodeTypes = AVAILABLE_NODE_TYPES.filter(
     nodeType =>
-      nodeType.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      nodeType.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (nodeType.category && nodeType.category.toLowerCase().includes(searchTerm.toLowerCase())),
+      nodeType.label.toLowerCase().includes(searchTerm.toLowerCase()) || nodeType.description.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // 点击外部关闭菜单
@@ -145,28 +135,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
                 onClick={() => handleNodeSelect(nodeType)}
                 className="group hover:bg-theme-accent flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-all duration-150"
               >
-                {/* 节点图标 */}
-                <div className="bg-theme-muted group-hover:bg-theme-accent flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors">
-                  <span className="text-sm">{nodeType.icon}</span>
-                </div>
-
                 {/* 节点信息 */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <div className="text-theme-foreground text-sm font-medium transition-colors">{nodeType.label}</div>
-                    {nodeType.category && (
-                      <span className="bg-theme-muted text-theme-muted-foreground group-hover:bg-theme-accent rounded-md px-2 py-0.5 text-xs transition-colors">
-                        {nodeType.category}
-                      </span>
-                    )}
                   </div>
-                </div>
-
-                {/* 添加箭头 */}
-                <div className="text-theme-muted-foreground group-hover:text-theme-foreground flex-shrink-0 transition-colors">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 18l6-6-6-6"></path>
-                  </svg>
                 </div>
               </button>
             ))

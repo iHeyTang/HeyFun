@@ -6,7 +6,7 @@ export type VideoNodeActionData = {
   prompt?: string;
   selectedModel?: string;
   aspectRatio?: string;
-  duration?: number;
+  duration?: string;
 };
 
 // 视频节点处理器

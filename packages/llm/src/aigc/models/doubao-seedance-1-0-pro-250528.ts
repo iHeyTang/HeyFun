@@ -20,7 +20,7 @@ export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
     referenceImage: z.undefined(),
     resolution: z.enum(['480p', '720p', '1080p']).default('720p'),
     aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']),
-    duration: z.number().min(3).max(12).default(5),
+    duration: z.enum(['3', '5', '10', '12']).default('5'),
     advanced: z.object({
       camerafixed: z.boolean().default(false).describe('[title:固定镜头]'),
     }),
@@ -99,7 +99,7 @@ export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
 
     const resolution = params.resolution;
     const aspectRatio = params.aspectRatio;
-    const duration = params.duration;
+    const duration = Number(params.duration);
     const fps = 24; // 固定帧率24fps
     const pricePerMillionTokens = 16500; // 16.50元/百万token
 

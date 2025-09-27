@@ -1,7 +1,7 @@
 import { NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
 import { Button } from '@/components/ui/button';
 import { useLLM } from '@/hooks/use-llm';
-import { ArrowUp, Bot } from 'lucide-react';
+import { WandSparkles } from 'lucide-react';
 import { memo, useEffect, useRef, useState } from 'react';
 import { TextNodeActionData, TextNodeProcessor } from './processor';
 import { ModelInfo, ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
@@ -115,14 +115,8 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
           <span>{selectedModel?.name || 'Select Model'}</span>
         </Button>
         {/* 右侧：提交按钮 */}
-        <Button
-          onClick={handleSubmit}
-          onMouseDown={(e: React.MouseEvent) => e.stopPropagation()}
-          className="cursor-pointer"
-          size="icon"
-          variant="ghost"
-        >
-          <ArrowUp />
+        <Button onClick={handleSubmit} onMouseDown={(e: React.MouseEvent) => e.stopPropagation()} className="cursor-pointer" size="icon">
+          <WandSparkles />
         </Button>
       </div>
       <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={setSelectedModel} />
