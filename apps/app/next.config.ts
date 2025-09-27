@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/dashboard',
-        destination: '/dashboard/chat',
+        destination: '/dashboard/flowcanvas',
         permanent: true,
       },
       {
