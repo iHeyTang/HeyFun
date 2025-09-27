@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: 'HeyFun',
   description: "Hey! Let's bring a little fun to this world together.",
   icons: {
-    icon: '/logo.png',
+    icon: '/favicon.png',
   },
 };
 
