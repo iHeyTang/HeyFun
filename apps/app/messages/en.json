@@ -4,7 +4,29 @@
     "signin": "Sign in",
     "signout": "Sign out",
     "settings": "Settings",
-    "language": "Language"
+    "language": "Language",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving...",
+    "addNew": "Add",
+    "remove": "Remove",
+    "removing": "Removing...",
+    "creating": "Creating...",
+    "loading": "Loading...",
+    "required": "Required",
+    "time": {
+      "justUpdated": "Just updated",
+      "minutesAgo": "Updated {count} minutes ago",
+      "hoursAgo": "Updated {count} hours ago",
+      "daysAgo": "Updated {count} days ago"
+    },
+    "sync": {
+      "syncing": "Syncing...",
+      "synced": "Synced"
+    }
   },
   "errors": {
     "general": "Something went wrong",
@@ -37,17 +59,8 @@
       "baseUrlPlaceholder": "Enter your API Base URL",
       "maxTokens": "Max Tokens",
       "temperature": "Temperature",
-      "required": "Required",
       "getApiKey": "Get API Key from DeepSeek",
-      "save": "Save",
-      "saving": "Saving...",
-      "addNew": "Add New Model",
-      "edit": "Edit",
-      "delete": "Delete",
       "confirmDelete": "Are you sure you want to remove this model?",
-      "remove": "Remove",
-      "removing": "Removing...",
-      "cancel": "Cancel",
       "modelRemoved": "Model removed",
       "configUpdated": "Configuration updated",
       "configUpdateError": "Failed to update configuration",
@@ -82,5 +95,25 @@
         "advanced": "Advanced Settings"
       }
     }
+  },
+  "flowcanvas": {
+    "title": "FlowCanvas",
+    "newProject": "New Project",
+    "emptyState": {
+      "title": "No projects yet",
+      "description": "Create your first FlowCanvas project to start building visual workflows",
+      "createFirst": "Create first project"
+    },
+    "project": {
+      "updatedAt": "Updated on"
+    },
+    "toast": {
+      "createSuccess": "Project created successfully",
+      "createError": "Failed to create project",
+      "deleteSuccess": "Project deleted successfully",
+      "deleteError": "Failed to delete project",
+      "loadError": "Failed to load projects"
+    },
+    "confirmDelete": "Are you sure you want to delete project \"{name}\"? This action cannot be undone."
   }
 }

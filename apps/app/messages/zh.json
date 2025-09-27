@@ -4,7 +4,29 @@
     "signin": "登录",
     "signout": "退出",
     "settings": "设置",
-    "language": "语言"
+    "language": "语言",
+    "cancel": "取消",
+    "delete": "删除",
+    "deleting": "删除中...",
+    "edit": "编辑",
+    "save": "保存",
+    "saving": "保存中...",
+    "addNew": "添加",
+    "remove": "删除",
+    "removing": "删除中...",
+    "creating": "创建中...",
+    "loading": "加载中...",
+    "required": "必填",
+    "time": {
+      "justUpdated": "刚刚更新",
+      "minutesAgo": "{count}分钟前更新",
+      "hoursAgo": "{count}小时前更新", 
+      "daysAgo": "{count}天前更新"
+    },
+    "sync": {
+      "syncing": "正在同步中...",
+      "synced": "已同步"
+    }
   },
   "errors": {
     "general": "发生错误",
@@ -37,17 +59,8 @@
       "baseUrlPlaceholder": "输入你的 API 基础 URL",
       "maxTokens": "最大令牌数",
       "temperature": "温度",
-      "required": "必填",
       "getApiKey": "从 DeepSeek 获取 API 密钥",
-      "save": "保存",
-      "saving": "保存中...",
-      "addNew": "添加新模型",
-      "edit": "编辑",
-      "delete": "删除",
       "confirmDelete": "确定要删除此模型吗？",
-      "remove": "删除",
-      "removing": "删除中...",
-      "cancel": "取消",
       "modelRemoved": "模型已删除",
       "configUpdated": "配置已更新",
       "configUpdateError": "更新配置失败",
@@ -82,5 +95,25 @@
         "advanced": "高级设置"
       }
     }
+  },
+  "flowcanvas": {
+    "title": "FlowCanvas",
+    "newProject": "新建项目",
+    "emptyState": {
+      "title": "还没有项目",
+      "description": "创建您的第一个 FlowCanvas 项目，开始构建可视化工作流",
+      "createFirst": "创建第一个项目"
+    },
+    "project": {
+      "updatedAt": "更新于"
+    },
+    "toast": {
+      "createSuccess": "项目创建成功",
+      "createError": "创建项目失败",
+      "deleteSuccess": "项目删除成功",
+      "deleteError": "删除项目失败",
+      "loadError": "加载项目失败"
+    },
+    "confirmDelete": "确定要删除项目 \"{name}\" 吗？此操作不可撤销。"
   }
 }

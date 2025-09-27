@@ -332,6 +332,20 @@ model ChatMessages {
   @@index([role])
 }
 
+model FlowCanvasProjects {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+  name           String
+  schema         Json
+
+  @@index([organizationId])
+  @@index([createdAt])
+  @@index([name])
+  @@index([organizationId, name])
+}
+
 model Credit {
   id             String   @id @default(cuid())
   createdAt      DateTime @default(now())

@@ -37,7 +37,7 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
 
     const result = await submitGenerationTask({
       model: selectedModel,
-      params: { prompt, aspectRatio, duration, referenceImage: images },
+      params: { prompt, aspectRatio, duration, referenceImage: images.map(image => image.url) },
     });
 
     console.log('video generation result', result);

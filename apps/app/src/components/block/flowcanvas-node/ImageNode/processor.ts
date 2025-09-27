@@ -36,7 +36,7 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
 
     const result = await submitGenerationTask({
       model: selectedModel,
-      params: { prompt, aspectRatio, referenceImage: images },
+      params: { prompt, aspectRatio, referenceImage: images.map(image => image.url) },
     });
 
     console.log('result', result);
