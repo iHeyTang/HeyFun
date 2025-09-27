@@ -84,7 +84,18 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
           <VideoNodeTooltip nodeId={id} value={data.actionData} onValueChange={handleActionDataChange} onSubmitSuccess={handleTooltipSubmit} />
         }
       >
-        <div className="">
+        <div className="relative">
+          {status.status === NodeStatus.PROCESSING && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded">
+              {/* 高斯模糊蒙版 */}
+              <div className="bg-accent/20 absolute inset-0 rounded backdrop-blur-lg"></div>
+              {/* Loading动画 */}
+              <div className="relative z-10 flex flex-col items-center justify-center">
+                <Loader2 className="text-theme-primary h-8 w-8 animate-spin" />
+              </div>
+            </div>
+          )}
+
           {videoUrl ? (
             <VideoPreview src={videoUrl} autoPlayOnHover={true} className="bg-theme-muted max-h-[200px] w-full rounded" loop />
           ) : (

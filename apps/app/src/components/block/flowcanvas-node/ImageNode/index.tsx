@@ -95,8 +95,24 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
         }
       >
         <div className="relative">
+          {status.status === NodeStatus.PROCESSING && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded">
+              {/* 高斯模糊蒙版 */}
+              <div className="bg-accent/20 absolute inset-0 rounded backdrop-blur-lg"></div>
+              {/* Loading动画 */}
+              <div className="relative z-10 flex flex-col items-center justify-center">
+                <Loader2 className="text-theme-primary h-8 w-8 animate-spin" />
+              </div>
+            </div>
+          )}
+
           {imageUrl ? (
-            <ImagePreview src={imageUrl} alt="Node image" className="mx-auto block max-h-[200px] min-h-[100px] max-w-full rounded object-contain" />
+            <ImagePreview
+              src={imageUrl}
+              alt="Node image"
+              className="mx-auto block max-h-[200px] min-h-[100px] max-w-full rounded object-contain"
+              onLoad={() => setIsImageLoading(false)}
+            />
           ) : (
             <div className="bg-theme-muted flex items-center justify-center rounded p-2 text-center transition-colors">
               {isUploading ? (
