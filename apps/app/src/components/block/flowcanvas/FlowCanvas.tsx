@@ -272,7 +272,6 @@ function FlowCanvasCore({
   }, []);
 
   const handleClick = useCallback((event: React.MouseEvent<Element, MouseEvent>) => {
-    event.stopPropagation();
     setFocusedNodeId(null);
   }, []);
 

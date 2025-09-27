@@ -31,8 +31,6 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     return availableModels?.find(model => model.name === selectedModelName);
   }, [availableModels, selectedModelName]);
 
-  console.log(selectedModel);
-
   // 当外部值改变时同步本地状态
   useEffect(() => {
     if (actionData?.prompt !== undefined) {
@@ -92,7 +90,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   };
 
   return (
-    <div className="flex min-w-[480px] flex-col gap-2 overflow-hidden rounded-lg p-4">
+    <div className="nodrag flex min-w-[480px] flex-col gap-2 overflow-hidden rounded-lg p-4">
       {/* 上半部分：多行文本输入框 */}
       <Textarea
         value={localPrompt}
@@ -129,7 +127,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                 ))}
             </SelectContent>
           </Select>
-          {selectedModel?.paramsSchema?.properties?.aspectRatio && 'enum' in selectedModel.paramsSchema.properties.aspectRatio && selectedModel.paramsSchema.properties.aspectRatio.enum?.length && (
+          {selectedModel?.paramsSchema?.properties?.aspectRatio?.enum?.length && (
             <Select
               value={selectedAspectRatio}
               onValueChange={(v: string) => {
@@ -145,27 +143,6 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                   <SelectItem key={option} value={option}>
                     <RatioIcon ratio={option} />
                     {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          {selectedModel?.paramsSchema?.properties?.duration && 'enum' in selectedModel.paramsSchema.properties.duration && selectedModel.paramsSchema.properties.duration.enum?.length && (
-            <Select
-              value={selectedDuration?.toString()}
-              onValueChange={(v: string) => {
-                const duration = parseInt(v);
-                setSelectedDuration(duration);
-                onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio, duration });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Duration" />
-              </SelectTrigger>
-              <SelectContent>
-                {selectedModel.paramsSchema.properties.duration.enum.map((option: string) => (
-                  <SelectItem key={option} value={option}>
-                    {option}秒
                   </SelectItem>
                 ))}
               </SelectContent>
