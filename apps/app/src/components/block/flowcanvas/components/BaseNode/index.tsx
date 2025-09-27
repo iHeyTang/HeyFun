@@ -12,35 +12,12 @@ interface BaseNodeProps {
   children?: React.ReactNode;
   className?: string;
   showHandles?: boolean;
-  // 修改：端口配置应该由具体节点类型传入，而不是从数据中读取
-  inputPorts?: Array<{
-    id: string;
-    name: string;
-    type: string;
-    required?: boolean;
-  }>;
-  outputPorts?: Array<{
-    id: string;
-    name: string;
-    type: string;
-  }>;
   onDragStart?: () => void;
   onDragEnd?: () => void;
   tooltip?: React.ReactNode;
 }
 
-export default function BaseNode({
-  data,
-  id,
-  children,
-  className = '',
-  showHandles = true,
-  inputPorts,
-  outputPorts,
-  onDragStart,
-  onDragEnd,
-  tooltip,
-}: BaseNodeProps) {
+export default function BaseNode({ data, id, children, className = '', showHandles = true, onDragStart, onDragEnd, tooltip }: BaseNodeProps) {
   const flowGraph = useFlowGraph();
   const { focusedNodeId } = useFlowGraphContext();
   const [isDragging, setIsDragging] = useState(false);
@@ -223,40 +200,18 @@ export default function BaseNode({
           </div>
 
           {/* 卡片主体 */}
-          <div className={`transition-all duration-200 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}>
+          <div className={cn('group transition-all duration-200', isDragging ? 'cursor-grabbing' : 'cursor-grab')}>
             {/* 渲染输入端口 */}
-            {showHandles &&
-              (() => {
-                // 如果定义了具体的输入端口，使用传入的端口配置
-                if (inputPorts && inputPorts.length > 0) {
-                  return inputPorts.map((port, index) => (
-                    <Handle
-                      key={`input-${port.id}`}
-                      type="target"
-                      position={getPosition(Position.Left)}
-                      id={port.id}
-                      style={{
-                        background: port.required ? 'var(--theme-destructive)' : 'var(--theme-border-secondary)',
-                        top: inputPorts.length > 1 ? `${20 + index * 30}px` : undefined,
-                      }}
-                      onConnect={params => console.log('handle onConnect', params)}
-                      isConnectable={true}
-                    />
-                  ));
-                }
-                // 否则渲染默认输入端口
-                return (
-                  <Handle
-                    type="target"
-                    position={getPosition(Position.Left)}
-                    id="input"
-                    style={{ background: 'var(--theme-border-secondary)' }}
-                    onConnect={params => console.log('handle onConnect', params)}
-                    isConnectable={true}
-                  />
-                );
-              })()}
-
+            {showHandles && (
+              <Handle
+                type="target"
+                position={getPosition(Position.Left)}
+                id="input"
+                className="bg-accent z-100 origin-top-left duration-200 group-hover:scale-400"
+                onConnect={params => console.log('handle onConnect', params)}
+                isConnectable={true}
+              />
+            )}
             <div
               className={cn(
                 'bg-theme-card rounded-lg border p-2',
@@ -269,32 +224,16 @@ export default function BaseNode({
             </div>
 
             {/* 渲染输出端口 */}
-            {showHandles &&
-              (() => {
-                // 如果定义了具体的输出端口，使用传入的端口配置
-                if (outputPorts && outputPorts.length > 0) {
-                  return outputPorts.map((port, index) => (
-                    <Handle
-                      key={`output-${port.id}`}
-                      type="target"
-                      position={getPosition(Position.Right)}
-                      id={port.id}
-                      style={{ background: 'var(--theme-border-secondary)', top: outputPorts.length > 1 ? `${20 + index * 30}px` : undefined }}
-                      isConnectable={true}
-                    />
-                  ));
-                }
-                // 否则渲染默认输出端口
-                return (
-                  <Handle
-                    type="source"
-                    position={getPosition(Position.Right)}
-                    id="output"
-                    style={{ background: 'var(--theme-border-secondary)' }}
-                    isConnectable={true}
-                  />
-                );
-              })()}
+            {showHandles && (
+              <Handle
+                type="source"
+                position={getPosition(Position.Right)}
+                id="output"
+                className="bg-accent z-100 origin-top-right duration-200 group-hover:scale-400"
+                onConnect={params => console.log('handle onConnect', params)}
+                isConnectable={true}
+              />
+            )}
           </div>
         </div>
       </NodeTooltipTrigger>
