@@ -383,7 +383,15 @@ function FlowCanvasCore({
         {/* 工具栏 */}
         {toolbox && <Toolbox>{toolbox}</Toolbox>}
         {/* 节点菜单 */}
-        {enableNodeMenu && <ContextMenu isOpen={nodeMenuOpen} position={nodeMenuPosition} onClose={handleCloseNodeMenu} onAddNode={handleAddNode} />}
+        {enableNodeMenu && (
+          <ContextMenu
+            isOpen={nodeMenuOpen}
+            position={nodeMenuPosition}
+            onClose={handleCloseNodeMenu}
+            onAddNode={handleAddNode}
+            canvasRef={canvasRef}
+          />
+        )}
 
         {/* 多选工具栏 */}
         <MultiSelectToolbar selecting={selecting} selectedNodes={selectedNodes} onExecuteSelectedNodes={handleExecuteSelectedNodes} />
