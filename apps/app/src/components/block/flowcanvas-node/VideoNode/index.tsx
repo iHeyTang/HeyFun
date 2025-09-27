@@ -2,9 +2,9 @@ import { BaseNode, NodeData, NodeStatus, useFlowGraph, useNodeStatusById } from 
 import { uploadFile } from '@/lib/browser/file';
 import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { VideoNodeActionData } from './processor';
 import { VideoNodeTooltip, VideoNodeTooltipProps } from './tooltip';
+import { VideoPreview } from '@/components/block/preview/video-preview';
 
 interface VideoNodeProps {
   data: NodeData<VideoNodeActionData>;
@@ -16,11 +16,8 @@ export { VideoNodeProcessor } from './processor';
 export default function VideoNode({ data, id }: VideoNodeProps) {
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | undefined>(data.output?.videos?.[0]?.url);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const fullscreenVideoRef = useRef<HTMLVideoElement>(null);
   const status = useNodeStatusById(id);
 
   const handleUploadFIle = useCallback(async (file: File) => {
@@ -78,46 +75,6 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
     flowGraph.updateNodeData(id, { output });
   }, []);
 
-  // 处理鼠标移入事件 - 开始播放视频
-  const handleMouseEnter = useCallback(() => {
-    if (videoRef.current && videoUrl) {
-      videoRef.current.play().catch(error => {
-        console.warn('视频自动播放失败:', error);
-      });
-    }
-  }, [videoUrl]);
-
-  // 处理鼠标移出事件 - 暂停视频
-  const handleMouseLeave = useCallback(() => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
-  }, []);
-
-  // 处理双击事件 - 全屏播放
-  const handleDoubleClick = useCallback(() => {
-    if (videoUrl) {
-      setIsFullscreen(true);
-    }
-  }, [videoUrl]);
-
-  // 关闭全屏
-  const handleCloseFullscreen = useCallback(() => {
-    setIsFullscreen(false);
-  }, []);
-
-  // 处理全屏视频播放状态同步
-  useEffect(() => {
-    if (isFullscreen && fullscreenVideoRef.current && videoRef.current) {
-      // 同步播放状态
-      if (!videoRef.current.paused) {
-        fullscreenVideoRef.current.play().catch(console.warn);
-      } else {
-        fullscreenVideoRef.current.pause();
-      }
-    }
-  }, [isFullscreen]);
-
   return (
     <>
       <BaseNode
@@ -129,24 +86,7 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
       >
         <div className="">
           {videoUrl ? (
-            <div className="relative">
-              {status.status === NodeStatus.PROCESSING && (
-                <div className="bg-theme-background/50 absolute inset-0 z-10 flex items-center justify-center rounded backdrop-blur-sm">
-                  <div className="flex flex-col items-center">
-                    <Loader2 className="text-theme-chart-2 animate-spin" />
-                  </div>
-                </div>
-              )}
-              <video
-                ref={videoRef}
-                src={videoUrl}
-                className="bg-theme-muted max-h-[200px] w-full cursor-pointer rounded"
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                onDoubleClick={handleDoubleClick}
-                loop
-              />
-            </div>
+            <VideoPreview src={videoUrl} autoPlayOnHover={true} className="bg-theme-muted max-h-[200px] w-full rounded" loop />
           ) : (
             <div className="bg-theme-muted flex items-center justify-center rounded p-2 text-center transition-colors">
               {isUploading ? (
@@ -170,48 +110,6 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
           <input ref={fileInputRef} type="file" accept="video/*" onChange={handleFileChange} style={{ display: 'none' }} />
         </div>
       </BaseNode>
-
-      {/* 全屏模态窗口 */}
-      {isFullscreen && videoUrl && <FullscreenVideoModal videoUrl={videoUrl} onClose={handleCloseFullscreen} videoRef={fullscreenVideoRef} />}
     </>
-  );
-}
-
-// 全屏视频模态窗口组件
-function FullscreenVideoModal({
-  videoUrl,
-  onClose,
-  videoRef,
-}: {
-  videoUrl: string;
-  onClose: () => void;
-  videoRef: React.RefObject<HTMLVideoElement | null>;
-}) {
-  return createPortal(
-    <div className="bg-theme-background/90 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative flex h-full w-full items-center justify-center">
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          className="h-auto max-h-full w-auto max-w-full rounded object-contain shadow-2xl"
-          onClick={e => e.stopPropagation()}
-          controls
-          loop
-          style={{
-            maxWidth: '100%',
-            maxHeight: '100%',
-            width: 'auto',
-            height: 'auto',
-          }}
-        />
-        <button
-          className="bg-theme-muted/50 text-theme-foreground hover:bg-theme-muted/70 absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-xl font-bold transition-colors"
-          onClick={onClose}
-        >
-          ×
-        </button>
-      </div>
-    </div>,
-    document.body,
   );
 }

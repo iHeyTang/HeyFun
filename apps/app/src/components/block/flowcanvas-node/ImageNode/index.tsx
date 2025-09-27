@@ -1,6 +1,5 @@
 import { Camera, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { ImageNodeActionData } from './processor';
 import { ImageNodeTooltip, ImageNodeTooltipProps } from './tooltip';
 import { useFlowGraph } from '@/components/block/flowcanvas';
@@ -8,6 +7,7 @@ import { useNodeStatusById } from '@/components/block/flowcanvas';
 import { BaseNode } from '@/components/block/flowcanvas';
 import { NodeData, NodeStatus } from '@/components/block/flowcanvas';
 import { uploadFile } from '@/lib/browser/file';
+import { ImagePreview } from '@/components/block/preview/image-preview';
 
 interface ImageNodeProps {
   data: NodeData<ImageNodeActionData>;
@@ -20,7 +20,6 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | undefined>(data.output?.images?.[0]?.url);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const status = useNodeStatusById(id);
@@ -52,16 +51,6 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
     fileInputRef.current?.click();
   };
 
-  // 处理图片加载完成
-  const handleImageLoad = () => {
-    setIsImageLoading(false);
-  };
-
-  // 处理图片加载错误
-  const handleImageError = () => {
-    setIsImageLoading(false);
-  };
-
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -91,18 +80,6 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
     flowGraph.updateNodeData(id, { output });
   }, []);
 
-  // 处理双击事件 - 全屏显示图像
-  const handleDoubleClick = useCallback(() => {
-    if (imageUrl) {
-      setIsFullscreen(true);
-    }
-  }, [imageUrl]);
-
-  // 关闭全屏
-  const handleCloseFullscreen = useCallback(() => {
-    setIsFullscreen(false);
-  }, []);
-
   return (
     <>
       <BaseNode
@@ -118,21 +95,8 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
         }
       >
         <div className="relative">
-          {(isImageLoading || status.status === NodeStatus.PROCESSING) && (
-            <div className="bg-theme-background/50 absolute inset-0 z-10 flex items-center justify-center rounded backdrop-blur-sm">
-              <div className="flex flex-col items-center">
-                <Loader2 className="text-theme-chart-2 animate-spin" />
-              </div>
-            </div>
-          )}
           {imageUrl ? (
-            <img
-              src={imageUrl}
-              className="mx-auto block max-h-[200px] min-h-[100px] max-w-full cursor-pointer rounded object-contain"
-              onLoad={handleImageLoad}
-              onError={handleImageError}
-              onDoubleClick={handleDoubleClick}
-            />
+            <ImagePreview src={imageUrl} alt="Node image" className="mx-auto block max-h-[200px] min-h-[100px] max-w-full rounded object-contain" />
           ) : (
             <div className="bg-theme-muted flex items-center justify-center rounded p-2 text-center transition-colors">
               {isUploading ? (
@@ -156,38 +120,6 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
         </div>
       </BaseNode>
-
-      {/* 全屏模态窗口 */}
-      {isFullscreen && imageUrl && <FullscreenModal imageUrl={imageUrl} onClose={handleCloseFullscreen} />}
     </>
-  );
-}
-
-// 全屏模态窗口组件
-function FullscreenModal({ imageUrl, onClose }: { imageUrl: string; onClose: () => void }) {
-  return createPortal(
-    <div className="bg-theme-background/90 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative flex h-full w-full items-center justify-center">
-        <img
-          src={imageUrl}
-          className="h-auto max-h-full w-auto max-w-full rounded object-contain shadow-2xl"
-          alt="Fullscreen image"
-          onClick={e => e.stopPropagation()}
-          style={{
-            maxWidth: '100%',
-            maxHeight: '100%',
-            width: 'auto',
-            height: 'auto',
-          }}
-        />
-        <button
-          className="bg-theme-muted/50 text-theme-foreground hover:bg-theme-muted/70 absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-xl font-bold transition-colors"
-          onClick={onClose}
-        >
-          ×
-        </button>
-      </div>
-    </div>,
-    document.body,
   );
 }

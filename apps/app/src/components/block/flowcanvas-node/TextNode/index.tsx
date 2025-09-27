@@ -135,35 +135,33 @@ export default function TextNode({ data, id }: TextNodeProps) {
     <BaseNode
       data={data}
       id={id}
-      className={`bg-theme-card max-w-[400px] min-w-[200px]`}
+      className={`bg-theme-card h-fit w-fit`}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       tooltip={
         <TextNodeTooltip nodeId={id} value={data.actionData} onValueChange={handleActionDataChange} onSubmitSuccess={handleTooltipSubmitSuccess} />
       }
     >
-      <div className="h-32 w-64 rounded p-2">
-        {isEditing ? (
-          <Textarea
-            ref={textareaRef}
-            value={text}
-            onChange={handleTextChange}
-            onBlur={handleTextBlur}
-            onKeyDown={handleKeyDown}
-            rows={3}
-            onMouseDown={e => e.stopPropagation()}
-            placeholder="请输入文本内容..."
-          />
-        ) : (
-          <div
-            className={`border-theme-border-primary text-theme-foreground hover:border-theme-border-secondary hover:bg-theme-accent/50 cursor-pointer rounded border-dashed p-2 text-xs break-words whitespace-pre-wrap transition-colors duration-200`}
-            onClick={handleTextClick}
-            onDoubleClick={handleTextDoubleClick}
-          >
-            {text || '双击输入文本内容...'}
-          </div>
-        )}
-      </div>
+      {isEditing ? (
+        <Textarea
+          ref={textareaRef}
+          value={text}
+          onChange={handleTextChange}
+          onBlur={handleTextBlur}
+          onKeyDown={handleKeyDown}
+          onMouseDown={e => e.stopPropagation()}
+          placeholder="请输入文本内容..."
+          className="nodrag h-fit min-h-[80px] w-fit min-w-[200px]"
+        />
+      ) : (
+        <div
+          className={`border-border-primary text-foreground hover:border-border-secondary hover:bg-accent/50 h-fit min-h-[80px] w-fit min-w-[200px] cursor-pointer rounded border-dashed p-2 text-xs break-words whitespace-pre-wrap transition-colors duration-200`}
+          onClick={handleTextClick}
+          onDoubleClick={handleTextDoubleClick}
+        >
+          {text || '双击输入文本内容...'}
+        </div>
+      )}
     </BaseNode>
   );
 }
