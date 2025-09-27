@@ -59,13 +59,16 @@ export default function TextNode({ data, id }: TextNodeProps) {
   };
 
   // 更新节点输出数据的函数
-  const updateNodeOutput = (newText: string) => {
-    const newOutput = { texts: [newText] };
-    // 通知画布API节点数据已更新
-    flowGraph.updateNodeData(id, { output: newOutput });
-    // 同时更新本地数据引用
-    data.output = newOutput;
-  };
+  const updateNodeOutput = useCallback(
+    (newText: string) => {
+      const newOutput = { texts: [newText] };
+      // 通知画布API节点数据已更新
+      flowGraph.updateNodeData(id, { output: newOutput });
+      // 同时更新本地数据引用
+      data.output = newOutput;
+    },
+    [flowGraph, id, data],
+  );
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // 阻止所有键盘事件冒泡到ReactFlow，避免意外删除节点

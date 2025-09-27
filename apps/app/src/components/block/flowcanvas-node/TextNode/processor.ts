@@ -25,10 +25,9 @@ export class TextNodeProcessor extends BaseNodeProcessor<TextNodeActionData> {
 
     const prompt = (actionData?.prompt || '').concat(texts.join('\n'));
 
-
     const result = await chatOnce({
-      modelProvider: actionData?.modelProvider!,
-      modelId: actionData?.modelId!,
+      modelProvider: actionData?.modelProvider || '',
+      modelId: actionData?.modelId || '',
       content: prompt,
     });
 

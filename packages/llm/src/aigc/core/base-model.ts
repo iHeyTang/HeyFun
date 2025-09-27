@@ -20,7 +20,7 @@ export interface TextToImageParams extends BaseGenerationParams {
 // 图生图参数
 export interface ImageToImageParams extends BaseGenerationParams {
   prompt: string; // 提示词
-  referenceImage: string; // 参考图（base64或URL）
+  referenceImage: string[]; // 参考图（base64或URL）
   aspectRatio: string;
 }
 
@@ -34,7 +34,7 @@ export interface TextToVideoParams extends BaseGenerationParams {
 // 图生视频参数
 export interface ImageToVideoParams extends BaseGenerationParams {
   prompt: string; // 提示词
-  referenceImage: string; // 参考图（base64或URL）
+  referenceImage: string[]; // 参考图（base64或URL）
   aspectRatio: string;
   duration: number; // 时长（秒）
 }

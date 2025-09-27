@@ -42,7 +42,7 @@ export const NodeTooltipTrigger = forwardRef<HTMLDivElement, HTMLAttributes<HTML
       props.onMouseEnter?.(e);
       showTooltip();
     },
-    [props, showTooltip]
+    [props, showTooltip],
   );
 
   const onMouseLeave = useCallback(
@@ -50,7 +50,7 @@ export const NodeTooltipTrigger = forwardRef<HTMLDivElement, HTMLAttributes<HTML
       props.onMouseLeave?.(e);
       hideTooltip();
     },
-    [props, hideTooltip]
+    [props, hideTooltip],
   );
 
   return <div ref={ref} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} {...props} />;
@@ -72,9 +72,16 @@ export const NodeTooltipContent = forwardRef<HTMLDivElement, NodeToolbarProps>((
 
   return (
     <div ref={ref}>
-      <NodeToolbar isVisible={isVisible} className={cn('rounded-sm bg-theme-popover border border-theme-border-secondary shadow-theme-luxury', className)} tabIndex={1} position={position} {...props}>
+      <NodeToolbar
+        isVisible={isVisible}
+        className={cn('bg-theme-popover border-theme-border-secondary shadow-theme-luxury rounded-sm border', className)}
+        tabIndex={1}
+        position={position}
+        {...props}
+      >
         {children}
       </NodeToolbar>
     </div>
   );
 });
+NodeTooltipContent.displayName = 'NodeTooltipContent';

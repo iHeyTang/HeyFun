@@ -97,7 +97,7 @@ class FlowGraphInstance {
         acc[node.type!] = (acc[node.type!] || 0) + 1;
         return acc;
       },
-      {} as Record<string, number>
+      {} as Record<string, number>,
     );
 
     return {
@@ -195,7 +195,7 @@ class FlowGraphInstance {
       const isValid = nodeIds.has(edge.source) && nodeIds.has(edge.target);
       if (!isValid) {
         console.warn(
-          `清理无效边: ${edge.source} -> ${edge.target}，源节点存在: ${nodeIds.has(edge.source)}, 目标节点存在: ${nodeIds.has(edge.target)}`
+          `清理无效边: ${edge.source} -> ${edge.target}，源节点存在: ${nodeIds.has(edge.source)}, 目标节点存在: ${nodeIds.has(edge.target)}`,
         );
       }
       return isValid;

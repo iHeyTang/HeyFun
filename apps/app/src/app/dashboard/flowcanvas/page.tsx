@@ -83,7 +83,7 @@ export default function FlowCanvasListPage() {
       buttonText: {
         cancel: tCommon('cancel'),
         confirm: tCommon('delete'),
-        loading: tCommon('deleting')
+        loading: tCommon('deleting'),
       },
       onConfirm: async () => {
         try {
@@ -97,7 +97,7 @@ export default function FlowCanvasListPage() {
           console.error('删除项目失败:', error);
           toast.error(error.message || t('toast.deleteError'));
         }
-      }
+      },
     });
   };
 
@@ -133,7 +133,7 @@ export default function FlowCanvasListPage() {
           ))}
         </div>
       )}
-      
+
       <ConfirmDialog />
     </div>
   );

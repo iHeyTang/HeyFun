@@ -52,7 +52,7 @@ export class ContextStateManager {
     schema: CanvasSchema,
     contextMethods?: FlowGraphContextHandlers,
     triggerNodeId?: string,
-    options?: { nodeExecutors?: Map<string, NodeExecutor>; onSchemaChange?: OnNodeOutputChangeCallback }
+    options?: { nodeExecutors?: Map<string, NodeExecutor>; onSchemaChange?: OnNodeOutputChangeCallback },
   ): Promise<ExecutionResult> {
     const scheduler = ContextStateManager.create(schema, contextMethods, options?.onSchemaChange);
 
