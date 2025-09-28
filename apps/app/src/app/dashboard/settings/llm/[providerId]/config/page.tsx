@@ -180,7 +180,7 @@ export default function ProviderConfigPanel() {
 const ProviderConnectionStatus = ({ connectionStatus, onClick }: { connectionStatus: ConnectionStatus; onClick?: () => void }) => {
   if (!connectionStatus.lastChecked) {
     return (
-      <Badge variant="outline" className="cursor-pointer rounded-full border-none bg-theme-badge-blue px-2 py-1 text-xs font-normal text-theme-badge-blue shadow-none">
+      <Badge variant="outline" className="cursor-pointer rounded-full border-none bg-badge-blue px-2 py-1 text-xs font-normal text-badge-blue shadow-none">
         <WifiOff className="mr-1 h-3 w-3" />
         No connection inspection yet, the configuration is not set yet.
       </Badge>
@@ -190,7 +190,7 @@ const ProviderConnectionStatus = ({ connectionStatus, onClick }: { connectionSta
     return (
       <Badge
         variant="outline"
-        className="cursor-pointer rounded-full border-none bg-theme-badge-blue px-2 py-1 text-xs font-normal text-theme-badge-blue shadow-none"
+        className="cursor-pointer rounded-full border-none bg-badge-blue px-2 py-1 text-xs font-normal text-badge-blue shadow-none"
         onClick={onClick}
         title="Testing"
       >
@@ -204,7 +204,7 @@ const ProviderConnectionStatus = ({ connectionStatus, onClick }: { connectionSta
     return (
       <Badge
         variant="outline"
-        className="cursor-pointer rounded-full border-none bg-theme-badge-green px-2 py-1 text-xs font-normal text-theme-badge-green shadow-none"
+        className="cursor-pointer rounded-full border-none bg-badge-green px-2 py-1 text-xs font-normal text-badge-green shadow-none"
         onClick={onClick}
         title="Connected"
       >
@@ -217,7 +217,7 @@ const ProviderConnectionStatus = ({ connectionStatus, onClick }: { connectionSta
   return (
     <Badge
       variant="outline"
-      className="cursor-pointer rounded-full border-none bg-theme-destructive/10 px-2 py-1 text-xs font-normal text-theme-destructive shadow-none"
+      className="cursor-pointer rounded-full border-none bg-destructive/10 px-2 py-1 text-xs font-normal text-destructive shadow-none"
       onClick={onClick}
       title="Connection Failed"
     >

@@ -2,7 +2,6 @@ import { Markdown } from '@/components/block/markdown/markdown';
 import { Badge } from '@/components/ui/badge';
 import { AggregatedMessage, Message } from '@/lib/browser/chat-messages/types';
 import { formatNumber } from '@/lib/utils';
-import '@/styles/animations.css';
 import { StepBadge } from './step';
 import { ToolMessageContent } from './tools';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -13,7 +12,11 @@ interface ChatMessageProps {
   messages: AggregatedMessage[];
 }
 
-const UserMessage = ({ message }: { message: Message<{ request: string }> }) => <Markdown className="chat">{message.content.request}</Markdown>;
+const UserMessage = ({ message }: { message: Message<{ request: string }> }) => (
+  <div className="bg-muted rounded-lg">
+    <Markdown className="chat">{message.content.request}</Markdown>
+  </div>
+);
 
 const PrepareMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:lifecycle:prepare' } }) => {
   const prepareCompleteMessage = message.messages.find(msg => msg.type === 'agent:lifecycle:prepare:complete') as
@@ -57,7 +60,9 @@ const PlanMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:
               <span>📝 Plan Completed</span>
             </Badge>
           </div>
-          <Markdown className="chat">{planCompleteMessage?.content.plan}</Markdown>
+          <div className="bg-muted rounded-lg">
+            <Markdown className="chat">{planCompleteMessage?.content.plan}</Markdown>
+          </div>
         </div>
       ) : (
         <div className="text-muted-foreground mt-2 mb-2 font-mono text-xs">
@@ -163,7 +168,7 @@ const StepMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:
           <div className="container mx-auto max-w-4xl">
             <div className="mb-2 flex items-center justify-between">
               <div className="text-lg font-bold">✨ FunMax</div>
-              <div className="text-xs font-medium text-theme-tertiary italic opacity-0 transition-opacity duration-300 group-hover:opacity-100 hover:opacity-100">
+              <div className="text-xs font-medium italic opacity-0 transition-opacity duration-300 group-hover:opacity-100 hover:opacity-100">
                 {thinkMessage.createdAt
                   ? new Date(thinkMessage.createdAt).toLocaleString('zh-CN', {
                       year: 'numeric',
@@ -178,7 +183,11 @@ const StepMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:
             </div>
             <StepBadge message={message} />
             <div className="flex flex-col gap-2 space-y-2">
-              {toolSelectedMessage?.content.thoughts && <Markdown className="chat">{toolSelectedMessage?.content.thoughts}</Markdown>}
+              {toolSelectedMessage?.content.thoughts && (
+                <div className="bg-muted rounded-lg">
+                  <Markdown className="chat">{toolSelectedMessage?.content.thoughts}</Markdown>
+                </div>
+              )}
               <ToolMessageContent message={message} />
             </div>
           </div>

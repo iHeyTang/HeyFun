@@ -45,7 +45,7 @@ export const ToolPreview = ({ messages, executionId, className }: ToolPreviewPro
         {args && Object.keys(args).length > 0 && (
           <div className="space-y-2">
             <div className="text-muted-foreground text-sm font-medium">Parameters</div>
-            <div className="bg-silver-gradient space-y-2 rounded-md p-3">
+            <div className="bg-muted space-y-2 rounded-md p-3">
               {Object.entries(args).map(([key, value]) => (
                 <div key={key} className="flex flex-col gap-1">
                   <div className="text-muted-foreground text-xs font-medium">{key}</div>
@@ -61,7 +61,7 @@ export const ToolPreview = ({ messages, executionId, className }: ToolPreviewPro
         {Array.isArray(result?.content) ? (
           <div className="space-y-2">
             <div className="text-muted-foreground text-sm font-medium">Result</div>
-            <div className={cn('bg-silver-gradient text-foreground overflow-hidden rounded-md p-2')}>
+            <div className={cn('bg-muted text-foreground overflow-hidden rounded-md p-2')}>
               <Markdown>
                 {result.content
                   .map((r, index) => {
@@ -89,7 +89,7 @@ export const ToolPreview = ({ messages, executionId, className }: ToolPreviewPro
         ) : result ? (
           <div className="space-y-2">
             <div className="text-muted-foreground text-sm font-medium">Result</div>
-            <div className={cn('bg-silver-gradient text-foreground overflow-hidden rounded-md')}>
+            <div className={cn('bg-muted text-foreground overflow-hidden rounded-md')}>
               <Markdown className="text-xs">{typeof result === 'object' ? JSON.stringify(result, null, 2) : result}</Markdown>
             </div>
           </div>

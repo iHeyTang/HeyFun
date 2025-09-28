@@ -131,7 +131,7 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
                     e.stopPropagation();
                     handleRemove();
                   }}
-                  className="bg-theme-destructive text-theme-destructive-foreground hover:bg-theme-destructive absolute -top-2 -right-2 rounded-full p-1.5 opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110"
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive absolute -top-2 -right-2 rounded-full p-1.5 opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110"
                   disabled={uploading}
                 >
                   <X className="h-3 w-3" />

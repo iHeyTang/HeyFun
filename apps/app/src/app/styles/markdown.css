@@ -1,0 +1,99 @@
+.markdown-body {
+  @apply overflow-x-auto;
+  background-color: transparent;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+/* 覆盖github-markdown-css的硬编码颜色 */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  color: var(--text-primary);
+}
+
+.markdown-body p {
+  color: var(--text-secondary);
+}
+
+.markdown-body a {
+  color: var(--primary);
+}
+
+.markdown-body a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.markdown-body code {
+  background-color: var(--muted);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.markdown-body pre {
+  background-color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.markdown-body pre code {
+  background-color: transparent;
+  border: none;
+}
+
+.markdown-body blockquote {
+  border-left: 4px solid var(--border);
+  background-color: var(--muted);
+  color: var(--text-secondary);
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  width: 100%;
+  background-color: transparent;
+}
+
+.markdown-body th {
+  background-color: var(--muted);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  padding: 0.5rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.markdown-body td {
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.5rem;
+}
+
+.markdown-body tr:nth-child(even) {
+  background-color: var(--bg-secondary);
+}
+
+.markdown-body tr:nth-child(odd) {
+  background-color: var(--bg-primary);
+}
+
+.markdown-body tr:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.markdown-body hr {
+  border-color: var(--border);
+}
+
+.markdown-body.chat {
+  font-size: 0.875rem;
+
+  pre,
+  code {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+}

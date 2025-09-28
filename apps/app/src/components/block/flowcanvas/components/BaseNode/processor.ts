@@ -9,7 +9,7 @@ export abstract class BaseNodeProcessor<TActionData extends Record<string, any> 
     const images = Array.from(input.values())
       .map(item => item.images)
       .flat()
-      .filter(item => !!item) as { url: string }[];
+      .filter(item => !!item) as { url?: string; key?: string }[];
     const texts = Array.from(input.values())
       .map(item => item.texts)
       .flat()
@@ -17,7 +17,7 @@ export abstract class BaseNodeProcessor<TActionData extends Record<string, any> 
     const videos = Array.from(input.values())
       .map(item => item.videos)
       .flat()
-      .filter(item => !!item) as { url: string }[];
+      .filter(item => !!item) as { url?: string; key?: string }[];
 
     return { images, texts, videos };
   }

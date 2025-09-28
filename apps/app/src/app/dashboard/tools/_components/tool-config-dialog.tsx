@@ -89,7 +89,7 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
               {/* Environment Configuration */}
               {tool.envSchema.properties && Object.keys(tool.envSchema.properties).length > 0 && (
                 <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-theme-primary">Environment Variables</h4>
+                  <h4 className="text-sm font-medium text-primary">Environment Variables</h4>
                   {Object.entries(tool.envSchema.properties).map(([key, value]: [string, any]) => (
                     <FormField
                       key={`env.${key}`}
@@ -128,7 +128,7 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
                 tool.querySchema.properties &&
                 Object.keys(tool.querySchema.properties).length > 0 && (
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-theme-primary">Query Parameters</h4>
+                    <h4 className="text-sm font-medium text-primary">Query Parameters</h4>
                     {Object.entries(tool.querySchema.properties).map(([key, value]: [string, any]) => (
                       <FormField
                         key={`query.${key}`}
@@ -167,7 +167,7 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
                 tool.headersSchema.properties &&
                 Object.keys(tool.headersSchema.properties).length > 0 && (
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-theme-primary">Headers</h4>
+                    <h4 className="text-sm font-medium text-primary">Headers</h4>
                     {Object.entries(tool.headersSchema.properties).map(([key, value]: [string, any]) => (
                       <FormField
                         key={`headers.${key}`}

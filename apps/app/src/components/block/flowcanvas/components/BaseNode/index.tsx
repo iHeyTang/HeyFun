@@ -67,17 +67,17 @@ export default function BaseNode({ data, id, children, className = '', showHandl
   const getStatusStyle = (status?: NodeStatus) => {
     switch (status) {
       case NodeStatus.PROCESSING:
-        return 'border-theme-chart-2';
+        return 'border-chart-2';
       case NodeStatus.COMPLETED:
-        return 'border-theme-success';
+        return 'border-success';
       case NodeStatus.FAILED:
-        return 'border-theme-destructive';
+        return 'border-destructive';
       case NodeStatus.PENDING:
-        return 'border-theme-chart-4';
+        return 'border-chart-4';
       case NodeStatus.PAUSED:
-        return 'border-theme-border-secondary';
+        return 'border-border-secondary';
       default:
-        return 'border-theme-border-primary';
+        return 'border-border-primary';
     }
   };
 
@@ -85,22 +85,22 @@ export default function BaseNode({ data, id, children, className = '', showHandl
   const getStatusIndicator = (status?: NodeStatus) => {
     switch (status) {
       case NodeStatus.PROCESSING:
-        return <div className="bg-theme-chart-2 h-3 w-3 animate-pulse rounded-full" />;
+        return <div className="bg-chart-2 h-3 w-3 animate-pulse rounded-full" />;
       case NodeStatus.COMPLETED:
-        return <div className="bg-theme-success h-3 w-3 rounded-full" />;
+        return <div className="bg-success h-3 w-3 rounded-full" />;
       case NodeStatus.FAILED:
         return (
           <div>
-            <div className="bg-theme-destructive h-3 w-3 rounded-full" />
+            <div className="bg-destructive h-3 w-3 rounded-full" />
             {statusData?.error}
           </div>
         );
       case NodeStatus.PENDING:
-        return <div className="bg-theme-chart-4 h-3 w-3 rounded-full" />;
+        return <div className="bg-chart-4 h-3 w-3 rounded-full" />;
       case NodeStatus.PAUSED:
-        return <div className="bg-theme-secondary h-3 w-3 rounded-full" />;
+        return <div className="bg-secondary h-3 w-3 rounded-full" />;
       default:
-        return <div className="bg-theme-secondary h-3 w-3 rounded-full" />;
+        return <div className="bg-secondary h-3 w-3 rounded-full" />;
     }
   };
 
@@ -190,7 +190,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
                 />
               ) : (
                 <span
-                  className="hover:bg-theme-accent hover:text-theme-accent-foreground text-theme-foreground cursor-pointer rounded px-1 py-0.5 transition-colors"
+                  className="hover:bg-accent hover:text-accent-foreground text-foreground cursor-pointer rounded px-1 py-0.5 transition-colors"
                   onClick={handleLabelClick}
                 >
                   {data.label}
@@ -216,7 +216,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
               className={cn(
                 'bg-card rounded-sm p-1 shadow-sm',
                 getStatusStyle(status),
-                focusedNodeId === id ? 'border-theme-primary' : selected ? 'border-theme-chart-1' : '',
+                focusedNodeId === id ? 'border-primary' : selected ? 'border-chart-1' : '',
                 className,
               )}
             >

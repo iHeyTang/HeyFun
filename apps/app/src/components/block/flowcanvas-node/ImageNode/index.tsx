@@ -8,6 +8,7 @@ import { BaseNode } from '@/components/block/flowcanvas';
 import { NodeData, NodeStatus } from '@/components/block/flowcanvas';
 import { uploadFile } from '@/lib/browser/file';
 import { ImagePreview } from '@/components/block/preview/image-preview';
+import { getSignedUrl } from '@/actions/oss';
 
 interface ImageNodeProps {
   data: NodeData<ImageNodeActionData>;
@@ -20,7 +21,8 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | undefined>(data.output?.images?.[0]?.url);
+  const [imageUrl, setImageUrl] = useState<string | undefined>();
+  const [imageKey, setImageKey] = useState<string | undefined>(data.output?.images?.[0]?.key);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const status = useNodeStatusById(id);
 
@@ -31,21 +33,36 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
 
   // 监听data.output变化，强制更新组件状态
   useEffect(() => {
-    const newImageUrl = data.output?.images?.[0]?.url;
-    if (newImageUrl !== imageUrl) {
+    const newImageKey = data.output?.images?.[0]?.key;
+    if (newImageKey !== imageKey) {
       console.log(`ImageNode ${id} - 检测到输出数据变化:`, {
-        oldUrl: imageUrl,
-        newUrl: newImageUrl,
+        oldKey: imageKey,
+        newKey: newImageKey,
         fullOutput: data.output,
         timestamp: new Date().toISOString(),
       });
-      setImageUrl(newImageUrl);
-      // 当图片URL变化时，设置为加载状态
-      if (newImageUrl) {
+      setImageKey(newImageKey);
+      // 当图片key变化时，设置为加载状态
+      if (newImageKey) {
         setIsImageLoading(true);
       }
     }
-  }, [data.output, data.output?.images, id, imageUrl, data]);
+  }, [data.output, data.output?.images, id, imageKey, data]);
+
+  // 将key转换为URL进行展示
+  useEffect(() => {
+    if (imageKey) {
+      getSignedUrl({ fileKey: imageKey }).then(result => {
+        if (result.data) {
+          setImageUrl(result.data);
+        }
+      }).catch(error => {
+        console.error('Failed to get signed URL:', error);
+      });
+    } else {
+      setImageUrl(undefined);
+    }
+  }, [imageKey]);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -63,8 +80,8 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
     setIsUploading(true);
 
     try {
-      const url = await handleUploadFIle(file);
-      flowGraph.updateNodeData(id, { output: { images: [{ url }] } });
+      const key = await handleUploadFIle(file);
+      flowGraph.updateNodeData(id, { output: { images: [{ key }] } });
     } finally {
       setIsUploading(false);
     }
@@ -101,7 +118,7 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
               <div className="bg-accent/20 absolute inset-0 rounded backdrop-blur-lg"></div>
               {/* Loading动画 */}
               <div className="relative z-10 flex flex-col items-center justify-center">
-                <Loader2 className="text-theme-primary h-8 w-8 animate-spin" />
+                <Loader2 className="text-primary h-8 w-8 animate-spin" />
               </div>
             </div>
           )}
@@ -114,10 +131,10 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
               onLoad={() => setIsImageLoading(false)}
             />
           ) : (
-            <div className="bg-theme-muted flex items-center justify-center rounded p-2 text-center transition-colors">
+            <div className="bg-muted flex items-center justify-center rounded p-2 text-center transition-colors">
               {isUploading ? (
-                <div className="text-theme-chart-2 flex flex-col items-center">
-                  <div className="border-theme-border-primary border-t-theme-chart-2 mb-2 h-5 w-5 animate-spin rounded-full border-2"></div>
+                <div className="text-chart-2 flex flex-col items-center">
+                  <div className="border-border-primary border-t-chart-2 mb-2 h-5 w-5 animate-spin rounded-full border-2"></div>
                   <span>Uploading...</span>
                 </div>
               ) : (
@@ -125,7 +142,7 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
                   <div className="cursor-pointer text-left" onClick={handleFileSelect}>
                     1. Upload local image (up to 10MB)
                   </div>
-                  <div className="text-theme-muted-foreground text-left" onClick={() => {}}>
+                  <div className="text-muted-foreground text-left" onClick={() => {}}>
                     2. Enter prompt to generate an image
                   </div>
                 </div>

@@ -138,7 +138,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
     <BaseNode
       data={data}
       id={id}
-      className={`bg-theme-card h-fit w-fit`}
+      className={`bg-card h-fit w-fit`}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       tooltip={

@@ -5,7 +5,7 @@ import SyntaxHighlighter from 'react-syntax-highlighter';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import { useAsync } from '@/hooks/use-async';
-import { createThemeCodeStyle } from '@/styles/code-theme';
+import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 
 export const Markdown: React.FC<{ src?: string; children?: string | null; className?: string }> = ({ src, children, className }) => {
   const { data: content, isLoading } = useAsync(
@@ -70,7 +70,7 @@ export const Markdown: React.FC<{ src?: string; children?: string | null; classN
                   showLineNumbers
                   PreTag={({ children }) => <div className="bg-transparent">{children}</div>}
                   language="json"
-                  style={createThemeCodeStyle()}
+                  style={githubGist}
                 >
                   {JSON.stringify(JSON.parse(children as string), null, 2)}
                 </SyntaxHighlighter>

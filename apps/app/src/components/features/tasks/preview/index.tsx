@@ -20,7 +20,7 @@ export const ChatPreview = ({ messages, taskId }: ChatPreviewProps) => {
           <Button
             variant="outline"
             size="sm"
-            className="hover:bg-accent/80 bg-silver-gradient flex items-center gap-1.5"
+            className="hover:bg-accent/80 bg-muted flex items-center gap-1.5"
             onClick={() => setData({ type: 'workspace', path: '' })}
           >
             <FolderIcon className="h-3.5 w-3.5" />

@@ -45,7 +45,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
 
           {/* Footer */}
           <div className="mt-auto p-2">
-            <div className="bg-silver-gradient flex flex-col justify-center gap-2 rounded-lg p-2">
+            <div className="bg-muted flex flex-col justify-center gap-2 rounded-lg p-2">
               <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[10px]">
                 <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />

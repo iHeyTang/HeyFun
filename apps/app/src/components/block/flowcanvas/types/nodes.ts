@@ -8,8 +8,8 @@ export type NodeType = 'image' | 'video' | 'text' | 'default' | 'processor';
  * 节点输出接口
  */
 export interface NodeOutput {
-  images?: Array<{ url: string }>;
-  videos?: Array<{ url: string }>;
+  images?: Array<{ url?: string; key?: string }>;
+  videos?: Array<{ url?: string; key?: string }>;
   texts?: string[];
 }
 

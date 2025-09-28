@@ -30,6 +30,7 @@ import { CanvasSchema } from './types/canvas';
 import { FlowGraphNode, NodeData, NodeExecutor, NodeStatus, WorkflowNodeState } from './types/nodes';
 
 import '@xyflow/react/dist/style.css';
+import { useTheme } from 'next-themes';
 
 type PendingConnection = { nodeId: string; handleId: string | null };
 
@@ -65,6 +66,8 @@ function FlowCanvasCore({
   toolbox,
   nodeTypes,
 }: FlowCanvasProps) {
+  const { theme } = useTheme();
+
   const componentNodes = useMemo(() => {
     const types = {} as NodeTypes;
     Object.entries(nodeTypes).forEach(([key, value]) => {
@@ -353,7 +356,7 @@ function FlowCanvasCore({
     <div className={cn(`relative h-full w-full`, className)}>
       <ReactFlow
         ref={canvasRef}
-        colorMode="light"
+        colorMode={theme === 'dark' ? 'dark' : 'light'}
         nodes={nodes}
         edges={edges}
         onConnectEnd={handleConnectEnd}

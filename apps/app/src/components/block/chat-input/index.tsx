@@ -61,7 +61,7 @@ export const ChatInput = ({
     <div className={`pointer-events-none p-4 ${className || ''}`}>
       <div className="pointer-events-auto mx-auto flex w-full max-w-4xl flex-col gap-2">
         {renderHeader && renderHeader()}
-        <div className="bg-background dark:bg-background flex w-full flex-col rounded-lg shadow-theme-light dark:border">
+        <div className="bg-background dark:bg-background flex w-full flex-col rounded-lg shadow-light dark:border">
           <Textarea
             ref={textareaRef}
             value={message}

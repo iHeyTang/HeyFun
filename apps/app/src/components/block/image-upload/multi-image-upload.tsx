@@ -159,7 +159,7 @@ export const MultiImageUpload = React.forwardRef<HTMLDivElement, MultiImageUploa
                 {/* 删除按钮 */}
                 <button
                   onClick={() => handleRemove(index)}
-                  className="absolute top-1 right-1 cursor-pointer rounded-full bg-theme-destructive p-1 text-theme-destructive-foreground opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:bg-theme-destructive"
+                  className="absolute top-1 right-1 cursor-pointer rounded-full bg-destructive p-1 text-destructive-foreground opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:bg-destructive"
                   disabled={uploading}
                 >
                   <X className="h-2 w-2" />

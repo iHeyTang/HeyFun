@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { VideoNodeActionData } from './processor';
 import { VideoNodeTooltip, VideoNodeTooltipProps } from './tooltip';
 import { VideoPreview } from '@/components/block/preview/video-preview';
+import { getSignedUrl } from '@/actions/oss';
 
 interface VideoNodeProps {
   data: NodeData<VideoNodeActionData>;
@@ -16,7 +17,8 @@ export { VideoNodeProcessor } from './processor';
 export default function VideoNode({ data, id }: VideoNodeProps) {
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
-  const [videoUrl, setVideoUrl] = useState<string | undefined>(data.output?.videos?.[0]?.url);
+  const [videoUrl, setVideoUrl] = useState<string | undefined>();
+  const [videoKey, setVideoKey] = useState<string | undefined>(data.output?.videos?.[0]?.key);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const status = useNodeStatusById(id);
 
@@ -27,17 +29,34 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
 
   // 监听data.output变化，强制更新组件状态
   useEffect(() => {
-    const newVideoUrl = data.output?.videos?.[0]?.url;
-    if (newVideoUrl !== videoUrl) {
+    const newVideoKey = data.output?.videos?.[0]?.key;
+    if (newVideoKey !== videoKey) {
       console.log(`VideoNode ${id} - 检测到输出数据变化:`, {
-        oldUrl: videoUrl,
-        newUrl: newVideoUrl,
+        oldKey: videoKey,
+        newKey: newVideoKey,
         fullOutput: data.output,
         timestamp: new Date().toISOString(),
       });
-      setVideoUrl(newVideoUrl);
+      setVideoKey(newVideoKey);
     }
-  }, [data.output, data.output?.videos, id, videoUrl, data]);
+  }, [data.output, data.output?.videos, id, videoKey, data]);
+
+  // 将key转换为URL进行展示
+  useEffect(() => {
+    if (videoKey) {
+      getSignedUrl({ fileKey: videoKey })
+        .then(result => {
+          if (result.data) {
+            setVideoUrl(result.data);
+          }
+        })
+        .catch(error => {
+          console.error('Failed to get signed URL:', error);
+        });
+    } else {
+      setVideoUrl(undefined);
+    }
+  }, [videoKey]);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -55,8 +74,8 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
     setIsUploading(true);
 
     try {
-      const url = await handleUploadFIle(file);
-      flowGraph.updateNodeData(id, { output: { videos: [{ url }] } });
+      const key = await handleUploadFIle(file);
+      flowGraph.updateNodeData(id, { output: { videos: [{ key }] } });
     } catch (error) {
       console.error('Video upload failed:', error);
       alert('Video upload failed. Please try again.');
@@ -91,18 +110,18 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
               <div className="bg-accent/20 absolute inset-0 rounded backdrop-blur-lg"></div>
               {/* Loading动画 */}
               <div className="relative z-10 flex flex-col items-center justify-center">
-                <Loader2 className="text-theme-primary h-8 w-8 animate-spin" />
+                <Loader2 className="text-primary h-8 w-8 animate-spin" />
               </div>
             </div>
           )}
 
           {videoUrl ? (
-            <VideoPreview src={videoUrl} autoPlayOnHover={true} className="bg-theme-muted max-h-[200px] w-full rounded" loop />
+            <VideoPreview src={videoUrl} autoPlayOnHover={true} className="bg-muted max-h-[200px] w-full rounded" loop />
           ) : (
-            <div className="bg-theme-muted flex items-center justify-center rounded p-2 text-center transition-colors">
+            <div className="bg-muted flex items-center justify-center rounded p-2 text-center transition-colors">
               {isUploading ? (
-                <div className="text-theme-chart-2 flex flex-col items-center">
-                  <div className="border-theme-border-primary border-t-theme-chart-2 mb-2 h-5 w-5 animate-spin rounded-full border-2"></div>
+                <div className="text-chart-2 flex flex-col items-center">
+                  <div className="border-border-primary border-t-chart-2 mb-2 h-5 w-5 animate-spin rounded-full border-2"></div>
                   <span>Uploading...</span>
                 </div>
               ) : (
@@ -110,7 +129,7 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
                   <div className="cursor-pointer text-left" onClick={handleFileSelect}>
                     1. Upload local video (up to 100MB)
                   </div>
-                  <div className="text-theme-muted-foreground text-left" onClick={() => {}}>
+                  <div className="text-muted-foreground text-left" onClick={() => {}}>
                     2. Enter prompt to generate a video
                   </div>
                 </div>

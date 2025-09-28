@@ -35,12 +35,11 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
       };
     }
 
+    const referenceImages = await getSignedUrls({ fileKeys: images.map(image => image.key!) });
     const result = await submitGenerationTask({
       model: selectedModel,
-      params: { prompt, aspectRatio, duration, referenceImage: images.map(image => image.url) },
+      params: { prompt, aspectRatio, duration, referenceImage: referenceImages.data?.map(url => url) || [] },
     });
-
-    console.log('video generation result', result);
 
     if (result.error || !result.data?.id) {
       return {
@@ -60,13 +59,12 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
       const taskResult = await getPaintboardTask({ taskId: result.data.id });
       console.log('video taskResult', taskResult);
       if (taskResult.data?.status === 'completed') {
-        const urls = await getSignedUrls({ fileKeys: taskResult.data.results.map(result => result.key) });
-
+        // 存储key而不是URL
         return {
           success: true,
           timestamp: new Date(),
           executionTime: Date.now() - startTime,
-          data: { videos: urls.data?.map(url => ({ url })) },
+          data: { videos: taskResult.data.results.map(result => ({ key: result.key })) },
         };
       }
 

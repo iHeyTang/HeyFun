@@ -16,7 +16,7 @@ export const formatFileSize = (bytes: number): string => {
  * 上传文件到OSS
  * @param file 要上传的文件
  * @param path 上传路径
- * @returns 上传后的文件URL
+ * @returns 上传后的文件key
  */
 export const uploadFile = async (file: File, path: string): Promise<string> => {
   // 获取上传URL
@@ -45,14 +45,7 @@ export const uploadFile = async (file: File, path: string): Promise<string> => {
     throw new Error('Failed to get file key');
   }
 
-  const url = await getSignedUrl({ fileKey: res.data.fileKey });
-
-  // 检查URL是否存在
-  if (!url.data) {
-    throw new Error('Failed to get signed URL');
-  }
-
-  return url.data;
+  return res.data.fileKey;
 };
 
 /**

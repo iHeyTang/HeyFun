@@ -74,12 +74,12 @@
 @keyframes glow-dark {
   0%,
   100% {
-    box-shadow: 0 0 5px var(--theme-glow-color);
+    box-shadow: 0 0 5px rgb(115 115 115 / 0.5);
   }
   50% {
     box-shadow:
-      0 0 15px var(--theme-glow-color-hover),
-      0 0 25px var(--theme-glow-color);
+      0 0 15px rgb(115 115 115 / 0.8),
+      0 0 25px rgb(115 115 115 / 0.5);
   }
 }
 
@@ -87,21 +87,21 @@
   0%,
   100% {
     box-shadow:
-      0 0 20px var(--theme-luxury-glow-light),
-      0 0 40px var(--theme-luxury-glow-medium),
-      0 0 60px var(--theme-luxury-glow-dark);
+      0 0 20px rgb(115 115 115 / 0.3),
+      0 0 40px rgb(115 115 115 / 0.2),
+      0 0 60px rgb(115 115 115 / 0.1);
   }
   50% {
     box-shadow:
-      0 0 30px var(--theme-luxury-glow-light),
-      0 0 60px var(--theme-luxury-glow-medium),
-      0 0 80px var(--theme-luxury-glow-dark);
+      0 0 30px rgb(115 115 115 / 0.4),
+      0 0 60px rgb(115 115 115 / 0.3),
+      0 0 80px rgb(115 115 115 / 0.2);
   }
 }
 
 .typewriter-dark {
   overflow: hidden;
-  border-right: 2px solid var(--theme-typewriter-border);
+  border-right: 2px solid rgb(115 115 115);
   white-space: nowrap;
   margin: 0 auto;
   letter-spacing: 0.1em;
@@ -116,7 +116,7 @@
 }
 
 .shimmer-text-dark {
-  background: linear-gradient(90deg, var(--theme-shimmer-start), var(--theme-shimmer-middle), var(--theme-shimmer-end));
+  background: linear-gradient(90deg, rgb(115 115 115), rgb(163 163 163), rgb(115 115 115));
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;
@@ -136,7 +136,7 @@
   position: absolute;
   width: 2px;
   height: 2px;
-  background: var(--theme-particle-color);
+  background: rgb(115 115 115);
   border-radius: 50%;
 }
 
@@ -240,13 +240,13 @@
 @keyframes pulse-glow {
   0%,
   100% {
-    box-shadow: 0 0 5px var(--theme-primary/20);
+    box-shadow: 0 0 5px rgb(115 115 115 / 0.2);
     transform: scale(1);
   }
   50% {
     box-shadow:
-      0 0 20px var(--theme-primary/40),
-      0 0 40px var(--theme-primary/20);
+      0 0 20px rgb(115 115 115 / 0.4),
+      0 0 40px rgb(115 115 115 / 0.2);
     transform: scale(1.05);
   }
 }
@@ -472,88 +472,6 @@
   animation: enhanced-scan-beam 8s linear infinite;
 }
 
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .animate-fade-in-title {
-    animation: fadeInUp 0.6s ease-out 0.1s both;
-  }
-
-  .animate-fade-in-subtitle {
-    animation: fadeInUpDelayed 0.6s ease-out 0.3s both;
-  }
-
-  .animate-fade-in-buttons {
-    animation: fadeInUpMoreDelayed 0.6s ease-out 0.5s both;
-  }
-
-  /* 减少移动端动画复杂度 */
-  .particle-system {
-    display: none;
-  }
-
-  /* 简化背景效果 */
-  .bg-theme-grid {
-    opacity: 0.05;
-  }
-
-  .bg-theme-mesh {
-    opacity: 0.1;
-  }
-}
-
-@media (max-width: 480px) {
-  /* 进一步简化小屏幕设备 */
-  .animate-morphing,
-  .animate-wave,
-  .animate-pulse-glow,
-  .animate-matrix-rain,
-  .animate-hologram,
-  .animate-energy-flow,
-  .animate-magnetic-field,
-  .animate-quantum-dot,
-  .animate-neural-network,
-  .animate-data-stream,
-  .animate-cyber-grid,
-  .animate-liquid-morph {
-    animation: none;
-  }
-
-  /* 减少背景元素 */
-  .bg-theme-grid {
-    display: none;
-  }
-}
-
-/* 平板设备优化 */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .animate-fade-in-title {
-    animation: fadeInUp 0.7s ease-out 0.15s both;
-  }
-
-  .animate-fade-in-subtitle {
-    animation: fadeInUpDelayed 0.7s ease-out 0.45s both;
-  }
-
-  .animate-fade-in-buttons {
-    animation: fadeInUpMoreDelayed 0.7s ease-out 0.75s both;
-  }
-}
-
-/* 大屏幕优化 */
-@media (min-width: 1440px) {
-  .animate-fade-in-title {
-    animation: fadeInUp 1s ease-out 0.3s both;
-  }
-
-  .animate-fade-in-subtitle {
-    animation: fadeInUpDelayed 1s ease-out 0.7s both;
-  }
-
-  .animate-fade-in-buttons {
-    animation: fadeInUpMoreDelayed 1s ease-out 1.1s both;
-  }
-}
-
 /* 响应式动画优化 */
 @media (prefers-reduced-motion: reduce) {
   .animate-morphing,
@@ -577,55 +495,5 @@
     animation: none;
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-/* 高对比度模式优化 */
-@media (prefers-contrast: high) {
-  .bg-theme-grid,
-  .bg-theme-mesh {
-    opacity: 0.2;
-  }
-
-  .text-theme-secondary {
-    color: var(--theme-text-primary);
-  }
-
-  .text-theme-tertiary {
-    color: var(--theme-text-secondary);
-  }
-}
-
-/* 深色模式优化 */
-@media (prefers-color-scheme: dark) {
-  .shimmer-text-dark {
-    background: linear-gradient(90deg, var(--theme-shimmer-start), var(--theme-shimmer-middle), var(--theme-shimmer-end));
-  }
-}
-
-/* 性能优化 */
-@media (max-width: 1024px) {
-  /* 减少复杂动画以提高性能 */
-  .animate-spin {
-    animation-duration: 20s;
-  }
-
-  .animate-pulse {
-    animation-duration: 4s;
-  }
-}
-
-/* 触摸设备优化 */
-@media (hover: none) and (pointer: coarse) {
-  .group:hover .group-hover\:scale-105 {
-    transform: scale(1);
-  }
-
-  .group:hover .group-hover\:shadow-xl {
-    box-shadow: inherit;
-  }
-
-  .group:hover .group-hover\:opacity-100 {
-    opacity: inherit;
   }
 }

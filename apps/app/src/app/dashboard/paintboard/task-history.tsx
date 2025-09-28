@@ -46,14 +46,14 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
     return (
       <div className="px-6 py-4">
         {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="border-b border-theme-border py-4 last:border-b-0">
+          <div key={index} className="border-border border-b py-4 last:border-b-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-6 w-16 animate-pulse rounded bg-theme-secondary"></div>
-                <div className="h-6 w-12 animate-pulse rounded bg-theme-secondary"></div>
-                <div className="h-6 w-32 animate-pulse rounded bg-theme-secondary"></div>
+                <div className="bg-secondary h-6 w-16 animate-pulse rounded"></div>
+                <div className="bg-secondary h-6 w-12 animate-pulse rounded"></div>
+                <div className="bg-secondary h-6 w-32 animate-pulse rounded"></div>
               </div>
-              <div className="h-4 w-24 animate-pulse rounded bg-theme-secondary"></div>
+              <div className="bg-secondary h-4 w-24 animate-pulse rounded"></div>
             </div>
           </div>
         ))}
@@ -64,7 +64,7 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
   if (error) {
     return (
       <div className="p-8 text-center">
-        <p className="mb-4 text-theme-destructive">{error}</p>
+        <p className="text-destructive mb-4">{error}</p>
         <Button onClick={() => fetchTasks()} variant="outline">
           Retry
         </Button>
@@ -77,11 +77,11 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
       {tasks.length === 0 ? (
         <div className="flex h-full items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-theme-secondary">
-              <Clock className="h-5 w-5 text-theme-tertiary" />
+            <div className="bg-secondary mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full">
+              <Clock className="h-5 w-5" />
             </div>
-            <p className="text-sm font-medium text-theme-secondary">No task records</p>
-            <p className="mt-1 text-xs text-theme-tertiary">Your generation tasks will appear here</p>
+            <p className="text-secondary text-sm font-medium">No task records</p>
+            <p className="mt-1 text-xs">Your generation tasks will appear here</p>
           </div>
         </div>
       ) : (
@@ -94,8 +94,8 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
             {/* 加载更多指示器 */}
             {loadingMore && (
               <div className="flex justify-center py-4">
-                <div className="flex items-center gap-2 text-sm text-theme-tertiary">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-theme-border border-t-theme-primary"></div>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="border-border border-t-primary h-4 w-4 animate-spin rounded-full border-2"></div>
                   加载更多...
                 </div>
               </div>
@@ -104,7 +104,7 @@ export const PaintboardTaskHistory = forwardRef<TaskHistoryRef>((props, ref) => 
             {/* 没有更多数据提示 */}
             {!hasMore && tasks.length > 0 && (
               <div className="flex justify-center py-4">
-                <div className="text-sm text-theme-quaternary">没有更多任务了</div>
+                <div className="text-sm">没有更多任务了</div>
               </div>
             )}
           </div>
@@ -127,17 +127,17 @@ function TaskCard({ task }: TaskCardProps) {
   const model = task.model;
 
   return (
-    <div className="space-y-4 border-b border-theme-border py-4 last:border-b-0">
+    <div className="border-border space-y-4 border-b py-4 last:border-b-0">
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {model && (
-            <Badge variant="secondary" className="bg-theme-secondary font-mono text-xs text-theme-secondary hover:bg-theme-secondary">
+            <Badge variant="secondary" className="font-mono">
               {model}
             </Badge>
           )}
 
           {ratio && (
-            <Badge variant="secondary" className="bg-theme-secondary text-xs text-theme-secondary hover:bg-theme-secondary">
+            <Badge variant="secondary" className="text-xs">
               {ratio}
             </Badge>
           )}
@@ -147,7 +147,7 @@ function TaskCard({ task }: TaskCardProps) {
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
-                    <Badge variant="secondary" className="max-w-xs bg-theme-secondary text-xs text-theme-secondary group-hover:pr-7 hover:bg-theme-secondary">
+                    <Badge variant="secondary" className="max-w-xs group-hover:pr-7">
                       <span className="truncate">{prompt}</span>
                     </Badge>
                   </TooltipTrigger>
@@ -157,10 +157,10 @@ function TaskCard({ task }: TaskCardProps) {
                 </Tooltip>
               </TooltipProvider>
               {copied ? (
-                <Check className="absolute top-[calc(50%+1px)] right-2 h-3 w-3 -translate-y-1/2 text-theme-tertiary opacity-100" />
+                <Check className="absolute top-[calc(50%+1px)] right-2 h-3 w-3 -translate-y-1/2 opacity-100" />
               ) : (
                 <Copy
-                  className="absolute top-[calc(50%+1px)] right-2 h-3 w-3 -translate-y-1/2 cursor-pointer text-theme-tertiary opacity-0 transition-opacity group-hover:opacity-60 hover:opacity-100"
+                  className="absolute top-[calc(50%+1px)] right-2 h-3 w-3 -translate-y-1/2 cursor-pointer opacity-0 transition-opacity group-hover:opacity-60 hover:opacity-100"
                   onClick={e => {
                     e.stopPropagation();
                     navigator.clipboard.writeText(prompt);
@@ -172,11 +172,11 @@ function TaskCard({ task }: TaskCardProps) {
           )}
         </div>
 
-        <span className="ml-4 flex-shrink-0 text-xs text-theme-tertiary">{formatDate(new Date(task.createdAt), 'yyyy-MM-dd HH:mm:ss')}</span>
+        <span className="ml-4 flex-shrink-0 text-xs">{formatDate(new Date(task.createdAt), 'yyyy-MM-dd HH:mm:ss')}</span>
       </div>
 
       {task.error ? (
-        <div className="mt-2 text-xs text-theme-quaternary">{task.error}</div>
+        <div className="mt-2 text-xs">{task.error}</div>
       ) : task.results && task.results.length > 0 ? (
         <div className="flex gap-4">
           {task.results.map((result: any) => (
@@ -214,7 +214,7 @@ function LoadingPlaceholder({ task }: LoadingPlaceholderProps) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-lg border border-theme-border bg-gradient-to-br from-theme-secondary to-theme-tertiary"
+      className="border-border from-secondary to-tertiary relative overflow-hidden rounded-lg border bg-gradient-to-br"
       style={{ width: `${size.width}px`, height: `${size.height}px` }}
     >
       {/* 渐变银色流动动效 */}
@@ -277,8 +277,8 @@ function ResultCard({ result }: ResultCardProps) {
   // 加载状态
   if (loading) {
     return (
-      <div className="flex h-48 w-full animate-pulse items-center justify-center rounded-lg bg-theme-secondary">
-        <div className="text-sm text-theme-tertiary">Loading...</div>
+      <div className="bg-secondary flex h-48 w-full animate-pulse items-center justify-center rounded-lg">
+        <div className="text-sm">Loading...</div>
       </div>
     );
   }
@@ -287,10 +287,10 @@ function ResultCard({ result }: ResultCardProps) {
   const errorMsg = errorState || error(result.key);
   if (errorMsg || !signedUrl) {
     return (
-      <div className="flex h-48 w-full items-center justify-center rounded-lg border border-theme-destructive bg-theme-destructive/5">
+      <div className="border-destructive bg-destructive/5 flex h-48 w-full items-center justify-center rounded-lg border">
         <div className="text-center">
-          <div className="mb-1 text-sm text-theme-destructive">Failed to load</div>
-          <div className="text-xs text-theme-destructive">{errorMsg || 'Unknown error'}</div>
+          <div className="text-destructive mb-1 text-sm">Failed to load</div>
+          <div className="text-destructive text-xs">{errorMsg || 'Unknown error'}</div>
         </div>
       </div>
     );

@@ -35,7 +35,7 @@ const Header = ({ className }: { className?: string }) => {
         <CreditBadge />
         <Dialog>
           <DialogTrigger asChild>
-            <Badge className="bg-theme-badge text-theme-badge cursor-pointer transition hover:scale-101">EARLY ACCESS</Badge>
+            <Badge className="bg-badge text-badge cursor-pointer transition hover:scale-101">EARLY ACCESS</Badge>
           </DialogTrigger>
           <DialogContent showCloseButton={false}>
             <DialogHeader>
@@ -77,11 +77,11 @@ export default async function RootLayout({
   return (
     <SignedIn>
       {!orgId ? (
-        <div className="flex h-full flex-col items-center justify-center text-theme-foreground">
+        <div className="text-foreground flex h-full flex-col items-center justify-center">
           <OrganizationList hidePersonal />
         </div>
       ) : (
-        <div className="flex h-full flex-col bg-secondary">
+        <div className="flex h-full flex-col">
           <Header className="h-12" />
           <div className="flex h-[calc(100vh-48px)] w-full">
             <AppSidebar />

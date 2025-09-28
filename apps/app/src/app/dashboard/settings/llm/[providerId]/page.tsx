@@ -65,7 +65,7 @@ export default function ProviderDetailsPanel() {
         </div>
         <div className="mt-2">
           <Link href={providerInfo.homepage!} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block" title="Homepage">
-            <Badge className="rounded-lg border-none bg-theme-badge-blue px-3 py-1 font-light text-theme-badge-blue shadow-none backdrop-blur-sm" variant="secondary">
+            <Badge className="rounded-lg border-none bg-badge-blue px-3 py-1 font-light text-badge-blue shadow-none backdrop-blur-sm" variant="secondary">
               <Globe className="h-5 w-5" /> {providerInfo.homepage}
             </Badge>
           </Link>
@@ -90,7 +90,7 @@ export default function ProviderDetailsPanel() {
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-3">
             {filteredModels.map(model => {
               return (
-                <div key={model.id} className="bg-silver-gradient rounded-lg p-4">
+                <div key={model.id} className="bg-muted rounded-lg p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="mb-2 flex items-center gap-2">

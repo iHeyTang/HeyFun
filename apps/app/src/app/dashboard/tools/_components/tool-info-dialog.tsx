@@ -90,19 +90,19 @@ export const ToolInfoDialog = forwardRef<ToolInfoDialogRef, ToolInfoDialogProps>
                 <div className="text-muted-foreground flex items-center gap-2 text-xs">
                   {tool.version && <Badge variant="outline">v{tool.version}</Badge>}
                   {tool.stars && (
-                    <Badge className="flex items-center gap-1 bg-theme-badge-amber text-theme-badge-amber">
+                    <Badge className="flex items-center gap-1 bg-badge-amber text-badge-amber">
                       <Star className="h-3 w-3" />
                       {tool.stars > 1000 ? `${(tool.stars / 1000).toFixed(1)}k` : tool.stars}
                     </Badge>
                   )}
                   {tool.downloads && (
-                    <Badge className="flex items-center gap-1 bg-theme-badge-blue text-theme-badge-blue">
+                    <Badge className="flex items-center gap-1 bg-badge-blue text-badge-blue">
                       <Download className="h-3 w-3" />
                       {tool.downloads > 1000 ? `${(tool.downloads / 1000).toFixed(1)}k` : tool.downloads}
                     </Badge>
                   )}
                   {tool.license && (
-                    <Badge className="rounded-full bg-theme-badge-green px-3 text-theme-badge-green">
+                    <Badge className="rounded-full bg-badge-green px-3 text-badge-green">
                       <Package className="h-4 w-4" />
                       {tool.license}
                     </Badge>
@@ -139,7 +139,7 @@ export const ToolInfoDialog = forwardRef<ToolInfoDialogRef, ToolInfoDialogProps>
                     {/* Quick Links */}
                     {tool.sourceUrl && (
                       <div>
-                        <Badge className="mb-2 bg-theme-badge-blue text-theme-badge-blue">Homepage</Badge>
+                        <Badge className="mb-2 bg-badge-blue text-badge-blue">Homepage</Badge>
                         <div className="pl-2">
                           <a href={tool.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline">
                             <ExternalLink className="h-4 w-4" />
@@ -150,7 +150,7 @@ export const ToolInfoDialog = forwardRef<ToolInfoDialogRef, ToolInfoDialogProps>
                     )}
                     {tool.repoUrl && (
                       <div>
-                        <Badge className="mb-2 bg-theme-badge-green text-theme-badge-green">Repository</Badge>
+                        <Badge className="mb-2 bg-badge-green text-badge-green">Repository</Badge>
                         <div className="pl-2">
                           <a href={tool.repoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline">
                             <ExternalLink className="h-4 w-4" />
@@ -162,7 +162,7 @@ export const ToolInfoDialog = forwardRef<ToolInfoDialogRef, ToolInfoDialogProps>
                     {/* Description */}
                     {tool.description && (
                       <div>
-                        <Badge className="mb-2 bg-theme-badge-amber text-theme-badge-amber">Description</Badge>
+                        <Badge className="mb-2 bg-badge-amber text-badge-amber">Description</Badge>
                         <div className="pl-2">{tool.description}</div>
                       </div>
                     )}
@@ -170,7 +170,7 @@ export const ToolInfoDialog = forwardRef<ToolInfoDialogRef, ToolInfoDialogProps>
                     {/* Tags */}
                     {tags.length > 0 && (
                       <div>
-                        <Badge className="mb-2 bg-theme-badge-purple text-theme-badge-purple">Tags</Badge>
+                        <Badge className="mb-2 bg-badge-purple text-badge-purple">Tags</Badge>
                         <div className="flex flex-wrap gap-2">
                           {tags.map((tag: string, index: number) => (
                             <Badge key={index} variant="secondary" className="flex items-center gap-1">
@@ -188,18 +188,18 @@ export const ToolInfoDialog = forwardRef<ToolInfoDialogRef, ToolInfoDialogProps>
               <TabsContent value="capabilities" className="m-0 flex-1 overflow-hidden">
                 <ScrollArea className="h-full">
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-theme-primary">Available Tools</h3>
+                    <h3 className="text-lg font-semibold text-primary">Available Tools</h3>
                     {capabilities.length > 0 ? (
                       <div className="grid gap-3">
                         {capabilities.map((capability: string, index: number) => (
-                          <div key={index} className="flex items-center gap-3 rounded-lg bg-theme-secondary p-3">
+                          <div key={index} className="flex items-center gap-3 rounded-lg bg-secondary p-3">
                             <Wrench className="h-5 w-5 flex-shrink-0" />
-                            <span className="font-medium text-theme-secondary">{capability}</span>
+                            <span className="font-medium">{capability}</span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-theme-tertiary italic">No capabilities information available</p>
+                      <p className="italic">No capabilities information available</p>
                     )}
                   </div>
                 </ScrollArea>

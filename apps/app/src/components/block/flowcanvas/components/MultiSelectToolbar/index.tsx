@@ -89,7 +89,7 @@ export const MultiSelectToolbar = forwardRef<MultiSelectToolbarRef, MultiSelectT
         >
           {selectedNodes.length > 1 && !selecting && (
             <div
-              className={cn('flex items-center gap-2 rounded-lg border-2 border-theme-chart-1 bg-theme-card p-2 shadow-theme-luxury', className)}
+              className={cn('flex items-center gap-2 rounded-lg border-2 border-chart-1 bg-card p-2 shadow-luxury', className)}
               style={{ pointerEvents: 'auto' }}
               onClick={e => {
                 console.log('工具栏容器被点击', e);
@@ -107,7 +107,7 @@ export const MultiSelectToolbar = forwardRef<MultiSelectToolbarRef, MultiSelectT
                   console.log('按钮 mouseup 事件', e);
                   e.stopPropagation();
                 }}
-                className="flex cursor-pointer items-center gap-2 rounded-md bg-theme-primary px-3 py-1.5 text-sm font-medium text-theme-primary-foreground transition-colors duration-200 hover:bg-theme-button-primary-hover"
+                className="flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-button-primary-hover"
                 style={{ pointerEvents: 'auto' }}
                 title="执行选中节点"
                 type="button"

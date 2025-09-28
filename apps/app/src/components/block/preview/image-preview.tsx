@@ -42,7 +42,7 @@ export function ImagePreview({ onDoubleClick, className = '', ...imgProps }: Ima
 // 全屏模态窗口组件
 function ImageFullscreenModal({ imageUrl, onClose }: { imageUrl: string; onClose: () => void }) {
   return createPortal(
-    <div className="bg-theme-background/90 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+    <div className="bg-background/90 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="relative flex h-full w-full items-center justify-center">
         <img
           src={imageUrl}
@@ -57,7 +57,7 @@ function ImageFullscreenModal({ imageUrl, onClose }: { imageUrl: string; onClose
           }}
         />
         <button
-          className="bg-theme-muted/50 text-theme-foreground hover:bg-theme-muted/70 absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-xl font-bold transition-colors"
+          className="bg-muted/50 text-foreground hover:bg-muted/70 absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-xl font-bold transition-colors"
           onClick={onClose}
         >
           ×

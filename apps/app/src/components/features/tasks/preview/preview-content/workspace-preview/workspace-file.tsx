@@ -60,8 +60,8 @@ const FileContent = ({ path }: { path: string }) => {
   return (
     <div className="flex h-full w-full items-center justify-center">
       <div className="text-center">
-        <Shell className="mx-auto h-10 w-10 text-theme-tertiary" />
-        <div className="mb-4 text-theme-tertiary">Oops! This file type can&apos;t be previewed</div>
+        <Shell className="mx-auto h-10 w-10" />
+        <div className="mb-4">Oops! This file type can&apos;t be previewed</div>
         <Link href={path} download={fileName}>
           <Button>Download file</Button>
         </Link>

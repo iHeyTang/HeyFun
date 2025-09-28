@@ -34,9 +34,10 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
       };
     }
 
+    const referenceImages = await getSignedUrls({ fileKeys: images.map(image => image.key!) });
     const result = await submitGenerationTask({
       model: selectedModel,
-      params: { prompt, aspectRatio, referenceImage: images.map(image => image.url) },
+      params: { prompt, aspectRatio, referenceImage: referenceImages.data?.map(url => url) || [] },
     });
 
     console.log('result', result);
@@ -59,13 +60,12 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
       const taskResult = await getPaintboardTask({ taskId: result.data.id });
       console.log('taskResult', taskResult);
       if (taskResult.data?.status === 'completed') {
-        const urls = await getSignedUrls({ fileKeys: taskResult.data.results.map(result => result.key) });
-
+        // 存储key而不是URL
         return {
           success: true,
           timestamp: new Date(),
           executionTime: Date.now() - startTime,
-          data: { images: urls.data?.map(url => ({ url })) },
+          data: { images: taskResult.data.results.map(result => ({ key: result.key })) },
         };
       }
 

@@ -162,7 +162,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
   return (
     <Panel
       position="top-left"
-      className="bg-theme-popover/95 shadow-theme-luxury border-theme-border-secondary w-72 rounded-xl border p-3 backdrop-blur-sm"
+      className="bg-popover/95 shadow-luxury border-border-secondary w-72 rounded-xl border p-3 backdrop-blur-sm"
       style={{
         position: 'absolute',
         left: `${adjustedPosition.x}px`,
@@ -179,7 +179,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
               placeholder="Search nodes..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="bg-theme-input focus:ring-theme-ring focus:bg-theme-input placeholder:text-theme-muted-foreground text-theme-foreground w-full rounded-lg border-0 px-3 py-2.5 text-sm transition-all duration-200 focus:ring-2 focus:outline-none"
+              className="bg-input focus:ring-ring focus:bg-input placeholder:text-muted-foreground text-foreground w-full rounded-lg border-0 px-3 py-2.5 text-sm transition-all duration-200 focus:ring-2 focus:outline-none"
               autoFocus
             />
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
@@ -190,7 +190,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
-                className="text-theme-muted-foreground"
+                className="text-muted-foreground"
               >
                 <circle cx="11" cy="11" r="8"></circle>
                 <path d="m21 21-4.35-4.35"></path>
@@ -200,24 +200,24 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
         </div>
 
         {/* 节点列表 */}
-        <div className="scrollbar-thin scrollbar-thumb-theme-border-secondary scrollbar-track-transparent max-h-64 space-y-1 overflow-y-auto">
+        <div className="scrollbar-thin scrollbar-thumb-border-secondary scrollbar-track-transparent max-h-64 space-y-1 overflow-y-auto">
           {filteredNodeTypes.length > 0 ? (
             filteredNodeTypes.map((nodeType, index) => (
               <button
                 key={nodeType.type}
                 onClick={() => handleNodeSelect(nodeType)}
-                className="group hover:bg-theme-accent flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-all duration-150"
+                className="group hover:bg-accent flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-all duration-150"
               >
                 {/* 节点信息 */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <div className="text-theme-foreground text-sm font-medium transition-colors">{nodeType.label}</div>
+                    <div className="text-foreground text-sm font-medium transition-colors">{nodeType.label}</div>
                   </div>
                 </div>
               </button>
             ))
           ) : (
-            <div className="text-theme-muted-foreground py-8 text-center">
+            <div className="text-muted-foreground py-8 text-center">
               <div className="mb-2 text-xl">🔍</div>
               <p className="text-sm">No matching nodes found</p>
             </div>
