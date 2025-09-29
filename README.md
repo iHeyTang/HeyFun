@@ -74,7 +74,11 @@ $ npx prisma db push
 5. 项目启动
 
 ```bash
+# 开启项目
 $ bun dev
+
+# 开启 upstash local mode
+npx @upstash/qstash-cli@latest dev
 ```
 
 启动完毕后，打开 `http://localhost:7100` 即可查看
