@@ -18,7 +18,7 @@ export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
     firstFrame: z.string().optional(),
     lastFrame: z.undefined(),
     referenceImage: z.undefined(),
-    resolution: z.enum(['480p', '720p', '1080p']).default('720p'),
+    resolution: z.enum(['480p', '720p', '1080p']).default('480p'),
     aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']),
     duration: z.enum(['3', '5', '10', '12']).default('5'),
     advanced: z.object({
@@ -39,7 +39,7 @@ export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
       images.push({ type: 'image_url', image_url: { url: params.firstFrame }, role: 'first_frame' });
     }
 
-    const promptParameter = `--rs ${params.resolution} --rt ${params.aspectRatio} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.advanced?.camerafixed}`;
+    const promptParameter = `--rs ${params.resolution || '480p'} --rt ${params.aspectRatio} --dur ${params.duration} --fps 24 --wm false --seed -1 --cf ${params.advanced?.camerafixed}`;
     const task = await this.provider.seedanceSubmit({
       model: 'doubao-seedance-1-0-pro-250528',
       content: [{ type: 'text', text: `${params.prompt}\n${promptParameter}` }, ...images],

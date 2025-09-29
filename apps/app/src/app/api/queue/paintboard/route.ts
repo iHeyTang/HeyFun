@@ -9,57 +9,64 @@ import { nanoid } from 'nanoid';
 import { NextResponse } from 'next/server';
 
 export const POST = async (req: Request) => {
-  const body = (await req.json()) as { taskId: string };
+  try {
+    const body = (await req.json()) as { taskId: string };
+    console.log('body', body);
 
-  const task = await prisma.paintboardTasks.findUnique({ where: { id: body.taskId } });
-  if (!task) {
-    return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-  }
+    const task = await prisma.paintboardTasks.findUnique({ where: { id: body.taskId } });
+    if (!task) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
 
-  const [error, externalTaskId] = await to(AIGC.submitGenerationTask(task.model, task.params as any));
+    const [error, externalTaskId] = await to(AIGC.submitGenerationTask(task.model, task.params as any));
 
-  if (error) {
-    return NextResponse.json({ error: `Failed to submit task: ${error.message}` }, { status: 500 });
-  }
+    if (error) {
+      console.error('Failed to submit task:', error);
+      return NextResponse.json({ error: `Failed to submit task: ${error.message}` }, { status: 500 });
+    }
 
-  await prisma.paintboardTasks.update({ where: { id: body.taskId }, data: { taskId: externalTaskId } });
+    await prisma.paintboardTasks.update({ where: { id: body.taskId }, data: { taskId: externalTaskId } });
 
-  const timeoutMs = 5 * 60 * 1000; // 5分钟
+    const timeoutMs = 5 * 60 * 1000; // 5分钟
 
-  const result = await processPaintboardTaskResult({
-    orgId: task.organizationId,
-    taskId: task.id,
-    model: task.model,
-    externalTaskId,
-    timeoutMs,
-    retryDelay: 2000, // 每次重试间隔2秒
-  });
+    const result = await processPaintboardTaskResult({
+      orgId: task.organizationId,
+      taskId: task.id,
+      model: task.model,
+      externalTaskId,
+      timeoutMs,
+      retryDelay: 2000, // 每次重试间隔2秒
+    });
 
-  if (result?.success) {
-    // 获取模型实例并计算费用
-    const model = AIGC.getModel(task.model);
-    if (!model) {
-      console.error(`Model not found: ${task.model}`);
-    } else {
-      try {
-        // 计算任务费用
-        const cost = model.calculateCost(task.params as any);
+    if (result?.success) {
+      // 获取模型实例并计算费用
+      const model = AIGC.getModel(task.model);
+      if (!model) {
+        console.error(`Model not found: ${task.model}`);
+      } else {
+        try {
+          // 计算任务费用
+          const cost = model.calculateCost(task.params as any);
 
-        // 扣除费用
-        await prisma.credit.update({
-          where: { organizationId: task.organizationId },
-          data: { amount: { decrement: cost } },
-        });
+          // 扣除费用
+          await prisma.credit.update({
+            where: { organizationId: task.organizationId },
+            data: { amount: { decrement: cost } },
+          });
 
-        console.log(`Deducted ${cost} credits from organization ${task.organizationId} for task ${task.id}`);
-      } catch (error) {
-        console.error(`Failed to deduct credits for task ${task.id}:`, error);
-        // 即使扣费失败，也不应该影响任务结果
+          console.log(`Deducted ${cost} credits from organization ${task.organizationId} for task ${task.id}`);
+        } catch (error) {
+          console.error(`Failed to deduct credits for task ${task.id}:`, error);
+          // 即使扣费失败，也不应该影响任务结果
+        }
       }
     }
-  }
 
-  return NextResponse.json({});
+    return NextResponse.json({});
+  } catch (error) {
+    console.error('Error in POST /api/queue/paintboard:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 };
 
 // 处理任务结果
