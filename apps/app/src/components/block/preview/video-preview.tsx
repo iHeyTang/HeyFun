@@ -1,6 +1,7 @@
-import { createPortal } from 'react-dom';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { VideoHTMLAttributes } from 'react';
+import { FullscreenModal } from './fullscreen';
+import { fullscreenModalRef } from './fullscreen';
 
 interface VideoPreviewProps extends VideoHTMLAttributes<HTMLVideoElement> {
   autoPlayOnHover?: boolean;
@@ -14,9 +15,8 @@ export function VideoPreview({
   className = '',
   ...videoProps
 }: VideoPreviewProps) {
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const fullscreenVideoRef = useRef<HTMLVideoElement>(null);
+  const fullscreenVideoRef = useRef<fullscreenModalRef | null>(null);
 
   const handleDoubleClick = useCallback<NonNullable<React.DOMAttributes<HTMLVideoElement>['onDoubleClick']>>(
     (e: React.MouseEvent<HTMLVideoElement>) => {
@@ -25,14 +25,10 @@ export function VideoPreview({
         onDoubleClick(e);
       }
       // 默认行为：打开全屏
-      setIsFullscreen(true);
+      fullscreenVideoRef.current?.show(videoProps.src || '', 'video');
     },
     [onDoubleClick],
   );
-
-  const handleCloseFullscreen = useCallback(() => {
-    setIsFullscreen(false);
-  }, []);
 
   // 处理鼠标移入事件
   const handleMouseEnter = useCallback<NonNullable<React.DOMAttributes<HTMLVideoElement>['onMouseEnter']>>(
@@ -66,18 +62,6 @@ export function VideoPreview({
     [onMouseLeave],
   );
 
-  // 处理全屏视频播放状态同步
-  useEffect(() => {
-    if (isFullscreen && fullscreenVideoRef.current && videoRef.current) {
-      // 同步播放状态
-      if (!videoRef.current.paused) {
-        fullscreenVideoRef.current.play().catch(console.warn);
-      } else {
-        fullscreenVideoRef.current.pause();
-      }
-    }
-  }, [isFullscreen]);
-
   // 合并默认样式和用户自定义样式
   const defaultClassName = 'cursor-pointer';
   const finalClassName = className ? `${defaultClassName} ${className}` : defaultClassName;
@@ -96,48 +80,7 @@ export function VideoPreview({
       </div>
 
       {/* 全屏模态窗口 */}
-      {isFullscreen && videoProps.src && (
-        <VideoFullscreenModal videoUrl={videoProps.src} onClose={handleCloseFullscreen} videoRef={fullscreenVideoRef} />
-      )}
+      <FullscreenModal ref={fullscreenVideoRef} />
     </>
-  );
-}
-
-// 全屏视频模态窗口组件
-function VideoFullscreenModal({
-  videoUrl,
-  onClose,
-  videoRef,
-}: {
-  videoUrl: string;
-  onClose: () => void;
-  videoRef: React.RefObject<HTMLVideoElement | null>;
-}) {
-  return createPortal(
-    <div className="bg-background/90 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative flex h-full w-full items-center justify-center">
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          className="h-auto max-h-full w-auto max-w-full rounded object-contain shadow-2xl"
-          onClick={e => e.stopPropagation()}
-          controls
-          loop
-          style={{
-            maxWidth: '100%',
-            maxHeight: '100%',
-            width: 'auto',
-            height: 'auto',
-          }}
-        />
-        <button
-          className="bg-muted/50 text-foreground hover:bg-muted/70 absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-xl font-bold transition-colors"
-          onClick={onClose}
-        >
-          ×
-        </button>
-      </div>
-    </div>,
-    document.body,
   );
 }

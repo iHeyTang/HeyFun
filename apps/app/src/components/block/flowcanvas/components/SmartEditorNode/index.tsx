@@ -17,6 +17,7 @@ export interface TiptapEditorProps {
   editable?: boolean;
   autoFocus?: boolean;
   mentionSuggestionItems?: MentionOptions<MentionItem>['suggestion']['items'];
+  onMentionClick?: (mentionId: string) => void;
 }
 
 export interface TiptapEditorRef {
@@ -26,7 +27,16 @@ export interface TiptapEditorRef {
 }
 
 export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(function TiptapEditor(
-  { value, onChange, placeholder = 'Input content...', className, editable = true, autoFocus = false, mentionSuggestionItems = () => [] },
+  {
+    value,
+    onChange,
+    placeholder = 'Input content...',
+    className,
+    editable = true,
+    autoFocus = false,
+    mentionSuggestionItems = () => [],
+    onMentionClick,
+  },
   ref,
 ) {
   const editor = useEditor({
@@ -98,6 +108,27 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(funct
       }, 0);
     }
   }, [editable, editor, autoFocus]);
+
+  // 监听mention点击事件
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleClick = (event: Event) => {
+      const target = event.target as HTMLElement;
+      if (target.attributes.getNamedItem('data-type')?.value === 'mention') {
+        const id = target.attributes.getNamedItem('data-id')?.value || '';
+        onMentionClick?.(id);
+      }
+    };
+
+    // 添加点击事件监听器
+    editor.view.dom.addEventListener('click', handleClick);
+
+    // 清理函数
+    return () => {
+      editor.view.dom.removeEventListener('click', handleClick);
+    };
+  }, [editor, onMentionClick]);
 
   return (
     <div className={cn('relative flex h-full flex-col', className)}>

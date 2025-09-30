@@ -11,6 +11,7 @@ import { TiptapEditor, TiptapEditorRef } from '../../flowcanvas/components/Smart
 import { MentionItem } from '../../flowcanvas/components/SmartEditorNode/MentionList';
 import { RatioIcon } from '../../ratio-icon';
 import { ImageNodeActionData, ImageNodeProcessor } from './processor';
+import { FullscreenModal, fullscreenModalRef } from '@/components/block/preview/fullscreen';
 
 export interface ImageNodeTooltipProps {
   nodeId: string;
@@ -31,6 +32,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const [localPrompt, setLocalPrompt] = useState(actionData?.prompt || '');
   const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
   const [selectedAspectRatio, setSelectedAspectRatio] = useState(actionData?.aspectRatio);
+  const fullscreenModalRef = useRef<fullscreenModalRef | null>(null);
 
   // 获取节点输入数据
   const nodeInputs = useMemo(() => {
@@ -138,6 +140,24 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     [nodeInputs],
   );
 
+  const handleMentionClick = useCallback(
+    async (mentionId: string) => {
+      const type = mentionId.split(':')[0];
+      if (type === 'image') {
+        const url = await getSignedUrl(mentionId.split(':')[1] || '');
+        fullscreenModalRef.current?.show(url || '', 'image');
+        return;
+      }
+
+      if (type === 'video') {
+        const url = await getSignedUrl(mentionId.split(':')[1] || '');
+        fullscreenModalRef.current?.show(url || '', 'video');
+        return;
+      }
+    },
+    [getSignedUrl],
+  );
+
   return (
     <div className="flex min-w-[480px] flex-col gap-2 overflow-hidden rounded-lg p-4">
       {/* 上半部分：多行文本输入框 */}
@@ -148,6 +168,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
         className="h-24 w-full resize-none border-none! outline-none!"
         mentionSuggestionItems={insertItems}
         ref={editorRef}
+        onMentionClick={handleMentionClick}
       />
 
       {/* 下半部分：Footer - 模型选择和提交按钮 */}
@@ -201,6 +222,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           <WandSparkles />
         </Button>
       </div>
+      <FullscreenModal ref={fullscreenModalRef} />
     </div>
   );
 };
