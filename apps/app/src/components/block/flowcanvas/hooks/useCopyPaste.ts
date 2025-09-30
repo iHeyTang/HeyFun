@@ -1,6 +1,7 @@
 import { Edge } from '@xyflow/react';
 import { useCallback, useEffect, useState } from 'react';
 import { FlowGraphNode } from '../types/nodes';
+import { useFlowGraph } from './useFlowGraph';
 
 /**
  * 复制粘贴扩展上下文
@@ -19,7 +20,7 @@ export interface CopyPasteExtensionContext {
   canvasRef: React.RefObject<HTMLElement | null>;
 
   // 工具方法
-  flowGraph: any; // FlowGraphInstance
+  flowGraph: ReturnType<typeof useFlowGraph>;
 }
 
 /**

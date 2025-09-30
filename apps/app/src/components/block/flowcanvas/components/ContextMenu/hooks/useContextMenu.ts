@@ -1,6 +1,7 @@
-import { addEdge, Connection, Edge, OnConnectEnd } from '@xyflow/react';
+import { addEdge, Connection, Edge, OnConnectEnd, useReactFlow } from '@xyflow/react';
 import { useCallback, useState } from 'react';
 import { FlowGraphNode } from '../../../types/nodes';
+import { useFlowGraph } from '../../../hooks/useFlowGraph';
 
 /**
  * 节点类型定义
@@ -29,7 +30,7 @@ export interface ContextMenuExtensionContext {
   canvasRef: React.RefObject<HTMLElement | null>;
 
   // 工具方法
-  flowGraph: any; // FlowGraphInstance
+  flowGraph: ReturnType<typeof useFlowGraph>;
 
   // 是否启用节点菜单
   enableNodeMenu: boolean;
@@ -141,7 +142,7 @@ export function useContextMenu(context: ContextMenuExtensionContext): ContextMen
         },
       };
 
-      flowGraph.addNode(newNode);
+      flowGraph.reactFlowInstance.addNodes([newNode]);
 
       // 如果有待连接的 handler，创建连接
       if (pendingConnectionHandle) {

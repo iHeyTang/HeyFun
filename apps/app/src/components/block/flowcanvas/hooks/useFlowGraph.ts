@@ -58,6 +58,25 @@ class FlowGraphInstance {
       .map(edge => nodes.find(node => node.id === edge.source))
       .filter(node => node !== undefined);
   }
+
+  /**
+   * 将画布像素位置转换为viewport相对位置
+   * @param position 画布上的像素位置 { x: number, y: number }
+   * @returns viewport相对位置 { x: number, y: number }
+   */
+  canvasPositionToViewport(position: { x: number; y: number }): { x: number; y: number } {
+    const viewport = this.reactFlowInstance.getViewport();
+
+    // ReactFlow的viewport包含x, y偏移和zoom缩放
+    // 画布像素位置需要根据viewport的变换进行转换
+    const viewportX = (position.x - viewport.x) / viewport.zoom;
+    const viewportY = (position.y - viewport.y) / viewport.zoom;
+
+    return {
+      x: viewportX,
+      y: viewportY,
+    };
+  }
 }
 
 /**

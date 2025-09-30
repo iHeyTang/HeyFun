@@ -2,12 +2,12 @@ import { cn } from '@/lib/utils';
 import { Background, Controls, Edge, MiniMap, NodeTypes, ReactFlow, ReactFlowProvider, useEdgesState, useNodesState } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useTheme } from 'next-themes';
-import React, { RefObject, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { RefObject, useCallback, useImperativeHandle, useMemo, useRef } from 'react';
 import { ContextMenu, useContextMenu } from './components/ContextMenu';
 import { MultiSelectToolbar, useMultiSelectToolbar } from './components/MultiSelectToolbar';
 import Toolbox from './components/Toolbox';
 import { FlowGraphProvider, useFlowGraphContext } from './FlowCanvasProvider';
-import { useCopyPaste, useImportExport, useSelection, useWorkflowRunner } from './hooks';
+import { useCopyPaste, useImportExport, useSchemaSync, useSelection, useWorkflowRunner } from './hooks';
 import { useFlowGraph } from './hooks/useFlowGraph';
 import { ExecutionResult } from './scheduler/core';
 import { CanvasSchema } from './types/canvas';
@@ -66,9 +66,9 @@ function FlowCanvasCore({
     return { executors, types };
   }, [nodeTypes]);
 
-  useEffect(() => {
-    onSchemaChange?.({ nodes, edges });
-  }, [nodes, edges, onSchemaChange]);
+  // Schema 同步：只在实质性数据变更时触发 onSchemaChange
+  // 会自动过滤掉 selected, dragging 等临时 UI 状态
+  useSchemaSync({ nodes, edges, onSchemaChange });
 
   useImperativeHandle(ref, () => ({
     importCanvas: (canvas: string) => {
