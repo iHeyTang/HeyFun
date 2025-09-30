@@ -215,7 +215,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
                 id="input"
                 className={cn('z-100 origin-top-left transition-all duration-200', '-left-[12px]!')}
                 style={{
-                  // @ts-ignore
+                  // @ts-expect-error: React Flow Handle 样式
                   '--handle-hover-size': `${handleHoverSize}px`,
                 }}
                 onConnect={params => console.log('handle onConnect', params)}
@@ -241,7 +241,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
                 id="output"
                 className={cn('z-100 origin-top-right transition-all duration-200', '-right-[12px]!')}
                 style={{
-                  // @ts-ignore
+                  // @ts-expect-error: React Flow Handle 样式
                   '--handle-hover-size': `${handleHoverSize}px`,
                 }}
                 onConnect={params => console.log('handle onConnect', params)}
