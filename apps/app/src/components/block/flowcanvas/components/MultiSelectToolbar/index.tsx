@@ -1,7 +1,11 @@
 import { cn } from '@/lib/utils';
-import { ViewportPortal, useReactFlow } from '@xyflow/react';
+import { ViewportPortal } from '@xyflow/react';
+import { useFlowGraph } from '../../hooks/useFlowGraph';
 import { PlayIcon } from 'lucide-react';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+
+export { useMultiSelectToolbar } from './hooks/useMultiSelectToolbar';
+export type { MultiSelectToolbarExtensionContext, MultiSelectToolbarExtensionResult } from './hooks/useMultiSelectToolbar';
 
 export interface MultiSelectToolbarProps {
   /** 是否正在选择状态 */
@@ -20,7 +24,7 @@ export interface MultiSelectToolbarRef {
 
 export const MultiSelectToolbar = forwardRef<MultiSelectToolbarRef, MultiSelectToolbarProps>(
   ({ selecting, selectedNodes, className, onExecuteSelectedNodes }, ref) => {
-    const { getNodesBounds } = useReactFlow();
+    const flowGraph = useFlowGraph();
 
     const toolbarRef = useRef<HTMLDivElement>(null);
 
@@ -30,12 +34,12 @@ export const MultiSelectToolbar = forwardRef<MultiSelectToolbarRef, MultiSelectT
       () => ({
         updatePosition: (selectedNodeIds: string[]) => {
           if (selectedNodeIds.length > 1 && toolbarRef.current) {
-            const bounds = getNodesBounds(selectedNodeIds);
+            const bounds = flowGraph.reactFlowInstance.getNodesBounds(selectedNodeIds);
             toolbarRef.current.style.transform = `translate(${bounds.x}px, ${bounds.y - 40}px)`;
           }
         },
       }),
-      [getNodesBounds, toolbarRef],
+      [flowGraph.reactFlowInstance.getNodesBounds, toolbarRef],
     );
 
     // 执行选中的节点
@@ -63,7 +67,7 @@ export const MultiSelectToolbar = forwardRef<MultiSelectToolbarRef, MultiSelectT
     };
 
     const bounds = useMemo(() => {
-      return getNodesBounds(selectedNodes);
+      return flowGraph.reactFlowInstance.getNodesBounds(selectedNodes);
     }, [selectedNodes]);
 
     const updatePosition = (selectedNodeIds: string[]) => {
@@ -89,7 +93,7 @@ export const MultiSelectToolbar = forwardRef<MultiSelectToolbarRef, MultiSelectT
         >
           {selectedNodes.length > 1 && !selecting && (
             <div
-              className={cn('flex items-center gap-2 rounded-lg border-2 border-chart-1 bg-card p-2 shadow-luxury', className)}
+              className={cn('border-chart-1 bg-card shadow-luxury flex items-center gap-2 rounded-lg border-2 p-2', className)}
               style={{ pointerEvents: 'auto' }}
               onClick={e => {
                 console.log('工具栏容器被点击', e);
@@ -107,7 +111,7 @@ export const MultiSelectToolbar = forwardRef<MultiSelectToolbarRef, MultiSelectT
                   console.log('按钮 mouseup 事件', e);
                   e.stopPropagation();
                 }}
-                className="flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-button-primary-hover"
+                className="bg-primary text-primary-foreground hover:bg-button-primary-hover flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-200"
                 style={{ pointerEvents: 'auto' }}
                 title="执行选中节点"
                 type="button"

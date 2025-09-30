@@ -1,38 +1,17 @@
 import { cn } from '@/lib/utils';
-import {
-  addEdge,
-  Background,
-  Connection,
-  Controls,
-  Edge,
-  EdgeChange,
-  MiniMap,
-  NodeChange,
-  NodeTypes,
-  OnConnectEnd,
-  OnEdgesChange,
-  OnNodesChange,
-  OnSelectionChangeFunc,
-  ReactFlow,
-  ReactFlowProvider,
-  useEdgesState,
-  useNodesState,
-} from '@xyflow/react';
-import React, { RefObject, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { ContextMenu, ContextMenuProps } from './components/ContextMenu';
-import { MultiSelectToolbar } from './components/MultiSelectToolbar';
+import { Background, Controls, Edge, MiniMap, NodeTypes, ReactFlow, ReactFlowProvider, useEdgesState, useNodesState } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { useTheme } from 'next-themes';
+import React, { RefObject, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import { ContextMenu, useContextMenu } from './components/ContextMenu';
+import { MultiSelectToolbar, useMultiSelectToolbar } from './components/MultiSelectToolbar';
 import Toolbox from './components/Toolbox';
 import { FlowGraphProvider, useFlowGraphContext } from './FlowCanvasProvider';
-import { useWorkflowRunner } from './hooks';
+import { useCopyPaste, useImportExport, useSelection, useWorkflowRunner } from './hooks';
 import { useFlowGraph } from './hooks/useFlowGraph';
 import { ExecutionResult } from './scheduler/core';
 import { CanvasSchema } from './types/canvas';
 import { FlowGraphNode, NodeData, NodeExecutor, NodeStatus, WorkflowNodeState } from './types/nodes';
-
-import '@xyflow/react/dist/style.css';
-import { useTheme } from 'next-themes';
-
-type PendingConnection = { nodeId: string; handleId: string | null };
 
 export interface FlowCanvasProps {
   initialSchema?: CanvasSchema;
@@ -67,60 +46,29 @@ function FlowCanvasCore({
   nodeTypes,
 }: FlowCanvasProps) {
   const { theme } = useTheme();
+  const context = useFlowGraphContext();
+  const flowGraph = useFlowGraph();
+  const { exportCanvasToJson } = useImportExport();
+  const selection = useSelection();
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialSchema?.nodes || []);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialSchema?.edges || []);
+  const workflowRunner = useWorkflowRunner({ onSchemaChange });
 
-  const componentNodes = useMemo(() => {
+  // 节点类型和执行器映射
+  const nodeMap = useMemo(() => {
     const types = {} as NodeTypes;
-    Object.entries(nodeTypes).forEach(([key, value]) => {
-      types[key] = value.component;
-    });
-    return types;
-  }, [nodeTypes]);
-
-  const nodeExecutors = useMemo(() => {
     const executors = new Map<string, NodeExecutor>();
     Object.entries(nodeTypes).forEach(([key, value]) => {
       executors.set(key, value.processor);
+      types[key] = value.component;
     });
-    return executors;
+    return { executors, types };
   }, [nodeTypes]);
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialSchema?.nodes || []);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialSchema?.edges || []);
-  const handleNodesChange = useCallback<OnNodesChange<FlowGraphNode>>(
-    (changes: NodeChange<FlowGraphNode>[]) => {
-      onNodesChange(changes);
-    },
-    [onNodesChange],
-  );
-  const handleEdgesChange = useCallback<OnEdgesChange<Edge>>(
-    (changes: EdgeChange<Edge>[]) => {
-      onEdgesChange(changes);
-    },
-    [onEdgesChange],
-  );
 
   useEffect(() => {
     onSchemaChange?.({ nodes, edges });
   }, [nodes, edges, onSchemaChange]);
-
-  const flowGraph = useFlowGraph();
-
-  const handleNodeOutputChange = useCallback(
-    (nodeId: string, output: NodeData['output']) => {
-      // 这个函数会被缓存，导致在异步执行请求的过程中，nodes和edges发生的变化无法通过 useNodesState 和 useEdgesState 更新
-      // 所以需要手动获取最新的nodes和edges
-      const nodes = flowGraph.getAllNodes();
-      const edges = flowGraph.getAllEdges();
-      setNodes(nodes.map(node => (node.id === nodeId ? { ...node, data: { ...node.data, output } } : node)));
-      onSchemaChange?.({ nodes, edges });
-    },
-    [flowGraph, onSchemaChange],
-  );
-
-  const workflowRunner = useWorkflowRunner({ onNodeOutputChange: handleNodeOutputChange });
-
-  // 待连接的 handler 状态
-  const [pendingConnectionHandle, setPendingConnectionHandle] = useState<PendingConnection | null>(null);
 
   useImperativeHandle(ref, () => ({
     importCanvas: (canvas: string) => {
@@ -129,228 +77,50 @@ function FlowCanvasCore({
       setEdges(schema?.edges || []);
     },
     exportCanvas: () => {
-      return flowGraph.exportCanvas();
+      return exportCanvasToJson();
     },
     run: async () => {
-      return await workflowRunner.runWorkflow({ nodes, edges }, undefined, nodeExecutors);
+      return await workflowRunner.runWorkflow({ nodes, edges }, undefined, nodeMap.executors);
     },
   }));
 
-  // 多选状态
-  const [selecting, setSelecting] = useState(false);
-  const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
-  const [selectedEdges, setSelectedEdges] = useState<string[]>([]);
-  const handleSelectionChange = useCallback<OnSelectionChangeFunc<FlowGraphNode, Edge>>(
-    ({ nodes, edges }: { nodes: FlowGraphNode[]; edges: Edge[] }) => {
-      setSelectedNodes(nodes.map(node => node.id));
-      setSelectedEdges(edges.map(edge => edge.id));
-    },
-    [],
-  );
+  // 复制粘贴扩展
+  const copyPasteExtension = useCopyPaste({
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    selectedNodes: selection.selectedNodes,
+    canvasRef,
+    flowGraph,
+  });
 
-  const canvasRef = useRef<HTMLDivElement>(null);
+  // 右键菜单扩展
+  const contextMenuExtension = useContextMenu({
+    edges,
+    setEdges,
+    canvasRef,
+    flowGraph,
+    enableNodeMenu,
+  });
 
-  // 处理连接结束事件
-  const handleConnectEnd = useCallback<OnConnectEnd>(
-    (event, state) => {
-      const source = state.fromHandle?.id === 'output' ? state.fromHandle : state.toHandle?.id === 'output' ? state.toHandle : undefined;
-      const target = state.fromHandle?.id === 'input' ? state.fromHandle : state.toHandle?.id === 'input' ? state.toHandle : undefined;
+  // 多选工具栏扩展
+  const multiSelectExtension = useMultiSelectToolbar({
+    nodes,
+    edges,
+    selectedNodes: selection.selectedNodes,
+    workflowRunner,
+    nodeExecutors: nodeMap.executors,
+  });
 
-      if (!source && !target) {
-        return;
-      }
-
-      // 如果 from 和 to 都存在，说明是正常连接，跳过
-      if (source && target) {
-        const params: Connection = { source: source.nodeId, target: target.nodeId, sourceHandle: source.id!, targetHandle: target.id! };
-        console.log('handleConnectEnd', params);
-        console.log('handleConnectEnd', edges);
-        const nextEdges = addEdge(params, edges);
-        console.log('handleConnectEnd nextEdges', nextEdges);
-        setEdges(nextEdges);
-        return;
-      }
-
-      // 获取鼠标在画布中的位置
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect || !('clientX' in event)) {
-        return;
-      }
-
-      const canvasPosition = {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
-      };
-
-      const newHandle = (source || target)!;
-
-      setPendingConnectionHandle({ nodeId: newHandle.nodeId, handleId: newHandle.id! });
-
-      if (enableNodeMenu) {
-        setNodeMenuPosition(canvasPosition);
-        setNodeMenuOpen(true);
-      }
-    },
-    [edges, enableNodeMenu],
-  );
-
-  // 节点菜单状态
-
-  const [nodeMenuOpen, setNodeMenuOpen] = useState(false);
-  const [nodeMenuPosition, setNodeMenuPosition] = useState({ x: 0, y: 0 });
-  const handleContextMenu = useCallback(
-    (event: MouseEvent | React.MouseEvent<Element, MouseEvent>) => {
-      if (!enableNodeMenu) return;
-
-      event.preventDefault(); // 阻止默认右键菜单
-      event.stopPropagation(); // 阻止事件冒泡
-
-      setNodeMenuPosition({
-        x: event.clientX - canvasRef.current!.getBoundingClientRect().x,
-        y: event.clientY - canvasRef.current!.getBoundingClientRect().y,
-      });
-      setNodeMenuOpen(true);
-    },
-    [enableNodeMenu, canvasRef],
-  );
-
-  // 添加节点
-  const handleAddNode = useCallback<ContextMenuProps['onAddNode']>(
-    (nodeType, canvasPosition) => {
-      const newNode: FlowGraphNode = {
-        id: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: nodeType.type,
-        position: flowGraph.canvasPositionToViewport(canvasPosition),
-        data: {
-          ...nodeType.defaultData,
-          label: nodeType.label,
-        },
-      };
-
-      flowGraph.addNode(newNode);
-      // 如果有待连接的 handler，创建连接
-      if (pendingConnectionHandle) {
-        console.log('handleAddNode pendingConnection', pendingConnectionHandle);
-        if (pendingConnectionHandle.handleId === 'output' && pendingConnectionHandle.nodeId && pendingConnectionHandle.nodeId !== '') {
-          // 从现有节点连接到新节点
-          const newEdge: Connection = {
-            source: pendingConnectionHandle.nodeId,
-            sourceHandle: pendingConnectionHandle.handleId,
-            target: newNode.id,
-            targetHandle: 'input',
-          };
-          const nextEdges = addEdge(newEdge, edges);
-          setEdges(nextEdges);
-        } else if (pendingConnectionHandle.handleId === 'input' && pendingConnectionHandle.nodeId && pendingConnectionHandle.nodeId !== '') {
-          // 从新节点连接到现有节点
-          const newEdge: Connection = {
-            source: newNode.id,
-            target: pendingConnectionHandle.nodeId,
-            sourceHandle: 'output',
-            targetHandle: pendingConnectionHandle.handleId,
-          };
-          const nextEdges = addEdge(newEdge, edges);
-          setEdges(nextEdges);
-        }
-
-        // 清除待连接状态
-        setPendingConnectionHandle(null);
-      }
-    },
-    [pendingConnectionHandle, edges, flowGraph],
-  );
-
-  // 关闭节点菜单
-  const handleCloseNodeMenu = useCallback(() => {
-    setNodeMenuOpen(false);
-    // 关闭菜单时清除待连接状态
-    setPendingConnectionHandle(null);
-  }, []);
-
-  // 使用Context管理节点状态
-  const { setFocusedNodeId } = useFlowGraphContext();
   const handleNodeClick = useCallback((event: React.MouseEvent<Element, MouseEvent>, node: FlowGraphNode) => {
     event.stopPropagation();
-    setFocusedNodeId(node.id);
+    context.setFocusedNodeId(node.id);
   }, []);
 
   const handlePaneClick = useCallback((event: React.MouseEvent<Element, MouseEvent>) => {
-    setFocusedNodeId(null);
+    context.setFocusedNodeId(null);
   }, []);
-
-  const handleSelectionStart = useCallback((event: React.MouseEvent<Element, MouseEvent>) => {
-    setSelecting(true);
-  }, []);
-
-  const handleSelectionEnd = useCallback((event: React.MouseEvent<Element, MouseEvent>) => {
-    setSelecting(false);
-  }, []);
-
-  const handleExecuteSelectedNodes = useCallback(
-    async (selectedNodeIds: string[]) => {
-      console.log('FlowCanvas: 使用工作流执行器执行选中的节点', selectedNodeIds);
-
-      if (!nodes || !edges) {
-        console.error('没有可用的工作流 schema');
-        return;
-      }
-
-      try {
-        // 找到选中节点及其所有前置依赖节点
-        const nodesToInclude = new Set<string>();
-        const edgesToExecute = new Set<string>();
-
-        // 添加选中的节点
-        selectedNodeIds.forEach(nodeId => {
-          nodesToInclude.add(nodeId);
-        });
-
-        // 找到所有前置依赖节点（只查找第一层）
-        const findDependencies = (nodeId: string) => {
-          edges?.forEach(edge => {
-            if (edge.target === nodeId && !nodesToInclude.has(edge.source)) {
-              nodesToInclude.add(edge.source);
-              edgesToExecute.add(edge.id);
-              // 只查找第一层依赖，不递归
-            }
-          });
-        };
-
-        // 为每个选中节点查找前置依赖
-        selectedNodeIds.forEach(findDependencies);
-
-        // 添加选中节点之间的边
-        edges?.forEach(edge => {
-          if (nodesToInclude.has(edge.source) && nodesToInclude.has(edge.target)) {
-            edgesToExecute.add(edge.id);
-          }
-        });
-
-        // 创建子工作流 schema
-        const subWorkflowSchema = {
-          nodes: nodes
-            .filter(node => nodesToInclude.has(node.id))
-            .map(node => {
-              // 如果是前置依赖节点（不是选中的节点），标记为已完成状态
-              if (!selectedNodeIds.includes(node.id)) {
-                return { ...node, data: { ...node.data, input: new Map(), actionData: {} } };
-              }
-              return node;
-            }),
-          edges: edges.filter(edge => edgesToExecute.has(edge.id)),
-          updatedAt: Date.now(),
-        };
-
-        // 使用工作流执行器运行子工作流
-        // 前置依赖节点被标记为已完成状态，不会被执行，但可以提供输出数据
-        // 只有选中的节点会被实际执行
-        await workflowRunner.runWorkflow(subWorkflowSchema, undefined, nodeExecutors);
-      } catch (error) {
-        console.error('执行选中节点时出错:', error);
-      }
-    },
-    [nodes, edges, workflowRunner, nodeExecutors],
-  );
 
   return (
     <div className={cn(`relative h-full w-full`, className)}>
@@ -359,14 +129,15 @@ function FlowCanvasCore({
         colorMode={theme === 'dark' ? 'dark' : 'light'}
         nodes={nodes}
         edges={edges}
-        onConnectEnd={handleConnectEnd}
-        onNodesChange={handleNodesChange}
-        onEdgesChange={handleEdgesChange}
-        onPaneContextMenu={handleContextMenu}
-        onSelectionChange={handleSelectionChange}
-        onSelectionStart={handleSelectionStart}
-        onSelectionEnd={handleSelectionEnd}
-        nodeTypes={componentNodes}
+        onConnectEnd={contextMenuExtension.onConnectEnd}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onPaneContextMenu={contextMenuExtension.onContextMenu}
+        onSelectionChange={selection.onSelectionChange}
+        onSelectionStart={selection.onSelectionStart}
+        onSelectionEnd={selection.onSelectionEnd}
+        onMouseMove={copyPasteExtension.onMouseMove}
+        nodeTypes={nodeMap.types}
         nodesDraggable={true}
         nodesConnectable={true}
         elementsSelectable={true}
@@ -388,16 +159,20 @@ function FlowCanvasCore({
         {/* 节点菜单 */}
         {enableNodeMenu && (
           <ContextMenu
-            isOpen={nodeMenuOpen}
-            position={nodeMenuPosition}
-            onClose={handleCloseNodeMenu}
-            onAddNode={handleAddNode}
+            isOpen={contextMenuExtension.isOpen}
+            position={contextMenuExtension.position}
+            onClose={contextMenuExtension.onClose}
+            onAddNode={contextMenuExtension.onAddNode}
             canvasRef={canvasRef}
           />
         )}
 
         {/* 多选工具栏 */}
-        <MultiSelectToolbar selecting={selecting} selectedNodes={selectedNodes} onExecuteSelectedNodes={handleExecuteSelectedNodes} />
+        <MultiSelectToolbar
+          selecting={selection.selecting}
+          selectedNodes={selection.selectedNodes}
+          onExecuteSelectedNodes={multiSelectExtension.onExecuteSelectedNodes}
+        />
       </ReactFlow>
     </div>
   );

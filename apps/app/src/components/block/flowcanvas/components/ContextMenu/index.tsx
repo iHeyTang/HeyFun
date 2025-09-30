@@ -1,13 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
 import { Panel } from '@xyflow/react';
-
-// 节点类型定义
-interface NodeType {
-  type: string;
-  label: string;
-  description: string;
-  defaultData?: Record<string, any>;
-}
+import React, { useEffect, useRef, useState } from 'react';
+import type { NodeType } from './hooks/useContextMenu';
 
 // 可用的节点类型
 const AVAILABLE_NODE_TYPES: NodeType[] = [
@@ -44,6 +37,8 @@ const AVAILABLE_NODE_TYPES: NodeType[] = [
     },
   },
 ];
+
+export { useContextMenu } from './hooks/useContextMenu';
 
 export interface ContextMenuProps {
   isOpen: boolean;
@@ -183,15 +178,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
               autoFocus
             />
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-muted-foreground"
-              >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground">
                 <circle cx="11" cy="11" r="8"></circle>
                 <path d="m21 21-4.35-4.35"></path>
               </svg>
