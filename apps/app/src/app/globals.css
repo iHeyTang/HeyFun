@@ -2,6 +2,7 @@
 @import 'tw-animate-css';
 @import './styles/markdown.css';
 @import './styles/animations.css';
+@import './styles/react-flow.css';
 
 @custom-variant dark (&:is(.dark *));
 

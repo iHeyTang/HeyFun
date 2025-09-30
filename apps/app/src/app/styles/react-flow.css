@@ -1,0 +1,40 @@
+/* React Flow Handle 样式 */
+.react-flow__handle {
+  background: oklch(0.985 0 0) !important;
+  border: 1.5px solid oklch(0.708 0 0) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  width: 10px !important;
+  height: 10px !important;
+}
+
+.dark .react-flow__handle {
+  background: oklch(0.205 0 0) !important;
+  border: 1.5px solid oklch(0.439 0 0) !important;
+}
+
+/* 使用伪元素创建更大的触发区域 */
+.react-flow__handle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--handle-hover-size);
+  height: var(--handle-hover-size);
+  /* background: rgba(255, 0, 0, 0.1); */ /* 调试用，可以取消注释看触发区域 */
+}
+
+/* Handle hover 时放大视觉效果 */
+.react-flow__handle:hover {
+  width: 14px !important;
+  height: 14px !important;
+  background: #b3e5fc !important;
+  border-color: #a8d8ea !important;
+  box-shadow: 0 0 0 3px rgba(168, 216, 234, 0.3) !important;
+}
+
+.dark .react-flow__handle:hover {
+  background: #b3e5fc !important;
+  border-color: #87ceeb !important;
+  box-shadow: 0 0 0 3px rgba(168, 216, 234, 0.35) !important;
+}

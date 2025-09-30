@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, useViewport } from '@xyflow/react';
 import { useCallback, useRef, useState } from 'react';
 import { useFlowGraphContext, useNodeStatusById } from '../../FlowCanvasProvider';
 import { useFlowGraph } from '../../hooks';
@@ -21,6 +21,7 @@ interface BaseNodeProps {
 export default function BaseNode({ data, id, children, className = '', showHandles = true, onDragStart, onDragEnd, tooltip, onBlur }: BaseNodeProps) {
   const flowGraph = useFlowGraph();
   const { focusedNodeId } = useFlowGraphContext();
+  const { zoom } = useViewport(); // 获取当前画布缩放比例
   const [isDragging, setIsDragging] = useState(false);
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
   const dragThreshold = 5; // 拖动阈值，超过这个距离才算拖动
@@ -159,6 +160,9 @@ export default function BaseNode({ data, id, children, className = '', showHandl
     }
     return pos;
   };
+
+  const hoverHandleSize = 60; // hover时的基准大小（px）
+  const handleHoverSize = hoverHandleSize / zoom;
   return (
     <NodeTooltip>
       {tooltip && (
@@ -202,14 +206,18 @@ export default function BaseNode({ data, id, children, className = '', showHandl
           </div>
 
           {/* 卡片主体 */}
-          <div className={cn('group transition-all duration-200', isDragging ? 'cursor-grabbing' : 'cursor-grab')}>
+          <div className={cn('group relative transition-all duration-200', isDragging ? 'cursor-grabbing' : 'cursor-grab')}>
             {/* 渲染输入端口 */}
             {showHandles && (
               <Handle
                 type="target"
                 position={getPosition(Position.Left)}
                 id="input"
-                className="bg-accent z-100 origin-top-left duration-200 group-hover:scale-400"
+                className={cn('z-100 origin-top-left transition-all duration-200', '-left-[12px]!')}
+                style={{
+                  // @ts-ignore
+                  '--handle-hover-size': `${handleHoverSize}px`,
+                }}
                 onConnect={params => console.log('handle onConnect', params)}
                 isConnectable={true}
               />
@@ -231,7 +239,11 @@ export default function BaseNode({ data, id, children, className = '', showHandl
                 type="source"
                 position={getPosition(Position.Right)}
                 id="output"
-                className="bg-accent z-100 origin-top-right duration-200 group-hover:scale-400"
+                className={cn('z-100 origin-top-right transition-all duration-200', '-right-[12px]!')}
+                style={{
+                  // @ts-ignore
+                  '--handle-hover-size': `${handleHoverSize}px`,
+                }}
                 onConnect={params => console.log('handle onConnect', params)}
                 isConnectable={true}
               />
