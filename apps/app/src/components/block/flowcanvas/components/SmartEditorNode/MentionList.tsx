@@ -30,7 +30,7 @@ interface FileMentionItem extends BaseMentionItem {
 // 文字片段类型
 interface TextMentionItem extends BaseMentionItem {
   type: 'text';
-  textPreview?: string;
+  label?: string;
   textLength?: number;
 }
 
@@ -138,7 +138,7 @@ const TextPreview: React.FC<{ item: TextMentionItem }> = ({ item }) => (
     </div>
     <div className="min-w-0 flex-1">
       <div className="text-foreground truncate text-sm font-medium">{item.id}</div>
-      {item.textPreview && <div className="text-muted-foreground truncate text-xs">{item.textPreview}</div>}
+      {item.label && <div className="text-muted-foreground truncate text-xs">{item.label}</div>}
       {item.textLength && <div className="text-muted-foreground/70 text-xs">{item.textLength} 字符</div>}
     </div>
   </div>

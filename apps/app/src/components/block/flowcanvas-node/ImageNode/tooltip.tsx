@@ -128,8 +128,8 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           input.data.output.texts.forEach((text, index) => {
             list.push({
               type: 'text' as const,
-              id: `text:${nodeId}`,
-              textPreview: `${input.data.label} ${index + 1} : ${text.slice(0, 10)}...`,
+              id: `text:${input.id}`,
+              label: `${input.data.label} ${index + 1} : ${text.slice(0, 10)}...`,
               textLength: text.length,
             });
           });
