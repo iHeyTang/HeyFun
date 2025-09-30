@@ -127,7 +127,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       <TiptapEditor
         value={localPrompt}
         onChange={handlePromptChange}
-        placeholder="Enter prompt to generate a video, input @ to mention"
+        placeholder="Enter prompt to generate a video. First image will be used as the first frame"
         className="h-24 w-full resize-none border-none! outline-none!"
         mentionSuggestionItems={insertItems}
         ref={editorRef}
