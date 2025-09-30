@@ -1,11 +1,14 @@
 ![HeyFun](https://socialify.git.ci/iHeyTang/HeyFun/image?description=1&font=Inter&forks=1&issues=1&logo=https%3A%2F%2Fheyfun.ai%2Flogo.png&name=1&owner=1&pattern=Signal&pulls=1&stargazers=1&theme=Auto)
 
 <div style="max-width:1000px">
-  <img src="assets/screenshots/tasks.png" style="border-radius:16px"
-  alt="screenshots/tasks.png">
+  <h5>FlowCanvas</h5>
+  <img src="assets/screenshots/flowcanvas.png" style="border-radius:16px" alt="screenshots/tasks.png">
+  <h5>Paintboard</h5>
   <img src="assets/screenshots/paintboard.png" style="border-radius:16px" alt="screenshots/paintboard.png">
+  <h5>Chat bot</h5>
+  <img src="assets/screenshots/tasks.png" style="border-radius:16px" alt="screenshots/tasks.png">
+  <h5>Settings</h5>
   <img src="assets/screenshots/settings-models.png" style="border-radius:16px"  alt="screenshots/settings-models.png">
-  <img src="assets/screenshots/settings-aigc.png" style="border-radius:16px"  alt="screenshots/settings-aigc.png">
 </div>
 
 ## 项目愿景
