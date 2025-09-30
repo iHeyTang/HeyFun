@@ -127,7 +127,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       <TiptapEditor
         value={localPrompt}
         onChange={handlePromptChange}
-        placeholder="根据 prompt 生图，输入 @ 插入输入图片或文本"
+        placeholder="Enter prompt to generate a video, input @ to mention"
         className="h-24 w-full resize-none border-none! outline-none!"
         mentionSuggestionItems={insertItems}
         ref={editorRef}

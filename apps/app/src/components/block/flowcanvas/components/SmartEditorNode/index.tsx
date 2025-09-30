@@ -1,12 +1,13 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import Mention, { MentionOptions } from '@tiptap/extension-mention';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { forwardRef, useEffect, useImperativeHandle } from 'react';
 import { MentionItem } from './MentionList';
 import { suggestion } from './sugesstion';
+import Placeholder from '@tiptap/extension-placeholder';
+import { cn } from '@/lib/utils';
 
 export interface TiptapEditorProps {
   value: string;
@@ -14,6 +15,7 @@ export interface TiptapEditorProps {
   placeholder?: string;
   className?: string;
   editable?: boolean;
+  autoFocus?: boolean;
   mentionSuggestionItems?: MentionOptions<MentionItem>['suggestion']['items'];
 }
 
@@ -24,12 +26,17 @@ export interface TiptapEditorRef {
 }
 
 export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(function TiptapEditor(
-  { value, onChange, placeholder = '输入内容...', className, editable = true, mentionSuggestionItems = () => [] },
+  { value, onChange, placeholder = 'Input content...', className, editable = true, autoFocus = false, mentionSuggestionItems = () => [] },
   ref,
 ) {
   const editor = useEditor({
     extensions: [
       StarterKit,
+      Placeholder.configure({
+        placeholder: placeholder,
+        emptyEditorClass: 'is-editor-empty',
+        showOnlyWhenEditable: false,
+      }),
       Mention.configure({
         renderText: ({ node }) => {
           return `@${node.attrs.id}`;
@@ -84,13 +91,13 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(funct
 
   // 当 editable 变为 true 时自动聚焦
   useEffect(() => {
-    if (editable && editor) {
+    if (editable && editor && autoFocus) {
       // 使用 setTimeout 确保 DOM 已经更新
       setTimeout(() => {
         editor.commands.focus();
       }, 0);
     }
-  }, [editable, editor]);
+  }, [editable, editor, autoFocus]);
 
   return (
     <div className={cn('relative flex h-full flex-col', className)}>

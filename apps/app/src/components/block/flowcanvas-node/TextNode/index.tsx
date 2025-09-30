@@ -1,8 +1,9 @@
-import { BaseNode, NodeData, useFlowGraph } from '@/components/block/flowcanvas';
+import { BaseNode, NodeData, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
 import { TiptapEditor, TiptapEditorRef } from '@/components/block/flowcanvas/components/SmartEditorNode';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TextNodeActionData } from './processor';
 import { TextNodeTooltip, TextNodeTooltipProps } from './tooltip';
+import { Loader2 } from 'lucide-react';
 
 interface TextNodeProps {
   data: NodeData<TextNodeActionData>;
@@ -18,6 +19,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
   const [isDragging, setIsDragging] = useState(false);
   const editorRef = useRef<TiptapEditorRef>(null);
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const status = useNodeStatusById(id);
 
   // 监听data.output变化，强制更新组件状态
   useEffect(() => {
@@ -124,14 +126,25 @@ export default function TextNode({ data, id }: TextNodeProps) {
         <TextNodeTooltip nodeId={id} value={data.actionData} onValueChange={handleActionDataChange} onSubmitSuccess={handleTooltipSubmitSuccess} />
       }
     >
+      {status.status === NodeStatus.PROCESSING && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded">
+          {/* 高斯模糊蒙版 */}
+          <div className="bg-accent/20 absolute inset-0 rounded backdrop-blur-lg"></div>
+          {/* Loading动画 */}
+          <div className="relative z-10 flex flex-col items-center justify-center">
+            <Loader2 className="text-primary h-8 w-8 animate-spin" />
+          </div>
+        </div>
+      )}
       {isEditing ? (
         <TiptapEditor
           ref={editorRef}
           value={text}
           onChange={handleTextChange}
           editable={isEditing}
-          placeholder="请输入文本内容..."
+          placeholder="Enter text directly, or chat with AI below"
           className="nodrag h-fit min-h-[80px] w-fit min-w-[200px] cursor-text"
+          autoFocus={true}
         />
       ) : (
         <div
@@ -143,8 +156,9 @@ export default function TextNode({ data, id }: TextNodeProps) {
             value={text}
             onChange={handleTextChange}
             editable={isEditing}
-            placeholder="请输入文本内容..."
+            placeholder="Double click to edit"
             className="h-fit min-h-[80px] w-fit min-w-[200px]"
+            autoFocus={true}
           />
         </div>
       )}

@@ -127,7 +127,7 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
       <TiptapEditor
         value={localPrompt}
         onChange={handlePromptChange}
-        placeholder="根据 prompt 生图，输入 @ 插入输入图片或文本"
+        placeholder="chat with AI, input @ to mention"
         className="h-24 w-full resize-none border-none! outline-none!"
         mentionSuggestionItems={insertItems}
         ref={editorRef}
