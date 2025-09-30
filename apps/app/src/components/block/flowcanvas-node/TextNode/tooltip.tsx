@@ -1,10 +1,15 @@
 import { NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
+import { TiptapEditor, TiptapEditorRef } from '@/components/block/flowcanvas/components/SmartEditorNode';
+import { ModelInfo, ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
 import { Button } from '@/components/ui/button';
 import { useLLM } from '@/hooks/use-llm';
+import { useSignedUrl } from '@/hooks/use-signed-url';
+import { MentionOptions } from '@tiptap/extension-mention';
+import { Editor } from '@tiptap/react';
 import { WandSparkles } from 'lucide-react';
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MentionItem } from '../../flowcanvas/components/SmartEditorNode/MentionList';
 import { TextNodeActionData, TextNodeProcessor } from './processor';
-import { ModelInfo, ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
 
 export interface TextNodeTooltipProps {
   nodeId: string;
@@ -16,13 +21,20 @@ export interface TextNodeTooltipProps {
 const processor = new TextNodeProcessor();
 
 const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: TextNodeTooltipProps) => {
+  const { getSignedUrl } = useSignedUrl();
+
   const flowGraph = useFlowGraph();
   const { updateStatus } = useNodeStatusById(nodeId);
   const { availableModels: models } = useLLM();
-  const [isComposing, setIsComposing] = useState(false);
   const [localPrompt, setLocalPrompt] = useState(actionData?.prompt || '');
   const modelSelectorRef = useRef<ModelSelectorRef>(null);
   const [selectedModel, setSelectedModel] = useState<ModelInfo | null>(null);
+  const editorRef = useRef<TiptapEditorRef>(null);
+
+  // 获取节点输入数据
+  const nodeInputs = useMemo(() => {
+    return flowGraph.getPreNodesById(nodeId);
+  }, [flowGraph, nodeId]);
 
   // 当外部值改变时同步本地状态
   useEffect(() => {
@@ -39,12 +51,13 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
     updateStatus(NodeStatus.PROCESSING);
     try {
       const node = flowGraph.getNodeById(nodeId)!;
+      const input = flowGraph.getNodeInputsById(nodeId);
+      const inputImages = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, images: value.images }));
+      const inputTexts = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
+      const inputVideos = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, videos: value.videos }));
       const result = await processor.execute({
-        ...node,
-        data: {
-          ...node.data,
-          actionData: { prompt: localPrompt, modelId: selectedModel?.id, modelProvider: selectedModel?.provider },
-        },
+        input: { images: inputImages, texts: inputTexts, videos: inputVideos },
+        actionData: { ...node.data.actionData, prompt: editorRef.current?.getText() },
       });
       const generatedText = result.data?.texts?.[0] || '';
       updateStatus(NodeStatus.COMPLETED);
@@ -73,40 +86,52 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
   const handlePromptChange = (newPrompt: string) => {
     // 始终更新本地状态以显示用户输入
     setLocalPrompt(newPrompt);
-
-    // 只有在非组词状态下才更新外部状态
-    if (!isComposing) {
-      onValueChange?.({ prompt: newPrompt, modelId: selectedModel?.id, modelProvider: selectedModel?.provider });
-    }
-  };
-
-  const handleCompositionStart = () => {
-    setIsComposing(true);
-  };
-
-  const handleCompositionEnd = (e: React.CompositionEvent<HTMLTextAreaElement>) => {
-    setIsComposing(false);
-    // 组词结束后更新外部状态
-    const newPrompt = (e.target as HTMLTextAreaElement).value;
-    setLocalPrompt(newPrompt);
     onValueChange?.({ prompt: newPrompt, modelId: selectedModel?.id, modelProvider: selectedModel?.provider });
   };
+
+  // 创建插入项配置
+  const insertItems: MentionOptions<MentionItem>['suggestion']['items'] = useCallback(
+    (props: { query: string; editor: Editor }) => {
+      const list: MentionItem[] = [];
+      nodeInputs.forEach(input => {
+        if (input.data.output?.images) {
+          input.data.output.images.forEach(async (image, index) => {
+            list.push({
+              type: 'image' as const,
+              id: `image:${image.key!}`,
+              imageAlt: image.key || '',
+              label: `${input.data.label} ${index + 1}`,
+              imageUrl: image.url ? image.url : await getSignedUrl(image.key!),
+            });
+          });
+        }
+        if (input.data.output?.texts) {
+          input.data.output.texts.forEach((text, index) => {
+            list.push({
+              type: 'text' as const,
+              id: `text:${nodeId}`,
+              textPreview: `${input.data.label} ${index + 1} : ${text.slice(0, 10)}...`,
+              textLength: text.length,
+            });
+          });
+        }
+      });
+      return list;
+    },
+    [nodeInputs],
+  );
 
   return (
     <div className="min-w-[480px] overflow-hidden rounded-lg p-4">
       {/* 上半部分：多行文本输入框 */}
-      <div>
-        <textarea
-          value={localPrompt}
-          onChange={e => handlePromptChange(e.target.value)}
-          onCompositionStart={handleCompositionStart}
-          onCompositionEnd={handleCompositionEnd}
-          onKeyDown={(e: React.KeyboardEvent) => e.stopPropagation()}
-          onMouseDown={(e: React.MouseEvent) => e.stopPropagation()}
-          placeholder="请输入AI文本生成的提示词..."
-          className="h-24 w-full resize-none outline-none"
-        />
-      </div>
+      <TiptapEditor
+        value={localPrompt}
+        onChange={handlePromptChange}
+        placeholder="根据 prompt 生图，输入 @ 插入输入图片或文本"
+        className="h-24 w-full resize-none border-none! outline-none!"
+        mentionSuggestionItems={insertItems}
+        ref={editorRef}
+      />
 
       {/* 下半部分：Footer - 模型选择和提交按钮 */}
       <div className="flex items-center justify-between">

@@ -1,5 +1,5 @@
 import { chatOnce } from '@/actions/chat';
-import { BaseNodeProcessor, FlowGraphNode, NodeExecutorExecuteResult } from '@/components/block/flowcanvas';
+import { BaseNodeActionData, BaseNodeProcessor, FlowGraphNode, NodeExecutorExecuteResult } from '@/components/block/flowcanvas';
 
 export type TextNodeActionData = {
   prompt?: string;
@@ -9,17 +9,16 @@ export type TextNodeActionData = {
 
 // 文本节点处理器
 export class TextNodeProcessor extends BaseNodeProcessor<TextNodeActionData> {
-  async execute(node: FlowGraphNode<TextNodeActionData>): Promise<NodeExecutorExecuteResult> {
+  async execute(data: BaseNodeActionData<TextNodeActionData>): Promise<NodeExecutorExecuteResult> {
     const startTime = Date.now();
-    const { images, texts } = this.parseInputs(node);
-    const { actionData } = node.data;
+    const { images, texts } = data.input;
+    const { actionData } = data;
 
     // 如果输入全部为空，则直接返回
     if (images.length === 0 && texts.length === 0 && !actionData?.prompt) {
       return {
         success: true,
         timestamp: new Date(),
-        data: node.data.output,
       };
     }
 

@@ -1,5 +1,5 @@
 import { CanvasSchema } from '../types/canvas';
-import { FlowGraphNode, NodeData, NodeExecutor, NodeExecutorExecuteResult, NodeOutput, NodeStatus, WorkflowNodeState } from '../types/nodes';
+import { NodeData, NodeExecutor, NodeInput, NodeStatus, WorkflowNodeState } from '../types/nodes';
 import { ContextStateManager, FlowGraphContextHandlers } from './state';
 
 // 节点状态接口
@@ -49,89 +49,6 @@ class NodeExecutorRegistry {
     executors.forEach((executor, nodeType) => {
       this.registerExecutor(nodeType, executor);
     });
-  }
-}
-
-/**
- * 通用节点执行器 (内部类)
- * 根据节点类型自动选择执行器，支持两种调用方式
- */
-class UniversalNodeExecutor implements NodeExecutor {
-  private executorRegistry: NodeExecutorRegistry;
-
-  constructor(executorRegistry: NodeExecutorRegistry) {
-    this.executorRegistry = executorRegistry;
-  }
-
-  async execute(node: FlowGraphNode, context: WorkflowContext): Promise<NodeExecutorExecuteResult> {
-    const nodeType = node.type;
-    const executor = this.executorRegistry.getExecutor(nodeType || 'default');
-
-    if (!executor) {
-      throw new Error(`找不到节点类型 "${nodeType}" 的执行器`);
-    }
-
-    // 收集前置节点的输入数据
-    const inputs = this.collectNodeInputs(node.id, context);
-
-    // 创建包含输入数据的节点副本
-    const nodeWithInputs = { ...node, data: { ...node.data, input: inputs } };
-
-    console.log(`UniversalNodeExecutor execute - 传递给执行器的节点数据:`, {
-      nodeId: node.id,
-      nodeType: node.type,
-      inputSize: inputs.size,
-      inputData: Array.from(inputs.entries()),
-      fullNodeData: nodeWithInputs.data,
-    });
-
-    return await executor.execute(nodeWithInputs);
-  }
-
-  /**
-   * 从工作流上下文构建节点运行数据
-   */
-  private buildNodeRunData(nodeId: string, context: WorkflowContext): FlowGraphNode {
-    const node = context.schema.nodes.find(n => n.id === nodeId);
-    if (!node) {
-      throw new Error(`找不到节点: ${nodeId}`);
-    }
-
-    return node;
-  }
-
-  /**
-   * 收集节点的输入数据
-   */
-  private collectNodeInputs(nodeId: string, context: WorkflowContext): Map<string, NodeOutput> {
-    console.log(`UnifiedScheduler collectNodeInputs - 开始收集节点 ${nodeId} 的输入数据`);
-
-    const inputsMap = new Map<string, NodeOutput>();
-
-    // 找到所有指向当前节点的边
-    const incomingEdges = context.schema.edges.filter(edge => edge.target === nodeId);
-    console.log(`UnifiedScheduler collectNodeInputs - 找到 ${incomingEdges.length} 条输入边:`, incomingEdges);
-
-    // 收集前置节点的输出
-    for (const edge of incomingEdges) {
-      const sourceNodeState = context.nodes.get(edge.source);
-      console.log(`UnifiedScheduler collectNodeInputs - 源节点 ${edge.source} 状态:`, sourceNodeState);
-
-      if (sourceNodeState?.result?.data) {
-        const sourceOutput = sourceNodeState.result.data;
-        console.log(`UnifiedScheduler collectNodeInputs - 源节点 ${edge.source} 输出数据:`, sourceOutput);
-
-        // 将前置节点的输出添加到输入映射中，使用边的源节点ID作为key
-        inputsMap.set(edge.source, sourceOutput);
-
-        console.log(`UnifiedScheduler collectNodeInputs - 已将节点 ${edge.source} 的输出添加到输入映射`);
-      } else {
-        console.warn(`UnifiedScheduler collectNodeInputs - 源节点 ${edge.source} 没有可用的输出数据`);
-      }
-    }
-
-    console.log(`UnifiedScheduler collectNodeInputs - 节点 ${nodeId} 最终收集到的输入数据映射:`, inputsMap);
-    return inputsMap;
   }
 }
 
@@ -200,11 +117,9 @@ export class UnifiedScheduler {
    * 为所有节点创建统一的执行器
    */
   private setupAutoExecutors(): void {
-    const universalExecutor = new UniversalNodeExecutor(this.executorRegistry);
-
-    // 为每个节点创建相同的通用执行器实例
     this.schema.nodes.forEach(node => {
-      this.nodeExecutors.set(node.id, universalExecutor);
+      const executor = this.executorRegistry.getExecutor(node.type!);
+      this.nodeExecutors.set(node.id, executor!);
     });
   }
 
@@ -345,8 +260,14 @@ export class UnifiedScheduler {
 
       // 执行节点
       const node = this.schema.nodes.find(n => n.id === nodeId)!;
-      console.log('UnifiedScheduler executeNode node', node);
-      const result = await executor.execute(node, context);
+      const inputs = this.getNodeInputsById(nodeId);
+      const inputImages = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, images: value.images }));
+      const inputTexts = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
+      const inputVideos = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, videos: value.videos }));
+      const result = await executor.execute(
+        { input: { images: inputImages, texts: inputTexts, videos: inputVideos }, actionData: node.data.actionData },
+        context,
+      );
       console.log('UnifiedScheduler executeNode result', nodeId, result);
 
       const executionTime = Date.now() - startTime;
@@ -586,5 +507,29 @@ export class UnifiedScheduler {
    */
   getExecutableNodes(): string[] {
     return this.schema.nodes.map(node => node.id).filter(nodeId => this.canNodeExecute(nodeId));
+  }
+
+  getNodeInputsById(nodeId: string): NodeInput {
+    const edges = this.schema.edges;
+    const nodes = this.schema.nodes;
+
+    // Find all incoming edges to this node
+    const incomingEdges = edges.filter(edge => edge.target === nodeId);
+
+    const inputs: NodeInput = new Map();
+
+    // For each incoming edge, get the source node's output
+    for (const edge of incomingEdges) {
+      const sourceNode = nodes.find(node => node.id === edge.source);
+      const sourceNodeData = sourceNode?.data as NodeData;
+      const sourceOutput = sourceNodeData.output;
+      if (sourceOutput) {
+        // Use the edge's sourceHandle as the key, or fall back to source node id
+        const outputKey = edge.source;
+        inputs.set(outputKey, sourceOutput);
+      }
+    }
+
+    return inputs;
   }
 }

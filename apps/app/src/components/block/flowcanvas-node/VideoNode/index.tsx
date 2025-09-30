@@ -22,6 +22,8 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const status = useNodeStatusById(id);
 
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
+
   const handleUploadFIle = useCallback(async (file: File) => {
     const res = await uploadFile(file, 'flowcanvas');
     return res;
@@ -44,6 +46,7 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
   // 将key转换为URL进行展示
   useEffect(() => {
     if (videoKey) {
+      setIsVideoLoading(true);
       getSignedUrl({ fileKey: videoKey })
         .then(result => {
           if (result.data) {
@@ -52,9 +55,13 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
         })
         .catch(error => {
           console.error('Failed to get signed URL:', error);
+        })
+        .finally(() => {
+          setIsVideoLoading(false);
         });
     } else {
       setVideoUrl(undefined);
+      setIsVideoLoading(false);
     }
   }, [videoKey]);
 
@@ -104,7 +111,7 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
         }
       >
         <div className="relative">
-          {status.status === NodeStatus.PROCESSING && (
+          {(status.status === NodeStatus.PROCESSING || isVideoLoading) && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded">
               {/* 高斯模糊蒙版 */}
               <div className="bg-accent/20 absolute inset-0 rounded backdrop-blur-lg"></div>
@@ -116,7 +123,13 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
           )}
 
           {videoUrl ? (
-            <VideoPreview src={videoUrl} autoPlayOnHover={true} className="bg-muted max-h-[200px] w-full rounded" loop />
+            <VideoPreview
+              src={videoUrl}
+              autoPlayOnHover={true}
+              className="bg-muted max-h-[200px] w-full rounded"
+              loop
+              onLoad={() => setIsVideoLoading(false)}
+            />
           ) : (
             <div className="bg-muted flex items-center justify-center rounded p-2 text-center transition-colors">
               {isUploading ? (

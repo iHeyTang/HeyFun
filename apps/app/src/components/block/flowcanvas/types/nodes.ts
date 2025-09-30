@@ -69,15 +69,24 @@ export interface NodeExecutorExecuteResult {
   data?: NodeOutput;
 }
 
+export type BaseNodeActionData<T extends Record<string, any> = Record<string, any>> = {
+  input: {
+    texts: { nodeId: string; texts?: string[] }[];
+    images: { nodeId: string; images?: { url?: string; key?: string }[] }[];
+    videos: { nodeId: string; videos?: { url?: string; key?: string }[] }[];
+  };
+  actionData?: T;
+};
+
 /**
  * 节点执行器接口
  * 支持两种调用方式：传入处理好的数据或传入上下文自己提取数据
  */
-export interface NodeExecutor {
+export interface NodeExecutor<TActionData extends Record<string, any> = Record<string, any>> {
   /**
    * 执行节点逻辑
    * @param dataOrNodeId - 如果是NodeRunData则直接处理，如果是string则作为nodeId使用
    * @param context - 当第一个参数是nodeId时必须提供工作流上下文
    */
-  execute(node: FlowGraphNode, context?: WorkflowContext): Promise<NodeExecutorExecuteResult>;
+  execute(data: BaseNodeActionData<TActionData>, context?: WorkflowContext): Promise<NodeExecutorExecuteResult>;
 }

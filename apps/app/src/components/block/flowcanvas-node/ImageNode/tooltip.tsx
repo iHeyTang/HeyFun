@@ -1,12 +1,16 @@
 import { NodeOutput, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { WandSparkles } from 'lucide-react';
-import { memo, useEffect, useMemo, useState } from 'react';
-import { ImageNodeActionData, ImageNodeProcessor } from './processor';
 import { useAigc } from '@/hooks/use-llm';
-import { Textarea } from '@/components/ui/textarea';
+import { useSignedUrl } from '@/hooks/use-signed-url';
+import { MentionOptions } from '@tiptap/extension-mention';
+import { Editor } from '@tiptap/react';
+import { WandSparkles } from 'lucide-react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { TiptapEditor, TiptapEditorRef } from '../../flowcanvas/components/SmartEditorNode';
+import { MentionItem } from '../../flowcanvas/components/SmartEditorNode/MentionList';
 import { RatioIcon } from '../../ratio-icon';
+import { ImageNodeActionData, ImageNodeProcessor } from './processor';
 
 export interface ImageNodeTooltipProps {
   nodeId: string;
@@ -18,19 +22,24 @@ export interface ImageNodeTooltipProps {
 const processor = new ImageNodeProcessor();
 
 const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: ImageNodeTooltipProps) => {
+  const { getSignedUrl } = useSignedUrl();
+
+  const editorRef = useRef<TiptapEditorRef>(null);
   const flowGraph = useFlowGraph();
   const { availableModels } = useAigc();
   const { updateStatus } = useNodeStatusById(nodeId);
-  const [isComposing, setIsComposing] = useState(false);
   const [localPrompt, setLocalPrompt] = useState(actionData?.prompt || '');
   const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
   const [selectedAspectRatio, setSelectedAspectRatio] = useState(actionData?.aspectRatio);
 
+  // 获取节点输入数据
+  const nodeInputs = useMemo(() => {
+    return flowGraph.getPreNodesById(nodeId);
+  }, [flowGraph, nodeId]);
+
   const selectedModel = useMemo(() => {
     return availableModels?.find(model => model.name === selectedModelName);
   }, [availableModels, selectedModelName]);
-
-  console.log(selectedModel);
 
   // 当外部值改变时同步本地状态
   useEffect(() => {
@@ -51,8 +60,35 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     try {
       const node = flowGraph.getNodeById(nodeId)!;
       const input = flowGraph.getNodeInputsById(nodeId);
-      const params = { ...node, data: { ...node.data, input } };
-      const result = await processor.execute(params);
+
+      const inputTexts = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
+      const inputImages = await Promise.all(
+        Array.from(input.entries()).map(async ([key, value]) => ({
+          nodeId: key,
+          images: await Promise.all(
+            value.images?.map(async img => {
+              const url = await getSignedUrl(img.key!);
+              return { key: img.key, url };
+            }) || [],
+          ),
+        })),
+      );
+      const inputVideos = await Promise.all(
+        Array.from(input.entries()).map(async ([key, value]) => ({
+          nodeId: key,
+          videos: await Promise.all(
+            value.videos?.map(async img => {
+              const url = await getSignedUrl(img.key!);
+              return { key: img.key, url };
+            }) || [],
+          ),
+        })),
+      );
+
+      const result = await processor.execute({
+        input: { images: inputImages, texts: inputTexts, videos: inputVideos },
+        actionData: { ...node.data.actionData, prompt: editorRef.current?.getText() },
+      });
       if (result.success) {
         updateStatus(NodeStatus.COMPLETED);
         onSubmitSuccess?.({ images: result.data?.images });
@@ -67,37 +103,51 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const handlePromptChange = (newPrompt: string) => {
     // 始终更新本地状态以显示用户输入
     setLocalPrompt(newPrompt);
-
-    // 只有在非组词状态下才更新外部状态
-    if (!isComposing) {
-      onValueChange?.({ prompt: newPrompt, selectedModel: selectedModelName });
-    }
+    onValueChange?.({ prompt: newPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio });
   };
 
-  const handleCompositionStart = () => {
-    setIsComposing(true);
-  };
-
-  const handleCompositionEnd = (e: React.CompositionEvent<HTMLTextAreaElement>) => {
-    setIsComposing(false);
-    // 组词结束后更新外部状态
-    const newPrompt = (e.target as HTMLTextAreaElement).value;
-    setLocalPrompt(newPrompt);
-    onValueChange?.({ prompt: newPrompt, selectedModel: selectedModelName });
-  };
+  // 创建插入项配置
+  const insertItems: MentionOptions<MentionItem>['suggestion']['items'] = useCallback(
+    (props: { query: string; editor: Editor }) => {
+      const list: MentionItem[] = [];
+      nodeInputs.forEach(input => {
+        if (input.data.output?.images) {
+          input.data.output.images.forEach(async (image, index) => {
+            list.push({
+              type: 'image' as const,
+              id: `image:${image.key!}`,
+              imageAlt: image.key || '',
+              label: `${input.data.label} ${index + 1}`,
+              imageUrl: image.url ? image.url : await getSignedUrl(image.key!),
+            });
+          });
+        }
+        if (input.data.output?.texts) {
+          input.data.output.texts.forEach((text, index) => {
+            list.push({
+              type: 'text' as const,
+              id: `text:${nodeId}`,
+              textPreview: `${input.data.label} ${index + 1} : ${text.slice(0, 10)}...`,
+              textLength: text.length,
+            });
+          });
+        }
+      });
+      return list;
+    },
+    [nodeInputs],
+  );
 
   return (
     <div className="flex min-w-[480px] flex-col gap-2 overflow-hidden rounded-lg p-4">
       {/* 上半部分：多行文本输入框 */}
-      <Textarea
+      <TiptapEditor
         value={localPrompt}
-        onChange={e => handlePromptChange(e.target.value)}
-        onCompositionStart={handleCompositionStart}
-        onCompositionEnd={handleCompositionEnd}
-        onKeyDown={(e: React.KeyboardEvent) => e.stopPropagation()}
-        onMouseDown={(e: React.MouseEvent) => e.stopPropagation()}
-        placeholder="根据 prompt 生图"
+        onChange={handlePromptChange}
+        placeholder="根据 prompt 生图，输入 @ 插入输入图片或文本"
         className="h-24 w-full resize-none border-none! outline-none!"
+        mentionSuggestionItems={insertItems}
+        ref={editorRef}
       />
 
       {/* 下半部分：Footer - 模型选择和提交按钮 */}

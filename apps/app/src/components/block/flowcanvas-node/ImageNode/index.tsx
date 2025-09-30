@@ -1,14 +1,11 @@
-import { Camera, Loader2 } from 'lucide-react';
+import { BaseNode, NodeData, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
+import { ImagePreview } from '@/components/block/preview/image-preview';
+import { useSignedUrl } from '@/hooks/use-signed-url';
+import { uploadFile } from '@/lib/browser/file';
+import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ImageNodeActionData } from './processor';
 import { ImageNodeTooltip, ImageNodeTooltipProps } from './tooltip';
-import { useFlowGraph } from '@/components/block/flowcanvas';
-import { useNodeStatusById } from '@/components/block/flowcanvas';
-import { BaseNode } from '@/components/block/flowcanvas';
-import { NodeData, NodeStatus } from '@/components/block/flowcanvas';
-import { uploadFile } from '@/lib/browser/file';
-import { ImagePreview } from '@/components/block/preview/image-preview';
-import { getSignedUrl } from '@/actions/oss';
 
 interface ImageNodeProps {
   data: NodeData<ImageNodeActionData>;
@@ -18,6 +15,8 @@ interface ImageNodeProps {
 export { ImageNodeProcessor } from './processor';
 
 export default function ImageNode({ id, data }: ImageNodeProps) {
+  const { getSignedUrl } = useSignedUrl();
+
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(false);
@@ -35,32 +34,27 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
   useEffect(() => {
     const newImageKey = data.output?.images?.[0]?.key;
     if (newImageKey !== imageKey) {
-      console.log(`ImageNode ${id} - 检测到输出数据变化:`, {
-        oldKey: imageKey,
-        newKey: newImageKey,
-        fullOutput: data.output,
-        timestamp: new Date().toISOString(),
-      });
       setImageKey(newImageKey);
-      // 当图片key变化时，设置为加载状态
-      if (newImageKey) {
-        setIsImageLoading(true);
-      }
     }
   }, [data.output, data.output?.images, id, imageKey, data]);
 
   // 将key转换为URL进行展示
   useEffect(() => {
     if (imageKey) {
-      getSignedUrl({ fileKey: imageKey }).then(result => {
-        if (result.data) {
-          setImageUrl(result.data);
-        }
-      }).catch(error => {
-        console.error('Failed to get signed URL:', error);
-      });
+      setIsImageLoading(true); // 开始获取URL时设置为加载状态
+      getSignedUrl(imageKey)
+        .then(url => {
+          if (url) {
+            setImageUrl(url);
+          }
+        })
+        .catch(error => {
+          console.error('Failed to get signed URL:', error);
+          setIsImageLoading(false); // 获取URL失败时取消加载状态
+        });
     } else {
       setImageUrl(undefined);
+      setIsImageLoading(false); // 清空图片时取消加载状态
     }
   }, [imageKey]);
 
@@ -112,7 +106,7 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
         }
       >
         <div className="relative">
-          {status.status === NodeStatus.PROCESSING && (
+          {(status.status === NodeStatus.PROCESSING || isImageLoading) && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded">
               {/* 高斯模糊蒙版 */}
               <div className="bg-accent/20 absolute inset-0 rounded backdrop-blur-lg"></div>

@@ -14,10 +14,11 @@ interface BaseNodeProps {
   showHandles?: boolean;
   onDragStart?: () => void;
   onDragEnd?: () => void;
+  onBlur?: () => void;
   tooltip?: React.ReactNode;
 }
 
-export default function BaseNode({ data, id, children, className = '', showHandles = true, onDragStart, onDragEnd, tooltip }: BaseNodeProps) {
+export default function BaseNode({ data, id, children, className = '', showHandles = true, onDragStart, onDragEnd, tooltip, onBlur }: BaseNodeProps) {
   const flowGraph = useFlowGraph();
   const { focusedNodeId } = useFlowGraphContext();
   const [isDragging, setIsDragging] = useState(false);
@@ -172,6 +173,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onBlur={onBlur}
         >
           {/* 标题和状态在卡片外部左上角 */}
           <div className="mb-1 flex items-center justify-between text-xs">

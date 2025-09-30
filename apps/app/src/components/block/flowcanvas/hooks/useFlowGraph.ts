@@ -131,17 +131,14 @@ class FlowGraphInstance {
 
     // Find all incoming edges to this node
     const incomingEdges = edges.filter(edge => edge.target === nodeId);
-    console.log('getNodeInputsById incomingEdges:', incomingEdges);
 
     const inputs: NodeInput = new Map();
 
     // For each incoming edge, get the source node's output
     for (const edge of incomingEdges) {
       const sourceNode = nodes.find(node => node.id === edge.source);
-      console.log('getNodeInputsById sourceNode:', sourceNode);
       const sourceNodeData = sourceNode?.data as NodeData;
       const sourceOutput = sourceNodeData.output;
-      console.log('getNodeInputsById sourceOutput:', sourceOutput);
       if (sourceOutput) {
         // Use the edge's sourceHandle as the key, or fall back to source node id
         const outputKey = edge.source;
@@ -150,6 +147,15 @@ class FlowGraphInstance {
     }
 
     return inputs;
+  }
+
+  getPreNodesById(nodeId: string): FlowGraphNode[] {
+    const edges = this.getAllEdges();
+    const nodes = this.getAllNodes();
+    return edges
+      .filter(edge => edge.target === nodeId)
+      .map(edge => nodes.find(node => node.id === edge.source))
+      .filter(node => node !== undefined);
   }
 
   /**
@@ -215,7 +221,6 @@ class FlowGraphInstance {
 export const useFlowGraph = () => {
   const reactFlowInstance = useReactFlow<FlowGraphNode, Edge>();
   return useMemo(() => {
-    console.log('useFlowGraph', reactFlowInstance);
     return new FlowGraphInstance(reactFlowInstance);
   }, [reactFlowInstance]);
 };

@@ -1,6 +1,5 @@
-import { getSignedUrl, getSignedUrls } from '@/actions/oss';
 import { getPaintboardTask, submitGenerationTask } from '@/actions/paintboard';
-import { BaseNodeProcessor, FlowGraphNode, NodeExecutorExecuteResult } from '@/components/block/flowcanvas';
+import { BaseNodeActionData, BaseNodeProcessor, NodeExecutorExecuteResult } from '@/components/block/flowcanvas';
 
 export type VideoNodeActionData = {
   prompt?: string;
@@ -11,10 +10,10 @@ export type VideoNodeActionData = {
 
 // 视频节点处理器
 export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
-  async execute(node: FlowGraphNode<VideoNodeActionData>): Promise<NodeExecutorExecuteResult> {
+  async execute(data: BaseNodeActionData<VideoNodeActionData>): Promise<NodeExecutorExecuteResult> {
     const startTime = Date.now();
-    const { images, texts } = this.parseInputs(node);
-    const { actionData } = node.data;
+    const { images, texts } = data.input;
+    const { actionData } = data;
     const { prompt, selectedModel, aspectRatio, duration } = actionData || {};
 
     // 如果输入全部为空，则直接返回
@@ -22,7 +21,6 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
       return {
         success: true,
         timestamp: new Date(),
-        data: node.data.output,
       };
     }
 
@@ -35,10 +33,10 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
       };
     }
 
-    const referenceImages = await getSignedUrls({ fileKeys: images.map(image => image.key!) });
+    const referenceImages = images.map(image => image.images?.map(image => image.url!)).flat();
     const result = await submitGenerationTask({
       model: selectedModel,
-      params: { prompt, aspectRatio, duration, referenceImage: referenceImages.data?.map(url => url) || [] },
+      params: { prompt, aspectRatio, duration, firstFrame: referenceImages?.[0] },
     });
 
     if (result.error || !result.data?.id) {

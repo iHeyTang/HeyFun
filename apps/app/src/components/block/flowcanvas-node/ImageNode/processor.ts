@@ -1,6 +1,5 @@
-import { getSignedUrl, getSignedUrls } from '@/actions/oss';
 import { getPaintboardTask, submitGenerationTask } from '@/actions/paintboard';
-import { BaseNodeProcessor, FlowGraphNode, NodeExecutorExecuteResult } from '@/components/block/flowcanvas';
+import { BaseNodeActionData, BaseNodeProcessor, NodeExecutorExecuteResult } from '@/components/block/flowcanvas';
 
 export type ImageNodeActionData = {
   prompt?: string;
@@ -10,18 +9,20 @@ export type ImageNodeActionData = {
 
 // 图片节点处理器
 export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
-  async execute(node: FlowGraphNode<ImageNodeActionData>): Promise<NodeExecutorExecuteResult> {
+  async execute(data: BaseNodeActionData<ImageNodeActionData>): Promise<NodeExecutorExecuteResult> {
     const startTime = Date.now();
-    const { images, texts } = this.parseInputs(node);
-    const { actionData } = node.data;
+    const { actionData } = data;
     const { prompt, selectedModel, aspectRatio } = actionData || {};
 
+    console.log('ImageNodeProcessor execute', data);
+
+    const images = data.input.images.map(image => image.images?.map(img => img)).flat();
+
     // 如果输入全部为空，则直接返回
-    if (images.length === 0 && texts.length === 0 && !actionData?.prompt) {
+    if (images.length === 0 && !actionData?.prompt) {
       return {
         success: true,
         timestamp: new Date(),
-        data: node.data.output,
       };
     }
 
@@ -34,13 +35,49 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
       };
     }
 
-    const referenceImages = await getSignedUrls({ fileKeys: images.map(image => image.key!) });
-    const result = await submitGenerationTask({
-      model: selectedModel,
-      params: { prompt, aspectRatio, referenceImage: referenceImages.data?.map(url => url) || [] },
+    let processedPrompt = prompt;
+
+    // 处理 prompt 中的 @text 提及
+    const textPattern = /@text:([^\s]+)/g;
+    const textMatches = [...prompt.matchAll(textPattern)];
+    textMatches.forEach(match => {
+      const nodeId = match[1];
+      if (nodeId) {
+        const textNode = data.input.texts.find(text => text.nodeId === nodeId);
+        if (textNode?.texts?.[0]) {
+          processedPrompt = processedPrompt.replace(match[0], textNode.texts[0]);
+        }
+      }
     });
 
-    console.log('result', result);
+    // 处理 prompt 中的 @image 提及
+    const imagePattern = /@image:([^\s]+)/g;
+    const mentionedImages: string[] = [];
+
+    // 提取所有提及的图片key，并替换为"图X"
+    const imageMatches = [...processedPrompt.matchAll(imagePattern)];
+    imageMatches.forEach((match, index) => {
+      const imageKey = match[1];
+      if (imageKey) {
+        const image = images.find(image => image?.key === imageKey);
+        if (image && image?.url) {
+          mentionedImages.push(image.url);
+          processedPrompt = processedPrompt.replace(match[0], `图${index + 1}`);
+        }
+      }
+    });
+
+    // 如果 prompt 中有提及图片，使用提及的图片；否则使用输入的所有图片
+    const referenceImages = mentionedImages.length > 0 ? mentionedImages : images[0]?.url ? [images[0].url] : [];
+
+    const result = await submitGenerationTask({
+      model: selectedModel,
+      params: {
+        prompt: processedPrompt,
+        aspectRatio,
+        referenceImage: referenceImages || [],
+      },
+    });
 
     if (result.error || !result.data?.id) {
       return {

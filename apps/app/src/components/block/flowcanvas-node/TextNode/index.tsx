@@ -1,8 +1,8 @@
 import { BaseNode, NodeData, useFlowGraph } from '@/components/block/flowcanvas';
+import { TiptapEditor, TiptapEditorRef } from '@/components/block/flowcanvas/components/SmartEditorNode';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TextNodeActionData } from './processor';
 import { TextNodeTooltip, TextNodeTooltipProps } from './tooltip';
-import { Textarea } from '@/components/ui/textarea';
 
 interface TextNodeProps {
   data: NodeData<TextNodeActionData>;
@@ -16,7 +16,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(data.output?.texts?.[0] || '');
   const [isDragging, setIsDragging] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<TiptapEditorRef>(null);
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 监听data.output变化，强制更新组件状态
@@ -33,23 +33,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
     }
   };
 
-  const handleTextClick = () => {
-    // 清除之前的定时器
-    if (clickTimeoutRef.current) {
-      clearTimeout(clickTimeoutRef.current);
-    }
-
-    // 设置定时器，如果300ms内没有双击，则认为是单击
-    clickTimeoutRef.current = setTimeout(() => {
-      if (!isDragging) {
-        // 这里可以添加单击逻辑，比如选中节点
-        console.log('Text node clicked');
-      }
-    }, 300);
-  };
-
-  const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newText = event.target.value;
+  const handleTextChange = (newText: string) => {
     setText(newText);
   };
 
@@ -70,7 +54,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
     [flowGraph, id, data],
   );
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (event: React.KeyboardEvent) => {
     // 阻止所有键盘事件冒泡到ReactFlow，避免意外删除节点
     event.stopPropagation();
 
@@ -78,9 +62,11 @@ export default function TextNode({ data, id }: TextNodeProps) {
       event.preventDefault();
       setIsEditing(false);
       updateNodeOutput(text);
+      editorRef.current?.blur();
     }
     if (event.key === 'Escape') {
       setIsEditing(false);
+      editorRef.current?.blur();
     }
   };
 
@@ -98,13 +84,6 @@ export default function TextNode({ data, id }: TextNodeProps) {
   const handleDragEnd = () => {
     setIsDragging(false);
   };
-
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.select();
-    }
-  }, [isEditing]);
 
   // 清理定时器
   useEffect(() => {
@@ -129,7 +108,6 @@ export default function TextNode({ data, id }: TextNodeProps) {
       // AI生成的文本设置到主内容区
       setText(generatedText);
       updateNodeOutput(generatedText);
-      console.log('TextNode AI生成文本:', generatedText);
     },
     [updateNodeOutput],
   );
@@ -141,28 +119,33 @@ export default function TextNode({ data, id }: TextNodeProps) {
       className={`bg-card h-fit w-fit`}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onBlur={handleTextBlur}
       tooltip={
         <TextNodeTooltip nodeId={id} value={data.actionData} onValueChange={handleActionDataChange} onSubmitSuccess={handleTooltipSubmitSuccess} />
       }
     >
       {isEditing ? (
-        <Textarea
-          ref={textareaRef}
+        <TiptapEditor
+          ref={editorRef}
           value={text}
           onChange={handleTextChange}
-          onBlur={handleTextBlur}
-          onKeyDown={handleKeyDown}
-          onMouseDown={e => e.stopPropagation()}
+          editable={isEditing}
           placeholder="请输入文本内容..."
-          className="nodrag h-fit min-h-[80px] w-fit min-w-[200px]"
+          className="nodrag h-fit min-h-[80px] w-fit min-w-[200px] cursor-text"
         />
       ) : (
         <div
           className={`border-border-primary text-foreground hover:border-border-secondary hover:bg-accent/50 h-fit min-h-[80px] w-fit min-w-[200px] cursor-pointer rounded border-dashed p-2 text-xs break-words whitespace-pre-wrap transition-colors duration-200`}
-          onClick={handleTextClick}
           onDoubleClick={handleTextDoubleClick}
         >
-          {text || '双击输入文本内容...'}
+          <TiptapEditor
+            ref={editorRef}
+            value={text}
+            onChange={handleTextChange}
+            editable={isEditing}
+            placeholder="请输入文本内容..."
+            className="h-fit min-h-[80px] w-fit min-w-[200px]"
+          />
         </div>
       )}
     </BaseNode>
