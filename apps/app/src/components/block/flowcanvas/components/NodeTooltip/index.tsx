@@ -74,7 +74,7 @@ export const NodeTooltipContent = forwardRef<HTMLDivElement, NodeToolbarProps>((
     <div ref={ref}>
       <NodeToolbar
         isVisible={isVisible}
-        className={cn('bg-popover border-border-secondary shadow-luxury rounded-sm border', className)}
+        className={cn('bg-popover border-border-secondary shadow-luxury rounded-sm border max-w-120', className)}
         tabIndex={1}
         position={position}
         {...props}

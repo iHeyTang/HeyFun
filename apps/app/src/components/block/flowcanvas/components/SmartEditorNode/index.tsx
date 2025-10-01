@@ -130,6 +130,18 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(funct
     };
   }, [editor, onMentionClick]);
 
+  // 阻止滚动事件冒泡
+  useEffect(() => {
+    if (!editor) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.stopPropagation();
+    };
+    editor.view.dom.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      editor.view.dom.removeEventListener('wheel', handleWheel);
+    };
+  }, [editor]);
+
   return (
     <div className={cn('relative flex h-full flex-col', className)}>
       <EditorContent editor={editor} className="flex-1 overflow-auto rounded-md" />
