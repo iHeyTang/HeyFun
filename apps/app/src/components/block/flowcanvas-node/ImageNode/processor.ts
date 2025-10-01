@@ -68,16 +68,18 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
       }
     });
 
+    const selectedImage = images.find(image => image?.key === selectedKey);
+
     // 如果 prompt 中有提及图片，使用提及的图片；否则使用输入的所有图片
     const referenceImages =
-      mentionedImages.length > 0 ? mentionedImages : actionData?.selectedKey ? [actionData.selectedKey] : images[0]?.url ? [images[0].url] : [];
+      mentionedImages.length > 0 ? mentionedImages : selectedImage?.url ? [selectedImage.url] : images[0]?.url ? [images[0].url] : [];
 
     const result = await submitGenerationTask({
       model: selectedModel,
       params: {
         prompt: processedPrompt,
         aspectRatio,
-        referenceImage: referenceImages || [],
+        referenceImage: referenceImages,
       },
     });
 

@@ -62,7 +62,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   }, [actionData?.prompt, actionData?.selectedModel, actionData?.aspectRatio]);
 
   const handleSubmit = async () => {
-    onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio });
+    onValueChange?.({ ...actionData, prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio });
     updateStatus(NodeStatus.PROCESSING);
     try {
       const node = flowGraph.getNodeById(nodeId)!;
@@ -110,7 +110,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const handlePromptChange = (newPrompt: string) => {
     // 始终更新本地状态以显示用户输入
     setLocalPrompt(newPrompt);
-    onValueChange?.({ prompt: newPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio });
+    onValueChange?.({ ...actionData, prompt: newPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio });
   };
 
   // 创建插入项配置
@@ -184,7 +184,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             value={selectedModelName}
             onValueChange={(v: string) => {
               setSelectedModelName(v);
-              onValueChange?.({ prompt: localPrompt, selectedModel: v, aspectRatio: '' });
+              onValueChange?.({ ...actionData, prompt: localPrompt, selectedModel: v, aspectRatio: '' });
             }}
           >
             <SelectTrigger size="sm" className="text-xs" hideIcon>
@@ -205,7 +205,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
               value={selectedAspectRatio}
               onValueChange={(v: string) => {
                 setSelectedAspectRatio(v);
-                onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: v });
+                onValueChange?.({ ...actionData, prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: v });
               }}
             >
               <SelectTrigger size="sm" className="text-xs" hideIcon>
@@ -241,6 +241,8 @@ export const ImageNodeTooltip = memo(ImageNodeTooltipComponent, (prevProps, next
   return (
     prevProps.value?.prompt === nextProps.value?.prompt &&
     prevProps.value?.selectedModel === nextProps.value?.selectedModel &&
+    prevProps.value?.aspectRatio === nextProps.value?.aspectRatio &&
+    prevProps.value?.selectedKey === nextProps.value?.selectedKey &&
     prevProps.onValueChange === nextProps.onValueChange &&
     prevProps.onSubmitSuccess === nextProps.onSubmitSuccess
   );
