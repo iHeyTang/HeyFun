@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useImperativeHandle, useState } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { ChevronUp, ChevronDown, Star, Keyboard } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export interface fullscreenModalRef {
   show: (data: { coverKey?: string; images?: { key: string; url: string }[] }) => void;
@@ -18,6 +19,21 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const thumbnailContainerRef = useRef<HTMLDivElement>(null);
+
+  // 滚动缩略图到当前选中的位置
+  const scrollToCurrentThumbnail = useCallback(() => {
+    if (thumbnailContainerRef.current && images && images.length > 0) {
+      const container = thumbnailContainerRef.current;
+      const thumbnailHeight = 64 + 8; // 64px (h-16) + 8px (gap-2)
+      const scrollTop = currentIndex * thumbnailHeight;
+
+      container.scrollTo({
+        top: scrollTop,
+        behavior: 'smooth',
+      });
+    }
+  }, [currentIndex, images]);
 
   useImperativeHandle(ref, () => ({
     show: (data: { coverKey?: string; images?: { key: string; url: string }[] }) => {
@@ -86,18 +102,32 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
     [images, currentIndex, onSetCover],
   );
 
-  // 监听全局 Escape 和箭头键
+  // 监听 currentIndex 变化，自动滚动缩略图
+  useEffect(() => {
+    scrollToCurrentThumbnail();
+  }, [scrollToCurrentThumbnail]);
+
+  // 监听全局 Escape 和箭头键（支持左利手控制：w=上，s=下）
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         handleCloseFullscreen();
-      } else if (e.key === 'ArrowLeft') {
+      } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        // 上一张：方向键上 或 w/W 键（左利手）
         if (images && images.length > 0) {
           setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
         }
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        // 下一张：方向键下 或 s/S 键（左利手）
         if (images && images.length > 0) {
           setCurrentIndex(prev => (prev < images.length - 1 ? prev + 1 : 0));
+        }
+      } else if (e.key === 'c' || e.key === 'C') {
+        // 设置封面：c/C 键
+        if (images && images.length > 0 && onSetCover && images[currentIndex]) {
+          const newCoverKey = images[currentIndex].key;
+          setCoverKey(newCoverKey);
+          onSetCover(newCoverKey);
         }
       }
     };
@@ -106,7 +136,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleCloseFullscreen, images]);
+  }, [handleCloseFullscreen, images, currentIndex, onSetCover]);
 
   if (!images || images.length === 0) {
     return null;
@@ -128,12 +158,60 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
           isClosing || isOpening ? 'scale-95 opacity-0' : 'scale-100 opacity-100'
         }`}
       >
+        {/* 左侧缩略图导航 */}
+        {hasMultipleImages && (
+          <div
+            ref={thumbnailContainerRef}
+            className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted/50 hover:scrollbar-thumb-muted/70 absolute top-1/2 left-4 z-10 max-h-[calc(100vh-100px)] -translate-y-1/2 overflow-y-auto pr-2"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex flex-col gap-2 p-3">
+              {images.map((img, idx) => {
+                const isCover = coverKey && img.key === coverKey;
+                return (
+                  <button
+                    key={img.key}
+                    className={`relative h-32 w-32 flex-shrink-0 overflow-hidden rounded border-2 transition-all duration-150 ${
+                      idx === currentIndex ? 'border-primary scale-110' : 'border-muted/50 hover:border-muted/70'
+                    }`}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setCurrentIndex(idx);
+                    }}
+                  >
+                    <img src={img.url} alt={`Thumbnail ${idx + 1}`} className="h-full w-full object-cover" />
+                    {/* 封面徽标 */}
+                    {isCover && (
+                      <div className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-yellow-400 shadow-lg">
+                        <Star className="h-4 w-4 fill-white text-white" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* 主图片 */}
         <img
           src={currentImage?.url}
           className="h-auto max-h-full w-auto max-w-full rounded object-contain shadow-2xl"
           alt={`Image ${currentIndex + 1}/${images.length}`}
           onClick={e => e.stopPropagation()}
+          onWheel={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (images && images.length > 0) {
+              if (e.deltaY > 0) {
+                // 向下滚动，显示下一张
+                setCurrentIndex(prev => (prev < images.length - 1 ? prev + 1 : 0));
+              } else {
+                // 向上滚动，显示上一张
+                setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
+              }
+            }
+          }}
           style={{
             maxWidth: '100%',
             maxHeight: '100%',
@@ -142,22 +220,72 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
           }}
         />
 
-        {/* 左右切换按钮 */}
+        {/* 右侧上下切换按钮 */}
         {hasMultipleImages && (
-          <>
+          <div className="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 flex-col gap-2">
             <button
-              className="bg-muted/50 text-foreground hover:bg-muted/70 absolute top-1/2 left-4 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full transition-all duration-150"
+              className="bg-muted/50 text-foreground hover:bg-muted/70 flex h-12 w-12 items-center justify-center rounded-full transition-all duration-150"
               onClick={handlePrevious}
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronUp className="h-6 w-6" />
             </button>
             <button
-              className="bg-muted/50 text-foreground hover:bg-muted/70 absolute top-1/2 right-4 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full transition-all duration-150"
+              className="bg-muted/50 text-foreground hover:bg-muted/70 flex h-12 w-12 items-center justify-center rounded-full transition-all duration-150"
               onClick={handleNext}
             >
-              <ChevronRight className="h-6 w-6" />
+              <ChevronDown className="h-6 w-6" />
             </button>
-          </>
+            {/* 快捷键提示按钮 */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="bg-muted/50 text-foreground hover:bg-muted/70 flex h-12 w-12 items-center justify-center rounded-full transition-all duration-150"
+                  onClick={e => e.stopPropagation()}
+                  title="Keyboard Shortcuts"
+                >
+                  <Keyboard className="h-5 w-5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="left" align="start" className="bg-background/95 w-auto p-4 backdrop-blur-sm" onClick={e => e.stopPropagation()}>
+                <div className="space-y-2 text-sm whitespace-nowrap">
+                  <div className="border-muted/20 mb-3 flex items-center gap-2 border-b pb-2">
+                    <Keyboard className="text-muted-foreground h-4 w-4" />
+                    <span className="text-foreground font-medium">Keyboard Shortcuts</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-6">
+                    <span className="text-muted-foreground">Previous</span>
+                    <div className="flex items-center gap-1">
+                      <kbd className="bg-muted/50 rounded px-2 py-1 font-mono text-xs">↑</kbd>
+                      <span className="text-muted-foreground text-xs">or</span>
+                      <kbd className="bg-muted/50 rounded px-2 py-1 font-mono text-xs">W</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-6">
+                    <span className="text-muted-foreground">Next</span>
+                    <div className="flex items-center gap-1">
+                      <kbd className="bg-muted/50 rounded px-2 py-1 font-mono text-xs">↓</kbd>
+                      <span className="text-muted-foreground text-xs">or</span>
+                      <kbd className="bg-muted/50 rounded px-2 py-1 font-mono text-xs">S</kbd>
+                    </div>
+                  </div>
+                  {onSetCover && (
+                    <div className="flex items-center justify-between gap-6">
+                      <span className="text-muted-foreground">Set Cover</span>
+                      <kbd className="bg-muted/50 rounded px-2 py-1 font-mono text-xs">C</kbd>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-6">
+                    <span className="text-muted-foreground">Close</span>
+                    <kbd className="bg-muted/50 rounded px-2 py-1 font-mono text-xs">ESC</kbd>
+                  </div>
+                  <div className="flex items-center justify-between gap-6">
+                    <span className="text-muted-foreground">Scroll</span>
+                    <span className="text-muted-foreground text-xs">Navigate</span>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         )}
 
         {/* 关闭按钮和设置封面按钮 */}
@@ -193,26 +321,6 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
             onClick={e => e.stopPropagation()}
           >
             {currentIndex + 1} / {images.length}
-          </div>
-        )}
-
-        {/* 缩略图导航 */}
-        {hasMultipleImages && images.length <= 10 && (
-          <div className="absolute bottom-16 left-1/2 z-10 flex -translate-x-1/2 gap-2" onClick={e => e.stopPropagation()}>
-            {images.map((img, idx) => (
-              <button
-                key={img.key}
-                className={`h-16 w-16 overflow-hidden rounded border-2 transition-all duration-150 ${
-                  idx === currentIndex ? 'border-primary scale-110' : 'border-muted/50 hover:border-muted/70'
-                }`}
-                onClick={e => {
-                  e.stopPropagation();
-                  setCurrentIndex(idx);
-                }}
-              >
-                <img src={img.url} alt={`Thumbnail ${idx + 1}`} className="h-full w-full object-cover" />
-              </button>
-            ))}
           </div>
         )}
       </div>
