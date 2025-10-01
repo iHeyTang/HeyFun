@@ -1,11 +1,11 @@
 import { BaseNode, NodeData, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
-import { ImagePreview } from '@/components/block/preview/image-preview';
 import { useSignedUrl } from '@/hooks/use-signed-url';
 import { uploadFile } from '@/lib/browser/file';
 import { Loader2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ImageNodeActionData } from './processor';
 import { ImageNodeTooltip, ImageNodeTooltipProps } from './tooltip';
+import { ImagePreview } from './preview';
 
 interface ImageNodeProps {
   data: NodeData<ImageNodeActionData>;
@@ -20,7 +20,7 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | undefined>();
+  const [images, setImages] = useState<{ key: string; url: string }[] | undefined>();
   const [imageKey, setImageKey] = useState<string | undefined>(data.output?.images?.[0]?.key);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const status = useNodeStatusById(id);
@@ -30,33 +30,28 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
     return res;
   }, []);
 
+  useEffect(() => {
+    const fetchImages = async () => {
+      setIsImageLoading(true); // 开始获取URL时设置为加载状态
+      const images = await Promise.all(data.output?.images?.map(async image => ({ key: image.key!, url: await getSignedUrl(image.key!) })) || []);
+      setImages(images);
+      setIsImageLoading(false); // 获取URL成功时取消加载状态
+    };
+    fetchImages();
+  }, [data.output?.images, getSignedUrl]);
+
   // 监听data.output变化，强制更新组件状态
   useEffect(() => {
-    const newImageKey = data.output?.images?.[0]?.key;
-    if (newImageKey !== imageKey) {
+    const newImageKey =
+      data.actionData?.selectedKey && data.output?.images?.some(image => image.key === data.actionData?.selectedKey)
+        ? data.actionData?.selectedKey
+        : data.output?.images?.[0]?.key;
+
+    // 只有当新key与当前key不同时才更新
+    if (newImageKey && newImageKey !== imageKey) {
       setImageKey(newImageKey);
     }
-  }, [data.output, data.output?.images, id, imageKey, data]);
-
-  // 将key转换为URL进行展示
-  useEffect(() => {
-    if (imageKey) {
-      setIsImageLoading(true); // 开始获取URL时设置为加载状态
-      getSignedUrl(imageKey)
-        .then(url => {
-          if (url) {
-            setImageUrl(url);
-          }
-        })
-        .catch(error => {
-          console.error('Failed to get signed URL:', error);
-          setIsImageLoading(false); // 获取URL失败时取消加载状态
-        });
-    } else {
-      setImageUrl(undefined);
-      setIsImageLoading(false); // 清空图片时取消加载状态
-    }
-  }, [imageKey]);
+  }, [data.output?.images, data.actionData?.selectedKey, imageKey]);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -91,6 +86,15 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
     flowGraph.updateNodeData(id, { output });
   }, []);
 
+  // 处理设置封面
+  const handleSetCover = useCallback(
+    (key: string) => {
+      setImageKey(key);
+      flowGraph.updateNodeData(id, { actionData: { ...data.actionData, selectedKey: key } });
+    },
+    [flowGraph, id, data.actionData],
+  );
+
   return (
     <>
       <BaseNode
@@ -117,12 +121,13 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
             </div>
           )}
 
-          {imageUrl ? (
+          {images?.length ? (
             <ImagePreview
-              src={imageUrl}
-              alt="Node image"
+              coverKey={imageKey}
+              images={images}
               className="mx-auto block max-h-[200px] min-h-[100px] max-w-[200px] min-w-[100px] rounded object-contain"
               onLoad={() => setIsImageLoading(false)}
+              onSetCover={handleSetCover}
             />
           ) : (
             <div className="bg-muted flex items-center justify-center rounded p-2 text-center transition-colors">

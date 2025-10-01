@@ -85,7 +85,7 @@ export abstract class BaseAigcModel {
 
   abstract submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string>;
 
-  abstract getTaskResult(params: { model: string; taskId: string }): Promise<GenerationTaskResult>;
+  abstract getTaskResult(params: { model: string; taskId: string; params: SubmitTaskParams }): Promise<GenerationTaskResult>;
 
   abstract calculateCost(params: z.infer<typeof this.paramsSchema>): number;
 

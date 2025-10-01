@@ -122,8 +122,8 @@ interface TaskCardProps {
 
 function TaskCard({ task }: TaskCardProps) {
   const [copied, setCopied] = React.useState(false);
-  const prompt = task.params?.prompt || task.params?.text || '';
-  const ratio = task.params?.aspectRatio;
+  const prompt = 'prompt' in task.params ? task.params.prompt : task.params?.text || '';
+  const ratio = 'aspectRatio' in task.params ? task.params.aspectRatio : undefined;
   const model = task.model;
 
   return (
@@ -196,7 +196,7 @@ interface LoadingPlaceholderProps {
 }
 
 function LoadingPlaceholder({ task }: LoadingPlaceholderProps) {
-  const aspectRatio = task.params?.aspectRatio || '1:1';
+  const aspectRatio = 'aspectRatio' in task.params ? task.params.aspectRatio || '1:1' : '1:1';
 
   // 根据宽高比计算尺寸，与ResultCard中的图片尺寸保持一致
   const getPlaceholderSize = (ratio: string) => {

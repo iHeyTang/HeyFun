@@ -5,6 +5,7 @@ export type ImageNodeActionData = {
   prompt?: string;
   selectedModel?: string;
   aspectRatio?: string;
+  selectedKey?: string;
 };
 
 // 图片节点处理器
@@ -12,7 +13,7 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
   async execute(data: BaseNodeActionData<ImageNodeActionData>): Promise<NodeExecutorExecuteResult> {
     const startTime = Date.now();
     const { actionData } = data;
-    const { prompt, selectedModel, aspectRatio } = actionData || {};
+    const { prompt, selectedModel, aspectRatio, selectedKey } = actionData || {};
 
     console.log('ImageNodeProcessor execute', data);
 
@@ -68,7 +69,8 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
     });
 
     // 如果 prompt 中有提及图片，使用提及的图片；否则使用输入的所有图片
-    const referenceImages = mentionedImages.length > 0 ? mentionedImages : images[0]?.url ? [images[0].url] : [];
+    const referenceImages =
+      mentionedImages.length > 0 ? mentionedImages : actionData?.selectedKey ? [actionData.selectedKey] : images[0]?.url ? [images[0].url] : [];
 
     const result = await submitGenerationTask({
       model: selectedModel,

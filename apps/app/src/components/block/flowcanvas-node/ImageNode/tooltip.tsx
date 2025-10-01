@@ -98,7 +98,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       });
       if (result.success) {
         updateStatus(NodeStatus.COMPLETED);
-        onSubmitSuccess?.({ images: result.data?.images });
+        onSubmitSuccess?.({ images: [...(node.data.output?.images || []), ...(result.data?.images || [])] });
       } else {
         updateStatus(NodeStatus.FAILED);
       }

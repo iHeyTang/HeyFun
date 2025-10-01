@@ -12,13 +12,17 @@ import {
   type VideoJsonSchema,
   type Voice,
 } from './core/base-model';
+
+import { GenerationTaskResult, GenerationType } from './types';
+export { imageParamsSchema, submitTaskParamsSchema, t2aParamsSchema, videoParamsSchema };
+export type { BaseAigcModel, GenerationType, ImageJsonSchema, SubmitTaskParams, SubmitTaskParamsJsonSchema, T2aJsonSchema, VideoJsonSchema, Voice };
+
+// Providers
 import { DashscopeWanProvider, dashscopeWanServiceConfigSchema } from './providers/aliyun-dashscope';
 import { MinimaxProvider, minimaxServiceConfigSchema } from './providers/minimax';
 import { VolcengineArkProvider, volcengineArkServiceConfigSchema } from './providers/volcengine-ark';
 import { VolcengineJimengProvider, volcengineJimengServiceConfigSchema } from './providers/volcengine-jimeng';
-import { GenerationTaskResult, GenerationType } from './types';
-export { imageParamsSchema, submitTaskParamsSchema, t2aParamsSchema, videoParamsSchema };
-export type { BaseAigcModel, GenerationType, ImageJsonSchema, SubmitTaskParams, SubmitTaskParamsJsonSchema, T2aJsonSchema, VideoJsonSchema, Voice };
+import { A302aiProvider, a302aiServiceConfigSchema } from './providers/a302ai';
 
 // 豆包模型
 import { DoubaoSeedance10LiteVideo } from './models/doubao-seedance-1-0-lite-video';
@@ -31,12 +35,14 @@ import { DoubaoSeedream40 } from './models/doubao-seedream-4-0-250828';
 
 // Minimax
 import { Minimax25Speech } from './models/minimax-2-5-speech';
+import { MidjourneyV7 } from './models/midjourney-v7';
 
 const aigcProviderConfigSchema = z.object({
   doubao: volcengineArkServiceConfigSchema.optional(),
   jimeng: volcengineJimengServiceConfigSchema.optional(),
   wan: dashscopeWanServiceConfigSchema.optional(),
   minimax: minimaxServiceConfigSchema.optional(),
+  '302ai': a302aiServiceConfigSchema.optional(),
 });
 
 class AIGCHost {
@@ -46,6 +52,7 @@ class AIGCHost {
     'volcengine-ark'?: VolcengineArkProvider;
     'volcengine-jimeng'?: VolcengineJimengProvider;
     minimax?: MinimaxProvider;
+    '302ai'?: A302aiProvider;
   } = {};
 
   constructor(config: z.infer<typeof aigcProviderConfigSchema>) {
@@ -65,6 +72,10 @@ class AIGCHost {
       const provider = new MinimaxProvider(config.minimax);
       this.providers['minimax'] = provider;
     }
+    if (config['302ai']) {
+      const provider = new A302aiProvider(config['302ai']);
+      this.providers['302ai'] = provider;
+    }
   }
 
   // 获取所有服务模型信息
@@ -82,14 +93,14 @@ class AIGCHost {
   }
 
   // 获取任务结果
-  public async getTaskResult(params: { modelName: string; taskId: string }): Promise<GenerationTaskResult> {
+  public async getTaskResult(params: { modelName: string; taskId: string; params: SubmitTaskParams }): Promise<GenerationTaskResult> {
     const { modelName, taskId } = params;
     const model = this.models.get(modelName);
     if (!model) {
       throw new Error(`不支持的服务: ${modelName}`);
     }
 
-    return await model.getTaskResult({ model: modelName, taskId });
+    return await model.getTaskResult({ model: modelName, taskId, params: params.params });
   }
 
   public async registerModel(fn: (providers: typeof this.providers) => BaseAigcModel | null): Promise<void> {
@@ -120,6 +131,9 @@ const AIGC = new AIGCHost({
   minimax: {
     apiKey: process.env.MINIMAX_API_KEY || '',
   },
+  '302ai': {
+    apiKey: process.env.A302AI_API_KEY || '',
+  },
 });
 
 // 豆包模型注册
@@ -136,5 +150,8 @@ AIGC.registerModel(providers => (providers['volcengine-ark'] ? new DoubaoSeedrea
 
 // Minimax模型注册
 AIGC.registerModel(providers => (providers['minimax'] ? new Minimax25Speech(providers['minimax']) : null));
+
+// Midjourney模型注册
+AIGC.registerModel(providers => (providers['302ai'] ? new MidjourneyV7(providers['302ai']) : null));
 
 export default AIGC;

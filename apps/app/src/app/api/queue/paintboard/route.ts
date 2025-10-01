@@ -4,7 +4,7 @@ import { prisma } from '@/lib/server/prisma';
 import storage, { downloadFile, getBucket } from '@/lib/server/storage';
 import { to } from '@/lib/shared/to';
 import { PaintboardTasks } from '@prisma/client';
-import AIGC from '@repo/llm/aigc';
+import AIGC, { SubmitTaskParams } from '@repo/llm/aigc';
 import { nanoid } from 'nanoid';
 import { NextResponse } from 'next/server';
 
@@ -32,6 +32,7 @@ export const POST = async (req: Request) => {
       orgId: task.organizationId,
       taskId: task.id,
       model: task.model,
+      params: task.params,
       externalTaskId,
       timeoutMs,
       retryDelay: 2000, // 每次重试间隔2秒
@@ -73,6 +74,7 @@ const processPaintboardTaskResult = async (args: {
   orgId: string;
   taskId: string;
   model: string;
+  params: SubmitTaskParams;
   externalTaskId: string;
   timeoutMs?: number;
   retryDelay?: number;
@@ -99,7 +101,7 @@ const processPaintboardTaskResult = async (args: {
         console.log(`Polling task ${taskId}, elapsed: ${Math.round(elapsedTime / 1000)}s, remaining: ${Math.round(remainingTime / 1000)}s`);
 
         // 使用统一接口获取任务结果
-        const result = await AIGC.getTaskResult({ modelName: model, taskId: externalTaskId });
+        const result = await AIGC.getTaskResult({ modelName: model, taskId: externalTaskId, params: args.params });
         // 检查任务是否完成
         if (result.status === 'completed' && result.data?.length) {
           const results: PaintboardTasks['results'] = [];

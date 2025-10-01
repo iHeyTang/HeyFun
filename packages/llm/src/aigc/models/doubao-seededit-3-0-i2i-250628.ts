@@ -1,6 +1,6 @@
 import z from 'zod';
 import { ToAsyncTaskManager } from '../../utils/to-async-task';
-import { BaseAigcModel } from '../core/base-model';
+import { BaseAigcModel, SubmitTaskParams } from '../core/base-model';
 import { VolcengineArkProvider } from '../providers/volcengine-ark';
 import { GenerationTaskResult, GenerationType } from '../types';
 
@@ -47,7 +47,7 @@ export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
     return task.id;
   }
 
-  async getTaskResult(params: { generationType: string; model: string; taskId: string }): Promise<GenerationTaskResult> {
+  async getTaskResult(params: { model: string; taskId: string }): Promise<GenerationTaskResult> {
     const result = toAsync.getTask(params.taskId);
     if (!result) {
       throw new Error('Task not found');

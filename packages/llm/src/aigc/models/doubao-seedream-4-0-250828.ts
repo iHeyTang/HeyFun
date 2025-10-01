@@ -55,7 +55,7 @@ export class DoubaoSeedream40 extends BaseAigcModel {
     return task.id;
   }
 
-  async getTaskResult(params: { generationType: string; model: string; taskId: string }): Promise<GenerationTaskResult> {
+  async getTaskResult(params: { model: string; taskId: string }): Promise<GenerationTaskResult> {
     const result = toAsync.getTask(params.taskId);
     if (!result) {
       throw new Error('Task not found');

@@ -1,5 +1,5 @@
 import z from 'zod';
-import { BaseAigcModel } from '../core/base-model';
+import { BaseAigcModel, SubmitTaskParams } from '../core/base-model';
 import { seedanceSubmitParamsSchema, VolcengineArkProvider } from '../providers/volcengine-ark';
 import { GenerationTaskResult, GenerationType } from '../types';
 
@@ -50,7 +50,7 @@ export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
     return task.id;
   }
 
-  async getTaskResult(params: { generationType: string; model: string; taskId: string }): Promise<GenerationTaskResult> {
+  async getTaskResult(params: { model: string; taskId: string }): Promise<GenerationTaskResult> {
     const result = await this.provider.seedanceGetResult({ id: params.taskId });
     if (!result) {
       throw new Error('Task not found');
