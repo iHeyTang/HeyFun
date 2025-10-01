@@ -1,12 +1,22 @@
 import z from 'zod';
-import { BaseAigcModel, ModelParameterLimits, SubmitTaskParams } from './core/base-model';
+import {
+  BaseAigcModel,
+  ModelParameterLimits,
+  ModelType,
+  modelTypesSchema,
+  modelTypesSubmitTaskParamsSchema,
+  ModelTypeSubmitTaskParams,
+  SubmitTaskParams,
+  submitTaskParamsSchema,
+} from './core/base-model';
 import { DashscopeWanProvider, dashscopeWanServiceConfigSchema } from './providers/aliyun-dashscope';
 import { MinimaxProvider, minimaxServiceConfigSchema } from './providers/minimax';
 import { VolcengineArkProvider, volcengineArkServiceConfigSchema } from './providers/volcengine-ark';
 import { VolcengineJimengProvider, volcengineJimengServiceConfigSchema } from './providers/volcengine-jimeng';
 import { GenerationTaskResult, GenerationType } from './types';
 export type { Voice } from './core/base-model';
-export type { BaseAigcModel, GenerationType, ModelParameterLimits };
+export { modelTypesSchema, modelTypesSubmitTaskParamsSchema, submitTaskParamsSchema };
+export type { BaseAigcModel, GenerationType, ModelParameterLimits, ModelType, ModelTypeSubmitTaskParams, SubmitTaskParams };
 
 // 豆包模型
 import { DoubaoSeedance10LiteVideo } from './models/doubao-seedance-1-0-lite-video';

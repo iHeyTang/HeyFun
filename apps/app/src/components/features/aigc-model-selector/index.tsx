@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GenerationType } from '@repo/llm/aigc';
+import { GenerationType, ModelType } from '@repo/llm/aigc';
 import { Image, Mic, Search, Sparkles, Video } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -22,7 +22,7 @@ interface ModelSelectorProps {
 }
 
 // 生成类型图标映射
-const generationTypeIcons = {
+const generationTypeIcons: Record<ModelType, React.ElementType> = {
   'text-to-image': Image,
   'image-to-image': Image,
   'text-to-video': Video,
@@ -32,7 +32,7 @@ const generationTypeIcons = {
 };
 
 // 生成类型中文名称映射
-const generationTypeNames = {
+const generationTypeNames: Record<ModelType, string> = {
   'text-to-image': 'Text to Image',
   'image-to-image': 'Image to Image',
   'text-to-video': 'Text to Video',

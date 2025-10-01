@@ -1,4 +1,5 @@
 import { JSONSchema as JsonSchemaType } from 'json-schema-to-ts';
+import { SubmitTaskParams } from '@repo/llm/aigc';
 
 declare global {
   declare namespace PrismaJson {
@@ -12,7 +13,7 @@ declare global {
     };
 
     type PaintboardTaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
-    type PaintboardTaskParams = Record<string, any>;
+    type PaintboardTaskParams = SubmitTaskParams;
     type PaintboardTaskResult = { bucket: string; key: string }[];
   }
 }

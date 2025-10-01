@@ -36,7 +36,7 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
     const referenceImages = images.map(image => image.images?.map(image => image.url!)).flat();
     const result = await submitGenerationTask({
       model: selectedModel,
-      params: { prompt, aspectRatio, duration, firstFrame: referenceImages?.[0] },
+      params: { prompt, aspectRatio, duration: Number(duration), firstFrame: referenceImages?.[0] },
     });
 
     if (result.error || !result.data?.id) {

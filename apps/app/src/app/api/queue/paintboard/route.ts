@@ -11,14 +11,13 @@ import { NextResponse } from 'next/server';
 export const POST = async (req: Request) => {
   try {
     const body = (await req.json()) as { taskId: string };
-    console.log('body', body);
 
     const task = await prisma.paintboardTasks.findUnique({ where: { id: body.taskId } });
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const [error, externalTaskId] = await to(AIGC.submitGenerationTask(task.model, task.params as any));
+    const [error, externalTaskId] = await to(AIGC.submitGenerationTask(task.model, task.params));
 
     if (error) {
       console.error('Failed to submit task:', error);

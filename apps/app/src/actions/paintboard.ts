@@ -3,6 +3,7 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
 import { queue } from '@/lib/server/queue';
+import { SubmitTaskParams } from '@repo/llm/aigc';
 
 // 获取用户的所有画板任务
 export const getUserPaintboardTasks = withUserAuth(
@@ -81,7 +82,7 @@ export const getPaintboardTask = withUserAuth(async ({ args }: AuthWrapperContex
 });
 
 // 提交生成任务
-export const submitGenerationTask = withUserAuth(async ({ args, orgId }: AuthWrapperContext<{ model: string; params: any }>) => {
+export const submitGenerationTask = withUserAuth(async ({ args, orgId }: AuthWrapperContext<{ model: string; params: SubmitTaskParams }>) => {
   const { model, params } = args;
 
   // 检查余额

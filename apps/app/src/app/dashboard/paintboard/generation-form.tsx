@@ -12,23 +12,24 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { GenerationSchemaForm, extractDefaultValuesFromSchema } from './generation-schema-form';
+import { submitTaskParamsSchema } from '@repo/llm/aigc';
 
 // Base form schema for model selection
 const baseFormSchema = z.object({
   serviceModel: z.string().min(1, 'Please select model'),
-  params: z.record(z.any()).optional(),
+  params: submitTaskParamsSchema,
 });
 
 type FormData = z.infer<typeof baseFormSchema>;
 
 interface UnifiedGenerationFormProps {
-  onSubmitSuccess?: (newTask?: any) => void;
+  onSubmitSuccess?: (newTask?: Awaited<ReturnType<typeof submitGenerationTask>>['data']) => void;
 }
 
 // 基础默认值，不包含动态参数
-const baseDefaultValues: FormData = {
+const baseDefaultValues: Partial<FormData> = {
   serviceModel: '',
-  params: {},
+  params: {} as z.infer<typeof submitTaskParamsSchema>,
 };
 
 export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationFormProps) {
@@ -71,7 +72,7 @@ export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationForm
   useEffect(() => {
     if (watchedModelName && watchedModelName !== previousModelRef.current && selectedModelSchema) {
       // 计算新模型的默认值
-      const schemaDefaults = extractDefaultValuesFromSchema(selectedModelSchema as any);
+      const schemaDefaults = extractDefaultValuesFromSchema(selectedModelSchema);
       const newDefaultValues = {
         serviceModel: watchedModelName,
         params: schemaDefaults,
@@ -127,12 +128,7 @@ export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationForm
 
           {/* Dynamic form fields based on selected model's JSON schema */}
           {selectedModelSchema && (
-            <GenerationSchemaForm
-              key={`${watchedModelName}-${formKey}`}
-              schema={selectedModelSchema as any}
-              form={form}
-              modelName={watchedModelName}
-            />
+            <GenerationSchemaForm key={`${watchedModelName}-${formKey}`} schema={selectedModelSchema} form={form} modelName={watchedModelName} />
           )}
 
           {/* Submit button */}
