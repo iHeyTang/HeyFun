@@ -142,6 +142,18 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(funct
     };
   }, [editor]);
 
+  // 阻止键盘事件冒泡
+  useEffect(() => {
+    if (!editor) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      event.stopPropagation();
+    };
+    editor.view.dom.addEventListener('keydown', handleKeyDown);
+    return () => {
+      editor.view.dom.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [editor]);
+
   return (
     <div className={cn('relative flex h-full flex-col', className)}>
       <EditorContent editor={editor} className="flex-1 overflow-auto rounded-md" />

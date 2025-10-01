@@ -2,10 +2,9 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { decryptTextWithPrivateKey, encryptTextWithPublicKey } from '@/lib/server/crypto';
 import { prisma } from '@/lib/server/prisma';
-import AIGC from '@repo/llm/aigc';
+import AIGC, { SubmitTaskParamsJsonSchema } from '@repo/llm/aigc';
 import { LLMFactory } from '@repo/llm/chat';
-import { JSONSchema } from 'json-schema-to-ts';
-import zodToJsonSchema, { JsonSchema7ObjectType } from 'zod-to-json-schema';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 /**
  * Get all model providers
@@ -115,7 +114,7 @@ export const getAigcModels = withUserAuth(async () => {
     description: model.description,
     costDescription: model.costDescription,
     generationTypes: model.generationTypes,
-    paramsSchema: zodToJsonSchema(model.paramsSchema) as Exclude<JSONSchema, boolean>,
+    paramsSchema: zodToJsonSchema(model.paramsSchema) as { properties: SubmitTaskParamsJsonSchema },
   }));
 });
 

@@ -1,22 +1,24 @@
 import z from 'zod';
 import {
   BaseAigcModel,
-  ModelParameterLimits,
-  ModelType,
-  modelTypesSchema,
-  modelTypesSubmitTaskParamsSchema,
-  ModelTypeSubmitTaskParams,
+  imageParamsSchema,
   SubmitTaskParams,
   submitTaskParamsSchema,
+  t2aParamsSchema,
+  videoParamsSchema,
+  type ImageJsonSchema,
+  type SubmitTaskParamsJsonSchema,
+  type T2aJsonSchema,
+  type VideoJsonSchema,
+  type Voice,
 } from './core/base-model';
 import { DashscopeWanProvider, dashscopeWanServiceConfigSchema } from './providers/aliyun-dashscope';
 import { MinimaxProvider, minimaxServiceConfigSchema } from './providers/minimax';
 import { VolcengineArkProvider, volcengineArkServiceConfigSchema } from './providers/volcengine-ark';
 import { VolcengineJimengProvider, volcengineJimengServiceConfigSchema } from './providers/volcengine-jimeng';
 import { GenerationTaskResult, GenerationType } from './types';
-export type { Voice } from './core/base-model';
-export { modelTypesSchema, modelTypesSubmitTaskParamsSchema, submitTaskParamsSchema };
-export type { BaseAigcModel, GenerationType, ModelParameterLimits, ModelType, ModelTypeSubmitTaskParams, SubmitTaskParams };
+export { imageParamsSchema, submitTaskParamsSchema, t2aParamsSchema, videoParamsSchema };
+export type { BaseAigcModel, GenerationType, ImageJsonSchema, SubmitTaskParams, SubmitTaskParamsJsonSchema, T2aJsonSchema, VideoJsonSchema, Voice };
 
 // 豆包模型
 import { DoubaoSeedance10LiteVideo } from './models/doubao-seedance-1-0-lite-video';

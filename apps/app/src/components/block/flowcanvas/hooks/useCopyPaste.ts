@@ -60,6 +60,23 @@ export function useCopyPaste(context: CopyPasteExtensionContext): CopyPasteExten
     console.log('已复制节点:', nodesToCopy.length, '条边:', edgesToCopy.length);
   }, [selectedNodes, nodes, edges]);
 
+  // 剪切选中的节点
+  const handleCut = useCallback(() => {
+    if (selectedNodes.length === 0) return;
+
+    const nodesToCut = nodes.filter(node => selectedNodes.includes(node.id));
+    const edgesToCut = edges.filter(edge => selectedNodes.includes(edge.source) && selectedNodes.includes(edge.target));
+
+    // 复制到剪贴板
+    setClipboard({ nodes: nodesToCut, edges: edgesToCut });
+
+    // 删除原始节点和相关的边
+    setNodes(prevNodes => prevNodes.filter(node => !selectedNodes.includes(node.id)));
+    setEdges(prevEdges => prevEdges.filter(edge => !selectedNodes.includes(edge.source) && !selectedNodes.includes(edge.target)));
+
+    console.log('已剪切节点:', nodesToCut.length, '条边:', edgesToCut.length);
+  }, [selectedNodes, nodes, edges, setNodes, setEdges]);
+
   // 粘贴节点
   const handlePaste = useCallback(() => {
     if (!clipboard || clipboard.nodes.length === 0) return;
@@ -124,13 +141,19 @@ export function useCopyPaste(context: CopyPasteExtensionContext): CopyPasteExten
         handleCopy();
       }
 
+      // 剪切 Cmd/Ctrl + X
+      if (event.key === 'x' || event.key === 'X') {
+        event.preventDefault();
+        handleCut();
+      }
+
       // 粘贴 Cmd/Ctrl + V
       if (event.key === 'v' || event.key === 'V') {
         event.preventDefault();
         handlePaste();
       }
     },
-    [handleCopy, handlePaste],
+    [handleCopy, handleCut, handlePaste],
   );
 
   // 跟踪鼠标位置

@@ -11,6 +11,7 @@ import { WandSparkles } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RatioIcon } from '../../ratio-icon';
 import { VideoNodeActionData, VideoNodeProcessor } from './processor';
+import { VideoJsonSchema } from '@repo/llm/aigc';
 
 export interface VideoNodeTooltipProps {
   nodeId: string;
@@ -31,6 +32,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
   const [selectedAspectRatio, setSelectedAspectRatio] = useState(actionData?.aspectRatio);
   const [selectedDuration, setSelectedDuration] = useState(actionData?.duration);
+  const [selectedResolution, setSelectedResolution] = useState(actionData?.resolution);
   const editorRef = useRef<TiptapEditorRef>(null);
 
   // 获取节点输入数据
@@ -41,6 +43,10 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const selectedModel = useMemo(() => {
     return availableModels?.find(model => model.name === selectedModelName);
   }, [availableModels, selectedModelName]);
+
+  const selectedModelParamsSchema = useMemo(() => {
+    return selectedModel?.paramsSchema?.properties as VideoJsonSchema;
+  }, [selectedModel]);
 
   // 当外部值改变时同步本地状态
   useEffect(() => {
@@ -144,7 +150,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
               onValueChange?.({ prompt: localPrompt, selectedModel: v, aspectRatio: '', duration: undefined });
             }}
           >
-            <SelectTrigger>
+            <SelectTrigger size="sm" className="text-xs">
               <SelectValue placeholder="Select a model" />
             </SelectTrigger>
             <SelectContent>
@@ -157,7 +163,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                 ))}
             </SelectContent>
           </Select>
-          {selectedModel?.paramsSchema?.properties?.aspectRatio?.enum?.length && (
+          {selectedModelParamsSchema?.aspectRatio?.enum?.length && (
             <Select
               value={selectedAspectRatio}
               onValueChange={(v: string) => {
@@ -165,20 +171,23 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                 onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: v, duration: selectedDuration });
               }}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Aspect Ratio" />
+              <SelectTrigger size="sm" className="text-xs" hideIcon>
+                <SelectValue placeholder="Aspect" />
               </SelectTrigger>
               <SelectContent>
-                {selectedModel.paramsSchema.properties.aspectRatio.enum.map((option: string) => (
-                  <SelectItem key={option} value={option}>
-                    <RatioIcon ratio={option} />
-                    {option}
-                  </SelectItem>
-                ))}
+                {selectedModelParamsSchema.aspectRatio.enum.map(option => {
+                  const optionString = option as string;
+                  return (
+                    <SelectItem key={optionString} value={optionString}>
+                      <RatioIcon ratio={optionString} />
+                      {optionString}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           )}
-          {selectedModel?.paramsSchema?.properties?.duration?.enum?.length && (
+          {selectedModelParamsSchema?.duration?.enum?.length && (
             <Select
               value={selectedDuration?.toString()}
               onValueChange={(v: string) => {
@@ -186,15 +195,47 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                 onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio, duration: v });
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger size="sm" className="text-xs" hideIcon>
                 <SelectValue placeholder="Duration" />
               </SelectTrigger>
               <SelectContent>
-                {selectedModel.paramsSchema.properties.duration.enum.map((option: string) => (
-                  <SelectItem key={option} value={option}>
-                    {option}s
-                  </SelectItem>
-                ))}
+                {selectedModelParamsSchema.duration.enum.map(option => {
+                  const optionString = option as string;
+                  return (
+                    <SelectItem key={optionString} value={optionString}>
+                      {optionString}s
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          )}
+          {selectedModelParamsSchema?.resolution?.enum?.length && (
+            <Select
+              value={selectedResolution}
+              onValueChange={(v: string) => {
+                setSelectedResolution(v);
+                onValueChange?.({
+                  prompt: localPrompt,
+                  selectedModel: selectedModelName,
+                  aspectRatio: selectedAspectRatio,
+                  duration: selectedDuration,
+                  resolution: v,
+                });
+              }}
+            >
+              <SelectTrigger size="sm" className="text-xs" hideIcon>
+                <SelectValue placeholder="Resolution" />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedModelParamsSchema.resolution.enum.map(option => {
+                  const optionString = option as string;
+                  return (
+                    <SelectItem key={optionString} value={optionString}>
+                      {optionString}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           )}

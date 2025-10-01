@@ -1,5 +1,5 @@
 // 自定义矩形图标组件，根据比例动态调整宽高
-export const RatioIcon = ({ ratio }: { ratio: string }) => {
+export const RatioIcon = ({ ratio, size = 16 }: { ratio: string; size?: number }) => {
   // 解析比例字符串，如 "16:9", "1:1", "4:3" 等
   const parseRatio = (ratioStr: string) => {
     const parts = ratioStr.split(':');
@@ -14,7 +14,7 @@ export const RatioIcon = ({ ratio }: { ratio: string }) => {
   const { width, height } = parseRatio(ratio);
 
   // 计算显示尺寸，保持最大尺寸为16px
-  const maxSize = 24;
+  const maxSize = size;
   const aspectRatio = width / height;
 
   let displayWidth = maxSize;
@@ -29,9 +29,9 @@ export const RatioIcon = ({ ratio }: { ratio: string }) => {
   }
 
   return (
-    <div className="flex h-8 w-8 items-center justify-center">
+    <div className="flex items-center justify-center" style={{ width: `${maxSize}px`, height: `${maxSize}px` }}>
       <div
-        className="rounded-[4px] border-2 border-current/80"
+        className="rounded-[2px] border-[1.5px] border-current/80"
         style={{
           width: `${displayWidth}px`,
           height: `${displayHeight}px`,

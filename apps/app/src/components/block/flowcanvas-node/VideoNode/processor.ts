@@ -6,6 +6,7 @@ export type VideoNodeActionData = {
   selectedModel?: string;
   aspectRatio?: string;
   duration?: string;
+  resolution?: string;
 };
 
 // 视频节点处理器
@@ -14,7 +15,7 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
     const startTime = Date.now();
     const { images, texts } = data.input;
     const { actionData } = data;
-    const { prompt, selectedModel, aspectRatio, duration } = actionData || {};
+    const { prompt, selectedModel, aspectRatio, duration, resolution } = actionData || {};
 
     // 如果输入全部为空，则直接返回
     if (images.length === 0 && texts.length === 0 && !actionData?.prompt) {
@@ -24,19 +25,19 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
       };
     }
 
-    if (!prompt || !selectedModel || !aspectRatio || !duration) {
+    if (!prompt || !selectedModel || !aspectRatio || !duration || !resolution) {
       return {
         success: false,
         timestamp: new Date(),
         executionTime: Date.now() - startTime,
-        error: 'Invalid prompt, model, aspect ratio, or duration',
+        error: 'Invalid prompt, model, aspect ratio, duration, or resolution',
       };
     }
 
     const referenceImages = images.map(image => image.images?.map(image => image.url!)).flat();
     const result = await submitGenerationTask({
       model: selectedModel,
-      params: { prompt, aspectRatio, duration: Number(duration), firstFrame: referenceImages?.[0] },
+      params: { prompt, aspectRatio, duration: Number(duration), firstFrame: referenceImages?.[0], resolution },
     });
 
     if (result.error || !result.data?.id) {

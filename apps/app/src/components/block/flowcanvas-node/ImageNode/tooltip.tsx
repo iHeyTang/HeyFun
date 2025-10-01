@@ -12,6 +12,7 @@ import { MentionItem } from '../../flowcanvas/components/SmartEditorNode/Mention
 import { RatioIcon } from '../../ratio-icon';
 import { ImageNodeActionData, ImageNodeProcessor } from './processor';
 import { FullscreenModal, fullscreenModalRef } from '@/components/block/preview/fullscreen';
+import { ImageJsonSchema } from '@repo/llm/aigc';
 
 export interface ImageNodeTooltipProps {
   nodeId: string;
@@ -42,6 +43,10 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const selectedModel = useMemo(() => {
     return availableModels?.find(model => model.name === selectedModelName);
   }, [availableModels, selectedModelName]);
+
+  const selectedModelParamsSchema = useMemo(() => {
+    return selectedModel?.paramsSchema?.properties as ImageJsonSchema;
+  }, [selectedModel]);
 
   // 当外部值改变时同步本地状态
   useEffect(() => {
@@ -182,7 +187,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
               onValueChange?.({ prompt: localPrompt, selectedModel: v, aspectRatio: '' });
             }}
           >
-            <SelectTrigger>
+            <SelectTrigger size="sm" className="text-xs" hideIcon>
               <SelectValue placeholder="Select a model" />
             </SelectTrigger>
             <SelectContent>
@@ -195,7 +200,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                 ))}
             </SelectContent>
           </Select>
-          {selectedModel?.paramsSchema?.properties?.aspectRatio?.enum?.length && (
+          {selectedModelParamsSchema?.aspectRatio?.enum?.length && (
             <Select
               value={selectedAspectRatio}
               onValueChange={(v: string) => {
@@ -203,16 +208,19 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                 onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: v });
               }}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Aspect Ratio" />
+              <SelectTrigger size="sm" className="text-xs" hideIcon>
+                <SelectValue placeholder="Aspect" />
               </SelectTrigger>
               <SelectContent>
-                {selectedModel.paramsSchema.properties.aspectRatio.enum.map((option: string) => (
-                  <SelectItem key={option} value={option}>
-                    <RatioIcon ratio={option} />
-                    {option}
-                  </SelectItem>
-                ))}
+                {selectedModelParamsSchema.aspectRatio.enum.map(option => {
+                  const optionString = option as string;
+                  return (
+                    <SelectItem key={optionString} value={optionString}>
+                      <RatioIcon ratio={optionString} />
+                      {optionString}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           )}
