@@ -45,6 +45,17 @@ const AVAILABLE_NODE_TYPES: NodeType[] = [
       description: '点击上传音频',
     },
   },
+  {
+    type: 'lipsync',
+    label: 'Lipsync Node',
+    description: '用于唇形同步',
+    defaultData: {
+      label: 'Lipsync Node',
+      description: '点击上传视频和音频',
+      videos: [],
+      audios: [],
+    },
+  },
 ];
 
 export { useContextMenu } from './hooks/useContextMenu';

@@ -23,7 +23,7 @@ export class SyncSoV2 extends BaseAigcModel {
   name = 'sync-so-v2';
   displayName = 'Sync So V2';
   description = 'Sync So V2';
-  costDescription = 'Normal: 0.04 Credits/F; Pro: 0.06 Credits/F';
+  costDescription = 'Normal: 0.96 Credits/s; Pro: 1.44 Credits/s';
   generationTypes = ['lip-sync'] as GenerationType[];
 
   paramsSchema = paramsSchema;
@@ -51,7 +51,6 @@ export class SyncSoV2 extends BaseAigcModel {
         },
       },
     });
-    console.log(data);
     if (!data.id) {
       throw new Error(data.error || 'Unknown error');
     }
@@ -99,19 +98,19 @@ export class SyncSoV2 extends BaseAigcModel {
   async calculateCost(params: z.infer<typeof this.paramsSchema>, outputs: GenerationTaskResult): Promise<number> {
     const model = params.advanced?.model || 'lipsync-2';
 
-    // 价格定义 (分/帧)
+    // 价格定义 (厘/帧)
     const pricePerFrame = model === 'lipsync-2-pro' ? 60 : 40;
 
     // 获取视频时长信息
     const videoDuration = await getMediaDuration(outputs.data?.[0]?.data || '');
 
-    // 假设帧率为24fps（常见的视频帧率）
+    // 假设帧率为24fps（常见的视频帧率）使用常见的视频帧率24fps
     const fps = 24;
     const totalFrames = videoDuration * fps;
 
     const cost = pricePerFrame * totalFrames;
 
-    // 返回成本（以分为单位）
+    // 返回成本（以厘为单位）
     return cost;
   }
 }

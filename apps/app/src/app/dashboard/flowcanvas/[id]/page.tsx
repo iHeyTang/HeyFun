@@ -11,6 +11,7 @@ import { useAigc, useLLM } from '@/hooks/use-llm';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import LipsyncNode, { LipsyncNodeProcessor } from '@/components/block/flowcanvas-node/LipsyncNode';
 
 const useProjectSchema = (ft: any) => {
   const { id } = useParams<{ id: string }>();
@@ -117,6 +118,7 @@ const FlowCanvasPage = () => {
       video: { component: VideoNode, processor: new VideoNodeProcessor() },
       audio: { component: AudioNode, processor: new AudioNodeProcessor() },
       text: { component: TextNode, processor: new TextNodeProcessor() },
+      lipsync: { component: LipsyncNode, processor: new LipsyncNodeProcessor() },
     };
   }, []);
 

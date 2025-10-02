@@ -122,7 +122,7 @@ interface TaskCardProps {
 
 function TaskCard({ task }: TaskCardProps) {
   const [copied, setCopied] = React.useState(false);
-  const prompt = 'prompt' in task.params ? task.params.prompt : task.params?.text || '';
+  const prompt = 'prompt' in task.params ? task.params.prompt : 'text' in task.params ? task.params.text : '';
   const ratio = 'aspectRatio' in task.params ? task.params.aspectRatio : undefined;
   const model = task.model;
 
