@@ -5,24 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAigc } from '@/hooks/use-llm';
 import { useSignedUrl } from '@/hooks/use-signed-url';
+import { T2aJsonSchema, Voice } from '@repo/llm/aigc';
 import { MentionOptions } from '@tiptap/extension-mention';
 import { Editor } from '@tiptap/react';
 import { WandSparkles } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RatioIcon } from '../../ratio-icon';
-import { VideoNodeActionData, VideoNodeProcessor } from './processor';
-import { VideoJsonSchema } from '@repo/llm/aigc';
+import { AudioNodeActionData, AudioNodeProcessor } from './processor';
+import { getAigcVoiceList } from '@/actions/llm';
 
-export interface VideoNodeTooltipProps {
+export interface AudioNodeTooltipProps {
   nodeId: string;
-  value?: VideoNodeActionData;
-  onValueChange?: (data: VideoNodeActionData) => void;
+  value?: AudioNodeActionData;
+  onValueChange?: (data: AudioNodeActionData) => void;
   onSubmitSuccess?: (data: NodeOutput) => void;
 }
 
-const processor = new VideoNodeProcessor();
+const processor = new AudioNodeProcessor();
 
-const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: VideoNodeTooltipProps) => {
+const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: AudioNodeTooltipProps) => {
   const { getSignedUrl } = useSignedUrl();
 
   const flowGraph = useFlowGraph();
@@ -30,10 +30,18 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const { updateStatus } = useNodeStatusById(nodeId);
   const [localPrompt, setLocalPrompt] = useState(actionData?.prompt || '');
   const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState(actionData?.aspectRatio);
-  const [selectedDuration, setSelectedDuration] = useState(actionData?.duration);
-  const [selectedResolution, setSelectedResolution] = useState(actionData?.resolution);
+  const [selectedVoiceId, setSelectedVoiceId] = useState(actionData?.voiceId);
   const editorRef = useRef<TiptapEditorRef>(null);
+
+  const [voiceList, setVoiceList] = useState<Voice[]>([]);
+
+  useEffect(() => {
+    if (selectedModelName) {
+      getAigcVoiceList({ modelName: selectedModelName }).then(res => {
+        setVoiceList(res.data || []);
+      });
+    }
+  }, [selectedModelName]);
 
   // 获取节点输入数据
   const nodeInputs = useMemo(() => {
@@ -45,7 +53,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   }, [availableModels, selectedModelName]);
 
   const selectedModelParamsSchema = useMemo(() => {
-    return selectedModel?.paramsSchema?.properties as VideoJsonSchema;
+    return selectedModel?.paramsSchema?.properties as T2aJsonSchema;
   }, [selectedModel]);
 
   // 当外部值改变时同步本地状态
@@ -56,24 +64,16 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     if (actionData?.selectedModel !== undefined) {
       setSelectedModelName(actionData.selectedModel);
     }
-    if (actionData?.aspectRatio !== undefined) {
-      setSelectedAspectRatio(actionData.aspectRatio);
+    if (actionData?.voiceId !== undefined) {
+      setSelectedVoiceId(actionData.voiceId);
     }
-    if (actionData?.duration !== undefined) {
-      setSelectedDuration(actionData.duration);
-    }
-    if (actionData?.resolution !== undefined) {
-      setSelectedResolution(actionData.resolution);
-    }
-  }, [actionData?.prompt, actionData?.selectedModel, actionData?.aspectRatio, actionData?.duration]);
+  }, [actionData?.prompt, actionData?.selectedModel, actionData?.voiceId]);
 
   const handleSubmit = async () => {
     onValueChange?.({
       prompt: localPrompt,
       selectedModel: selectedModelName,
-      aspectRatio: selectedAspectRatio,
-      duration: selectedDuration,
-      resolution: selectedResolution,
+      voiceId: selectedVoiceId,
     });
     updateStatus(NodeStatus.PROCESSING);
     try {
@@ -103,25 +103,14 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           ),
         })),
       );
-      const inputAudios = await Promise.all(
-        Array.from(input.entries()).map(async ([key, value]) => ({
-          nodeId: key,
-          audios: await Promise.all(
-            value.audios?.map(async audio => {
-              const url = await getSignedUrl(audio.key!);
-              return { key: audio.key, url };
-            }) || [],
-          ),
-        })),
-      );
 
       const result = await processor.execute({
-        input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios },
+        input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: [] },
         actionData: { ...node.data.actionData, prompt: editorRef.current?.getText() },
       });
       if (result.success) {
         updateStatus(NodeStatus.COMPLETED);
-        onSubmitSuccess?.({ videos: result.data?.videos });
+        onSubmitSuccess?.({ audios: result.data?.audios });
       } else {
         updateStatus(NodeStatus.FAILED);
       }
@@ -137,9 +126,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     onValueChange?.({
       prompt: newPrompt,
       selectedModel: selectedModelName,
-      aspectRatio: selectedAspectRatio,
-      duration: selectedDuration,
-      resolution: selectedResolution,
+      voiceId: selectedVoiceId,
     });
   };
 
@@ -148,17 +135,6 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     (props: { query: string; editor: Editor }) => {
       const list: MentionItem[] = [];
       nodeInputs.forEach(input => {
-        if (input.data.output?.images) {
-          input.data.output.images.forEach(async (image, index) => {
-            list.push({
-              type: 'image' as const,
-              id: `image:${image.key!}`,
-              imageAlt: image.key || '',
-              label: `${input.data.label} ${index + 1}`,
-              imageUrl: image.url ? image.url : await getSignedUrl(image.key!),
-            });
-          });
-        }
         if (input.data.output?.texts) {
           input.data.output.texts.forEach((text, index) => {
             list.push({
@@ -181,7 +157,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       <TiptapEditor
         value={localPrompt}
         onChange={handlePromptChange}
-        placeholder="Enter prompt to generate a video. First image will be used as the first frame"
+        placeholder="Enter text to generate audio, input @ to mention"
         className="h-24 w-full resize-none border-none! outline-none!"
         mentionSuggestionItems={insertItems}
         ref={editorRef}
@@ -198,9 +174,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
               onValueChange?.({
                 prompt: localPrompt,
                 selectedModel: v,
-                aspectRatio: '',
-                duration: '',
-                resolution: '',
+                voiceId: '',
               });
             }}
           >
@@ -209,7 +183,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             </SelectTrigger>
             <SelectContent>
               {availableModels
-                ?.filter(model => model.generationTypes.includes('text-to-video') || model.generationTypes.includes('image-to-video'))
+                ?.filter(model => model.generationTypes.includes('text-to-speech'))
                 .map(model => (
                   <SelectItem key={model.name} value={model.name}>
                     {model.displayName}
@@ -217,88 +191,26 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                 ))}
             </SelectContent>
           </Select>
-          {selectedModelParamsSchema?.aspectRatio?.enum?.length && (
+          {voiceList.length > 0 && (
             <Select
-              value={selectedAspectRatio}
+              value={selectedVoiceId}
               onValueChange={(v: string) => {
-                setSelectedAspectRatio(v);
+                setSelectedVoiceId(v);
                 onValueChange?.({
                   prompt: localPrompt,
                   selectedModel: selectedModelName,
-                  aspectRatio: v,
-                  duration: selectedDuration,
-                  resolution: selectedResolution,
+                  voiceId: v,
                 });
               }}
             >
               <SelectTrigger size="sm" className="text-xs" hideIcon>
-                <SelectValue placeholder="Aspect" />
+                <SelectValue placeholder="Voice" />
               </SelectTrigger>
               <SelectContent>
-                {selectedModelParamsSchema.aspectRatio.enum.map(option => {
-                  const optionString = option as string;
+                {voiceList.map(option => {
                   return (
-                    <SelectItem key={optionString} value={optionString}>
-                      <RatioIcon ratio={optionString} />
-                      {optionString}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          )}
-          {selectedModelParamsSchema?.duration?.enum?.length && (
-            <Select
-              value={selectedDuration?.toString()}
-              onValueChange={(v: string) => {
-                setSelectedDuration(v);
-                onValueChange?.({
-                  prompt: localPrompt,
-                  selectedModel: selectedModelName,
-                  aspectRatio: selectedAspectRatio,
-                  duration: v,
-                  resolution: selectedResolution,
-                });
-              }}
-            >
-              <SelectTrigger size="sm" className="text-xs" hideIcon>
-                <SelectValue placeholder="Duration" />
-              </SelectTrigger>
-              <SelectContent>
-                {selectedModelParamsSchema.duration.enum.map(option => {
-                  const optionString = option as string;
-                  return (
-                    <SelectItem key={optionString} value={optionString}>
-                      {optionString}s
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          )}
-          {selectedModelParamsSchema?.resolution?.enum?.length && (
-            <Select
-              value={selectedResolution}
-              onValueChange={(v: string) => {
-                setSelectedResolution(v);
-                onValueChange?.({
-                  prompt: localPrompt,
-                  selectedModel: selectedModelName,
-                  aspectRatio: selectedAspectRatio,
-                  duration: selectedDuration,
-                  resolution: v,
-                });
-              }}
-            >
-              <SelectTrigger size="sm" className="text-xs" hideIcon>
-                <SelectValue placeholder="Resolution" />
-              </SelectTrigger>
-              <SelectContent>
-                {selectedModelParamsSchema.resolution.enum.map(option => {
-                  const optionString = option as string;
-                  return (
-                    <SelectItem key={optionString} value={optionString}>
-                      {optionString}
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.name}
                     </SelectItem>
                   );
                 })}
@@ -316,13 +228,12 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
 };
 
 // 使用 memo 优化组件，只有当初始值真正改变时才重新渲染
-export const VideoNodeTooltip = memo(VideoNodeTooltipComponent, (prevProps, nextProps) => {
+export const AudioNodeTooltip = memo(AudioNodeTooltipComponent, (prevProps, nextProps) => {
   // 现在只需要比较初始值，因为我们不会在输入过程中触发外部更新
   return (
     prevProps.value?.prompt === nextProps.value?.prompt &&
     prevProps.value?.selectedModel === nextProps.value?.selectedModel &&
-    prevProps.value?.aspectRatio === nextProps.value?.aspectRatio &&
-    prevProps.value?.duration === nextProps.value?.duration &&
+    prevProps.value?.voiceId === nextProps.value?.voiceId &&
     prevProps.onValueChange === nextProps.onValueChange &&
     prevProps.onSubmitSuccess === nextProps.onSubmitSuccess
   );

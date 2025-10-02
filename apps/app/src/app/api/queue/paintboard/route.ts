@@ -103,11 +103,11 @@ const processPaintboardTaskResult = async (args: {
         // 使用统一接口获取任务结果
         const result = await AIGC.getTaskResult({ modelName: model, taskId: externalTaskId, params: args.params });
         // 检查任务是否完成
-        if (result.status === 'completed' && result.data?.length) {
+        if (result.status === 'completed') {
           const results: PaintboardTasks['results'] = [];
 
           // 下载所有结果文件并上传到OSS
-          for (const item of result.data) {
+          for (const item of result.data || []) {
             if (item.sourceType === 'url') {
               try {
                 // 从URL中提取文件名，移除查询参数
@@ -148,7 +148,12 @@ const processPaintboardTaskResult = async (args: {
             console.log(`Task ${taskId} completed successfully with ${results.length} results`);
             return { success: true, results };
           } else {
-            throw new Error('No valid results found');
+            await prisma.paintboardTasks.update({
+              where: { id: taskId },
+              data: { status: 'failed', error: 'No valid results found' },
+            });
+            console.error(`Task ${taskId} failed: No valid results found`);
+            return { success: false, results: [] };
           }
         } else if (result.status === 'failed') {
           console.error(`Task ${taskId} failed:`, result.error);

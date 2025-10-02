@@ -52,11 +52,44 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
     try {
       const node = flowGraph.getNodeById(nodeId)!;
       const input = flowGraph.getNodeInputsById(nodeId);
-      const inputImages = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, images: value.images }));
       const inputTexts = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
-      const inputVideos = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, videos: value.videos }));
+
+      const inputImages = await Promise.all(
+        Array.from(input.entries()).map(async ([key, value]) => ({
+          nodeId: key,
+          images: await Promise.all(
+            value.images?.map(async img => {
+              const url = await getSignedUrl(img.key!);
+              return { key: img.key, url };
+            }) || [],
+          ),
+        })),
+      );
+      const inputVideos = await Promise.all(
+        Array.from(input.entries()).map(async ([key, value]) => ({
+          nodeId: key,
+          videos: await Promise.all(
+            value.videos?.map(async img => {
+              const url = await getSignedUrl(img.key!);
+              return { key: img.key, url };
+            }) || [],
+          ),
+        })),
+      );
+      const inputAudios = await Promise.all(
+        Array.from(input.entries()).map(async ([key, value]) => ({
+          nodeId: key,
+          audios: await Promise.all(
+            value.audios?.map(async audio => {
+              const url = await getSignedUrl(audio.key!);
+              return { key: audio.key, url };
+            }) || [],
+          ),
+        })),
+      );
+
       const result = await processor.execute({
-        input: { images: inputImages, texts: inputTexts, videos: inputVideos },
+        input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios },
         actionData: { ...node.data.actionData, prompt: editorRef.current?.getText() },
       });
       const generatedText = result.data?.texts?.[0] || '';

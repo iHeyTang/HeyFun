@@ -6,6 +6,20 @@ import { ToAsyncTaskManager } from '../../utils/to-async-task';
 
 const toAsync = new ToAsyncTaskManager<Awaited<ReturnType<MinimaxProvider['t2a']>>>();
 
+const minimax25SpeechParamsSchema = z.object({
+  text: z.string(),
+  voice_id: z.string(),
+  advanced: z
+    .object({
+      mode: z.enum(['hd', 'turbo']),
+      speed: z.number().min(0.5).max(2).step(0.1).default(1).optional(),
+      vol: z.number().min(0).max(10).step(0.1).default(1.0).optional(),
+      pitch: z.number().int().min(-12).max(12).default(0).optional(),
+      emotion: z.enum(['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'calm']).optional(),
+    })
+    .optional(),
+});
+
 /**
  * https://platform.minimaxi.com/document/t2a_async_api_intro?key=68adac446fe587e3fbfe965b
  */
@@ -16,15 +30,7 @@ export class Minimax25Speech extends BaseAigcModel {
   costDescription = '3.85(HD)/2.2(Turbo) Credits /M Characters';
   generationTypes = ['text-to-speech'] as GenerationType[];
 
-  paramsSchema = z.object({
-    text: z.string(),
-    voice_id: z.string(),
-    mode: z.enum(['hd', 'turbo']),
-    speed: z.number().min(0.5).max(2).step(0.1).default(1).optional(),
-    vol: z.number().min(0).max(10).step(0.1).default(1.0).optional(),
-    pitch: z.number().int().min(-12).max(12).default(0).optional(),
-    emotion: z.enum(['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'calm']).optional(),
-  });
+  paramsSchema = minimax25SpeechParamsSchema;
 
   provider: MinimaxProvider;
   constructor(provider: MinimaxProvider) {
@@ -43,10 +49,10 @@ export class Minimax25Speech extends BaseAigcModel {
           text: params.text,
           voice_setting: {
             voice_id: params.voice_id,
-            speed: params.speed,
-            vol: params.vol,
-            pitch: params.pitch,
-            emotion: params.emotion,
+            speed: params.advanced?.speed,
+            vol: params.advanced?.vol,
+            pitch: params.advanced?.pitch,
+            emotion: params.advanced?.emotion,
           },
         }),
       );
@@ -58,23 +64,25 @@ export class Minimax25Speech extends BaseAigcModel {
       text: params.text,
       voice_setting: {
         voice_id: params.voice_id,
-        speed: params.speed,
-        vol: params.vol,
-        pitch: params.pitch,
-        emotion: params.emotion,
+        speed: params.advanced?.speed,
+        vol: params.advanced?.vol,
+        pitch: params.advanced?.pitch,
+        emotion: params.advanced?.emotion,
       },
     });
     return task.task_id;
   }
 
-  async getTaskResult(params: { model: string; taskId: string }): Promise<GenerationTaskResult> {
-    const task = toAsync.getTask(params.taskId);
-    if (task) {
-      return {
-        status: task.status === 'succeeded' ? 'completed' : task.status === 'failed' ? 'failed' : 'pending',
-        data: task.result?.data ? [{ data: task.result.data.audio, sourceType: 'hex', type: 'audio', fileExtension: '.mp3' }] : [],
-        error: task.error || undefined,
-      };
+  async getTaskResult(params: { model: string; taskId: string; params: z.infer<typeof minimax25SpeechParamsSchema> }): Promise<GenerationTaskResult> {
+    if (params.params.text.length < 90000) {
+      const task = toAsync.getTask(params.taskId);
+      if (task) {
+        return {
+          status: task.status === 'succeeded' ? 'completed' : task.status === 'failed' ? 'failed' : 'pending',
+          data: task.result?.data ? [{ data: task.result.data.audio, sourceType: 'hex', type: 'audio', fileExtension: '.mp3' }] : [],
+          error: task.error || undefined,
+        };
+      }
     }
 
     const result = await this.provider.t2aQuery(params.taskId);
@@ -97,14 +105,14 @@ export class Minimax25Speech extends BaseAigcModel {
   }
 
   private detectModelName(params: z.infer<typeof this.paramsSchema>) {
-    if (params.mode === 'hd') {
+    if (params.advanced?.mode === 'hd') {
       return 'speech-2.5-hd-preview';
     }
     return 'speech-2.5-turbo-preview';
   }
 
   calculateCost(params: z.infer<typeof this.paramsSchema>): number {
-    const pricePerMillionChars = params.mode === 'hd' ? 3850 : 2200;
+    const pricePerMillionChars = params.advanced?.mode === 'hd' ? 3850 : 2200;
     const charCount = params.text.length;
     return Number(Math.max(1, (pricePerMillionChars * charCount) / 1000000));
   }

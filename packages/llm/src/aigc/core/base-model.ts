@@ -44,11 +44,7 @@ export type VideoJsonSchema = {
 export const t2aParamsSchema = z.object({
   text: z.string(),
   voice_id: z.string().optional(),
-  mode: z.string().optional(),
-  speed: z.number().optional(),
-  vol: z.number().optional(),
-  pitch: z.number().optional(),
-  emotion: z.string().optional(),
+  advanced: z.any().optional(),
 });
 
 export type T2aJsonSchema = {

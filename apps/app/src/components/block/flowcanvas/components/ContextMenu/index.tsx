@@ -36,6 +36,15 @@ const AVAILABLE_NODE_TYPES: NodeType[] = [
       autoPlay: false,
     },
   },
+  {
+    type: 'audio',
+    label: 'Audio Node',
+    description: '用于上传和播放音频',
+    defaultData: {
+      label: 'Audio Node',
+      description: '点击上传音频',
+    },
+  },
 ];
 
 export { useContextMenu } from './hooks/useContextMenu';

@@ -91,9 +91,20 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           ),
         })),
       );
+      const inputAudios = await Promise.all(
+        Array.from(input.entries()).map(async ([key, value]) => ({
+          nodeId: key,
+          audios: await Promise.all(
+            value.audios?.map(async audio => {
+              const url = await getSignedUrl(audio.key!);
+              return { key: audio.key, url };
+            }) || [],
+          ),
+        })),
+      );
 
       const result = await processor.execute({
-        input: { images: inputImages, texts: inputTexts, videos: inputVideos },
+        input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios },
         actionData: { ...node.data.actionData, prompt: editorRef.current?.getText() },
       });
       if (result.success) {

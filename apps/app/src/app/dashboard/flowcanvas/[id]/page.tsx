@@ -5,6 +5,7 @@ import { CanvasSchema, FlowCanvas, FlowCanvasRef } from '@/components/block/flow
 import ImageNode, { ImageNodeProcessor } from '@/components/block/flowcanvas-node/ImageNode';
 import TextNode, { TextNodeProcessor } from '@/components/block/flowcanvas-node/TextNode';
 import VideoNode, { VideoNodeProcessor } from '@/components/block/flowcanvas-node/VideoNode';
+import AudioNode, { AudioNodeProcessor } from '@/components/block/flowcanvas-node/AudioNode';
 import { Button } from '@/components/ui/button';
 import { useAigc, useLLM } from '@/hooks/use-llm';
 import { useParams } from 'next/navigation';
@@ -114,6 +115,7 @@ const FlowCanvasPage = () => {
     return {
       image: { component: ImageNode, processor: new ImageNodeProcessor() },
       video: { component: VideoNode, processor: new VideoNodeProcessor() },
+      audio: { component: AudioNode, processor: new AudioNodeProcessor() },
       text: { component: TextNode, processor: new TextNodeProcessor() },
     };
   }, []);

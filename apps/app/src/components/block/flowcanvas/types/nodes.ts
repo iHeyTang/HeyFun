@@ -2,7 +2,7 @@
 import { Node } from '@xyflow/react';
 import { WorkflowContext } from '../scheduler/core';
 
-export type NodeType = 'image' | 'video' | 'text' | 'default' | 'processor';
+export type NodeType = 'image' | 'video' | 'audio' | 'text' | 'default' | 'processor';
 
 /**
  * 节点输出接口
@@ -10,6 +10,7 @@ export type NodeType = 'image' | 'video' | 'text' | 'default' | 'processor';
 export interface NodeOutput {
   images?: Array<{ url?: string; key?: string }>;
   videos?: Array<{ url?: string; key?: string }>;
+  audios?: Array<{ url?: string; key?: string }>;
   texts?: string[];
 }
 
@@ -74,6 +75,7 @@ export type BaseNodeActionData<T extends Record<string, any> = Record<string, an
     texts: { nodeId: string; texts?: string[] }[];
     images: { nodeId: string; images?: { url?: string; key?: string }[] }[];
     videos: { nodeId: string; videos?: { url?: string; key?: string }[] }[];
+    audios: { nodeId: string; audios?: { url?: string; key?: string }[] }[];
   };
   actionData?: T;
 };
