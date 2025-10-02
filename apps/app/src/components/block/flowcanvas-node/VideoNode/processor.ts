@@ -13,19 +13,20 @@ export type VideoNodeActionData = {
 export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
   async execute(data: BaseNodeActionData<VideoNodeActionData>): Promise<NodeExecutorExecuteResult> {
     const startTime = Date.now();
-    const { images, texts } = data.input;
     const { actionData } = data;
     const { prompt, selectedModel, aspectRatio, duration, resolution } = actionData || {};
 
+    const images = data.input.images.map(image => image.images?.map(img => img)).flat();
+
     // 如果输入全部为空，则直接返回
-    if (images.length === 0 && texts.length === 0 && !actionData?.prompt) {
+    if (images.length === 0 && !actionData?.prompt) {
       return {
         success: true,
         timestamp: new Date(),
       };
     }
 
-    if (!prompt || !selectedModel || !aspectRatio || !duration || !resolution) {
+    if (!prompt || !selectedModel) {
       return {
         success: false,
         timestamp: new Date(),
@@ -34,10 +35,44 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
       };
     }
 
-    const referenceImages = images.map(image => image.images?.map(image => image.url!)).flat();
+    let processedPrompt = prompt;
+
+    // 处理 prompt 中的 @text 提及
+    const textPattern = /@text:([^\s]+)/g;
+    const textMatches = [...prompt.matchAll(textPattern)];
+    textMatches.forEach(match => {
+      const nodeId = match[1];
+      if (nodeId) {
+        const textNode = data.input.texts.find(text => text.nodeId === nodeId);
+        if (textNode?.texts?.[0]) {
+          processedPrompt = processedPrompt.replace(match[0], textNode.texts[0]);
+        }
+      }
+    });
+
+    // 处理 prompt 中的 @image 提及
+    const imagePattern = /@image:([^\s]+)/g;
+    const mentionedImages: string[] = [];
+
+    // 提取所有提及的图片key，并替换为"图X"
+    const imageMatches = [...processedPrompt.matchAll(imagePattern)];
+    imageMatches.forEach((match, index) => {
+      const imageKey = match[1];
+      if (imageKey) {
+        const image = images.find(image => image?.key === imageKey);
+        if (image && image?.url) {
+          mentionedImages.push(image.url);
+          processedPrompt = processedPrompt.replace(match[0], `图${index + 1}`);
+        }
+      }
+    });
+
+    // 如果 prompt 中有提及图片，使用提及的图片；否则使用输入的所有图片
+    const referenceImages = mentionedImages.length > 0 ? mentionedImages : images[0]?.url ? [images[0].url] : [];
+
     const result = await submitGenerationTask({
       model: selectedModel,
-      params: { prompt, aspectRatio, duration: Number(duration), firstFrame: referenceImages?.[0], resolution },
+      params: { prompt: processedPrompt, aspectRatio, duration: Number(duration), firstFrame: referenceImages?.[0], resolution },
     });
 
     if (result.error || !result.data?.id) {
@@ -56,7 +91,6 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
       await new Promise(resolve => setTimeout(resolve, 5000));
 
       const taskResult = await getPaintboardTask({ taskId: result.data.id });
-      console.log('video taskResult', taskResult);
       if (taskResult.data?.status === 'completed') {
         // 存储key而不是URL
         return {

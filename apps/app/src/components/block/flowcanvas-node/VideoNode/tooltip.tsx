@@ -62,17 +62,48 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     if (actionData?.duration !== undefined) {
       setSelectedDuration(actionData.duration);
     }
+    if (actionData?.resolution !== undefined) {
+      setSelectedResolution(actionData.resolution);
+    }
   }, [actionData?.prompt, actionData?.selectedModel, actionData?.aspectRatio, actionData?.duration]);
 
   const handleSubmit = async () => {
-    onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio, duration: selectedDuration });
+    onValueChange?.({
+      prompt: localPrompt,
+      selectedModel: selectedModelName,
+      aspectRatio: selectedAspectRatio,
+      duration: selectedDuration,
+      resolution: selectedResolution,
+    });
     updateStatus(NodeStatus.PROCESSING);
     try {
       const node = flowGraph.getNodeById(nodeId)!;
       const input = flowGraph.getNodeInputsById(nodeId);
-      const inputImages = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, images: value.images }));
+
       const inputTexts = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
-      const inputVideos = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, videos: value.videos }));
+      const inputImages = await Promise.all(
+        Array.from(input.entries()).map(async ([key, value]) => ({
+          nodeId: key,
+          images: await Promise.all(
+            value.images?.map(async img => {
+              const url = await getSignedUrl(img.key!);
+              return { key: img.key, url };
+            }) || [],
+          ),
+        })),
+      );
+      const inputVideos = await Promise.all(
+        Array.from(input.entries()).map(async ([key, value]) => ({
+          nodeId: key,
+          videos: await Promise.all(
+            value.videos?.map(async img => {
+              const url = await getSignedUrl(img.key!);
+              return { key: img.key, url };
+            }) || [],
+          ),
+        })),
+      );
+
       const result = await processor.execute({
         input: { images: inputImages, texts: inputTexts, videos: inputVideos },
         actionData: { ...node.data.actionData, prompt: editorRef.current?.getText() },
@@ -92,7 +123,13 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const handlePromptChange = (newPrompt: string) => {
     // 始终更新本地状态以显示用户输入
     setLocalPrompt(newPrompt);
-    onValueChange?.({ prompt: newPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio, duration: selectedDuration });
+    onValueChange?.({
+      prompt: newPrompt,
+      selectedModel: selectedModelName,
+      aspectRatio: selectedAspectRatio,
+      duration: selectedDuration,
+      resolution: selectedResolution,
+    });
   };
 
   // 创建插入项配置
@@ -103,8 +140,8 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
         if (input.data.output?.images) {
           input.data.output.images.forEach(async (image, index) => {
             list.push({
-              id: `image:${image.key!}`,
               type: 'image' as const,
+              id: `image:${image.key!}`,
               imageAlt: image.key || '',
               label: `${input.data.label} ${index + 1}`,
               imageUrl: image.url ? image.url : await getSignedUrl(image.key!),
@@ -147,7 +184,13 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             value={selectedModelName}
             onValueChange={(v: string) => {
               setSelectedModelName(v);
-              onValueChange?.({ prompt: localPrompt, selectedModel: v, aspectRatio: '', duration: undefined });
+              onValueChange?.({
+                prompt: localPrompt,
+                selectedModel: v,
+                aspectRatio: '',
+                duration: '',
+                resolution: '',
+              });
             }}
           >
             <SelectTrigger size="sm" className="text-xs">
@@ -168,7 +211,13 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
               value={selectedAspectRatio}
               onValueChange={(v: string) => {
                 setSelectedAspectRatio(v);
-                onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: v, duration: selectedDuration });
+                onValueChange?.({
+                  prompt: localPrompt,
+                  selectedModel: selectedModelName,
+                  aspectRatio: v,
+                  duration: selectedDuration,
+                  resolution: selectedResolution,
+                });
               }}
             >
               <SelectTrigger size="sm" className="text-xs" hideIcon>
@@ -192,7 +241,13 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
               value={selectedDuration?.toString()}
               onValueChange={(v: string) => {
                 setSelectedDuration(v);
-                onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio, duration: v });
+                onValueChange?.({
+                  prompt: localPrompt,
+                  selectedModel: selectedModelName,
+                  aspectRatio: selectedAspectRatio,
+                  duration: v,
+                  resolution: selectedResolution,
+                });
               }}
             >
               <SelectTrigger size="sm" className="text-xs" hideIcon>
