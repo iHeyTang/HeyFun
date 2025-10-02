@@ -25,7 +25,6 @@ export class A302aiProvider {
     const url = new URL(`${BASE_URL}${params.path}`);
     const query = new URLSearchParams(params.query);
     url.search = query.toString();
-    console.log(params.body);
     try {
       const response = await fetch(url, {
         method: params.method,

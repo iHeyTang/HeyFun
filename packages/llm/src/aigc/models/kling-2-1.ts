@@ -69,7 +69,6 @@ export class Kling21 extends BaseAigcModel {
     if (!data.data?.task_id) {
       throw new Error(data.message || 'Unknown error');
     }
-    console.log(data.data.task_status);
     const status = this.getStatus(data.data?.task_status || 'submitted');
 
     if (status !== 'completed') {
@@ -111,6 +110,6 @@ export class Kling21 extends BaseAigcModel {
   }
 
   calculateCost(params: z.infer<typeof this.paramsSchema>): number {
-    return 0.35;
+    return 350;
   }
 }

@@ -56,7 +56,7 @@ export class Jimeng30ProVideo extends BaseAigcModel {
     return data.data.task_id;
   }
 
-  async getTaskResult(params: { generationType: string; model: string; taskId: string }): Promise<GenerationTaskResult> {
+  async getTaskResult(params: { model: string; taskId: string }): Promise<GenerationTaskResult> {
     const host = 'https://visual.volcengineapi.com';
     const action = 'CVSync2AsyncGetResult';
     const version = '2022-08-31';

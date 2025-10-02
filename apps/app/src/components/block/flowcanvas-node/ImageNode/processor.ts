@@ -27,7 +27,7 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
       };
     }
 
-    if (!prompt || !selectedModel || !aspectRatio) {
+    if (!prompt || !selectedModel) {
       return {
         success: false,
         timestamp: new Date(),

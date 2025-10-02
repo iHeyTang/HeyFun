@@ -37,6 +37,7 @@ import { DoubaoSeedream40 } from './models/doubao-seedream-4-0-250828';
 import { Minimax25Speech } from './models/minimax-2-5-speech';
 import { MidjourneyV7 } from './models/midjourney-v7';
 import { Kling21 } from './models/kling-2-1';
+import { Gemini25FlashImagePreview } from './models/gemini-2-5-flash-image-preview';
 
 const aigcProviderConfigSchema = z.object({
   doubao: volcengineArkServiceConfigSchema.optional(),
@@ -157,5 +158,8 @@ AIGC.registerModel(providers => (providers['302ai'] ? new MidjourneyV7(providers
 
 // Kling模型注册
 AIGC.registerModel(providers => (providers['302ai'] ? new Kling21(providers['302ai']) : null));
+
+// Gemini模型注册
+AIGC.registerModel(providers => (providers['302ai'] ? new Gemini25FlashImagePreview(providers['302ai']) : null));
 
 export default AIGC;
