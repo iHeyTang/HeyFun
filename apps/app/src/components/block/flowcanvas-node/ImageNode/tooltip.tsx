@@ -99,6 +99,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       if (result.success) {
         updateStatus(NodeStatus.COMPLETED);
         onSubmitSuccess?.({ images: [...(node.data.output?.images || []), ...(result.data?.images || [])] });
+        onValueChange?.({ ...actionData, selectedKey: result.data?.images?.[0]?.key });
       } else {
         updateStatus(NodeStatus.FAILED);
       }

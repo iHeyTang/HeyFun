@@ -151,6 +151,7 @@ const processPaintboardTaskResult = async (args: {
             throw new Error('No valid results found');
           }
         } else if (result.status === 'failed') {
+          console.error(`Task ${taskId} failed:`, result.error);
           throw new Error(result.error || 'Task failed');
         } else {
           // 任务仍在处理中，等待后继续轮询

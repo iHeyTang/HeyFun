@@ -92,6 +92,13 @@ export class MidjourneyV7 extends BaseAigcModel {
 
     const status = this.getStatus(data.status || 'NOT_START');
 
+    if (status === 'failed') {
+      return {
+        status,
+        error: data.failReason || data.description || 'Unknown error',
+      };
+    }
+
     if (status !== 'completed') {
       return {
         status,

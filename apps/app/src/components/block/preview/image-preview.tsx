@@ -16,7 +16,7 @@ export function ImagePreview({ onDoubleClick, className = '', ...imgProps }: Ima
       }
       imageFullscreenModalRef.current?.show(imgProps.src || '', 'image');
     },
-    [onDoubleClick],
+    [onDoubleClick, imgProps.src],
   );
 
   // 合并默认样式和用户自定义样式

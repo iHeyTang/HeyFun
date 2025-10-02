@@ -27,7 +27,7 @@ export function VideoPreview({
       // 默认行为：打开全屏
       fullscreenVideoRef.current?.show(videoProps.src || '', 'video');
     },
-    [onDoubleClick],
+    [onDoubleClick, videoProps.src],
   );
 
   // 处理鼠标移入事件

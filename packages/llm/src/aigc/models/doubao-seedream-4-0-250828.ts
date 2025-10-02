@@ -90,21 +90,21 @@ export class DoubaoSeedream40 extends BaseAigcModel {
   private convertAspectRatioToImageSize(aspectRatio: string): `${number}x${number}` | undefined {
     switch (aspectRatio) {
       case '1:1':
-        return '1024x1024';
+        return '2048x2048';
       case '4:3':
-        return '1152x864';
+        return '2304x1728';
       case '3:4':
-        return '864x1152';
+        return '1728x2304';
       case '16:9':
-        return '1280x720';
+        return '2560x1440';
       case '9:16':
-        return '720x1280';
-      case '2:3':
-        return '832x1248';
+        return '1440x2560';
       case '3:2':
-        return '1248x832';
+        return '2496x1664';
+      case '2:3':
+        return '1664x2496';
       case '21:9':
-        return '1512x648';
+        return '3024x1296';
       default:
         return undefined;
     }
