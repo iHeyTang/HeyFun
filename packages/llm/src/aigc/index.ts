@@ -38,6 +38,7 @@ import { Minimax25Speech } from './models/minimax-2-5-speech';
 import { MidjourneyV7 } from './models/midjourney-v7';
 import { Kling21 } from './models/kling-2-1';
 import { Gemini25FlashImagePreview } from './models/gemini-2-5-flash-image-preview';
+import { SoraVideo2 } from './models/sora-video-2';
 
 const aigcProviderConfigSchema = z.object({
   doubao: volcengineArkServiceConfigSchema.optional(),
@@ -161,5 +162,8 @@ AIGC.registerModel(providers => (providers['302ai'] ? new Kling21(providers['302
 
 // Gemini模型注册
 AIGC.registerModel(providers => (providers['302ai'] ? new Gemini25FlashImagePreview(providers['302ai']) : null));
+
+// Sora模型注册
+AIGC.registerModel(providers => (providers['302ai'] ? new SoraVideo2(providers['302ai']) : null));
 
 export default AIGC;

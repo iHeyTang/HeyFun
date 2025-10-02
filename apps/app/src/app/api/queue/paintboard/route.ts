@@ -26,7 +26,7 @@ export const POST = async (req: Request) => {
 
     await prisma.paintboardTasks.update({ where: { id: body.taskId }, data: { taskId: externalTaskId } });
 
-    const timeoutMs = 5 * 60 * 1000; // 5分钟
+    const timeoutMs = 15 * 60 * 1000; // 15分钟
 
     const result = await processPaintboardTaskResult({
       orgId: task.organizationId,
@@ -35,7 +35,7 @@ export const POST = async (req: Request) => {
       params: task.params,
       externalTaskId,
       timeoutMs,
-      retryDelay: 2000, // 每次重试间隔2秒
+      retryDelay: 5000, // 每次重试间隔5秒
     });
 
     if (result?.success) {
@@ -81,7 +81,7 @@ const processPaintboardTaskResult = async (args: {
 }) => {
   // 根据生成类型设置不同的超时时间
   const { orgId, taskId, model, externalTaskId, retryDelay = 3000 } = args;
-  const defaultTimeout = 5 * 60 * 1000; // 5分钟
+  const defaultTimeout = 15 * 60 * 1000; // 15分钟
   const timeoutMs = args.timeoutMs ?? defaultTimeout;
 
   try {
