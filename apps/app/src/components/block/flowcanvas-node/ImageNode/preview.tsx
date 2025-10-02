@@ -17,7 +17,7 @@ export function ImagePreview({ coverKey, images, className, onLoad, onSetCover }
     e => {
       imageFullscreenModalRef.current?.show({ coverKey, images });
     },
-    [coverKey],
+    [coverKey, images],
   );
 
   // 合并默认样式和用户自定义样式
