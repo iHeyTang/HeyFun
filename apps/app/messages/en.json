@@ -92,7 +92,9 @@
         "pitch": "Pitch",
         "emotion": "Emotion",
         "resolution": "Resolution",
-        "advanced": "Advanced Settings"
+        "advanced": "Advanced Settings",
+        "video": "Video",
+        "audio": "Audio"
       }
     }
   },

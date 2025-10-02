@@ -39,6 +39,7 @@ import { MidjourneyV7 } from './models/midjourney-v7';
 import { Kling21 } from './models/kling-2-1';
 import { Gemini25FlashImagePreview } from './models/gemini-2-5-flash-image-preview';
 import { SoraVideo2 } from './models/sora-video-2';
+import { SyncSoV2 } from './models/sync-so-v2';
 
 const aigcProviderConfigSchema = z.object({
   doubao: volcengineArkServiceConfigSchema.optional(),
@@ -165,5 +166,8 @@ AIGC.registerModel(providers => (providers['302ai'] ? new Gemini25FlashImagePrev
 
 // Sora模型注册
 AIGC.registerModel(providers => (providers['302ai'] ? new SoraVideo2(providers['302ai']) : null));
+
+// Sync So V2模型注册
+AIGC.registerModel(providers => (providers['302ai'] ? new SyncSoV2(providers['302ai']) : null));
 
 export default AIGC;

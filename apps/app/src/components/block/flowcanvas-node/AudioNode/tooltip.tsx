@@ -203,7 +203,7 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                 });
               }}
             >
-              <SelectTrigger size="sm" className="text-xs" hideIcon>
+              <SelectTrigger size="sm" className="max-w-[100px] text-xs" hideIcon>
                 <SelectValue placeholder="Voice" />
               </SelectTrigger>
               <SelectContent>

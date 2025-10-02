@@ -50,17 +50,26 @@ export const t2aParamsSchema = z.object({
 export type T2aJsonSchema = {
   text: JSONSchema.StringSchema;
   voice_id: JSONSchema.StringSchema;
-  mode: JSONSchema.StringSchema;
-  speed: JSONSchema.NumberSchema;
-  vol: JSONSchema.NumberSchema;
-  pitch: JSONSchema.NumberSchema;
-  emotion: JSONSchema.StringSchema;
+  advanced: JSONSchema.ObjectSchema;
+};
+
+// 唇形同步生成参数
+export const lipSyncParamsSchema = z.object({
+  video: z.string(),
+  audio: z.string(),
+  advanced: z.any().optional(),
+});
+
+export type LipSyncJsonSchema = {
+  video: JSONSchema.StringSchema;
+  audio: JSONSchema.StringSchema;
+  advanced: JSONSchema.ObjectSchema;
 };
 
 // 提交任务参数
-export const submitTaskParamsSchema = z.union([imageParamsSchema, videoParamsSchema, t2aParamsSchema]);
+export const submitTaskParamsSchema = z.union([imageParamsSchema, videoParamsSchema, t2aParamsSchema, lipSyncParamsSchema]);
 export type SubmitTaskParams = z.infer<typeof submitTaskParamsSchema>;
-export type SubmitTaskParamsJsonSchema = ImageJsonSchema | VideoJsonSchema | T2aJsonSchema;
+export type SubmitTaskParamsJsonSchema = ImageJsonSchema | VideoJsonSchema | T2aJsonSchema | LipSyncJsonSchema;
 
 export interface Voice {
   id: string;
@@ -77,13 +86,15 @@ export abstract class BaseAigcModel {
   public abstract generationTypes: GenerationType[];
 
   // 抽象方法：子类必须实现自己的参数验证规则
-  public abstract paramsSchema: z.ZodSchema<z.infer<typeof videoParamsSchema> | z.infer<typeof imageParamsSchema> | z.infer<typeof t2aParamsSchema>>;
+  public abstract paramsSchema: z.ZodSchema<
+    z.infer<typeof videoParamsSchema> | z.infer<typeof imageParamsSchema> | z.infer<typeof t2aParamsSchema> | z.infer<typeof lipSyncParamsSchema>
+  >;
 
   abstract submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string>;
 
   abstract getTaskResult(params: { model: string; taskId: string; params: SubmitTaskParams }): Promise<GenerationTaskResult>;
 
-  abstract calculateCost(params: z.infer<typeof this.paramsSchema>): number;
+  abstract calculateCost(params: z.infer<typeof this.paramsSchema>, outputs: GenerationTaskResult): number | Promise<number>;
 
   getVoiceList(): Promise<Voice[]> {
     return Promise.resolve([]);

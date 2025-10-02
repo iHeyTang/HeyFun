@@ -46,7 +46,7 @@ export const POST = async (req: Request) => {
       } else {
         try {
           // 计算任务费用
-          const cost = model.calculateCost(task.params as any);
+          const cost = await model.calculateCost(task.params, result.originalResult);
 
           // 扣除费用
           await prisma.credit.update({
@@ -146,14 +146,14 @@ const processPaintboardTaskResult = async (args: {
               data: { results: results as any, status: 'completed' },
             });
             console.log(`Task ${taskId} completed successfully with ${results.length} results`);
-            return { success: true, results };
+            return { success: true, results, originalResult: result };
           } else {
             await prisma.paintboardTasks.update({
               where: { id: taskId },
               data: { status: 'failed', error: 'No valid results found' },
             });
             console.error(`Task ${taskId} failed: No valid results found`);
-            return { success: false, results: [] };
+            return { success: false, results: [], originalResult: result };
           }
         } else if (result.status === 'failed') {
           console.error(`Task ${taskId} failed:`, result.error);

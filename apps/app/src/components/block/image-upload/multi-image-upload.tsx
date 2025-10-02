@@ -1,5 +1,6 @@
 'use client';
 
+import { useSignedUrl } from '@/hooks/use-signed-url';
 import { uploadFile, validateFile } from '@/lib/browser/file';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -45,6 +46,8 @@ export const MultiImageUpload = React.forwardRef<HTMLDivElement, MultiImageUploa
     const [uploadingFiles, setUploadingFiles] = React.useState<Set<string>>(new Set());
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+    const { getSignedUrl } = useSignedUrl();
+
     const handleFileUpload = async (file: File): Promise<string> => {
       const error = validateFile(file, accept, maxSize);
       if (error) {
@@ -55,8 +58,8 @@ export const MultiImageUpload = React.forwardRef<HTMLDivElement, MultiImageUploa
       setUploadingFiles(prev => new Set(prev).add(fileId));
 
       try {
-        const url = await uploadFile(file, uploadPath);
-        return url;
+        const key = await uploadFile(file, uploadPath);
+        return key;
       } finally {
         setUploadingFiles(prev => {
           const newSet = new Set(prev);
@@ -84,7 +87,8 @@ export const MultiImageUpload = React.forwardRef<HTMLDivElement, MultiImageUploa
       // 并发上传所有文件
       const uploadPromises = fileArray.map(async file => {
         try {
-          const url = await handleFileUpload(file);
+          const key = await handleFileUpload(file);
+          const url = await getSignedUrl(key);
           newUrls.push(url);
         } catch (error) {
           errors.push(`${file.name}: ${error instanceof Error ? error.message : 'Upload failed'}`);
@@ -159,7 +163,7 @@ export const MultiImageUpload = React.forwardRef<HTMLDivElement, MultiImageUploa
                 {/* 删除按钮 */}
                 <button
                   onClick={() => handleRemove(index)}
-                  className="absolute top-1 right-1 cursor-pointer rounded-full bg-destructive p-1 text-destructive-foreground opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:bg-destructive"
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive absolute top-1 right-1 cursor-pointer rounded-full p-1 opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110"
                   disabled={uploading}
                 >
                   <X className="h-2 w-2" />

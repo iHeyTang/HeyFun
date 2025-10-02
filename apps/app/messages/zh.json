@@ -92,7 +92,9 @@
         "pitch": "音调",
         "emotion": "情感",
         "resolution": "分辨率",
-        "advanced": "高级设置"
+        "advanced": "高级设置",
+        "video": "视频",
+        "audio": "音频"
       }
     }
   },

@@ -5,11 +5,11 @@ import { useSignedUrl } from '@/hooks/use-signed-url';
 import { uploadFile, validateFile } from '@/lib/browser/file';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Upload, X } from 'lucide-react';
+import { Music, X } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
 
-export interface ImageUploadProps {
+export interface AudioUploadProps {
   value?: string; // 上传后的文件URL
   onChange?: (url: string) => void; // 当URL变化时回调
   accept?: string;
@@ -23,13 +23,13 @@ export interface ImageUploadProps {
   placeholder?: React.ReactNode;
 }
 
-export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
+export const AudioUpload = React.forwardRef<HTMLDivElement, AudioUploadProps>(
   (
     {
       value,
       onChange,
-      accept = 'image/*',
-      maxSize = 10 * 1024 * 1024, // 10MB
+      accept = 'audio/*',
+      maxSize = 50 * 1024 * 1024, // 50MB
       uploadPath = 'paintboard',
       disabled = false,
       className,
@@ -58,10 +58,10 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
         const key = await uploadFile(file, uploadPath);
         const url = await getSignedUrl(key);
         onChange?.(url);
-        toast.success('文件上传成功');
+        toast.success('Audio uploaded successfully');
       } catch (error) {
         console.error('Upload error:', error);
-        toast.error('文件上传失败');
+        toast.error('Audio upload failed');
       } finally {
         setUploading(false);
       }
@@ -89,9 +89,13 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
     const handleDrop = (e: React.DragEvent) => {
       e.preventDefault();
       setDragOver(false);
-      if (!disabled && e.dataTransfer.files.length > 0) {
+      if (!disabled && e.dataTransfer.files) {
         handleFiles(e.dataTransfer.files);
       }
+    };
+
+    const handleClick = () => {
+      fileInputRef.current?.click();
     };
 
     const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,42 +104,34 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
       }
     };
 
-    const handleClick = () => {
-      if (!disabled) {
-        fileInputRef.current?.click();
-      }
-    };
-
-    const handleRemove = () => {
+    const handleRemove = (e: React.MouseEvent) => {
+      e.stopPropagation();
       onChange?.('');
     };
 
-    const uploadState = uploading ? 'uploading' : dragOver ? 'dragOver' : 'default';
+    const uploadState = uploading ? 'uploading' : dragOver ? 'dragOver' : disabled ? null : 'default';
 
     return (
-      <div ref={ref} className={cn('h-full w-full', className)}>
+      <div ref={ref} className={cn('relative w-full', className)}>
         {value ? (
-          // 显示已上传文件的预览
-          <div className="group relative flex h-full w-full cursor-pointer items-center justify-center" onClick={handleClick}>
-            {value && (
-              <div className="relative h-full w-full">
-                <img src={value} alt="Uploaded file" className="h-full w-full rounded object-cover" />
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleRemove();
-                  }}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive absolute -top-2 -right-2 rounded-full p-1.5 opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110"
-                  disabled={uploading}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            )}
-
-            {uploading && (
-              <div className="bg-muted absolute right-2 bottom-2 left-2 h-1 overflow-hidden rounded-full">
-                <div className="bg-primary h-1 animate-pulse rounded-full" />
+          // 显示音频预览
+          <div className="relative w-full rounded border p-4">
+            <audio
+              src={value}
+              controls
+              className="w-full"
+              onError={() => {
+                toast.error('Audio loading failed');
+              }}
+            >
+              Your browser does not support audio playback
+            </audio>
+            {!disabled && (
+              <div
+                className="bg-background/80 hover:bg-background absolute top-2 right-2 cursor-pointer rounded-full p-1 backdrop-blur-sm transition-colors"
+                onClick={handleRemove}
+              >
+                <X className="h-4 w-4" />
               </div>
             )}
           </div>
@@ -148,6 +144,7 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
                 .split(' ')
                 .filter(cls => !cls.includes('min-h') && !cls.includes('p-'))
                 .join(' '),
+              'min-h-[100px]',
             )}
             onClick={uploading ? undefined : handleClick}
             onDragOver={uploading ? undefined : handleDragOver}
@@ -175,26 +172,22 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
 
             {/* 内容层 */}
             {uploading ? (
-              <motion.div
-                className="relative z-10 flex items-center justify-center"
-                animate={{
-                  scale: [1, 1.1, 1],
-                  opacity: [0.6, 1, 0.6],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
-              >
-                <Upload className="text-primary h-6 w-6" />
+              <motion.div className="z-10 flex flex-col items-center gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <div className="border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
+                <p className="text-muted-foreground text-sm">Uploading...</p>
               </motion.div>
             ) : (
-              placeholder || (
-                <div className="flex items-center justify-center">
-                  <Upload className="text-muted-foreground group-hover:text-foreground h-6 w-6 transition-colors duration-200" />
-                </div>
-              )
+              <div className="z-10 flex flex-col items-center gap-2 px-4 py-6">
+                {placeholder || (
+                  <>
+                    <Music className="text-muted-foreground h-8 w-8" />
+                    <div className="text-center">
+                      <p className="text-sm">Drop audio file or click to upload</p>
+                      <p className="text-muted-foreground mt-1 text-xs">Max 50MB supported</p>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -203,4 +196,4 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
   },
 );
 
-ImageUpload.displayName = 'ImageUpload';
+AudioUpload.displayName = 'AudioUpload';

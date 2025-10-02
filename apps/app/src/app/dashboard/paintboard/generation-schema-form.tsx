@@ -1,4 +1,4 @@
-import { ImageUpload, MultiImageUpload } from '@/components/block/image-upload';
+import { ImageUpload, MultiImageUpload, VideoUpload, AudioUpload } from '@/components/block/image-upload';
 import { Button } from '@/components/ui/button';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -48,6 +48,12 @@ const FIELD_RENDER_MAP = new Map([
   ['referenceImage', 'image-array'], // 图片数组
   ['firstFrame', 'image'], // 单张图片
   ['lastFrame', 'image'], // 单张图片
+
+  // 视频上传字段
+  ['video', 'video'], // 单个视频
+
+  // 音频上传字段
+  ['audio', 'audio'], // 单个音频
 ]);
 
 // 获取字段渲染方式
@@ -462,6 +468,60 @@ const StringForm = ({ schema, form, fieldPath, hideLabel, modelName }: Generatio
                 size="sm"
                 showPreview={true}
                 className="h-24 w-24"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+
+  // 视频上传字段 (video)
+  if (renderType === 'video') {
+    return (
+      <FormField
+        key={fieldName}
+        control={form.control}
+        name={formFieldPath}
+        render={({ field: formField }) => (
+          <FormItem className="space-y-1">
+            {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
+            <FormControl>
+              <VideoUpload
+                value={formField.value ? String(formField.value) : ''}
+                onChange={formField.onChange}
+                accept="video/*"
+                maxSize={100 * 1024 * 1024} // 100MB
+                uploadPath="paintboard"
+                showPreview={true}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+
+  // 音频上传字段 (audio)
+  if (renderType === 'audio') {
+    return (
+      <FormField
+        key={fieldName}
+        control={form.control}
+        name={formFieldPath}
+        render={({ field: formField }) => (
+          <FormItem className="space-y-1">
+            {!hideLabel && <FormLabel>{displayLabel}</FormLabel>}
+            <FormControl>
+              <AudioUpload
+                value={formField.value ? String(formField.value) : ''}
+                onChange={formField.onChange}
+                accept="audio/*"
+                maxSize={50 * 1024 * 1024} // 50MB
+                uploadPath="paintboard"
+                showPreview={true}
               />
             </FormControl>
             <FormMessage />
