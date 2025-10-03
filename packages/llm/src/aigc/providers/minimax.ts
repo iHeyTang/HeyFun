@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import qs from 'querystring';
 import z from 'zod';
+import { downloadFile } from '../utils/downloader';
 
 export interface SignParams {
   headers?: Record<string, string>;
@@ -113,15 +114,7 @@ export class MinimaxProvider {
   }
 
   async t2a(params: z.infer<typeof t2aSubmitParamsSchema>) {
-    const res = await fetch('https://api.minimaxi.com/v1/t2a_v2', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify(params),
-    });
-    const resBody = (await res.json()) as {
+    const res = await this.request<{
       data: { audio: string; subtitle_file?: string; status: number };
       extra_info: {
         audio_length: number;
@@ -136,8 +129,9 @@ export class MinimaxProvider {
       };
       trace_id: string;
       base_resp: { status_code: number; status_msg: string };
-    };
-    return resBody;
+    }>('https://api.minimaxi.com/v1/t2a_v2', { method: 'POST', body: params });
+
+    return res;
   }
 
   /**
@@ -145,16 +139,8 @@ export class MinimaxProvider {
    * https://platform.minimaxi.com/document/t2a_async_create?key=68adac886602726333001546
    */
   async t2aSubmit(params: z.infer<typeof t2aSubmitParamsSchema>) {
-    const res = await fetch('https://api.minimaxi.com/v1/t2a_async_v2', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify(params),
-    });
-    const resBody = (await res.json()) as { task_id: bigint };
-    return { task_id: resBody.task_id.toString() };
+    const res = await this.request<{ task_id: bigint }>('https://api.minimaxi.com/v1/t2a_async_v2', { method: 'POST', body: params });
+    return { task_id: res.task_id.toString() };
   }
 
   /**
@@ -162,24 +148,77 @@ export class MinimaxProvider {
    * https://platform.minimaxi.com/document/t2a_async_query?key=68adad0f6fe587e3fbfe9810
    */
   async t2aQuery(taskId: string) {
-    const res = await fetch(`http://api.minimaxi.com/v1/query/t2a_async_query_v2?task_id=${taskId}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-    });
-
-    const resBody = (await res.json()) as {
+    const res = await this.request<{
       task_id: string;
       status: 'Processing' | 'Success' | 'Failed' | 'Expired';
       file_id: bigint;
       status_message: string;
+    }>(`http://api.minimaxi.com/v1/query/t2a_async_query_v2?task_id=${taskId}`);
+    if (res.status === 'Failed') {
+      throw new Error(res.status_message);
+    }
+    return res;
+  }
+
+  async request<R = unknown, T = unknown>(
+    url: string,
+    options?: {
+      method?: 'GET' | 'POST';
+      body?: T;
+      headers?: Record<string, string>;
+    },
+  ) {
+    const res = await fetch(url, {
+      method: options?.method || 'GET',
+      headers: { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json', ...options?.headers },
+      body: options?.body ? JSON.stringify(options.body) : undefined,
+    });
+    return res.json() as Promise<R>;
+  }
+
+  async uploadFile(data: { purpose: 'prompt_audio'; file: string }) {
+    const fileUrl = new URL(data.file);
+    const filename = fileUrl.pathname.split('/').pop();
+    const buffer = await downloadFile(data.file);
+    const formData = new FormData();
+    formData.append('purpose', data.purpose);
+    formData.append('file', new Blob([buffer]), filename);
+
+    const respond = await fetch('https://api.minimaxi.com/v1/files/upload', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${this.apiKey}` },
+      body: formData,
+    });
+
+    const res = (await respond.json()) as {
+      file: { file_id: string; bytes: number; created_at: number; filename: string; purpose: string };
+      base_resp: { status_code: number; status_msg: string };
     };
 
-    if (resBody.status === 'Failed') {
-      throw new Error(resBody.status_message);
+    if (res.base_resp.status_code !== 0) {
+      throw new Error(res.base_resp.status_msg);
     }
-    return resBody;
+    return res.file.file_id;
+  }
+
+  async cloneVoice(params: { voice_id: string; file_id: string; text?: string; model?: string }) {
+    const res = await this.request<{
+      input_sensitive: boolean;
+      input_sensitive_type: number;
+      demo_audio: string;
+      base_resp: { status_code: number; status_msg: string };
+    }>('https://api.minimaxi.com/v1/voice_clone', {
+      method: 'POST',
+      body: { need_noise_reduction: true, need_volume_normalization: true, ...params },
+    });
+    return res;
+  }
+
+  async deleteVoice(voice_type: 'voice_cloning' | 'voice_generation', voice_id: string) {
+    const res = await this.request<{
+      base_resp: { status_code: number; status_msg: string };
+    }>('https://api.minimaxi.com/v1/delete_voice', { method: 'POST', body: { voice_type, voice_id } });
+    return res;
   }
 
   /**
@@ -188,34 +227,12 @@ export class MinimaxProvider {
    * @returns
    */
   async getVoice() {
-    const res = await fetch('https://api.minimaxi.com/v1/get_voice', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        voice_type: 'all',
-      }),
-    });
-    const resBody = (await res.json()) as {
-      system_voice: {
-        voice_id: string;
-        voice_name: string;
-        description: string[];
-      }[];
-      voice_cloning: {
-        voice_id: string;
-        description: string[];
-        created_time: string;
-      }[];
-      voice_generation: {
-        voice_id: string;
-        description: string[];
-        created_time: string;
-      }[];
-    };
-    return resBody;
+    const res = await this.request<{
+      system_voice?: { voice_id: string; voice_name: string; description: string[] }[];
+      voice_cloning?: { voice_id: string; description: string[]; created_time: string }[];
+      voice_generation?: { voice_id: string; description: string[]; created_time: string }[];
+    }>('https://api.minimaxi.com/v1/get_voice', { method: 'POST', body: { voice_type: 'system' } });
+    return res;
   }
 
   /**
@@ -225,13 +242,7 @@ export class MinimaxProvider {
    * @returns
    */
   async retrieveFileById(file_id: string) {
-    const res = await fetch(`https://api.minimaxi.com/v1/files/retrieve?file_id=${file_id}`, {
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    const resBody = (await res.json()) as {
+    const res = await this.request<{
       file: {
         file_id: bigint;
         bytes: bigint;
@@ -239,11 +250,11 @@ export class MinimaxProvider {
         download_url: string;
       };
       base_resp: { status_code: number; status_msg: string };
-    };
-    if (resBody.base_resp.status_code !== 0) {
-      throw new Error(resBody.base_resp.status_msg);
+    }>(`https://api.minimaxi.com/v1/files/retrieve?file_id=${file_id}`);
+    if (res.base_resp.status_code !== 0) {
+      throw new Error(res.base_resp.status_msg);
     }
-    return { file_id: resBody.file.file_id, file_name: resBody.file.filename, file_size: resBody.file.bytes, file_url: resBody.file.download_url };
+    return { file_id: res.file.file_id, file_name: res.file.filename, file_size: res.file.bytes, file_url: res.file.download_url };
   }
 
   /**

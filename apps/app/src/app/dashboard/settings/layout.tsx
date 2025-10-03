@@ -34,6 +34,15 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             {t('agents')}
           </Link>
           <Link
+            href="/dashboard/settings/voices"
+            className={cn(
+              'hover:bg-muted cursor-pointer p-2 text-sm transition-colors',
+              pathname.startsWith('/dashboard/settings/voices') && 'bg-muted',
+            )}
+          >
+            {t('voices')}
+          </Link>
+          <Link
             href="/dashboard/settings/preferences"
             className={cn(
               'hover:bg-muted cursor-pointer p-2 text-sm transition-colors',

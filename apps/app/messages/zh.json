@@ -20,7 +20,7 @@
     "time": {
       "justUpdated": "刚刚更新",
       "minutesAgo": "{count}分钟前更新",
-      "hoursAgo": "{count}小时前更新", 
+      "hoursAgo": "{count}小时前更新",
       "daysAgo": "{count}天前更新"
     },
     "sync": {
@@ -72,6 +72,7 @@
       "models": "模型",
       "aigc": "画板",
       "agents": "智能体",
+      "voices": "音色",
       "preferences": "偏好设置"
     }
   },
@@ -130,5 +131,58 @@
       "loadError": "加载项目失败"
     },
     "confirmDelete": "确定要删除项目 \"{name}\" 吗？此操作不可撤销。"
+  },
+  "voices": {
+    "title": "音色管理",
+    "description": "管理和配置多个平台的自定义音色",
+    "tabs": {
+      "voices": "我的音色",
+      "cloneTasks": "克隆任务"
+    },
+    "providers": {
+      "all": "全部平台",
+      "selectPlaceholder": "选择平台"
+    },
+    "actions": {
+      "cloneVoice": "克隆音色",
+      "deleteVoice": "删除音色",
+      "startClone": "开始克隆"
+    },
+    "emptyState": {
+      "voices": "暂无音色，点击右上角添加音色",
+      "cloneTasks": "暂无克隆任务"
+    },
+    "toast": {
+      "loadVoicesFailed": "加载音色列表失败",
+      "loadCloneTasksFailed": "加载克隆任务失败",
+      "voiceDeleted": "音色已删除",
+      "deleteVoiceFailed": "删除音色失败",
+      "cloneSuccess": "音色克隆成功！",
+      "cloneFailed": "克隆音色失败",
+      "fillAllFields": "请填写所有必填字段"
+    },
+    "confirmDelete": "确定要删除这个音色吗？",
+    "cloneDialog": {
+      "title": "克隆音色",
+      "description": "上传音频文件来克隆新的音色",
+      "fields": {
+        "name": "音色名称",
+        "namePlaceholder": "输入音色名称",
+        "description": "描述",
+        "descriptionPlaceholder": "输入音色描述",
+        "model": "模型",
+        "modelPlaceholder": "选择支持克隆的模型",
+        "audioFile": "音频文件 URL",
+        "audioFileHint": "请提供可访问的音频文件URL，建议时长 10-30 秒",
+        "text": "试听文本",
+        "textPlaceholder": "输入试听文本内容（用于生成预览音频）"
+      }
+    },
+    "status": {
+      "pending": "等待中",
+      "processing": "处理中",
+      "completed": "已完成",
+      "failed": "失败"
+    }
   }
 }

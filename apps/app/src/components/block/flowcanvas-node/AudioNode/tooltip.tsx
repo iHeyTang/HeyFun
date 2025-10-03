@@ -12,6 +12,7 @@ import { WandSparkles } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AudioNodeActionData, AudioNodeProcessor } from './processor';
 import { getAigcVoiceList } from '@/actions/llm';
+import { VoiceSelectorDialog, VoiceSelectorRef } from '@/components/features/voice-selector';
 
 export interface AudioNodeTooltipProps {
   nodeId: string;
@@ -32,8 +33,10 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
   const [selectedVoiceId, setSelectedVoiceId] = useState(actionData?.voiceId);
   const editorRef = useRef<TiptapEditorRef>(null);
+  const voiceSelectorRef = useRef<VoiceSelectorRef>(null);
 
   const [voiceList, setVoiceList] = useState<Voice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<Voice | null>(null);
 
   useEffect(() => {
     if (selectedModelName) {
@@ -192,30 +195,9 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             </SelectContent>
           </Select>
           {voiceList.length > 0 && (
-            <Select
-              value={selectedVoiceId}
-              onValueChange={(v: string) => {
-                setSelectedVoiceId(v);
-                onValueChange?.({
-                  prompt: localPrompt,
-                  selectedModel: selectedModelName,
-                  voiceId: v,
-                });
-              }}
-            >
-              <SelectTrigger size="sm" className="max-w-[100px] text-xs" hideIcon>
-                <SelectValue placeholder="Voice" />
-              </SelectTrigger>
-              <SelectContent>
-                {voiceList.map(option => {
-                  return (
-                    <SelectItem key={option.id} value={option.id}>
-                      {option.name}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+            <Button variant="outline" size="sm" className="justify-start p-4 text-xs font-normal" onClick={() => voiceSelectorRef.current?.open()}>
+              <span>{selectedVoice?.name || 'Select Voice'}</span>
+            </Button>
           )}
         </div>
         {/* 右侧：提交按钮 */}
@@ -223,6 +205,7 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           <WandSparkles />
         </Button>
       </div>
+      <VoiceSelectorDialog ref={voiceSelectorRef} selectedVoice={selectedVoice} onVoiceSelect={setSelectedVoice} model={selectedModelName} />
     </div>
   );
 };

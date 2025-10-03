@@ -1,4 +1,5 @@
 import { getSignedUploadUrl, getSignedUrl } from '@/actions/oss';
+import { join } from 'path';
 
 /**
  * 格式化文件大小显示
@@ -20,7 +21,7 @@ export const formatFileSize = (bytes: number): string => {
  */
 export const uploadFile = async (file: File, path: string): Promise<string> => {
   // 获取上传URL
-  const res = await getSignedUploadUrl({ extension: path.split('.').pop()! });
+  const res = await getSignedUploadUrl({ path, extension: file.name.split('.').pop()! });
 
   // 检查上传URL是否存在
   if (!res.data?.uploadUrl) {

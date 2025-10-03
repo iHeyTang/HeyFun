@@ -1,10 +1,12 @@
 import z from 'zod';
-import { BaseAigcModel, Voice } from '../core/base-model';
+import { BaseAigcModel, Voice, VoiceCloneParams, VoiceCloneResult } from '../core/base-model';
 import { GenerationTaskResult, GenerationType } from '../types';
 import { MinimaxProvider } from '../providers/minimax';
 import { ToAsyncTaskManager } from '../../utils/to-async-task';
 
 const toAsync = new ToAsyncTaskManager<Awaited<ReturnType<MinimaxProvider['t2a']>>>();
+
+const toAsyncCloneVoice = new ToAsyncTaskManager<Awaited<ReturnType<MinimaxProvider['cloneVoice']>> & { voice_id: string }>();
 
 const minimax25SpeechParamsSchema = z.object({
   text: z.string(),
@@ -123,10 +125,45 @@ export class Minimax25Speech extends BaseAigcModel {
    */
   async getVoiceList(): Promise<Voice[]> {
     const voices = await this.provider.getVoice();
-    return [...voices.system_voice, ...voices.voice_cloning, ...voices.voice_generation].map(v => ({
+    return [...(voices.system_voice || []), ...(voices.voice_cloning || []), ...(voices.voice_generation || [])].map(v => ({
       id: v.voice_id,
-      name: 'name' in v && typeof v.name === 'string' ? v.name : v.description?.[0] || v.voice_id,
+      name: 'voice_name' in v && typeof v.voice_name === 'string' ? v.voice_name : v.description?.[0] || v.voice_id,
       description: v.description?.join('\n'),
     }));
+  }
+
+  async cloneVoice(params: VoiceCloneParams): Promise<string> {
+    const fileId = await this.provider.uploadFile({ purpose: 'prompt_audio', file: params.audio });
+    // 生成256长度的随机id
+    const timestamp = Date.now().toString();
+    const randomPart = Array.from({ length: 256 - timestamp.length - 22 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+    const voiceId = `heyfun-voice_cloning-${timestamp}-${randomPart}`;
+    const result = toAsyncCloneVoice.addTask(async () => {
+      const res = await this.provider.cloneVoice({ voice_id: voiceId, file_id: fileId, text: params.text, model: 'speech-2.5-hd-preview' });
+      return { ...res, voice_id: voiceId };
+    });
+    return result.id;
+  }
+
+  async getCloneVoiceResult(task_id: string): Promise<VoiceCloneResult> {
+    const result = toAsyncCloneVoice.getTask(task_id);
+    if (!result) {
+      throw new Error('Task not found');
+    }
+    return {
+      success: result.result?.base_resp.status_code === 0,
+      voiceId: result.result?.voice_id,
+      error: result.result?.base_resp.status_code !== 0 ? result.result?.base_resp.status_msg : undefined,
+      demo_audio: { type: 'url', data: result.result?.demo_audio || '' },
+    };
+  }
+
+  async deleteVoice(voice_id: string) {
+    const voiceType = voice_id.startsWith('heyfun-voice_cloning-') ? 'voice_cloning' : 'voice_generation';
+    const result = await this.provider.deleteVoice(voiceType, voice_id);
+    return {
+      success: result.base_resp.status_code === 0,
+      error: result.base_resp.status_code !== 0 ? result.base_resp.status_msg : undefined,
+    };
   }
 }

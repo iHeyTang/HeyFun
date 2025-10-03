@@ -18,7 +18,8 @@ interface ToAsyncTask<Result = any> {
 export class ToAsyncTaskManager<Result = any> {
   private tasks: Record<string, ToAsyncTask<Result>> = {};
 
-  addTask(promise: Promise<Result>): ToAsyncTask<Result> {
+  addTask(p: Promise<Result> | (() => Promise<Result>)): ToAsyncTask<Result> {
+    const promise = typeof p === 'function' ? p() : p;
     const task: ToAsyncTask<Result> = {
       id: uuidv4(),
       created: new Date(),

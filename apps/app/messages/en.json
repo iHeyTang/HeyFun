@@ -72,6 +72,7 @@
       "models": "Models",
       "aigc": "Paintboard",
       "agents": "Agents",
+      "voices": "Voices",
       "preferences": "Preferences"
     }
   },
@@ -130,5 +131,58 @@
       "loadError": "Failed to load projects"
     },
     "confirmDelete": "Are you sure you want to delete project \"{name}\"? This action cannot be undone."
+  },
+  "voices": {
+    "title": "Voice Management",
+    "description": "Manage and configure custom voices across multiple platforms",
+    "tabs": {
+      "voices": "My Voices",
+      "cloneTasks": "Clone Tasks"
+    },
+    "providers": {
+      "all": "All Platforms",
+      "selectPlaceholder": "Select platform"
+    },
+    "actions": {
+      "cloneVoice": "Clone Voice",
+      "deleteVoice": "Delete Voice",
+      "startClone": "Start Cloning"
+    },
+    "emptyState": {
+      "voices": "No voices yet, click the button above to add a voice",
+      "cloneTasks": "No clone tasks yet"
+    },
+    "toast": {
+      "loadVoicesFailed": "Failed to load voices",
+      "loadCloneTasksFailed": "Failed to load clone tasks",
+      "voiceDeleted": "Voice deleted",
+      "deleteVoiceFailed": "Failed to delete voice",
+      "cloneSuccess": "Voice cloned successfully!",
+      "cloneFailed": "Failed to clone voice",
+      "fillAllFields": "Please fill in all required fields"
+    },
+    "confirmDelete": "Are you sure you want to delete this voice?",
+    "cloneDialog": {
+      "title": "Clone Voice",
+      "description": "Upload audio file to clone a new voice",
+      "fields": {
+        "name": "Voice Name",
+        "namePlaceholder": "Enter voice name",
+        "description": "Description",
+        "descriptionPlaceholder": "Enter voice description",
+        "model": "Model",
+        "modelPlaceholder": "Select a model that supports cloning",
+        "audioFile": "Audio File URL",
+        "audioFileHint": "Provide an accessible audio file URL, recommended duration 10-30 seconds",
+        "text": "Preview Text",
+        "textPlaceholder": "Enter preview text (used to generate preview audio)"
+      }
+    },
+    "status": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
   }
 }

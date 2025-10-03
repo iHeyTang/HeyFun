@@ -77,6 +77,26 @@ export interface Voice {
   description: string;
 }
 
+export interface VoiceCloneParams {
+  name?: string;
+  description?: string;
+  /**
+   * 音频文件
+   */
+  audio: string;
+  /**
+   * 试听文本内容
+   */
+  text: string;
+}
+
+export interface VoiceCloneResult {
+  success: boolean;
+  voiceId?: string;
+  error?: string;
+  demo_audio?: { type: 'url' | 'base64' | 'hex'; data: string };
+}
+
 // 基础适配器抽象类
 export abstract class BaseAigcModel {
   public abstract name: string;
@@ -98,6 +118,24 @@ export abstract class BaseAigcModel {
 
   getVoiceList(): Promise<Voice[]> {
     return Promise.resolve([]);
+  }
+
+  cloneVoice(params: VoiceCloneParams): Promise<string> {
+    return Promise.resolve('');
+  }
+
+  getCloneVoiceResult(task_id: string): Promise<VoiceCloneResult> {
+    return Promise.resolve({
+      success: false,
+      error: 'Voice cloning not supported by this provider',
+    });
+  }
+
+  deleteVoice(voice_id: string): Promise<{ success: boolean; error?: string }> {
+    return Promise.resolve({
+      success: false,
+      error: 'Voice deletion not supported by this provider',
+    });
   }
 
   // 通用错误处理方法

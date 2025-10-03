@@ -11,11 +11,24 @@ import {
   type T2aJsonSchema,
   type VideoJsonSchema,
   type Voice,
+  type VoiceCloneParams,
+  type VoiceCloneResult,
 } from './core/base-model';
 
 import { GenerationTaskResult, GenerationType } from './types';
 export { imageParamsSchema, submitTaskParamsSchema, t2aParamsSchema, videoParamsSchema };
-export type { BaseAigcModel, GenerationType, ImageJsonSchema, SubmitTaskParams, SubmitTaskParamsJsonSchema, T2aJsonSchema, VideoJsonSchema, Voice };
+export type {
+  BaseAigcModel,
+  GenerationType,
+  ImageJsonSchema,
+  SubmitTaskParams,
+  SubmitTaskParamsJsonSchema,
+  T2aJsonSchema,
+  VideoJsonSchema,
+  Voice,
+  VoiceCloneParams,
+  VoiceCloneResult,
+};
 
 // Providers
 import { DashscopeWanProvider, dashscopeWanServiceConfigSchema } from './providers/aliyun-dashscope';

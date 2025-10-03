@@ -346,6 +346,66 @@ model FlowCanvasProjects {
   @@index([organizationId, name])
 }
 
+// 音色管理
+model Voices {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  organizationId  String
+  // 基本信息
+  name            String
+  description     String?
+  // 提供商信息
+  provider        String // 提供商标识
+  model           String? // 使用的模型
+  /// [StringList] 标签
+  tags            Json     @default("[]")
+  // 音频相关
+  previewAudio    String? // 预览音频URL
+  sourceAudio     String? // 源音频URL（用于克隆）
+  // 外部音色ID
+  externalVoiceId String? // 在第三方平台的音色ID
+  // 额外配置
+  /// [JSONSchema] 额外的provider特定配置
+  extra           Json?
+  // 状态
+  status          String   @default("active") // active, creating, failed
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([provider])
+  @@index([createdAt])
+  @@index([name])
+}
+
+// 音色克隆任务
+model VoiceCloneTasks {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  organizationId  String
+  // 任务信息
+  name            String
+  description     String?
+  provider        String
+  status          String   @default("pending") // pending, processing, completed, failed
+  // 音频文件
+  /// [StringList] 音频文件URLs
+  audioFiles      Json     @default("[]")
+  // 配置参数
+  /// [JSONSchema] 额外参数
+  params          Json?
+  // 结果
+  voiceId         String? // 关联生成的Voice ID
+  externalVoiceId String? // 第三方平台返回的音色ID
+  error           String?  @db.Text
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([provider])
+  @@index([createdAt])
+}
+
 model Credit {
   id             String   @id @default(cuid())
   createdAt      DateTime @default(now())

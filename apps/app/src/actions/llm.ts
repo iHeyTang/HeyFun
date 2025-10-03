@@ -121,7 +121,7 @@ export const getAigcModels = withUserAuth(async () => {
 /**
  * Get all voices of a model
  */
-export const getAigcVoiceList = withUserAuth(async ({ args }: AuthWrapperContext<{ modelName: string }>) => {
+export const getAigcVoiceList = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ modelName: string }>) => {
   const { modelName } = args;
 
   try {
@@ -136,8 +136,17 @@ export const getAigcVoiceList = withUserAuth(async ({ args }: AuthWrapperContext
       throw new Error('Model does not support voice selection');
     }
 
+    // 获取自定义音色
+    const customVoices = await prisma.voices
+      .findMany({
+        where: { organizationId: orgId, model: modelName },
+        select: { externalVoiceId: true, name: true, description: true },
+      })
+      .then(voices => voices.map(voice => ({ id: voice.externalVoiceId!, name: voice.name, description: voice.description || '', custom: true })));
+
+    // 获取模型自带音色
     const voices = await model.getVoiceList();
-    return voices;
+    return [...customVoices, ...voices];
   } catch (error) {
     console.error('Error getting voice list:', error);
     throw new Error((error as Error).message);
