@@ -267,7 +267,10 @@ export class UnifiedScheduler {
       const inputAudios = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, audios: value.audios }));
       const inputMusics = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, musics: value.musics }));
       const result = await executor.execute(
-        { input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: inputMusics }, actionData: node.data.actionData },
+        {
+          input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: inputMusics },
+          actionData: node.data.actionData,
+        },
         context,
       );
       console.log('UnifiedScheduler executeNode result', nodeId, result);
