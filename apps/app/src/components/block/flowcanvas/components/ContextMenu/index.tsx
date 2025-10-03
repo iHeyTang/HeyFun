@@ -46,6 +46,15 @@ const AVAILABLE_NODE_TYPES: NodeType[] = [
     },
   },
   {
+    type: 'music',
+    label: 'Music Node',
+    description: '用于生成音乐',
+    defaultData: {
+      label: 'Music Node',
+      description: '点击上传音乐',
+    },
+  },
+  {
     type: 'lipsync',
     label: 'Lipsync Node',
     description: '用于唇形同步',

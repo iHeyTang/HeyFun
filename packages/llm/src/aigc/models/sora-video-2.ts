@@ -5,6 +5,8 @@ import { GenerationTaskResult, GenerationType } from '../types';
 
 const paramsSchema = z.object({
   prompt: z.string(),
+  aspectRatio: z.enum(['16:9', '9:16']).optional(),
+  referenceImage: z.array(z.string()).optional(),
 });
 
 /**
@@ -40,7 +42,8 @@ export class SoraVideo2 extends BaseAigcModel {
       method: 'POST',
       body: {
         model: 'sora-2',
-        orientation: undefined,
+        orientation: params.aspectRatio === '16:9' ? 'landscape' : 'portrait',
+        image: params.referenceImage,
         prompt: params.prompt,
       },
     });

@@ -107,7 +107,7 @@ const LipsyncNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange,
       );
 
       const result = await processor.execute({
-        input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios },
+        input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: [] },
         actionData: node.data.actionData,
       });
       if (result.success) {

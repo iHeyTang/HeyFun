@@ -37,6 +37,20 @@ export const restoreAigcTaskResultToStorage = async (prefix: string, item: NonNu
     } catch (error) {
       console.error('Error processing result hex:', item.data, error);
     }
+  } else if (item.sourceType === 'music') {
+    try {
+      // 处理音乐类型，默认使用 url，如果有flac，下载后单独存储，并把key作为metadata.flac_key
+      const musicData = item.data;
+      if (!musicData.url) {
+        throw new Error('No valid music URL found');
+      }
+      const { buffer, mimeType, extension } = await downloadFile(musicData.url);
+      const key = `${prefix}/${Date.now()}_${nanoid(8)}${extension}`;
+      await storage.put(key, buffer, { contentType: mimeType });
+      return { bucket: getBucket(), key, metadata: { flac_key: key, lyrics: musicData.lyrics_sections } };
+    } catch (error) {
+      console.error('Error processing music result:', item.data, error);
+    }
   }
   throw new Error('Invalid source type');
 };

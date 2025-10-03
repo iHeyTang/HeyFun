@@ -20,7 +20,8 @@ export const POST = async (req: Request) => {
 
     if (error) {
       console.error('Failed to submit task:', error);
-      return NextResponse.json({ error: `Failed to submit task: ${error.message}` }, { status: 500 });
+      await prisma.paintboardTasks.update({ where: { id: body.taskId }, data: { status: 'failed', error: error.message } });
+      return NextResponse.json({});
     }
 
     await prisma.paintboardTasks.update({ where: { id: body.taskId }, data: { taskId: externalTaskId } });

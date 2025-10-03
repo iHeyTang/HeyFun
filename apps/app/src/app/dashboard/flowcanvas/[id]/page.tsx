@@ -6,6 +6,7 @@ import ImageNode, { ImageNodeProcessor } from '@/components/block/flowcanvas-nod
 import TextNode, { TextNodeProcessor } from '@/components/block/flowcanvas-node/TextNode';
 import VideoNode, { VideoNodeProcessor } from '@/components/block/flowcanvas-node/VideoNode';
 import AudioNode, { AudioNodeProcessor } from '@/components/block/flowcanvas-node/AudioNode';
+import MusicNode, { MusicNodeProcessor } from '@/components/block/flowcanvas-node/MusicNode';
 import { Button } from '@/components/ui/button';
 import { useAigc, useLLM } from '@/hooks/use-llm';
 import { useParams } from 'next/navigation';
@@ -119,6 +120,7 @@ const FlowCanvasPage = () => {
       audio: { component: AudioNode, processor: new AudioNodeProcessor() },
       text: { component: TextNode, processor: new TextNodeProcessor() },
       lipsync: { component: LipsyncNode, processor: new LipsyncNodeProcessor() },
+      music: { component: MusicNode, processor: new MusicNodeProcessor() },
     };
   }, []);
 

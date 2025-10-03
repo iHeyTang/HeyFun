@@ -93,7 +93,7 @@ export class PixverseLipsync extends BaseAigcModel {
     const pricePerSec = 500;
 
     // 获取视频时长信息
-    const videoDuration = await getMediaDuration(outputs.data?.[0]?.data || '');
+    const videoDuration = await getMediaDuration((outputs.data?.[0]?.data as string) || '');
 
     const cost = pricePerSec * videoDuration;
 

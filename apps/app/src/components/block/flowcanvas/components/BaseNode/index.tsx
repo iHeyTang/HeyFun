@@ -5,6 +5,7 @@ import { useFlowGraphContext, useNodeStatusById } from '../../FlowCanvasProvider
 import { useFlowGraph } from '../../hooks';
 import { NodeData, NodeStatus } from '../../types/nodes';
 import { NodeTooltip, NodeTooltipContent, NodeTooltipTrigger } from '../NodeTooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface BaseNodeProps {
   data: NodeData;
@@ -80,29 +81,6 @@ export default function BaseNode({ data, id, children, className = '', showHandl
         return 'border-border-secondary';
       default:
         return 'border-border-primary';
-    }
-  };
-
-  // 获取状态指示器
-  const getStatusIndicator = (status?: NodeStatus) => {
-    switch (status) {
-      case NodeStatus.PROCESSING:
-        return <div className="bg-chart-2 h-3 w-3 animate-pulse rounded-full" />;
-      case NodeStatus.COMPLETED:
-        return <div className="bg-success h-3 w-3 rounded-full" />;
-      case NodeStatus.FAILED:
-        return (
-          <div>
-            <div className="bg-destructive h-3 w-3 rounded-full" />
-            {statusData?.error}
-          </div>
-        );
-      case NodeStatus.PENDING:
-        return <div className="bg-chart-4 h-3 w-3 rounded-full" />;
-      case NodeStatus.PAUSED:
-        return <div className="bg-secondary h-3 w-3 rounded-full" />;
-      default:
-        return <div className="bg-secondary h-3 w-3 rounded-full" />;
     }
   };
 
@@ -182,7 +160,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
           {/* 标题和状态在卡片外部左上角 */}
           <div className="mb-1 flex items-center justify-between text-xs">
             <div className="flex items-center gap-1">
-              {getStatusIndicator(status)}
+              <StatusIndicator status={status} error={statusData?.error} />
               {isEditingLabel ? (
                 <input
                   type="text"
@@ -254,3 +232,28 @@ export default function BaseNode({ data, id, children, className = '', showHandl
     </NodeTooltip>
   );
 }
+
+const StatusIndicator = ({ status, error }: { status: NodeStatus; error?: string }) => {
+  // 获取状态指示器
+  switch (status) {
+    case NodeStatus.PROCESSING:
+      return <div className="bg-chart-2 h-3 w-3 animate-pulse rounded-full" />;
+    case NodeStatus.COMPLETED:
+      return <div className="bg-success h-3 w-3 rounded-full" />;
+    case NodeStatus.FAILED:
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="bg-destructive h-3 w-3 rounded-full" />
+          </TooltipTrigger>
+          <TooltipContent side="top">{error}</TooltipContent>
+        </Tooltip>
+      );
+    case NodeStatus.PENDING:
+      return <div className="bg-chart-4 h-3 w-3 rounded-full" />;
+    case NodeStatus.PAUSED:
+      return <div className="bg-secondary h-3 w-3 rounded-full" />;
+    default:
+      return <div className="bg-secondary h-3 w-3 rounded-full" />;
+  }
+};

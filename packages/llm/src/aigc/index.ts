@@ -13,6 +13,7 @@ import {
   type Voice,
   type VoiceCloneParams,
   type VoiceCloneResult,
+  type MusicJsonSchema,
 } from './core/base-model';
 
 import { GenerationTaskResult, GenerationType } from './types';
@@ -29,6 +30,7 @@ export type {
   Voice,
   VoiceCloneParams,
   VoiceCloneResult,
+  MusicJsonSchema,
 };
 
 // Providers
@@ -55,6 +57,9 @@ import { Minimax25Speech } from './models/minimax-2-5-speech';
 import { PixverseLipsync } from './models/pixverse-lipsync';
 import { SoraVideo2 } from './models/sora-video-2';
 import { SyncSoV2 } from './models/sync-so-v2';
+import { MurekaSong } from './models/mureka-song';
+import { MurekaInstrumental } from './models/mureka-instrumental';
+import { MurekaProvider, murekaServiceConfigSchema } from './providers/mureka';
 
 const aigcProviderConfigSchema = z.object({
   doubao: volcengineArkServiceConfigSchema.optional(),
@@ -62,6 +67,7 @@ const aigcProviderConfigSchema = z.object({
   wan: dashscopeWanServiceConfigSchema.optional(),
   minimax: minimaxServiceConfigSchema.optional(),
   '302ai': a302aiServiceConfigSchema.optional(),
+  mureka: murekaServiceConfigSchema.optional(),
 });
 
 class AIGCHost {
@@ -72,6 +78,7 @@ class AIGCHost {
     'volcengine-jimeng'?: VolcengineJimengProvider;
     minimax?: MinimaxProvider;
     '302ai'?: A302aiProvider;
+    mureka?: MurekaProvider;
   } = {};
 
   constructor(config: z.infer<typeof aigcProviderConfigSchema>) {
@@ -94,6 +101,10 @@ class AIGCHost {
     if (config['302ai']) {
       const provider = new A302aiProvider(config['302ai']);
       this.providers['302ai'] = provider;
+    }
+    if (config.mureka) {
+      const provider = new MurekaProvider(config.mureka);
+      this.providers['mureka'] = provider;
     }
   }
 
@@ -153,6 +164,9 @@ const AIGC = new AIGCHost({
   '302ai': {
     apiKey: process.env.A302AI_API_KEY || '',
   },
+  mureka: {
+    apiKey: process.env.MUREKA_API_KEY || '',
+  },
 });
 
 // 豆包模型注册
@@ -187,5 +201,9 @@ AIGC.registerModel(providers => (providers['302ai'] ? new SyncSoV2(providers['30
 
 // Pixverse Lipsync模型注册
 AIGC.registerModel(providers => (providers['302ai'] ? new PixverseLipsync(providers['302ai']) : null));
+
+// Mureka模型注册
+AIGC.registerModel(providers => (providers['mureka'] ? new MurekaSong(providers['mureka']) : null));
+AIGC.registerModel(providers => (providers['mureka'] ? new MurekaInstrumental(providers['mureka']) : null));
 
 export default AIGC;

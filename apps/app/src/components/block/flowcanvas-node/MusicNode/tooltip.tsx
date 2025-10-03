@@ -5,37 +5,33 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAigc } from '@/hooks/use-llm';
 import { useSignedUrl } from '@/hooks/use-signed-url';
-import { T2aJsonSchema, Voice } from '@repo/llm/aigc';
 import { MentionOptions } from '@tiptap/extension-mention';
 import { Editor } from '@tiptap/react';
 import { WandSparkles } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AudioNodeActionData, AudioNodeProcessor } from './processor';
-import { getAigcVoiceList } from '@/actions/llm';
-import { VoiceSelectorDialog, VoiceSelectorRef } from '@/components/features/voice-selector';
+import { MusicNodeActionData, MusicNodeProcessor } from './processor';
+import { MusicJsonSchema } from '@repo/llm/aigc';
 
-export interface AudioNodeTooltipProps {
+export interface MusicNodeTooltipProps {
   nodeId: string;
-  value?: AudioNodeActionData;
-  onValueChange?: (data: AudioNodeActionData) => void;
+  value?: MusicNodeActionData;
+  onValueChange?: (data: MusicNodeActionData) => void;
   onSubmitSuccess?: (data: NodeOutput) => void;
 }
 
-const processor = new AudioNodeProcessor();
+const processor = new MusicNodeProcessor();
 
-const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: AudioNodeTooltipProps) => {
+const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: MusicNodeTooltipProps) => {
   const { getSignedUrl } = useSignedUrl();
 
   const flowGraph = useFlowGraph();
   const { availableModels } = useAigc();
   const { updateStatus } = useNodeStatusById(nodeId);
+  const [localLyrics, setLocalLyrics] = useState(actionData?.lyrics || '');
   const [localPrompt, setLocalPrompt] = useState(actionData?.prompt || '');
   const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
-  const [selectedVoiceId, setSelectedVoiceId] = useState(actionData?.voiceId);
-  const editorRef = useRef<TiptapEditorRef>(null);
-  const voiceSelectorRef = useRef<VoiceSelectorRef>(null);
-
-  const [voiceList, setVoiceList] = useState<Voice[]>([]);
+  const lyricsEditorRef = useRef<TiptapEditorRef>(null);
+  const promptEditorRef = useRef<TiptapEditorRef>(null);
 
   // 获取节点输入数据
   const nodeInputs = useMemo(() => {
@@ -46,40 +42,28 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     return availableModels?.find(model => model.name === selectedModelName);
   }, [availableModels, selectedModelName]);
 
-  const selectedVoice = useMemo(() => {
-    return voiceList.find(voice => voice.id === selectedVoiceId);
-  }, [voiceList, selectedVoiceId]);
-
-  useEffect(() => {
-    if (selectedModel && selectedModelName) {
-      getAigcVoiceList({ provider: selectedModel.provider, modelName: selectedModelName }).then(res => {
-        setVoiceList(res.data || []);
-      });
-    }
-  }, [selectedModel, selectedModelName]);
-
   const selectedModelParamsSchema = useMemo(() => {
-    return selectedModel?.paramsSchema?.properties as T2aJsonSchema;
+    return selectedModel?.paramsSchema?.properties as MusicJsonSchema;
   }, [selectedModel]);
 
   // 当外部值改变时同步本地状态
   useEffect(() => {
+    if (actionData?.lyrics !== undefined) {
+      setLocalLyrics(actionData.lyrics);
+    }
     if (actionData?.prompt !== undefined) {
       setLocalPrompt(actionData.prompt);
     }
     if (actionData?.selectedModel !== undefined) {
       setSelectedModelName(actionData.selectedModel);
     }
-    if (actionData?.voiceId !== undefined) {
-      setSelectedVoiceId(actionData.voiceId);
-    }
-  }, [actionData?.prompt, actionData?.selectedModel, actionData?.voiceId]);
+  }, [actionData?.lyrics, actionData?.prompt, actionData?.selectedModel]);
 
   const handleSubmit = async () => {
     onValueChange?.({
+      lyrics: localLyrics,
       prompt: localPrompt,
       selectedModel: selectedModelName,
-      voiceId: selectedVoiceId,
     });
     updateStatus(NodeStatus.PROCESSING);
     try {
@@ -112,13 +96,17 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
 
       const result = await processor.execute({
         input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: [], musics: [] },
-        actionData: { ...node.data.actionData, prompt: editorRef.current?.getText() },
+        actionData: {
+          ...node.data.actionData,
+          lyrics: lyricsEditorRef.current?.getText(),
+          prompt: promptEditorRef.current?.getText(),
+        },
       });
       if (result.success) {
         updateStatus(NodeStatus.COMPLETED);
-        onSubmitSuccess?.({ audios: result.data?.audios });
+        onSubmitSuccess?.({ musics: result.data?.musics });
       } else {
-        updateStatus(NodeStatus.FAILED);
+        updateStatus(NodeStatus.FAILED, { error: result.error });
       }
     } catch (error: any) {
       console.error(error);
@@ -126,13 +114,21 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     }
   };
 
+  const handleLyricsChange = (newLyrics: string) => {
+    setLocalLyrics(newLyrics);
+    onValueChange?.({
+      lyrics: newLyrics,
+      prompt: localPrompt,
+      selectedModel: selectedModelName,
+    });
+  };
+
   const handlePromptChange = (newPrompt: string) => {
-    // 始终更新本地状态以显示用户输入
     setLocalPrompt(newPrompt);
     onValueChange?.({
+      lyrics: localLyrics,
       prompt: newPrompt,
       selectedModel: selectedModelName,
-      voiceId: selectedVoiceId,
     });
   };
 
@@ -159,17 +155,34 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
 
   return (
     <div className="nodrag flex min-w-[480px] flex-col gap-2 overflow-hidden rounded-lg p-4">
-      {/* 上半部分：多行文本输入框 */}
-      <TiptapEditor
-        value={localPrompt}
-        onChange={handlePromptChange}
-        placeholder="Enter text to generate audio, input @ to mention"
-        className="h-24 w-full resize-none border-none! outline-none!"
-        mentionSuggestionItems={insertItems}
-        ref={editorRef}
-      />
+      {/* 歌词输入框 */}
+      {selectedModelParamsSchema?.lyrics.type === 'string' && (
+        <div className="flex flex-col gap-1">
+          <label className="text-muted-foreground text-xs">Lyrics</label>
+          <TiptapEditor
+            value={localLyrics}
+            onChange={handleLyricsChange}
+            placeholder="Enter lyrics here, input @ to mention"
+            className="h-32 w-full resize-none border-none! outline-none!"
+            mentionSuggestionItems={insertItems}
+            ref={lyricsEditorRef}
+          />
+        </div>
+      )}
+      {/* 提示词输入框 */}
+      <div className="flex flex-col gap-1">
+        <label className="text-muted-foreground text-xs">Prompt</label>
+        <TiptapEditor
+          value={localPrompt}
+          onChange={handlePromptChange}
+          placeholder="Enter prompt to describe music style, input @ to mention"
+          className="h-24 w-full resize-none border-none! outline-none!"
+          mentionSuggestionItems={insertItems}
+          ref={promptEditorRef}
+        />
+      </div>
 
-      {/* 下半部分：Footer - 模型选择和提交按钮 */}
+      {/* Footer - 模型选择和提交按钮 */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center justify-start gap-2">
           {/* 左侧：模型选择 */}
@@ -178,9 +191,9 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             onValueChange={(v: string) => {
               setSelectedModelName(v);
               onValueChange?.({
+                lyrics: localLyrics,
                 prompt: localPrompt,
                 selectedModel: v,
-                voiceId: '',
               });
             }}
           >
@@ -189,7 +202,7 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             </SelectTrigger>
             <SelectContent>
               {availableModels
-                ?.filter(model => model.generationTypes.includes('text-to-speech'))
+                ?.filter(model => model.generationTypes.includes('music'))
                 .map(model => (
                   <SelectItem key={model.name} value={model.name}>
                     {model.displayName}
@@ -197,37 +210,22 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                 ))}
             </SelectContent>
           </Select>
-          {voiceList.length > 0 && (
-            <Button variant="outline" size="sm" className="justify-start p-4 text-xs font-normal" onClick={() => voiceSelectorRef.current?.open()}>
-              <span>{selectedVoice?.name || 'Select Voice'}</span>
-            </Button>
-          )}
         </div>
         {/* 右侧：提交按钮 */}
         <Button onClick={handleSubmit} onMouseDown={(e: React.MouseEvent) => e.stopPropagation()} className="cursor-pointer" size="icon">
           <WandSparkles />
         </Button>
       </div>
-      <VoiceSelectorDialog
-        ref={voiceSelectorRef}
-        value={selectedVoiceId}
-        voices={voiceList}
-        onChange={voiceId => {
-          setSelectedVoiceId(voiceId);
-          onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, voiceId: voiceId });
-        }}
-      />
     </div>
   );
 };
 
 // 使用 memo 优化组件，只有当初始值真正改变时才重新渲染
-export const AudioNodeTooltip = memo(AudioNodeTooltipComponent, (prevProps, nextProps) => {
-  // 现在只需要比较初始值，因为我们不会在输入过程中触发外部更新
+export const MusicNodeTooltip = memo(MusicNodeTooltipComponent, (prevProps, nextProps) => {
   return (
+    prevProps.value?.lyrics === nextProps.value?.lyrics &&
     prevProps.value?.prompt === nextProps.value?.prompt &&
     prevProps.value?.selectedModel === nextProps.value?.selectedModel &&
-    prevProps.value?.voiceId === nextProps.value?.voiceId &&
     prevProps.onValueChange === nextProps.onValueChange &&
     prevProps.onSubmitSuccess === nextProps.onSubmitSuccess
   );

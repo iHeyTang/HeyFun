@@ -103,7 +103,7 @@ export class SyncSoV2 extends BaseAigcModel {
     const pricePerFrame = model === 'lipsync-2-pro' ? 60 : 40;
 
     // 获取视频时长信息
-    const videoDuration = await getMediaDuration(outputs.data?.[0]?.data || '');
+    const videoDuration = await getMediaDuration((outputs.data?.[0]?.data as string) || '');
 
     // 假设帧率为24fps（常见的视频帧率）使用常见的视频帧率24fps
     const fps = 24;

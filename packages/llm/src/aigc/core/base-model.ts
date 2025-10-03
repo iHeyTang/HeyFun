@@ -66,10 +66,21 @@ export type LipSyncJsonSchema = {
   advanced: JSONSchema.ObjectSchema;
 };
 
+// 歌曲生成参数
+export const musicParamsSchema = z.object({
+  lyrics: z.string().optional(),
+  prompt: z.string().optional(),
+});
+
+export type MusicJsonSchema = {
+  lyrics: JSONSchema.StringSchema;
+  prompt: JSONSchema.StringSchema;
+};
+
 // 提交任务参数
-export const submitTaskParamsSchema = z.union([imageParamsSchema, videoParamsSchema, t2aParamsSchema, lipSyncParamsSchema]);
+export const submitTaskParamsSchema = z.union([imageParamsSchema, videoParamsSchema, t2aParamsSchema, lipSyncParamsSchema, musicParamsSchema]);
 export type SubmitTaskParams = z.infer<typeof submitTaskParamsSchema>;
-export type SubmitTaskParamsJsonSchema = ImageJsonSchema | VideoJsonSchema | T2aJsonSchema | LipSyncJsonSchema;
+export type SubmitTaskParamsJsonSchema = ImageJsonSchema | VideoJsonSchema | T2aJsonSchema | LipSyncJsonSchema | MusicJsonSchema;
 
 export interface Voice {
   id: string;
@@ -110,7 +121,11 @@ export abstract class BaseAigcModel {
 
   // 抽象方法：子类必须实现自己的参数验证规则
   public abstract paramsSchema: z.ZodSchema<
-    z.infer<typeof videoParamsSchema> | z.infer<typeof imageParamsSchema> | z.infer<typeof t2aParamsSchema> | z.infer<typeof lipSyncParamsSchema>
+    | z.infer<typeof videoParamsSchema>
+    | z.infer<typeof imageParamsSchema>
+    | z.infer<typeof t2aParamsSchema>
+    | z.infer<typeof lipSyncParamsSchema>
+    | z.infer<typeof musicParamsSchema>
   >;
 
   abstract submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string>;

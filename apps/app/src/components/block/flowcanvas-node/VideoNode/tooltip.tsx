@@ -116,7 +116,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       );
 
       const result = await processor.execute({
-        input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios },
+        input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: [] },
         actionData: { ...node.data.actionData, prompt: editorRef.current?.getText() },
       });
       if (result.success) {
