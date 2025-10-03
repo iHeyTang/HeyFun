@@ -24,6 +24,7 @@ export class Jimeng30ProVideo extends BaseAigcModel {
     duration: z.enum(['5', '10']),
   });
 
+  providerName = 'volcengine-jimeng';
   provider: VolcengineJimengProvider;
   constructor(provider: VolcengineJimengProvider) {
     super();

@@ -1,11 +1,10 @@
 'use server';
 
+import { restoreAigcTaskResultToStorage } from '@/lib/server/aigc';
 import { prisma } from '@/lib/server/prisma';
-import storage, { downloadFile, getBucket } from '@/lib/server/storage';
 import { to } from '@/lib/shared/to';
 import { PaintboardTasks } from '@prisma/client';
 import AIGC, { SubmitTaskParams } from '@repo/llm/aigc';
-import { nanoid } from 'nanoid';
 import { NextResponse } from 'next/server';
 
 export const POST = async (req: Request) => {
@@ -108,34 +107,11 @@ const processPaintboardTaskResult = async (args: {
 
           // 下载所有结果文件并上传到OSS
           for (const item of result.data || []) {
-            if (item.sourceType === 'url') {
-              try {
-                // 从URL中提取文件名，移除查询参数
-                const { buffer, mimeType, extension } = await downloadFile(item.data);
-                const key = `${orgId}/${Date.now()}_${nanoid(8)}${extension}`;
-                await storage.put(key, buffer, { contentType: mimeType });
-                results.push({ bucket: getBucket(), key });
-              } catch (error) {
-                console.error('Error processing result URL:', item.data, error);
-              }
-            } else if (item.sourceType === 'base64') {
-              try {
-                const buffer = Buffer.from(item.data, 'base64');
-                const key = `${orgId}/${Date.now()}_${nanoid(8)}${item.fileExtension}`;
-                await storage.put(key, buffer, { contentType: `${item.type}/*` });
-                results.push({ bucket: getBucket(), key });
-              } catch (error) {
-                console.error('Error processing result base64:', item.data, error);
-              }
-            } else if (item.sourceType === 'hex') {
-              try {
-                const buffer = Buffer.from(item.data, 'hex');
-                const key = `${orgId}/${Date.now()}_${nanoid(8)}${item.fileExtension}`;
-                await storage.put(key, buffer, { contentType: `${item.type}/*` });
-                results.push({ bucket: getBucket(), key });
-              } catch (error) {
-                console.error('Error processing result hex:', item.data, error);
-              }
+            try {
+              const result = await restoreAigcTaskResultToStorage(orgId, item);
+              results.push(result);
+            } catch (error) {
+              console.error('Error processing task result:', item, error);
             }
           }
 

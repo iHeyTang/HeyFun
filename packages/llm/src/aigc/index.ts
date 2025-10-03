@@ -19,6 +19,7 @@ import { GenerationTaskResult, GenerationType } from './types';
 export { imageParamsSchema, submitTaskParamsSchema, t2aParamsSchema, videoParamsSchema };
 export type {
   BaseAigcModel,
+  GenerationTaskResult,
   GenerationType,
   ImageJsonSchema,
   SubmitTaskParams,
@@ -31,11 +32,11 @@ export type {
 };
 
 // Providers
+import { A302aiProvider, a302aiServiceConfigSchema } from './providers/a302ai';
 import { DashscopeWanProvider, dashscopeWanServiceConfigSchema } from './providers/aliyun-dashscope';
 import { MinimaxProvider, minimaxServiceConfigSchema } from './providers/minimax';
 import { VolcengineArkProvider, volcengineArkServiceConfigSchema } from './providers/volcengine-ark';
 import { VolcengineJimengProvider, volcengineJimengServiceConfigSchema } from './providers/volcengine-jimeng';
-import { A302aiProvider, a302aiServiceConfigSchema } from './providers/a302ai';
 
 // 豆包模型
 import { DoubaoSeedance10LiteVideo } from './models/doubao-seedance-1-0-lite-video';
@@ -47,13 +48,13 @@ import { DoubaoSeedream40 } from './models/doubao-seedream-4-0-250828';
 // 即梦模型
 
 // Minimax
-import { Minimax25Speech } from './models/minimax-2-5-speech';
-import { MidjourneyV7 } from './models/midjourney-v7';
-import { Kling21 } from './models/kling-2-1';
 import { Gemini25FlashImagePreview } from './models/gemini-2-5-flash-image-preview';
+import { Kling21 } from './models/kling-2-1';
+import { MidjourneyV7 } from './models/midjourney-v7';
+import { Minimax25Speech } from './models/minimax-2-5-speech';
+import { PixverseLipsync } from './models/pixverse-lipsync';
 import { SoraVideo2 } from './models/sora-video-2';
 import { SyncSoV2 } from './models/sync-so-v2';
-import { PixverseLipsync } from './models/pixverse-lipsync';
 
 const aigcProviderConfigSchema = z.object({
   doubao: volcengineArkServiceConfigSchema.optional(),

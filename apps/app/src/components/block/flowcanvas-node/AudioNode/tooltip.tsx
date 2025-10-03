@@ -36,15 +36,6 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const voiceSelectorRef = useRef<VoiceSelectorRef>(null);
 
   const [voiceList, setVoiceList] = useState<Voice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<Voice | null>(null);
-
-  useEffect(() => {
-    if (selectedModelName) {
-      getAigcVoiceList({ modelName: selectedModelName }).then(res => {
-        setVoiceList(res.data || []);
-      });
-    }
-  }, [selectedModelName]);
 
   // 获取节点输入数据
   const nodeInputs = useMemo(() => {
@@ -54,6 +45,18 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const selectedModel = useMemo(() => {
     return availableModels?.find(model => model.name === selectedModelName);
   }, [availableModels, selectedModelName]);
+
+  const selectedVoice = useMemo(() => {
+    return voiceList.find(voice => voice.id === selectedVoiceId);
+  }, [voiceList, selectedVoiceId]);
+
+  useEffect(() => {
+    if (selectedModel && selectedModelName) {
+      getAigcVoiceList({ provider: selectedModel.provider, modelName: selectedModelName }).then(res => {
+        setVoiceList(res.data || []);
+      });
+    }
+  }, [selectedModel, selectedModelName]);
 
   const selectedModelParamsSchema = useMemo(() => {
     return selectedModel?.paramsSchema?.properties as T2aJsonSchema;
@@ -205,7 +208,15 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           <WandSparkles />
         </Button>
       </div>
-      <VoiceSelectorDialog ref={voiceSelectorRef} selectedVoice={selectedVoice} onVoiceSelect={setSelectedVoice} model={selectedModelName} />
+      <VoiceSelectorDialog
+        ref={voiceSelectorRef}
+        value={selectedVoiceId}
+        voices={voiceList}
+        onChange={voiceId => {
+          setSelectedVoiceId(voiceId);
+          onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, voiceId: voiceId });
+        }}
+      />
     </div>
   );
 };

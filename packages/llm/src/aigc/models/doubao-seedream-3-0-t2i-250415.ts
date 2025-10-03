@@ -25,6 +25,7 @@ export class DoubaoSeedream30T2i250415 extends BaseAigcModel {
     }),
   });
 
+  providerName = 'volcengine-ark';
   provider: VolcengineArkProvider;
   constructor(provider: VolcengineArkProvider) {
     super();

@@ -21,6 +21,7 @@ export class Gemini25FlashImagePreview extends BaseAigcModel {
 
   paramsSchema = paramsSchema;
 
+  providerName = '302ai';
   provider: A302aiProvider;
   constructor(provider: A302aiProvider) {
     super();

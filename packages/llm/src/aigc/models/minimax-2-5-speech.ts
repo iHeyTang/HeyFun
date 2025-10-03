@@ -34,6 +34,7 @@ export class Minimax25Speech extends BaseAigcModel {
 
   paramsSchema = minimax25SpeechParamsSchema;
 
+  providerName = 'minimax';
   provider: MinimaxProvider;
   constructor(provider: MinimaxProvider) {
     super();

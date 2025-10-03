@@ -23,6 +23,7 @@ interface GenerationSchemaFormProps {
   form: UseFormReturn<any>;
   fieldPath?: string;
   hideLabel?: boolean;
+  provider?: string;
   modelName?: string;
 }
 
@@ -72,10 +73,11 @@ interface VoiceSelectorProps {
   formFieldPath: string;
   displayLabel: string;
   hideLabel: boolean;
+  provider: string;
   modelName: string;
 }
 
-const VoiceSelector = ({ form, formFieldPath, displayLabel, hideLabel, modelName }: VoiceSelectorProps) => {
+const VoiceSelector = ({ form, formFieldPath, displayLabel, hideLabel, provider, modelName }: VoiceSelectorProps) => {
   const [voices, setVoices] = useState<Voice[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +90,7 @@ const VoiceSelector = ({ form, formFieldPath, displayLabel, hideLabel, modelName
       setError(null);
 
       try {
-        const result = await getAigcVoiceList({ modelName });
+        const result = await getAigcVoiceList({ provider, modelName });
         if (result.error) {
           setError(result.error);
         } else {
@@ -104,7 +106,7 @@ const VoiceSelector = ({ form, formFieldPath, displayLabel, hideLabel, modelName
     };
 
     loadVoices();
-  }, [modelName]);
+  }, [provider, modelName]);
 
   return (
     <FormField
@@ -229,7 +231,7 @@ export const extractDefaultValuesFromSchema = (schema: any, fieldPath = ''): Rec
 };
 
 export const GenerationSchemaForm = (props: GenerationSchemaFormProps) => {
-  const { schema, form, fieldPath = '', hideLabel = false, modelName } = props;
+  const { schema, form, fieldPath = '', hideLabel = false, provider, modelName } = props;
   const t = useTranslations('paintboard.form.fields');
 
   if (!schema) {
@@ -255,7 +257,7 @@ export const GenerationSchemaForm = (props: GenerationSchemaFormProps) => {
 
   switch (schema.type) {
     case 'string':
-      return <StringForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} modelName={modelName} />;
+      return <StringForm schema={schema} form={form} fieldPath={fieldPath} hideLabel={hideLabel} provider={provider} modelName={modelName} />;
 
     case 'number':
     case 'integer':
@@ -339,7 +341,7 @@ export const GenerationSchemaForm = (props: GenerationSchemaFormProps) => {
 };
 
 // String 表单组件
-const StringForm = ({ schema, form, fieldPath, hideLabel, modelName }: GenerationSchemaFormProps) => {
+const StringForm = ({ schema, form, fieldPath, hideLabel, provider, modelName }: GenerationSchemaFormProps) => {
   const fieldName = schema.title || fieldPath || 'value';
   const formFieldPath = `params.${fieldName}`;
   const t = useTranslations('paintboard.form.fields');
@@ -363,6 +365,7 @@ const StringForm = ({ schema, form, fieldPath, hideLabel, modelName }: Generatio
         formFieldPath={formFieldPath}
         displayLabel={displayLabel}
         hideLabel={hideLabel || false}
+        provider={provider || ''}
         modelName={modelName || ''}
       />
     );

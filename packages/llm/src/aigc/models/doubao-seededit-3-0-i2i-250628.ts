@@ -25,6 +25,7 @@ export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
     }),
   });
 
+  providerName = 'volcengine-ark';
   provider: VolcengineArkProvider;
   constructor(provider: VolcengineArkProvider) {
     super();

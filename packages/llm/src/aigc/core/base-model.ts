@@ -75,6 +75,8 @@ export interface Voice {
   id: string;
   name: string;
   description: string;
+  audio?: string;
+  language?: string;
 }
 
 export interface VoiceCloneParams {
@@ -100,6 +102,7 @@ export interface VoiceCloneResult {
 // 基础适配器抽象类
 export abstract class BaseAigcModel {
   public abstract name: string;
+  public abstract providerName: string;
   public abstract displayName: string;
   public abstract description?: string;
   public abstract costDescription?: string;

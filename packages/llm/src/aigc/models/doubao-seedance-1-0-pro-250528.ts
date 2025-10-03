@@ -26,6 +26,7 @@ export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
     }),
   });
 
+  providerName = 'volcengine-ark';
   provider: VolcengineArkProvider;
   constructor(provider: VolcengineArkProvider) {
     super();

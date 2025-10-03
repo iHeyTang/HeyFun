@@ -110,6 +110,7 @@ export const getAigcModels = withUserAuth(async () => {
   const models = await AIGC.getAllServiceModels();
   return models.map(model => ({
     name: model.name,
+    provider: model.providerName,
     displayName: model.displayName,
     description: model.description,
     costDescription: model.costDescription,
@@ -121,7 +122,7 @@ export const getAigcModels = withUserAuth(async () => {
 /**
  * Get all voices of a model
  */
-export const getAigcVoiceList = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ modelName: string }>) => {
+export const getAigcVoiceList = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ provider: string; modelName: string }>) => {
   const { modelName } = args;
 
   try {
@@ -140,13 +141,32 @@ export const getAigcVoiceList = withUserAuth(async ({ orgId, args }: AuthWrapper
     const customVoices = await prisma.voices
       .findMany({
         where: { organizationId: orgId, model: modelName },
-        select: { externalVoiceId: true, name: true, description: true },
+        select: { externalVoiceId: true, name: true, description: true, previewAudio: true },
       })
-      .then(voices => voices.map(voice => ({ id: voice.externalVoiceId!, name: voice.name, description: voice.description || '', custom: true })));
+      .then(voices =>
+        voices.map(voice => ({
+          id: voice.externalVoiceId!,
+          name: voice.name,
+          description: voice.description || '',
+          audio: voice.previewAudio || '',
+          custom: true,
+        })),
+      );
 
     // 获取模型自带音色
     const voices = await model.getVoiceList();
-    return [...customVoices, ...voices];
+    const systemVoices = await prisma.systemVoices.findMany({
+      where: { provider: model.providerName },
+      select: { externalVoiceId: true, name: true, description: true, audio: true },
+    });
+    return [
+      ...customVoices,
+      ...voices.map(voice => {
+        const systemVoice = systemVoices.find(v => v.externalVoiceId === voice.id);
+        const description = voice.description || systemVoice?.description || '';
+        return { id: voice.id, name: voice.name, description: description, audio: systemVoice?.audio || '', custom: false };
+      }),
+    ];
   } catch (error) {
     console.error('Error getting voice list:', error);
     throw new Error((error as Error).message);

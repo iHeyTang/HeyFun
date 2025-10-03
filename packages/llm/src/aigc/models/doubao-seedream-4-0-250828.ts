@@ -31,6 +31,7 @@ export class DoubaoSeedream40 extends BaseAigcModel {
     }),
   });
 
+  providerName = 'volcengine-ark';
   provider: VolcengineArkProvider;
   constructor(provider: VolcengineArkProvider) {
     super();

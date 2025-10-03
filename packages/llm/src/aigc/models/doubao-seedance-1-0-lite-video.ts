@@ -26,6 +26,7 @@ export class DoubaoSeedance10LiteVideo extends BaseAigcModel {
     }),
   });
 
+  providerName = 'volcengine-ark';
   provider: VolcengineArkProvider;
   constructor(provider: VolcengineArkProvider) {
     super();

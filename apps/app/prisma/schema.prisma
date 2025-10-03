@@ -416,3 +416,31 @@ model Credit {
   @@index([organizationId])
   @@index([createdAt])
 }
+
+// 音色管理
+model SystemVoices {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  // 基本信息
+  name            String
+  description     String?
+  // 提供商信息
+  provider        String // 提供商标识
+  model           String? // 使用的模型
+  /// [StringList] 标签
+  tags            Json     @default("[]")
+  /// 音频
+  audio           String   @default("")
+  // 外部音色ID
+  externalVoiceId String? // 在第三方平台的音色ID
+  // 额外配置
+  /// [JSONSchema] 额外的provider特定配置
+  extra           Json?
+  // 状态
+  status          String   @default("active") // active, creating, failed
+
+  @@index([provider])
+  @@index([createdAt])
+  @@index([name])
+}

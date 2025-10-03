@@ -24,6 +24,7 @@ export class Jimeng40 extends BaseAigcModel {
     }),
   });
 
+  providerName = 'volcengine-jimeng';
   provider: VolcengineJimengProvider;
   constructor(provider: VolcengineJimengProvider) {
     super();
