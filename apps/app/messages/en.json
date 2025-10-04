@@ -70,7 +70,8 @@
     },
     "voiceSelector": {
       "searchPlaceholder": "Search voice...",
-      "noVoicesFound": "No voices found"
+      "noVoicesFound": "No voices found",
+      "custom": "Custom"
     },
     "confirm": {
       "cancel": "Cancel",

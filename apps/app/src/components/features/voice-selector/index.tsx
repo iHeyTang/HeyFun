@@ -7,6 +7,7 @@ import { Voice } from '@repo/llm/aigc';
 import { Check, Mic, Play, Search } from 'lucide-react';
 import { useImperativeHandle, useMemo, useState, forwardRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { Badge } from '@/components/ui/badge';
 
 export type VoiceSelectorRef = {
   open: () => void;
@@ -136,7 +137,10 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
                     {currentPlayingId === voice.id ? <Play className="text-primary h-3 w-3" /> : <Mic className="text-muted-foreground h-3 w-3" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate font-normal">{voice.name}</div>
+                    <div className="flex items-center gap-2 truncate font-normal">
+                      <div>{voice.name}</div>
+                      {voice.custom && <Badge variant="outline">{t('custom')}</Badge>}
+                    </div>
                     {voice.description && <div className="text-muted-foreground truncate text-xs">{voice.description}</div>}
                   </div>
                 </div>

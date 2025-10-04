@@ -70,7 +70,8 @@
     },
     "voiceSelector": {
       "searchPlaceholder": "音声を検索...",
-      "noVoicesFound": "音声が見つかりません"
+      "noVoicesFound": "音声が見つかりません",
+      "custom": "カスタム"
     },
     "confirm": {
       "cancel": "キャンセル",
@@ -587,4 +588,3 @@
     }
   }
 }
-

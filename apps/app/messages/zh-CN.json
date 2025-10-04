@@ -70,7 +70,8 @@
     },
     "voiceSelector": {
       "searchPlaceholder": "搜索音色...",
-      "noVoicesFound": "未找到音色"
+      "noVoicesFound": "未找到音色",
+      "custom": "自定义"
     },
     "confirm": {
       "cancel": "取消",

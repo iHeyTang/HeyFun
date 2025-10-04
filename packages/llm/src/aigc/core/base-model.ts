@@ -88,6 +88,7 @@ export interface Voice {
   description: string;
   audio?: string;
   language?: string;
+  custom?: boolean;
 }
 
 export interface VoiceCloneParams {
