@@ -4,7 +4,7 @@ import { Markdown } from '@/components/block/markdown/markdown';
 
 export default function NotificationZh() {
   return (
-    <Markdown className="h-128 w-full overflow-y-scroll">
+    <Markdown className="h-128 w-full">
       {`
 ## 欢迎来到 HeyFun
 
@@ -40,7 +40,7 @@ export default function NotificationZh() {
 ---
 *如有任何疑问和兴趣，欢迎随时交流*
 
-邮箱：[dehui1012@qq.com]
+邮箱：dehui1012@qq.com
 
 微信：iheytang
 `}

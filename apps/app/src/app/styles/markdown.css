@@ -1,99 +1,282 @@
 .markdown-body {
+  /* 基础样式 */
   @apply overflow-x-auto;
   background-color: transparent;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
+  line-height: 1.75;
   color: var(--text-primary);
-}
+  letter-spacing: 0.01em;
 
-/* 覆盖github-markdown-css的硬编码颜色 */
-.markdown-body h1,
-.markdown-body h2,
-.markdown-body h3,
-.markdown-body h4,
-.markdown-body h5,
-.markdown-body h6 {
-  color: var(--text-primary);
-}
+  /* 标题样式 - 层级分明，呼吸感强 */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--text-primary);
+    font-weight: 600;
+    line-height: 1.4;
+    margin-top: 2rem;
+    margin-bottom: 0.875rem;
+    letter-spacing: -0.02em;
+  }
 
-.markdown-body p {
-  color: var(--text-secondary);
-}
+  h1 {
+    font-size: 1.875rem;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+  }
 
-.markdown-body a {
-  color: var(--primary);
-}
+  h2 {
+    font-size: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+  }
 
-.markdown-body a:hover {
-  color: var(--primary);
-  text-decoration: underline;
-}
+  h3 {
+    font-size: 1.25rem;
+  }
 
-.markdown-body code {
-  background-color: var(--muted);
-  color: var(--text-primary);
-  border: 1px solid var(--border);
-}
+  h4 {
+    font-size: 1.125rem;
+  }
 
-.markdown-body pre {
-  background-color: var(--muted);
-  border: 1px solid var(--border);
-}
+  h5 {
+    font-size: 1rem;
+  }
 
-.markdown-body pre code {
-  background-color: transparent;
-  border: none;
-}
+  h6 {
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+  }
 
-.markdown-body blockquote {
-  border-left: 4px solid var(--border);
-  background-color: var(--muted);
-  color: var(--text-secondary);
-}
+  /* 段落样式 - 增加间距和透气感 */
+  p {
+    color: var(--text-secondary);
+    margin-top: 0;
+    margin-bottom: 1rem;
+    line-height: 1.8;
 
-.markdown-body table {
-  border-collapse: collapse;
-  margin: 1rem 0;
-  width: 100%;
-  background-color: transparent;
-}
+    & + p {
+      margin-top: 0.75rem;
+    }
+  }
 
-.markdown-body th {
-  background-color: var(--muted);
-  color: var(--text-primary);
-  border: 1px solid var(--border);
-  padding: 0.5rem;
-  text-align: left;
-  font-weight: 600;
-}
+  /* 链接样式 - 优雅过渡 */
+  a {
+    color: var(--text-primary);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+    transition: all 0.2s ease;
 
-.markdown-body td {
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  padding: 0.5rem;
-}
+    &:hover {
+      color: var(--text-primary);
+      border-bottom-color: var(--text-primary);
+    }
+  }
 
-.markdown-body tr:nth-child(even) {
-  background-color: var(--bg-secondary);
-}
+  /* 列表样式 - 清晰且有层次 */
+  ul,
+  ol {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-left: 1.75rem;
 
-.markdown-body tr:nth-child(odd) {
-  background-color: var(--bg-primary);
-}
+    ul,
+    ol {
+      margin-top: 0.375rem;
+      margin-bottom: 0.375rem;
+    }
+  }
 
-.markdown-body tr:hover {
-  background-color: var(--bg-tertiary);
-}
+  ul {
+    list-style: disc;
+  }
 
-.markdown-body hr {
-  border-color: var(--border);
-}
+  ol {
+    list-style: decimal;
+  }
 
-.markdown-body.chat {
-  font-size: 0.875rem;
+  li {
+    margin-top: 0.375rem;
+    margin-bottom: 0.375rem;
+    line-height: 1.75;
+    color: var(--text-secondary);
 
-  pre,
+    > p {
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  /* 代码样式 */
   code {
-    white-space: pre-wrap;
-    word-break: break-all;
+    background-color: rgba(128, 128, 128, 0.08);
+    color: var(--text-primary);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Consolas', monospace;
+    border: 1px solid rgba(128, 128, 128, 0.12);
+    letter-spacing: 0;
+
+    a {
+      border-bottom: none;
+      color: var(--text-primary);
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.7;
+        border-bottom: none;
+      }
+    }
+  }
+
+  pre {
+    background: linear-gradient(135deg, rgba(248, 248, 248, 0.6) 0%, rgba(250, 250, 250, 0.4) 100%);
+    border: 1px solid rgba(128, 128, 128, 0.15);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+
+    code {
+      background-color: transparent;
+      border: none;
+      padding: 0;
+      font-size: 0.875rem;
+      color: var(--text-primary);
+    }
+  }
+
+  /* 引用块 - 简洁优雅 */
+  blockquote {
+    border-left: 3px solid rgba(128, 128, 128, 0.25);
+    background-color: rgba(128, 128, 128, 0.03);
+    color: var(--text-secondary);
+    padding: 0.75rem 1rem;
+    margin: 1.5rem 0;
+    border-radius: 0 0.25rem 0.25rem 0;
+
+    p {
+      margin-bottom: 0.5rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  /* 表格样式 - 清晰且现代 */
+  table {
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    width: 100%;
+    background-color: transparent;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid rgba(128, 128, 128, 0.15);
+  }
+
+  thead {
+    background: linear-gradient(180deg, rgba(248, 248, 248, 0.8) 0%, rgba(250, 250, 250, 0.6) 100%);
+  }
+
+  th {
+    color: var(--text-primary);
+    border: 1px solid rgba(128, 128, 128, 0.12);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.01em;
+  }
+
+  td {
+    border: 1px solid rgba(128, 128, 128, 0.12);
+    color: var(--text-secondary);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  tbody tr {
+    transition: background-color 0.15s ease;
+
+    &:nth-child(even) {
+      background-color: rgba(128, 128, 128, 0.02);
+    }
+
+    &:hover {
+      background-color: rgba(128, 128, 128, 0.05);
+    }
+  }
+
+  /* 分隔线 - 简洁分明 */
+  hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(128, 128, 128, 0.2) 50%, transparent 100%);
+    margin: 2rem 0;
+  }
+
+  /* 图片样式 - 优雅呈现 */
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  /* 文本强调样式 */
+  strong {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  em {
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+
+  del {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+
+  /* 任务列表 */
+  input[type='checkbox'] {
+    margin-right: 0.5rem;
+    accent-color: var(--text-primary);
+  }
+
+  /* 聊天模式下的特殊样式 */
+  &.chat {
+    font-size: 0.875rem;
+    line-height: 1.7;
+
+    pre,
+    code {
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      margin-top: 1.25rem;
+      margin-bottom: 0.625rem;
+    }
+
+    p {
+      margin-bottom: 0.75rem;
+    }
   }
 }

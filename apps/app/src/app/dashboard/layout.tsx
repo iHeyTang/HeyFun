@@ -38,7 +38,7 @@ const Header = ({ className }: { className?: string }) => {
           <DialogTrigger asChild>
             <Badge className="bg-badge text-badge cursor-pointer transition hover:scale-101">EARLY ACCESS</Badge>
           </DialogTrigger>
-          <DialogContent showCloseButton={false}>
+          <DialogContent showCloseButton={false} style={{ maxWidth: '800px' }}>
             <DialogHeader>
               <DialogTitle>EARLY ACCESS</DialogTitle>
             </DialogHeader>
