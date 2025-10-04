@@ -230,7 +230,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
               >
                 {/* 节点信息 */}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div>
                     <div className="text-foreground text-sm font-medium transition-colors">{nodeType.label}</div>
                     <div className="text-muted-foreground text-xs">{nodeType.description}</div>
                   </div>
