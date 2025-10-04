@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTranslations } from 'next-intl';
 
 export default function MarketplacePage() {
   const { data: schemas = [], refresh: refreshSchemas } = useServerAction(listToolSchemas, {}, { cache: 'all-tools' });
@@ -16,6 +17,7 @@ export default function MarketplacePage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const t = useTranslations('tools.page');
 
   const toolInfoDialogRef = useRef<ToolInfoDialogRef>(null);
 
@@ -55,7 +57,7 @@ export default function MarketplacePage() {
         <div className="relative max-w-md flex-1">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
-            placeholder="Search tools by name or description..."
+            placeholder={t('search.placeholder')}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -64,12 +66,12 @@ export default function MarketplacePage() {
         <div className="flex items-center gap-2">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-36">
-              <SelectValue placeholder="Filter status" />
+              <SelectValue placeholder={t('filter.placeholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Tools</SelectItem>
-              <SelectItem value="installed">Installed</SelectItem>
-              <SelectItem value="not-installed">Not Installed</SelectItem>
+              <SelectItem value="all">{t('filter.all')}</SelectItem>
+              <SelectItem value="installed">{t('filter.installed')}</SelectItem>
+              <SelectItem value="not-installed">{t('filter.notInstalled')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -78,8 +80,8 @@ export default function MarketplacePage() {
       {/* Results Summary */}
       <div className="mb-4 text-sm">
         {filteredTools.length === schemas.length
-          ? `Showing all ${schemas.length} tools`
-          : `Showing ${filteredTools.length} of ${schemas.length} tools`}
+          ? t('results.showing', { total: schemas.length })
+          : t('results.filtered', { count: filteredTools.length, total: schemas.length })}
       </div>
 
       {/* Available Tools Section */}
@@ -90,6 +92,7 @@ export default function MarketplacePage() {
             tool={tool}
             installed={installedTools.some(installed => installed.schema.id === tool.id)}
             onShowInfo={() => toolInfoDialogRef.current?.showInfo(tool)}
+            t={t}
           />
         ))}
       </div>
@@ -97,10 +100,8 @@ export default function MarketplacePage() {
       {/* No Results Message */}
       {filteredTools.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <h3 className="mb-2 text-lg font-medium">No tools found</h3>
-          <p className="max-w-sm text-sm">
-            Try adjusting your search query or filter criteria to find the tools you&apos;re looking for.
-          </p>
+          <h3 className="mb-2 text-lg font-medium">{t('emptyState.title')}</h3>
+          <p className="max-w-sm text-sm">{t('emptyState.description')}</p>
         </div>
       )}
 
@@ -109,7 +110,7 @@ export default function MarketplacePage() {
   );
 }
 
-const ToolItem = ({ tool, installed, onShowInfo }: { tool: ToolSchemas; installed: boolean; onShowInfo: () => void }) => {
+const ToolItem = ({ tool, installed, onShowInfo, t }: { tool: ToolSchemas; installed: boolean; onShowInfo: () => void; t: any }) => {
   const tags = Array.isArray(tool.tags) ? tool.tags.filter((tag): tag is string => typeof tag === 'string') : [];
   const capabilities = Array.isArray(tool.capabilities) ? tool.capabilities.filter((cap): cap is string => typeof cap === 'string') : [];
 
@@ -134,11 +135,11 @@ const ToolItem = ({ tool, installed, onShowInfo }: { tool: ToolSchemas; installe
             <span className="line-clamp-1 text-sm font-semibold text-primary">{tool.name}</span>
             {installed && (
               <Badge variant="secondary" className="shrink-0 bg-badge-green text-xs">
-                Installed
+                {t('badge.installed')}
               </Badge>
             )}
           </div>
-          {tool.author && <p className="mt-0.5 text-xs">by {tool.author}</p>}
+          {tool.author && <p className="mt-0.5 text-xs">{t('item.by')} {tool.author}</p>}
         </div>
       </div>
 

@@ -8,10 +8,11 @@ import { Github } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import NotificationEn from './notification-en';
-import NotificationZh from './notification-zh';
+import NotificationZhCN from './notification-zh-CN';
 import { AppSidebar } from './sidebar';
 import { CreditBadge } from '@/components/features/credit-badge';
 import { ThemeToggle } from '@/components/features/theme-toggle';
+import { LanguageToggle } from '@/components/features/language-toggle';
 import { ThemeLogo } from '@/components/features/theme-logo';
 
 export const metadata: Metadata = {
@@ -43,11 +44,11 @@ const Header = ({ className }: { className?: string }) => {
             </DialogHeader>
             <Tabs className="flex-1">
               <TabsList>
-                <TabsTrigger value="zh">中文</TabsTrigger>
+                <TabsTrigger value="zh-CN">中文</TabsTrigger>
                 <TabsTrigger value="en">English</TabsTrigger>
               </TabsList>
-              <TabsContent value="zh">
-                <NotificationZh />
+              <TabsContent value="zh-CN">
+                <NotificationZhCN />
               </TabsContent>
               <TabsContent value="en">
                 <NotificationEn />
@@ -59,7 +60,8 @@ const Header = ({ className }: { className?: string }) => {
           <Github className="text-muted-foreground h-3 w-3 cursor-pointer" />
         </Link>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        <LanguageToggle />
         <ThemeToggle />
         <UserButton />
       </div>

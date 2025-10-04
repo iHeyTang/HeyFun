@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AudioNodeActionData } from './processor';
 import { AudioNodeTooltip, AudioNodeTooltipProps } from './tooltip';
+import { useTranslations } from 'next-intl';
 
 interface AudioNodeProps {
   data: NodeData<AudioNodeActionData>;
@@ -15,6 +16,8 @@ interface AudioNodeProps {
 export { AudioNodeProcessor } from './processor';
 
 export default function AudioNode({ data, id }: AudioNodeProps) {
+  const t = useTranslations('flowcanvas.nodes');
+
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
@@ -74,7 +77,7 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
     if (!file) return;
 
     if (!file.type.startsWith('audio/')) {
-      alert('Please select an audio file');
+      alert(t('selectAudioFile'));
       return;
     }
 
@@ -85,7 +88,7 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
       flowGraph.updateNodeData(id, { output: { audios: [{ key }] } });
     } catch (error) {
       console.error('Audio upload failed:', error);
-      alert('Audio upload failed. Please try again.');
+      alert(t('audioUploadFailed'));
     } finally {
       setIsUploading(false);
     }
@@ -132,15 +135,15 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
               {isUploading ? (
                 <div className="text-chart-2 flex flex-col items-center">
                   <div className="border-border-primary border-t-chart-2 mb-2 h-5 w-5 animate-spin rounded-full border-2"></div>
-                  <span>Uploading...</span>
+                  <span>{t('uploading')}</span>
                 </div>
               ) : (
                 <div className="flex h-32 flex-col justify-center gap-1 space-y-1 p-4 text-sm">
                   <div className="cursor-pointer text-left" onClick={handleFileSelect}>
-                    1. Upload local audio (up to 10MB)
+                    1. {t('uploadAudio')}
                   </div>
                   <div className="text-muted-foreground text-left" onClick={() => {}}>
-                    2. Enter prompt to generate audio
+                    2. {t('generateAudio')}
                   </div>
                 </div>
               )}

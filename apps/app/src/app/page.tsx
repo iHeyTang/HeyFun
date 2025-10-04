@@ -1,10 +1,12 @@
 import { ThemeToggle } from '@/components/features/theme-toggle';
+import { LanguageToggle } from '@/components/features/language-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ThemeLogo } from '@/components/features/theme-logo';
 import { Blocks, Github, Layers, Menu, Network, Workflow } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import './page.css';
 
 export const metadata: Metadata = {
@@ -38,7 +40,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const t = await getTranslations('home');
+  const tNav = await getTranslations('home.nav');
+  const tHero = await getTranslations('home.hero');
+
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       {/* Header Navigation */}
@@ -54,21 +60,22 @@ export default function HomePage() {
             {/* Navigation Links */}
             <div className="hidden flex-1 items-center justify-center gap-8 md:flex">
               <Link href="/" className="text-sm font-normal text-neutral-800 transition-colors hover:text-neutral-900">
-                Home
+                {tNav('home')}
               </Link>
               <Link href="/" className="text-sm font-normal text-neutral-800 transition-colors hover:text-neutral-900">
-                Features
+                {tNav('features')}
               </Link>
               <Link href="/" className="text-sm font-normal text-neutral-800 transition-colors hover:text-neutral-900">
-                Open Source
+                {tNav('openSource')}
               </Link>
               <Link href="/" className="text-sm font-normal text-neutral-800 transition-colors hover:text-neutral-900">
-                Pricing
+                {tNav('pricing')}
               </Link>
             </div>
 
             {/* Right Section */}
             <div className="flex items-center gap-4">
+              <LanguageToggle />
               <ThemeToggle />
               {/* GitHub Info */}
               <Link
@@ -77,14 +84,14 @@ export default function HomePage() {
                 className="hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-normal text-neutral-800 transition-all hover:text-neutral-900 sm:flex"
               >
                 <Github className="h-3 w-3" />
-                <span>GitHub</span>
+                <span>{tNav('github')}</span>
               </Link>
 
               {/* Login Button */}
               <Link href="/dashboard">
                 <Button size="sm" className="rounded-full">
                   <div className="flex items-center gap-2 px-1">
-                    <span>Dashboard</span>
+                    <span>{tNav('dashboard')}</span>
                   </div>
                 </Button>
               </Link>
@@ -192,7 +199,7 @@ export default function HomePage() {
                   <div className="flex justify-center pt-4">
                     <div className="group relative">
                       <Badge className="cursor-default border-neutral-300 bg-white px-8 py-2 text-sm font-medium text-neutral-800 backdrop-blur-sm transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg">
-                        AI Studio
+                        {tHero('badge')}
                       </Badge>
                       <div className="absolute inset-0 rounded-full bg-gradient-to-r from-neutral-800/5 to-neutral-800/5 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100"></div>
                     </div>
@@ -204,19 +211,17 @@ export default function HomePage() {
                   <div className="relative">
                     <div className="absolute -inset-2 bg-gradient-to-r from-transparent via-neutral-800/2.5 to-transparent blur-xl"></div>
                   </div>
-                  <p className="mx-auto max-w-2xl text-lg leading-relaxed font-normal text-neutral-600">
-                    Intelligent Agents • Automated Workflows • Creative AI Platform
-                  </p>
+                  <p className="mx-auto max-w-2xl text-lg leading-relaxed font-normal text-neutral-600">{tHero('subtitle')}</p>
                 </div>
 
                 {/* Enhanced Core Features */}
                 <div className="animate-fade-in-subtitle mx-auto max-w-4xl">
                   <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
                     {[
-                      { icon: Blocks, title: 'AI Agents', desc: 'Intelligent Autonomous Agents', delay: '0s' },
-                      { icon: Workflow, title: 'Workflows', desc: 'Automated Task Orchestration', delay: '0.2s' },
-                      { icon: Network, title: 'Integration', desc: 'Seamless AI Service Connection', delay: '0.4s' },
-                      { icon: Layers, title: 'Studio', desc: 'Creative AI Development Platform', delay: '0.6s' },
+                      { icon: Blocks, title: tHero('features.agents.title'), desc: tHero('features.agents.description'), delay: '0s' },
+                      { icon: Workflow, title: tHero('features.workflows.title'), desc: tHero('features.workflows.description'), delay: '0.2s' },
+                      { icon: Network, title: tHero('features.integration.title'), desc: tHero('features.integration.description'), delay: '0.4s' },
+                      { icon: Layers, title: tHero('features.studio.title'), desc: tHero('features.studio.description'), delay: '0.6s' },
                     ].map((feature, index) => (
                       <div
                         key={index}
@@ -245,7 +250,7 @@ export default function HomePage() {
                       size="lg"
                       className="group relative overflow-hidden border-0 bg-neutral-800 px-10 py-4 text-lg font-medium text-white shadow-xl transition-all duration-300 hover:scale-105 hover:bg-neutral-900 hover:shadow-2xl"
                     >
-                      <span className="relative z-10">Get Started</span>
+                      <span className="relative z-10">{tHero('getStarted')}</span>
                       <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-full"></div>
                     </Button>
                   </Link>

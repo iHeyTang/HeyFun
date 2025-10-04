@@ -3,6 +3,7 @@ import { ViewportPortal } from '@xyflow/react';
 import { useFlowGraph } from '../../hooks/useFlowGraph';
 import { PlayIcon } from 'lucide-react';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 
 export { useMultiSelectToolbar } from './hooks/useMultiSelectToolbar';
 export type { MultiSelectToolbarExtensionContext, MultiSelectToolbarExtensionResult } from './hooks/useMultiSelectToolbar';
@@ -25,6 +26,7 @@ export interface MultiSelectToolbarRef {
 export const MultiSelectToolbar = forwardRef<MultiSelectToolbarRef, MultiSelectToolbarProps>(
   ({ selecting, selectedNodes, className, onExecuteSelectedNodes }, ref) => {
     const flowGraph = useFlowGraph();
+    const t = useTranslations('flowcanvas.toolbar');
 
     const toolbarRef = useRef<HTMLDivElement>(null);
 
@@ -113,11 +115,11 @@ export const MultiSelectToolbar = forwardRef<MultiSelectToolbarRef, MultiSelectT
                 }}
                 className="bg-primary text-primary-foreground hover:bg-button-primary-hover flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-200"
                 style={{ pointerEvents: 'auto' }}
-                title="执行选中节点"
+                title={t('executeSelected')}
                 type="button"
               >
                 <PlayIcon className="h-4 w-4" />
-                执行
+                {t('execute')}
               </button>
             </div>
           )}

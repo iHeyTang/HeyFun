@@ -13,6 +13,7 @@ import { InputToolsConfigDialog, InputToolsConfigDialogRef, useInputToolsConfig 
 import { create } from 'zustand';
 import { usePreferences } from '@/hooks/use-preferences';
 import { useLLM } from '@/hooks/use-llm';
+import { useTranslations } from 'next-intl';
 
 interface ChatInputProps {
   status?: 'idle' | 'thinking' | 'terminating' | 'completed';
@@ -60,6 +61,8 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
   const [files, setFiles] = useState<File[]>([]);
   const [availableAgents, setAvailableAgents] = useState<AgentInfo[]>([]);
   const { enabledTools } = useInputToolsConfig();
+  const t = useTranslations('chat.input');
+  const tConfirm = useTranslations('chat.confirm.terminate');
 
   const { selectedModel, setSelectedModel } = useAgentModelSelector();
   const { selectedAgent, setSelectedAgent } = useAgentSelectorStore('chat-input-agent-storage')();
@@ -103,17 +106,17 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
       confirm({
         content: (
           <DialogHeader>
-            <DialogTitle>Terminate Task</DialogTitle>
-            <DialogDescription>Are you sure you want to terminate this task?</DialogDescription>
+            <DialogTitle>{tConfirm('title')}</DialogTitle>
+            <DialogDescription>{tConfirm('description')}</DialogDescription>
           </DialogHeader>
         ),
         onConfirm: async () => {
           await onTerminate?.();
         },
         buttonText: {
-          cancel: 'Cancel',
-          confirm: 'Terminate',
-          loading: 'Terminating...',
+          cancel: tConfirm('cancel'),
+          confirm: tConfirm('confirm'),
+          loading: tConfirm('terminating'),
         },
       });
       return;
@@ -129,13 +132,13 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
   const getPlaceholder = () => {
     switch (status) {
       case 'thinking':
-        return 'Thinking...';
+        return t('placeholderThinking');
       case 'terminating':
-        return 'Terminating...';
+        return t('placeholderTerminating');
       case 'completed':
-        return 'Task completed!';
+        return t('placeholderCompleted');
       default:
-        return "Let's Imagine the Impossible, Create the Future Together";
+        return t('placeholder');
     }
   };
 
@@ -163,22 +166,22 @@ export const ChatInput = ({ status = 'idle', onSubmit, onTerminate }: ChatInputP
         </Tooltip> */}
         <Badge variant="secondary" className="flex cursor-pointer items-center gap-1" onClick={() => modelSelectorRef.current?.open()}>
           <Wrench className="h-3 w-3" />
-          <span>{selectedModel?.name || 'Select Model'}</span>
+          <span>{selectedModel?.name || t('selectModel')}</span>
         </Badge>
         <Badge variant="secondary" className="flex cursor-pointer items-center gap-1" onClick={() => agentSelectorRef.current?.open()}>
           <Bot className="h-3 w-3" />
-          <span>{selectedAgent?.name || 'FunMax'}</span>
+          <span>{selectedAgent?.name || t('selectAgent')}</span>
         </Badge>
         <Badge variant="secondary" className="flex cursor-pointer items-center gap-1" onClick={() => toolsConfigDialogRef.current?.open()}>
           <Wrench className="h-3 w-3" />
-          <span>Tools {enabledTools.length ? `(${enabledTools.length})` : ''}</span>
+          <span>{t('tools')} {enabledTools.length ? `(${enabledTools.length})` : ''}</span>
         </Badge>
       </div>
       <div className="flex items-center gap-2">
         {files.length > 0 && (
           <Badge variant="secondary" className="flex cursor-default items-center gap-1 py-1 pr-1 pl-2">
             <span>
-              {files.length} File{files.length > 1 ? 's' : ''}
+              {files.length} {t('files')}
             </span>
             <Badge
               variant="secondary"

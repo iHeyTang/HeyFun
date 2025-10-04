@@ -1,0 +1,589 @@
+{
+  "common": {
+    "welcome": "환영합니다",
+    "signin": "로그인",
+    "signout": "로그아웃",
+    "settings": "설정",
+    "language": "언어",
+    "cancel": "취소",
+    "delete": "삭제",
+    "deleting": "삭제 중...",
+    "edit": "편집",
+    "save": "저장",
+    "saving": "저장 중...",
+    "addNew": "추가",
+    "remove": "제거",
+    "removing": "제거 중...",
+    "creating": "생성 중...",
+    "loading": "로딩 중...",
+    "required": "필수",
+    "search": "검색",
+    "filter": "필터",
+    "close": "닫기",
+    "open": "열기",
+    "download": "다운로드",
+    "upload": "업로드",
+    "time": {
+      "justUpdated": "방금 업데이트됨",
+      "minutesAgo": "{count}분 전 업데이트",
+      "hoursAgo": "{count}시간 전 업데이트",
+      "daysAgo": "{count}일 전 업데이트"
+    },
+    "sync": {
+      "syncing": "동기화 중...",
+      "synced": "동기화됨"
+    },
+    "modelSelector": {
+      "searchPlaceholder": "모델 검색...",
+      "noModelsFound": "모델을 찾을 수 없습니다"
+    },
+    "aigcModelSelector": {
+      "title": "AIGC 모델 선택기",
+      "model": "모델",
+      "searchPlaceholder": "모델 이름 또는 설명 검색...",
+      "categories": {
+        "all": "전체",
+        "textToImage": "텍스트를 이미지로",
+        "imageToImage": "이미지를 이미지로",
+        "video": "비디오 생성",
+        "speech": "음성 생성"
+      },
+      "generationTypes": {
+        "textToImage": "텍스트를 이미지로",
+        "imageToImage": "이미지를 이미지로",
+        "textToVideo": "텍스트를 비디오로",
+        "imageToVideo": "이미지를 비디오로",
+        "keyframeToVideo": "키프레임을 비디오로",
+        "textToSpeech": "음성 합성"
+      },
+      "noModels": "사용 가능한 모델이 없습니다",
+      "noMatch": "일치하는 모델을 찾을 수 없습니다"
+    },
+    "agentSelector": {
+      "title": "에이전트 선택",
+      "funmax": "FunMax",
+      "system": "시스템",
+      "defaultDescription": "표준 구성으로 기본 FunMax 에이전트 사용",
+      "default": "기본",
+      "tools": "도구",
+      "moreTools": "+{count}개 더보기"
+    },
+    "voiceSelector": {
+      "searchPlaceholder": "음성 검색...",
+      "noVoicesFound": "음성을 찾을 수 없습니다"
+    },
+    "confirm": {
+      "cancel": "취소",
+      "confirm": "확인",
+      "processing": "처리 중..."
+    }
+  },
+  "errors": {
+    "general": "오류가 발생했습니다",
+    "notFound": "페이지를 찾을 수 없습니다",
+    "unauthorized": "인증되지 않은 접근"
+  },
+  "home": {
+    "nav": {
+      "home": "홈",
+      "features": "기능",
+      "openSource": "오픈 소스",
+      "pricing": "가격",
+      "github": "GitHub",
+      "dashboard": "대시보드"
+    },
+    "hero": {
+      "title": "HeyFun",
+      "badge": "AI Studio",
+      "subtitle": "지능형 에이전트 • 자동화 워크플로 • 창의적인 AI 플랫폼",
+      "getStarted": "시작하기",
+      "features": {
+        "agents": {
+          "title": "AI 에이전트",
+          "description": "지능형 자율 에이전트"
+        },
+        "workflows": {
+          "title": "워크플로",
+          "description": "자동화된 작업 오케스트레이션"
+        },
+        "integration": {
+          "title": "통합",
+          "description": "원활한 AI 서비스 연결"
+        },
+        "studio": {
+          "title": "스튜디오",
+          "description": "창의적인 AI 개발 플랫폼"
+        }
+      }
+    }
+  },
+  "dashboard": {
+    "sidebar": {
+      "flowcanvas": "FlowCanvas",
+      "chat": "채팅",
+      "tasks": "작업",
+      "paintboard": "페인트보드",
+      "workspace": "작업 공간",
+      "tools": "도구",
+      "settings": "설정"
+    }
+  },
+  "chat": {
+    "sidebar": {
+      "title": "채팅 기록",
+      "newChat": "새 채팅",
+      "noHistory": "채팅 기록이 없습니다"
+    },
+    "input": {
+      "placeholder": "불가능을 상상하고 함께 미래를 만들어가요",
+      "placeholderThinking": "생각 중...",
+      "placeholderTerminating": "종료 중...",
+      "placeholderCompleted": "작업 완료!",
+      "selectModel": "모델 선택",
+      "selectAgent": "에이전트 선택",
+      "tools": "도구",
+      "files": "파일",
+      "attachFiles": "파일 첨부",
+      "sendMessage": "메시지 보내기",
+      "terminateTask": "작업 종료"
+    },
+    "messages": {
+      "preparing": "준비 중...",
+      "prepared": "준비 완료",
+      "planning": "계획 중...",
+      "planCompleted": "계획 완료",
+      "taskCompleted": "훌륭해요! 작업 완료",
+      "taskTerminated": "작업이 사용자에 의해 종료되었습니다",
+      "taskError": "앗! 문제가 발생했습니다",
+      "inputTokens": "입력",
+      "completionTokens": "출력"
+    },
+    "confirm": {
+      "terminate": {
+        "title": "작업 종료",
+        "description": "이 작업을 종료하시겠습니까?",
+        "confirm": "종료",
+        "cancel": "취소",
+        "terminating": "종료 중..."
+      }
+    }
+  },
+  "tasks": {
+    "sidebar": {
+      "title": "최근 작업",
+      "newTask": "새 작업"
+    },
+    "page": {
+      "emptyState": {
+        "subtitle": "안녕하세요! 함께 이 세상에 약간의 재미를 더해봅시다."
+      }
+    },
+    "input": {
+      "tools": {
+        "title": "도구 구성",
+        "addCustom": "새 사용자 정의 도구 추가",
+        "addNew": {
+          "title": "새 사용자 정의 도구 추가",
+          "namePlaceholder": "도구 이름 입력",
+          "configPlaceholder": "도구 구성 입력, 예:\n{\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n}",
+          "add": "추가",
+          "nameRequired": "도구 이름은 필수입니다",
+          "configRequired": "도구 구성은 필수입니다",
+          "success": "도구가 성공적으로 설치되었습니다"
+        },
+        "market": {
+          "title": "도구 마켓",
+          "description": "마켓플레이스에서 새 도구를 발견하고 설치하세요",
+          "browse": "마켓 둘러보기"
+        },
+        "confirm": {
+          "remove": "이 사용자 정의 도구를 제거하시겠습니까?",
+          "confirmRemove": "제거 확인",
+          "cancel": "취소"
+        },
+        "tooltip": {
+          "viewDetails": "클릭하여 세부정보 보기"
+        },
+        "badge": {
+          "mcp": "MCP",
+          "custom": "사용자 정의"
+        }
+      },
+      "share": {
+        "title": "작업 공유",
+        "description": "이 작업 공유",
+        "duration": "유효 기간",
+        "durationPlaceholder": "유효 기간 선택",
+        "days7": "7일",
+        "days30": "30일",
+        "days60": "60일",
+        "days180": "180일",
+        "days365": "365일",
+        "createLink": "공유 링크 생성 및 복사",
+        "processing": "처리 중...",
+        "linkCopied": "공유 링크가 복사되었습니다"
+      }
+    }
+  },
+  "workspace": {
+    "sidebar": {
+      "actions": {
+        "download": "다운로드",
+        "remove": "제거"
+      },
+      "emptyState": {
+        "title": "파일을 찾을 수 없습니다",
+        "description": "작업 공간이 비어 있습니다"
+      },
+      "loadError": "로드에 실패했습니다. 클릭하여 다시 시도하세요."
+    },
+    "page": {
+      "emptyState": {
+        "title": "작업 공간",
+        "description": "사이드바에서 파일을 선택하여 내용을 확인하세요."
+      }
+    }
+  },
+  "tools": {
+    "page": {
+      "title": "도구 마켓",
+      "search": {
+        "placeholder": "이름 또는 설명으로 도구 검색..."
+      },
+      "filter": {
+        "placeholder": "상태 필터",
+        "all": "모든 도구",
+        "installed": "설치됨",
+        "notInstalled": "설치 안 됨"
+      },
+      "results": {
+        "showing": "전체 {total}개 도구 표시",
+        "filtered": "{count} / {total}개 도구 표시"
+      },
+      "emptyState": {
+        "title": "도구를 찾을 수 없습니다",
+        "description": "검색 쿼리나 필터 기준을 조정하여 원하는 도구를 찾아보세요."
+      },
+      "badge": {
+        "installed": "설치됨"
+      },
+      "item": {
+        "by": "작성자:"
+      }
+    }
+  },
+  "config": {
+    "language": "언어",
+    "preferences": "설정",
+    "preferencesDescription": "애플리케이션 설정 구성",
+    "languageSelectPlaceholder": "언어 선택",
+    "toast": {
+      "loadConfigError": "구성 로드 실패",
+      "updateSuccess": "설정이 업데이트되었습니다",
+      "updateError": "설정 업데이트 실패"
+    },
+    "appearance": "외관",
+    "apperanceThemes": {
+      "light": "라이트",
+      "dark": "다크",
+      "system": "시스템"
+    },
+    "llm": {
+      "title": "모델",
+      "description": "모델 구성",
+      "model": "모델",
+      "apiKey": "API 키",
+      "apiKeyPlaceholder": "API 키 입력",
+      "baseUrl": "API 기본 URL",
+      "baseUrlPlaceholder": "API 기본 URL 입력",
+      "maxTokens": "최대 토큰 수",
+      "temperature": "온도",
+      "getApiKey": "DeepSeek에서 API 키 가져오기",
+      "confirmDelete": "이 모델을 제거하시겠습니까?",
+      "modelRemoved": "모델이 제거되었습니다",
+      "configUpdated": "구성이 업데이트되었습니다",
+      "configUpdateError": "구성 업데이트 실패",
+      "encryptionNote": "귀하의 키는",
+      "encryptionTech": "PKCS1_OAEP",
+      "encryptionTechNote": "암호화 기술을 사용하여 암호화되고 저장됩니다",
+      "provider": {
+        "configureProvider": "공급자 구성",
+        "supportedModels": "지원되는 모델",
+        "searchModel": "모델 검색...",
+        "modelsCount": "{count}개 모델",
+        "contextLength": "{length}K 컨텍스트"
+      }
+    },
+    "agents": {
+      "title": "에이전트",
+      "description": "특정 프롬프트 및 도구를 사용하여 사용자 정의 에이전트 구성",
+      "createAgent": "에이전트 생성",
+      "editAgent": "에이전트 편집",
+      "createNew": "새 에이전트 생성",
+      "configureDescription": "특정 프롬프트 및 도구를 사용하여 사용자 정의 에이전트 구성",
+      "default": "기본",
+      "form": {
+        "name": "이름",
+        "namePlaceholder": "에이전트 이름 입력",
+        "description": "설명",
+        "descriptionPlaceholder": "에이전트 설명 입력",
+        "systemPrompt": "시스템 프롬프트",
+        "systemPromptPlaceholder": "사용자 정의 시스템 프롬프트 템플릿 입력",
+        "tools": "도구",
+        "toolsDescription": "이 에이전트가 사용할 수 있는 도구 선택 (TODO: 도구 선택기 구현)",
+        "toolsCount": "도구 ({count})",
+        "cancel": "취소",
+        "create": "에이전트 생성",
+        "update": "에이전트 업데이트",
+        "saving": "저장 중..."
+      }
+    },
+    "sidebar": {
+      "models": "모델",
+      "aigc": "페인트보드",
+      "agents": "에이전트",
+      "voices": "음성",
+      "preferences": "설정"
+    }
+  },
+  "paintboard": {
+    "form": {
+      "selectModel": "모델 선택",
+      "startGeneration": "생성 시작",
+      "submitting": "제출 중...",
+      "taskSubmitted": "작업이 성공적으로 제출되었습니다",
+      "taskSubmitFailed": "작업 제출 실패",
+      "invalidModel": "잘못된 서비스 또는 모델 정보",
+      "selectModelFirst": "모델을 선택하세요",
+      "fields": {
+        "prompt": "프롬프트",
+        "text": "텍스트",
+        "aspectRatio": "화면 비율",
+        "duration": "기간",
+        "firstFrame": "첫 프레임",
+        "lastFrame": "마지막 프레임",
+        "referenceImage": "참조 이미지",
+        "voice_id": "음성",
+        "mode": "모드",
+        "speed": "속도",
+        "vol": "볼륨",
+        "pitch": "피치",
+        "emotion": "감정",
+        "resolution": "해상도",
+        "advanced": "고급 설정",
+        "video": "비디오",
+        "audio": "오디오"
+      }
+    }
+  },
+  "flowcanvas": {
+    "title": "FlowCanvas",
+    "newProject": "새 프로젝트",
+    "emptyState": {
+      "title": "아직 프로젝트가 없습니다",
+      "description": "첫 번째 FlowCanvas 프로젝트를 생성하여 시각적 워크플로 구축을 시작하세요",
+      "createFirst": "첫 프로젝트 생성"
+    },
+    "project": {
+      "updatedAt": "업데이트 날짜",
+      "unnamed": "제목 없는 템플릿",
+      "namePlaceholder": "템플릿 이름 입력",
+      "errors": {
+        "loadFailed": "프로젝트 로드 실패",
+        "updateFailed": "프로젝트 업데이트 실패",
+        "updateNameFailed": "프로젝트 이름 업데이트 실패",
+        "syncFailed": "동기화 실패",
+        "importFailed": "가져오기 실패"
+      },
+      "messages": {
+        "dataImport": "캔버스 데이터 가져오기",
+        "importSuccess": "캔버스 데이터를 성공적으로 가져왔습니다"
+      }
+    },
+    "toast": {
+      "createSuccess": "프로젝트가 생성되었습니다",
+      "createError": "프로젝트 생성 실패",
+      "deleteSuccess": "프로젝트가 삭제되었습니다",
+      "deleteError": "프로젝트 삭제 실패",
+      "loadError": "프로젝트 로드 실패"
+    },
+    "confirmDelete": "프로젝트 \"{name}\"을(를) 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
+    "toolbar": {
+      "execute": "실행",
+      "executeSelected": "선택한 노드 실행"
+    },
+    "contextMenu": {
+      "searchPlaceholder": "노드 검색...",
+      "noMatch": "일치하는 노드를 찾을 수 없습니다",
+      "nodes": {
+        "text": {
+          "label": "텍스트 노드",
+          "description": "텍스트 콘텐츠 표시 및 처리용",
+          "defaultLabel": "텍스트 노드",
+          "defaultDescription": "더블 클릭하여 텍스트 콘텐츠 편집",
+          "defaultText": "클릭하여 텍스트 편집"
+        },
+        "image": {
+          "label": "이미지 노드",
+          "description": "이미지 업로드 및 표시용",
+          "defaultLabel": "이미지 노드",
+          "defaultDescription": "클릭하여 이미지 업로드"
+        },
+        "video": {
+          "label": "비디오 노드",
+          "description": "비디오 업로드 및 재생용",
+          "defaultLabel": "비디오 노드",
+          "defaultDescription": "클릭하여 비디오 업로드"
+        },
+        "audio": {
+          "label": "오디오 노드",
+          "description": "오디오 업로드 및 재생용",
+          "defaultLabel": "오디오 노드",
+          "defaultDescription": "클릭하여 오디오 업로드"
+        },
+        "music": {
+          "label": "음악 노드",
+          "description": "음악 생성용",
+          "defaultLabel": "음악 노드",
+          "defaultDescription": "클릭하여 음악 업로드"
+        },
+        "lipsync": {
+          "label": "립싱크 노드",
+          "description": "립싱크용",
+          "defaultLabel": "립싱크 노드",
+          "defaultDescription": "클릭하여 비디오 및 오디오 업로드"
+        }
+      }
+    },
+    "nodes": {
+      "uploading": "업로드 중...",
+      "uploadAudio": "로컬 오디오 업로드 (최대 10MB)",
+      "uploadImage": "로컬 이미지 업로드 (최대 10MB)",
+      "generateAudio": "프롬프트를 입력하여 오디오 생성",
+      "generateImage": "프롬프트를 입력하여 이미지 생성",
+      "selectAudioFile": "오디오 파일을 선택하세요",
+      "selectImageFile": "이미지 파일을 선택하세요",
+      "audioUploadFailed": "오디오 업로드 실패. 다시 시도하세요.",
+      "invalidPromptOrModel": "잘못된 프롬프트 또는 모델",
+      "failedToGenerateAudio": "오디오 생성 실패",
+      "invalidPromptModelOrRatio": "잘못된 프롬프트, 모델 또는 화면 비율",
+      "failedToGenerateImage": "이미지 생성 실패",
+      "connectInput": "노드 입력 연결:",
+      "videoInput": "• 비디오:",
+      "audioInput": "• 오디오:",
+      "connected": "{count}개 연결됨",
+      "notConnected": "연결 안 됨",
+      "startLipsync": "아래 버튼을 클릭하여 립싱크 시작",
+      "pleaseConnectInputs": "비디오 및 오디오 입력을 연결하세요",
+      "missingVideoOrAudio": "비디오 또는 오디오 입력 누락",
+      "noModelSelected": "모델이 선택되지 않음",
+      "invalidVideoOrAudioUrl": "잘못된 비디오 또는 오디오 URL",
+      "lipsyncFailed": "립싱크 실패",
+      "lipsyncTimeout": "립싱크 시간 초과",
+      "keyboardShortcuts": "키보드 단축키",
+      "previous": "이전",
+      "next": "다음",
+      "setCover": "커버로 설정",
+      "close": "닫기",
+      "scroll": "스크롤",
+      "navigate": "탐색",
+      "currentCover": "현재 커버",
+      "setAsCover": "커버로 설정"
+    },
+    "nodeTooltips": {
+      "common": {
+        "selectModel": "모델 선택",
+        "aspect": "화면 비율",
+        "duration": "기간",
+        "resolution": "해상도",
+        "selectVoice": "음성 선택",
+        "lyrics": "가사",
+        "prompt": "프롬프트"
+      },
+      "text": {
+        "placeholder": "AI와 채팅, @를 입력하여 멘션",
+        "selectModel": "모델 선택",
+        "failed": "AI 텍스트 생성 실패"
+      },
+      "image": {
+        "placeholder": "프롬프트를 입력하여 이미지 생성, @를 입력하여 멘션"
+      },
+      "video": {
+        "placeholder": "프롬프트를 입력하여 비디오 생성. 첫 번째 이미지가 첫 프레임으로 사용됩니다"
+      },
+      "audio": {
+        "placeholder": "텍스트를 입력하여 오디오 생성, @를 입력하여 멘션"
+      },
+      "music": {
+        "lyricsPlaceholder": "여기에 가사 입력, @를 입력하여 멘션",
+        "promptPlaceholder": "프롬프트를 입력하여 음악 스타일 설명, @를 입력하여 멘션"
+      },
+      "lipsync": {
+        "connectAlert": "먼저 비디오 및 오디오 입력을 연결하세요",
+        "selectModelAlert": "모델을 선택하세요",
+        "failed": "립싱크 실패",
+        "inputStatus": "입력 상태:",
+        "videoInput": "비디오 입력:",
+        "audioInput": "오디오 입력:",
+        "items": "개",
+        "connected": "✓ {count}개",
+        "notConnected": "✗ 연결 안 됨",
+        "selectModel": "립싱크 모델 선택",
+        "selectModelPlaceholder": "립싱크 모델 선택"
+      }
+    }
+  },
+  "voices": {
+    "title": "음성 관리",
+    "description": "여러 플랫폼에서 사용자 정의 음성 관리 및 구성",
+    "tabs": {
+      "voices": "내 음성",
+      "cloneTasks": "복제 작업"
+    },
+    "providers": {
+      "all": "모든 플랫폼",
+      "selectPlaceholder": "플랫폼 선택"
+    },
+    "actions": {
+      "cloneVoice": "음성 복제",
+      "deleteVoice": "음성 삭제",
+      "startClone": "복제 시작"
+    },
+    "emptyState": {
+      "voices": "아직 음성이 없습니다. 오른쪽 상단 버튼을 클릭하여 음성을 추가하세요",
+      "cloneTasks": "아직 복제 작업이 없습니다"
+    },
+    "toast": {
+      "loadVoicesFailed": "음성 로드 실패",
+      "loadCloneTasksFailed": "복제 작업 로드 실패",
+      "voiceDeleted": "음성이 삭제되었습니다",
+      "deleteVoiceFailed": "음성 삭제 실패",
+      "cloneSuccess": "음성이 성공적으로 복제되었습니다!",
+      "cloneFailed": "음성 복제 실패",
+      "fillAllFields": "모든 필수 필드를 입력하세요"
+    },
+    "confirmDelete": "이 음성을 삭제하시겠습니까?",
+    "cloneDialog": {
+      "title": "음성 복제",
+      "description": "오디오 파일을 업로드하여 새 음성 복제",
+      "fields": {
+        "name": "음성 이름",
+        "namePlaceholder": "음성 이름 입력",
+        "description": "설명",
+        "descriptionPlaceholder": "음성 설명 입력",
+        "model": "모델",
+        "modelPlaceholder": "복제를 지원하는 모델 선택",
+        "audioFile": "오디오 파일 URL",
+        "audioFileHint": "접근 가능한 오디오 파일 URL을 제공하세요. 권장 시간은 10-30초입니다",
+        "text": "미리보기 텍스트",
+        "textPlaceholder": "미리보기 텍스트 입력 (미리보기 오디오 생성에 사용)"
+      }
+    },
+    "status": {
+      "pending": "대기 중",
+      "processing": "처리 중",
+      "completed": "완료",
+      "failed": "실패"
+    }
+  }
+}

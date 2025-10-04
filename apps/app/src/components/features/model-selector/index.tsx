@@ -7,6 +7,7 @@ import { useLLM } from '@/hooks/use-llm';
 import { Bot, Check, Search } from 'lucide-react';
 import { useImperativeHandle, useMemo, useState, forwardRef } from 'react';
 import { Preferences } from '@prisma/client';
+import { useTranslations } from 'next-intl';
 
 export type ModelSelectorRef = {
   open: () => void;
@@ -22,6 +23,7 @@ interface ModelSelectorProps {
 export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorProps>(({ selectedModel, onModelSelect }, ref) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const t = useTranslations('common.modelSelector');
 
   const { availableModels, providerInfos } = useLLM();
 
@@ -59,7 +61,7 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
             <Search className="text-muted-foreground h-4 w-4" />
           </div>
           <Input
-            placeholder="Search model..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="h-12 rounded-none border-0 pr-4 pl-12 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -69,7 +71,7 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
         <div className="max-h-96 overflow-y-auto">
           {Object.keys(grouped).length === 0 && (
             <div className="flex items-center justify-center py-12">
-              <div className="text-muted-foreground text-sm">No models found</div>
+              <div className="text-muted-foreground text-sm">{t('noModelsFound')}</div>
             </div>
           )}
 

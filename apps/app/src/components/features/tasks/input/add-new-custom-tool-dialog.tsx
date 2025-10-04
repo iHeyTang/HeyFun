@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import React, { useImperativeHandle, useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export interface AddNewCustomToolDialogRef {
   open: () => void;
@@ -12,6 +13,7 @@ export interface AddNewCustomToolDialogRef {
 
 export const AddNewCustomToolDialog = React.forwardRef<AddNewCustomToolDialogRef, { onSuccess?: () => void }>((props, ref) => {
   const [open, setOpen] = useState(false);
+  const t = useTranslations('tasks.input.tools.addNew');
 
   const [toolName, setToolName] = useState('');
   const [toolConfig, setToolConfig] = useState('');
@@ -24,11 +26,11 @@ export const AddNewCustomToolDialog = React.forwardRef<AddNewCustomToolDialogRef
 
   const handleAddTool = async () => {
     if (!toolName) {
-      toast.error('Tool name is required');
+      toast.error(t('nameRequired'));
       return;
     }
     if (!toolConfig) {
-      toast.error('Tool config is required');
+      toast.error(t('configRequired'));
       return;
     }
     if (toolName && toolConfig) {
@@ -36,7 +38,7 @@ export const AddNewCustomToolDialog = React.forwardRef<AddNewCustomToolDialogRef
       if (res.error) {
         toast.error(res.error);
       } else {
-        toast.success(res.data?.message || 'Tool installed successfully');
+        toast.success(res.data?.message || t('success'));
         setOpen(false);
         props.onSuccess?.();
       }
@@ -60,18 +62,18 @@ export const AddNewCustomToolDialog = React.forwardRef<AddNewCustomToolDialogRef
     >
       <DialogContent style={{ overflowY: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <DialogHeader className="h-12">
-          <DialogTitle>Add a new custom tool</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 space-y-4">
-          <Input placeholder="Enter the tool name" value={toolName} onChange={e => setToolName(e.target.value)} />
+          <Input placeholder={t('namePlaceholder')} value={toolName} onChange={e => setToolName(e.target.value)} />
           <Textarea
-            placeholder={`Enter the tool config, example:\n{\n    "command": "npx",\n    "args": ["-y", "@modelcontextprotocol/server-everything"]\n}`}
+            placeholder={t('configPlaceholder')}
             value={toolConfig}
             onChange={e => setToolConfig(e.target.value)}
           />
         </div>
         <DialogFooter>
-          <Button onClick={handleAddTool}>Add</Button>
+          <Button onClick={handleAddTool}>{t('add')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

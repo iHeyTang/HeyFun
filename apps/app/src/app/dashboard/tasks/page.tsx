@@ -8,13 +8,14 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useRecentTasks } from './sidebar';
+import { useTranslations } from 'next-intl';
 
-const EmptyState = () => (
+const EmptyState = ({ subtitle }: { subtitle: string }) => (
   <div className="flex h-full items-center justify-center gap-4 opacity-50">
     <Image src="/logo-white.png" alt="HeyFun" width={64} height={64} />
     <div className="flex flex-col">
       <div className="text-2xl font-bold">HeyFun</div>
-      <div className="text-muted-foreground text-sm">Hey! Let&apos;s bring a little fun to this world together.</div>
+      <div className="text-muted-foreground text-sm">{subtitle}</div>
     </div>
   </div>
 );
@@ -24,6 +25,7 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { refreshTasks } = useRecentTasks();
+  const t = useTranslations('tasks.page.emptyState');
 
   const { selectedModel } = useAgentModelSelector();
   const { enabledTools } = useInputToolsConfig();
@@ -76,7 +78,7 @@ export default function ChatPage() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 space-y-4 overflow-y-auto p-4 pb-20">
-        <EmptyState />
+        <EmptyState subtitle={t('subtitle')} />
       </div>
       <ChatInput status={isLoading ? 'thinking' : 'idle'} onSubmit={handleSubmit} />
     </div>

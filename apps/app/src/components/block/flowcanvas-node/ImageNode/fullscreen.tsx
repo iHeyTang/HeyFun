@@ -2,6 +2,7 @@ import { useCallback, useEffect, useImperativeHandle, useState, useRef } from 'r
 import { createPortal } from 'react-dom';
 import { ChevronUp, ChevronDown, Star, Keyboard } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useTranslations } from 'next-intl';
 
 export interface fullscreenModalRef {
   show: (data: { coverKey?: string; images?: { key: string; url: string }[] }) => void;
@@ -14,6 +15,8 @@ export interface FullscreenModalProps {
 
 // 全屏模态窗口组件
 export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
+  const t = useTranslations('flowcanvas.nodes');
+
   const [coverKey, setCoverKey] = useState<string | undefined>();
   const [images, setImages] = useState<{ key: string; url: string }[] | undefined>();
   const [isClosing, setIsClosing] = useState(false);
@@ -241,7 +244,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
                 <button
                   className="bg-muted/50 text-foreground hover:bg-muted/70 flex h-12 w-12 items-center justify-center rounded-full transition-all duration-150"
                   onClick={e => e.stopPropagation()}
-                  title="Keyboard Shortcuts"
+                  title={t('keyboardShortcuts')}
                 >
                   <Keyboard className="h-5 w-5" />
                 </button>
@@ -250,10 +253,10 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
                 <div className="space-y-2 text-sm whitespace-nowrap">
                   <div className="border-muted/20 mb-3 flex items-center gap-2 border-b pb-2">
                     <Keyboard className="text-muted-foreground h-4 w-4" />
-                    <span className="text-foreground font-medium">Keyboard Shortcuts</span>
+                    <span className="text-foreground font-medium">{t('keyboardShortcuts')}</span>
                   </div>
                   <div className="flex items-center justify-between gap-6">
-                    <span className="text-muted-foreground">Previous</span>
+                    <span className="text-muted-foreground">{t('previous')}</span>
                     <div className="flex items-center gap-1">
                       <kbd className="bg-muted/50 rounded px-2 py-1 font-mono text-xs">↑</kbd>
                       <span className="text-muted-foreground text-xs">or</span>
@@ -261,7 +264,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-6">
-                    <span className="text-muted-foreground">Next</span>
+                    <span className="text-muted-foreground">{t('next')}</span>
                     <div className="flex items-center gap-1">
                       <kbd className="bg-muted/50 rounded px-2 py-1 font-mono text-xs">↓</kbd>
                       <span className="text-muted-foreground text-xs">or</span>
@@ -270,17 +273,17 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
                   </div>
                   {onSetCover && (
                     <div className="flex items-center justify-between gap-6">
-                      <span className="text-muted-foreground">Set Cover</span>
+                      <span className="text-muted-foreground">{t('setCover')}</span>
                       <kbd className="bg-muted/50 rounded px-2 py-1 font-mono text-xs">C</kbd>
                     </div>
                   )}
                   <div className="flex items-center justify-between gap-6">
-                    <span className="text-muted-foreground">Close</span>
+                    <span className="text-muted-foreground">{t('close')}</span>
                     <kbd className="bg-muted/50 rounded px-2 py-1 font-mono text-xs">ESC</kbd>
                   </div>
                   <div className="flex items-center justify-between gap-6">
-                    <span className="text-muted-foreground">Scroll</span>
-                    <span className="text-muted-foreground text-xs">Navigate</span>
+                    <span className="text-muted-foreground">{t('scroll')}</span>
+                    <span className="text-muted-foreground text-xs">{t('navigate')}</span>
                   </div>
                 </div>
               </PopoverContent>
@@ -299,10 +302,10 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
                   : 'bg-muted/50 text-foreground hover:bg-muted/70'
               }`}
               onClick={handleSetCover}
-              title={isCurrentImageCover ? 'Current cover' : 'Set as cover'}
+              title={isCurrentImageCover ? t('currentCover') : t('setAsCover')}
             >
               <Star className={`h-4 w-4 ${isCurrentImageCover ? 'fill-current' : ''}`} />
-              {isCurrentImageCover ? 'Current cover' : 'Set as cover'}
+              {isCurrentImageCover ? t('currentCover') : t('setAsCover')}
             </button>
           )}
           {/* 关闭按钮 */}

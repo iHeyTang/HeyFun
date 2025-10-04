@@ -10,6 +10,7 @@ import { WandSparkles } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MentionItem } from '../../flowcanvas/components/SmartEditorNode/MentionList';
 import { TextNodeActionData, TextNodeProcessor } from './processor';
+import { useTranslations } from 'next-intl';
 
 export interface TextNodeTooltipProps {
   nodeId: string;
@@ -22,6 +23,8 @@ const processor = new TextNodeProcessor();
 
 const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: TextNodeTooltipProps) => {
   const { getSignedUrl } = useSignedUrl();
+  const t = useTranslations('flowcanvas.nodeTooltips.text');
+  const tCommon = useTranslations('flowcanvas.nodeTooltips.common');
 
   const flowGraph = useFlowGraph();
   const { updateStatus } = useNodeStatusById(nodeId);
@@ -160,7 +163,7 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
       <TiptapEditor
         value={localPrompt}
         onChange={handlePromptChange}
-        placeholder="chat with AI, input @ to mention"
+        placeholder={t('placeholder')}
         className="h-24 w-full resize-none border-none! outline-none!"
         mentionSuggestionItems={insertItems}
         ref={editorRef}
@@ -170,7 +173,7 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
       <div className="flex items-center justify-between">
         {/* 左侧：模型选择 */}
         <Button variant="outline" size="sm" className="justify-start p-4" onClick={() => modelSelectorRef.current?.open()}>
-          <span>{selectedModel?.name || 'Select Model'}</span>
+          <span>{selectedModel?.name || t('selectModel')}</span>
         </Button>
         {/* 右侧：提交按钮 */}
         <Button onClick={handleSubmit} onMouseDown={(e: React.MouseEvent) => e.stopPropagation()} className="cursor-pointer" size="icon">

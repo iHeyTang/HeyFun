@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { GenerationSchemaForm, extractDefaultValuesFromSchema } from './generation-schema-form';
 import { submitTaskParamsSchema } from '@repo/llm/aigc';
+import { useTranslations } from 'next-intl';
 
 // Base form schema for model selection
 const baseFormSchema = z.object({
@@ -36,6 +37,7 @@ export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationForm
   const [availableModels, setAvailableModels] = useState<Awaited<ReturnType<typeof getAigcModels>>['data']>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const previousModelRef = useRef<string>('');
+  const t = useTranslations('paintboard.form');
 
   // Force form re-render by updating the key
   const [formKey, setFormKey] = useState(0);
@@ -95,20 +97,20 @@ export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationForm
       const model = data.serviceModel;
 
       if (!model) {
-        toast.error('Invalid service or model information');
+        toast.error(t('invalidModel'));
         return;
       }
 
       const result = await submitGenerationTask({ model, params: data.params });
       if (result.error) {
-        toast.error(`Task submission failed: ${result?.error || 'Unknown error'}`);
+        toast.error(`${t('taskSubmitFailed')}: ${result?.error || 'Unknown error'}`);
         return;
       }
-      toast.success('Task submitted successfully');
+      toast.success(t('taskSubmitted'));
       onSubmitSuccess?.(result.data);
     } catch (error) {
       console.error('Failed to submit task:', error);
-      toast.error('Failed to submit task');
+      toast.error(t('taskSubmitFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -123,7 +125,7 @@ export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationForm
             models={availableModels || []}
             selectedModel={watchedModelName}
             onModelSelect={value => form.setValue('serviceModel', value)}
-            placeholder="选择模型"
+            placeholder={t('selectModel')}
           />
 
           {/* Dynamic form fields based on selected model's JSON schema */}
@@ -139,7 +141,7 @@ export function UnifiedGenerationForm({ onSubmitSuccess }: UnifiedGenerationForm
 
           {/* Submit button */}
           <Button type="submit" className="w-full" disabled={isSubmitting || !watchedModelName}>
-            {isSubmitting ? 'Submitting...' : 'Start Generation'}
+            {isSubmitting ? t('submitting') : t('startGeneration')}
           </Button>
         </form>
       </Form>

@@ -14,6 +14,7 @@ import remarkGfm from 'remark-gfm';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { AddNewCustomToolDialog, AddNewCustomToolDialogRef } from './add-new-custom-tool-dialog';
+import { useTranslations } from 'next-intl';
 
 const DEFAULT_SELECTED_TOOLS = ['web_search', 'str_replace_editor', 'python_execute', 'browser_use'];
 
@@ -50,6 +51,7 @@ export const InputToolsConfigDialog = ({ ref }: InputToolsConfigDialogProps) => 
   const addNewCustomToolRef = useRef<AddNewCustomToolDialogRef>(null);
   const { allTools, refreshTools } = useAgentTools();
   const { enabledTools, setEnabledTools } = useInputToolsConfig();
+  const t = useTranslations('tasks.input.tools');
 
   useImperativeHandle(ref, () => ({
     open: () => {
@@ -80,7 +82,7 @@ export const InputToolsConfigDialog = ({ ref }: InputToolsConfigDialogProps) => 
     confirm({
       content: (
         <div>
-          <p>Are you sure you want to remove this custom tool?</p>
+          <p>{t('confirm.remove')}</p>
         </div>
       ),
       onConfirm: async () => {
@@ -89,8 +91,8 @@ export const InputToolsConfigDialog = ({ ref }: InputToolsConfigDialogProps) => 
         refreshTools();
       },
       buttonText: {
-        confirm: 'Confirm Remove',
-        cancel: 'Cancel',
+        confirm: t('confirm.confirmRemove'),
+        cancel: t('confirm.cancel'),
       },
     });
   };
@@ -104,7 +106,7 @@ export const InputToolsConfigDialog = ({ ref }: InputToolsConfigDialogProps) => 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent style={{ width: '90vw', maxWidth: '90vw', display: 'flex', flexDirection: 'column', height: '80vh', maxHeight: '80vh' }}>
           <DialogHeader>
-            <DialogTitle>Tools Configuration</DialogTitle>
+            <DialogTitle>{t('title')}</DialogTitle>
           </DialogHeader>
 
           <div className="flex h-[calc(100%-64px)] flex-1 flex-col gap-4">
@@ -138,8 +140,8 @@ export const InputToolsConfigDialog = ({ ref }: InputToolsConfigDialogProps) => 
                   <div className="flex items-center justify-between">
                     <span className="line-clamp-1 text-sm font-medium">{tool.name}</span>
                     <div className="flex items-center gap-2">
-                      {tool.type === 'mcp' && <Badge variant="secondary">MCP</Badge>}
-                      {tool.source === 'CUSTOM' && <Badge variant="secondary">CUSTOM</Badge>}
+                      {tool.type === 'mcp' && <Badge variant="secondary">{t('badge.mcp')}</Badge>}
+                      {tool.source === 'CUSTOM' && <Badge variant="secondary">{t('badge.custom')}</Badge>}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -149,7 +151,7 @@ export const InputToolsConfigDialog = ({ ref }: InputToolsConfigDialogProps) => 
                             />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Click to view details</p>
+                            <p>{t('tooltip.viewDetails')}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -169,7 +171,7 @@ export const InputToolsConfigDialog = ({ ref }: InputToolsConfigDialogProps) => 
               {/* action for add a new custom tools */}
               <div className="flex h-[80px] items-center justify-between rounded-lg border p-4">
                 <div className="space-y-1">
-                  <h3 className="text-sm font-medium">Add a new custom tool</h3>
+                  <h3 className="text-sm font-medium">{t('addCustom')}</h3>
                 </div>
                 <Button variant="outline" onClick={() => addNewCustomToolRef.current?.open()}>
                   <Plus className="h-4 w-4" />
@@ -180,11 +182,11 @@ export const InputToolsConfigDialog = ({ ref }: InputToolsConfigDialogProps) => 
             {/* Tool Market Entry */}
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="space-y-1">
-                <h3 className="text-sm font-medium">Tool Market</h3>
-                <p className="text-muted-foreground text-sm">Discover and install new tools from our marketplace</p>
+                <h3 className="text-sm font-medium">{t('market.title')}</h3>
+                <p className="text-muted-foreground text-sm">{t('market.description')}</p>
               </div>
               <Button variant="outline" onClick={() => window.open('/tools/market', '_blank')}>
-                Browse Market
+                {t('market.browse')}
               </Button>
             </div>
           </div>
@@ -197,8 +199,8 @@ export const InputToolsConfigDialog = ({ ref }: InputToolsConfigDialogProps) => 
           <DialogHeader className="h-12">
             <DialogTitle>{showToolInfo?.name || 'Unknown'}</DialogTitle>
             <div className="flex items-center gap-2">
-              {showToolInfo?.type === 'mcp' && <Badge variant="secondary">MCP</Badge>}
-              {showToolInfo?.source === 'CUSTOM' && <Badge variant="secondary">CUSTOM</Badge>}
+              {showToolInfo?.type === 'mcp' && <Badge variant="secondary">{t('badge.mcp')}</Badge>}
+              {showToolInfo?.source === 'CUSTOM' && <Badge variant="secondary">{t('badge.custom')}</Badge>}
             </div>
           </DialogHeader>
 

@@ -11,6 +11,7 @@ import { WandSparkles } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MusicNodeActionData, MusicNodeProcessor } from './processor';
 import { MusicJsonSchema } from '@repo/llm/aigc';
+import { useTranslations } from 'next-intl';
 
 export interface MusicNodeTooltipProps {
   nodeId: string;
@@ -23,6 +24,8 @@ const processor = new MusicNodeProcessor();
 
 const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: MusicNodeTooltipProps) => {
   const { getSignedUrl } = useSignedUrl();
+  const t = useTranslations('flowcanvas.nodeTooltips.music');
+  const tCommon = useTranslations('flowcanvas.nodeTooltips.common');
 
   const flowGraph = useFlowGraph();
   const { availableModels } = useAigc();
@@ -158,11 +161,11 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       {/* 歌词输入框 */}
       {selectedModelParamsSchema?.lyrics.type === 'string' && (
         <div className="flex flex-col gap-1">
-          <label className="text-muted-foreground text-xs">Lyrics</label>
+          <label className="text-muted-foreground text-xs">{tCommon('lyrics')}</label>
           <TiptapEditor
             value={localLyrics}
             onChange={handleLyricsChange}
-            placeholder="Enter lyrics here, input @ to mention"
+            placeholder={t('lyricsPlaceholder')}
             className="h-32 w-full resize-none border-none! outline-none!"
             mentionSuggestionItems={insertItems}
             ref={lyricsEditorRef}
@@ -171,11 +174,11 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       )}
       {/* 提示词输入框 */}
       <div className="flex flex-col gap-1">
-        <label className="text-muted-foreground text-xs">Prompt</label>
+        <label className="text-muted-foreground text-xs">{tCommon('prompt')}</label>
         <TiptapEditor
           value={localPrompt}
           onChange={handlePromptChange}
-          placeholder="Enter prompt to describe music style, input @ to mention"
+          placeholder={t('promptPlaceholder')}
           className="h-24 w-full resize-none border-none! outline-none!"
           mentionSuggestionItems={insertItems}
           ref={promptEditorRef}
@@ -198,7 +201,7 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             }}
           >
             <SelectTrigger size="sm" className="text-xs">
-              <SelectValue placeholder="Select a model" />
+              <SelectValue placeholder={tCommon('selectModel')} />
             </SelectTrigger>
             <SelectContent>
               {availableModels

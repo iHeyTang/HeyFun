@@ -11,10 +11,12 @@ import { Globe, Search, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function ProviderDetailsPanel() {
   const [models, setModels] = useState<ProviderModelInfo[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const t = useTranslations('config.llm.provider');
 
   const { providerId } = useParams<{ providerId: string }>();
   const { providerInfos } = useLLM();
@@ -58,7 +60,7 @@ export default function ProviderDetailsPanel() {
             <Link href={`/dashboard/settings/llm/${providerInfo.provider}/config`}>
               <Button variant="ghost" size="sm">
                 <Settings className="mr-2 h-4 w-4" />
-                Configure Provider
+                {t('configureProvider')}
               </Button>
             </Link>
           )}
@@ -78,13 +80,13 @@ export default function ProviderDetailsPanel() {
         {/* Model list */}
         <div className="flex min-h-0 flex-1 flex-col space-y-4">
           <div className="flex flex-shrink-0 items-center justify-between pr-3">
-            <h3 className="text-lg font-semibold">Supported Models</h3>
+            <h3 className="text-lg font-semibold">{t('supportedModels')}</h3>
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                <Input placeholder="Search model..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-64 pl-9" />
+                <Input placeholder={t('searchModel')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-64 pl-9" />
               </div>
-              <Badge variant="secondary">{filteredModels.length} models</Badge>
+              <Badge variant="secondary">{t('modelsCount', { count: filteredModels.length })}</Badge>
             </div>
           </div>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-3">
@@ -96,7 +98,7 @@ export default function ProviderDetailsPanel() {
                       <div className="mb-2 flex items-center gap-2">
                         <h4 className="font-medium">{model.name}</h4>
                         <Badge variant="secondary" className="text-xs">
-                          {Math.round(model.contextLength / 1000)}K context
+                          {t('contextLength', { length: Math.round(model.contextLength / 1000) })}
                         </Badge>
                       </div>
                       <Markdown className="compact">{model.pricingDescription}</Markdown>

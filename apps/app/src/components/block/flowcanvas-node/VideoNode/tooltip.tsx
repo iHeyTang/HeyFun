@@ -12,6 +12,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RatioIcon } from '../../ratio-icon';
 import { VideoNodeActionData, VideoNodeProcessor } from './processor';
 import { VideoJsonSchema } from '@repo/llm/aigc';
+import { useTranslations } from 'next-intl';
 
 export interface VideoNodeTooltipProps {
   nodeId: string;
@@ -24,6 +25,8 @@ const processor = new VideoNodeProcessor();
 
 const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: VideoNodeTooltipProps) => {
   const { getSignedUrl } = useSignedUrl();
+  const t = useTranslations('flowcanvas.nodeTooltips');
+  const tCommon = useTranslations('flowcanvas.nodeTooltips.common');
 
   const flowGraph = useFlowGraph();
   const { availableModels } = useAigc();
@@ -181,7 +184,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       <TiptapEditor
         value={localPrompt}
         onChange={handlePromptChange}
-        placeholder="Enter prompt to generate a video. First image will be used as the first frame"
+        placeholder={t('video.placeholder')}
         className="h-24 w-full resize-none border-none! outline-none!"
         mentionSuggestionItems={insertItems}
         ref={editorRef}
@@ -205,7 +208,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             }}
           >
             <SelectTrigger size="sm" className="text-xs">
-              <SelectValue placeholder="Select a model" />
+              <SelectValue placeholder={tCommon('selectModel')} />
             </SelectTrigger>
             <SelectContent>
               {availableModels

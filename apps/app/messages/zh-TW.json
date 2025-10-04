@@ -1,0 +1,590 @@
+{
+  "common": {
+    "welcome": "歡迎",
+    "signin": "登入",
+    "signout": "退出",
+    "settings": "設定",
+    "language": "語言",
+    "cancel": "取消",
+    "delete": "刪除",
+    "deleting": "刪除中...",
+    "edit": "編輯",
+    "save": "儲存",
+    "saving": "儲存中...",
+    "addNew": "新增",
+    "remove": "刪除",
+    "removing": "刪除中...",
+    "creating": "建立中...",
+    "loading": "載入中...",
+    "required": "必填",
+    "search": "搜尋",
+    "filter": "篩選",
+    "close": "關閉",
+    "open": "開啟",
+    "download": "下載",
+    "upload": "上傳",
+    "time": {
+      "justUpdated": "剛剛更新",
+      "minutesAgo": "{count}分鐘前更新",
+      "hoursAgo": "{count}小時前更新",
+      "daysAgo": "{count}天前更新"
+    },
+    "sync": {
+      "syncing": "正在同步中...",
+      "synced": "已同步"
+    },
+    "modelSelector": {
+      "searchPlaceholder": "搜尋模型...",
+      "noModelsFound": "未找到模型"
+    },
+    "aigcModelSelector": {
+      "title": "AIGC 模型選擇器",
+      "model": "模型",
+      "searchPlaceholder": "搜尋模型名稱或描述...",
+      "categories": {
+        "all": "全部",
+        "textToImage": "文字生成圖片",
+        "imageToImage": "圖片生成圖片",
+        "video": "影片生成",
+        "speech": "語音生成"
+      },
+      "generationTypes": {
+        "textToImage": "文字生成圖片",
+        "imageToImage": "圖片生成圖片",
+        "textToVideo": "文字生成影片",
+        "imageToVideo": "圖片生成影片",
+        "keyframeToVideo": "關鍵幀生成影片",
+        "textToSpeech": "語音合成"
+      },
+      "noModels": "暫無可用模型",
+      "noMatch": "未找到符合的模型"
+    },
+    "agentSelector": {
+      "title": "選擇智慧體",
+      "funmax": "FunMax",
+      "system": "系統",
+      "defaultDescription": "使用預設 FunMax 智慧體及標準設定",
+      "default": "預設",
+      "tools": "工具",
+      "moreTools": "+{count} 更多"
+    },
+    "voiceSelector": {
+      "searchPlaceholder": "搜尋音色...",
+      "noVoicesFound": "未找到音色"
+    },
+    "confirm": {
+      "cancel": "取消",
+      "confirm": "確認",
+      "processing": "處理中..."
+    }
+  },
+  "errors": {
+    "general": "發生錯誤",
+    "notFound": "頁面未找到",
+    "unauthorized": "未授權存取"
+  },
+  "home": {
+    "nav": {
+      "home": "首頁",
+      "features": "功能",
+      "openSource": "開源",
+      "pricing": "定價",
+      "github": "GitHub",
+      "dashboard": "控制台"
+    },
+    "hero": {
+      "title": "HeyFun",
+      "badge": "AI Studio",
+      "subtitle": "智慧代理 • 自動化工作流 • 創意 AI 平台",
+      "getStarted": "開始使用",
+      "features": {
+        "agents": {
+          "title": "AI 代理",
+          "description": "智慧自主代理"
+        },
+        "workflows": {
+          "title": "工作流",
+          "description": "自動化任務編排"
+        },
+        "integration": {
+          "title": "整合",
+          "description": "無縫 AI 服務連接"
+        },
+        "studio": {
+          "title": "工作室",
+          "description": "創意 AI 開發平台"
+        }
+      }
+    }
+  },
+  "dashboard": {
+    "sidebar": {
+      "flowcanvas": "FlowCanvas",
+      "chat": "聊天",
+      "tasks": "任務",
+      "paintboard": "畫板",
+      "workspace": "工作空間",
+      "tools": "工具",
+      "settings": "設定"
+    }
+  },
+  "chat": {
+    "sidebar": {
+      "title": "聊天歷史",
+      "newChat": "新建聊天",
+      "noHistory": "暫無聊天記錄"
+    },
+    "input": {
+      "placeholder": "讓我們一起想像不可能，共創未來",
+      "placeholderThinking": "思考中...",
+      "placeholderTerminating": "終止中...",
+      "placeholderCompleted": "任務完成！",
+      "selectModel": "選擇模型",
+      "selectAgent": "選擇代理",
+      "tools": "工具",
+      "files": "個檔案",
+      "attachFiles": "附加檔案",
+      "sendMessage": "傳送訊息",
+      "terminateTask": "終止任務"
+    },
+    "messages": {
+      "preparing": "準備中...",
+      "prepared": "已準備",
+      "planning": "規劃中...",
+      "planCompleted": "規劃完成",
+      "taskCompleted": "太棒了！任務完成",
+      "taskTerminated": "任務已被使用者終止",
+      "taskError": "哎呀！出錯了",
+      "inputTokens": "輸入",
+      "completionTokens": "輸出"
+    },
+    "confirm": {
+      "terminate": {
+        "title": "終止任務",
+        "description": "確定要終止此任務嗎？",
+        "confirm": "終止",
+        "cancel": "取消",
+        "terminating": "終止中..."
+      }
+    }
+  },
+  "tasks": {
+    "sidebar": {
+      "title": "最近任務",
+      "newTask": "新建任務"
+    },
+    "page": {
+      "emptyState": {
+        "subtitle": "嘿！讓我們一起為這個世界帶來一點樂趣吧。"
+      }
+    },
+    "input": {
+      "tools": {
+        "title": "工具設定",
+        "addCustom": "新增新的自訂工具",
+        "addNew": {
+          "title": "新增一個新的自訂工具",
+          "namePlaceholder": "輸入工具名稱",
+          "configPlaceholder": "輸入工具設定，範例：\n{\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n}",
+          "add": "新增",
+          "nameRequired": "工具名稱必填",
+          "configRequired": "工具設定必填",
+          "success": "工具安裝成功"
+        },
+        "market": {
+          "title": "工具市場",
+          "description": "從我們的市場探索和安裝新工具",
+          "browse": "瀏覽市場"
+        },
+        "confirm": {
+          "remove": "確定要刪除此自訂工具嗎？",
+          "confirmRemove": "確認刪除",
+          "cancel": "取消"
+        },
+        "tooltip": {
+          "viewDetails": "點擊檢視詳情"
+        },
+        "badge": {
+          "mcp": "MCP",
+          "custom": "自訂"
+        }
+      },
+      "share": {
+        "title": "分享任務",
+        "description": "分享此任務",
+        "duration": "有效期",
+        "durationPlaceholder": "選擇有效期",
+        "days7": "7 天",
+        "days30": "30 天",
+        "days60": "60 天",
+        "days180": "180 天",
+        "days365": "365 天",
+        "createLink": "建立分享連結並複製",
+        "processing": "處理中...",
+        "linkCopied": "分享連結已複製"
+      }
+    }
+  },
+  "workspace": {
+    "sidebar": {
+      "actions": {
+        "download": "下載",
+        "remove": "刪除"
+      },
+      "emptyState": {
+        "title": "未找到檔案",
+        "description": "工作空間為空"
+      },
+      "loadError": "載入失敗。點擊重試。"
+    },
+    "page": {
+      "emptyState": {
+        "title": "工作空間",
+        "description": "從側邊欄選擇一個檔案以檢視其內容。"
+      }
+    }
+  },
+  "tools": {
+    "page": {
+      "title": "工具市場",
+      "search": {
+        "placeholder": "按名稱或描述搜尋工具..."
+      },
+      "filter": {
+        "placeholder": "篩選狀態",
+        "all": "所有工具",
+        "installed": "已安裝",
+        "notInstalled": "未安裝"
+      },
+      "results": {
+        "showing": "顯示所有 {total} 個工具",
+        "filtered": "顯示 {count} / {total} 個工具"
+      },
+      "emptyState": {
+        "title": "未找到工具",
+        "description": "嘗試調整搜尋查詢或篩選條件以找到您要尋找的工具。"
+      },
+      "badge": {
+        "installed": "已安裝"
+      },
+      "item": {
+        "by": "作者："
+      }
+    }
+  },
+  "config": {
+    "language": "語言",
+    "preferences": "偏好設定",
+    "preferencesDescription": "設定您的應用程式偏好設定",
+    "languageSelectPlaceholder": "選擇語言",
+    "toast": {
+      "loadConfigError": "載入設定失敗",
+      "updateSuccess": "偏好設定已更新",
+      "updateError": "更新偏好設定失敗"
+    },
+    "appearance": "外觀",
+    "apperanceThemes": {
+      "light": "亮色",
+      "dark": "暗色",
+      "system": "系統"
+    },
+    "llm": {
+      "title": "模型",
+      "description": "設定您的模型",
+      "model": "模型",
+      "apiKey": "API 金鑰",
+      "apiKeyPlaceholder": "輸入您的 API 金鑰",
+      "baseUrl": "API 基礎 URL",
+      "baseUrlPlaceholder": "輸入您的 API 基礎 URL",
+      "maxTokens": "最大權杖數",
+      "temperature": "溫度",
+      "getApiKey": "從 DeepSeek 取得 API 金鑰",
+      "confirmDelete": "確定要刪除此模型嗎？",
+      "modelRemoved": "模型已刪除",
+      "configUpdated": "設定已更新",
+      "configUpdateError": "更新設定失敗",
+      "encryptionNote": "您的金鑰將使用",
+      "encryptionTech": "PKCS1_OAEP",
+      "encryptionTechNote": "加密技術進行加密和儲存",
+      "provider": {
+        "configureProvider": "設定提供商",
+        "supportedModels": "支援的模型",
+        "searchModel": "搜尋模型...",
+        "modelsCount": "{count} 個模型",
+        "contextLength": "{length}K 上下文"
+      }
+    },
+    "agents": {
+      "title": "智慧體",
+      "description": "設定具有特定提示詞和工具的自訂智慧體",
+      "createAgent": "建立智慧體",
+      "editAgent": "編輯智慧體",
+      "createNew": "建立新智慧體",
+      "configureDescription": "設定具有特定提示詞和工具的自訂智慧體",
+      "default": "預設",
+      "form": {
+        "name": "名稱",
+        "namePlaceholder": "輸入智慧體名稱",
+        "description": "描述",
+        "descriptionPlaceholder": "輸入智慧體描述",
+        "systemPrompt": "系統提示詞",
+        "systemPromptPlaceholder": "輸入自訂系統提示詞範本",
+        "tools": "工具",
+        "toolsDescription": "選擇此智慧體可以使用的工具（待實現：工具選擇器）",
+        "toolsCount": "工具 ({count})",
+        "cancel": "取消",
+        "create": "建立智慧體",
+        "update": "更新智慧體",
+        "saving": "儲存中..."
+      }
+    },
+    "sidebar": {
+      "models": "模型",
+      "aigc": "畫板",
+      "agents": "智慧體",
+      "voices": "音色",
+      "preferences": "偏好設定"
+    }
+  },
+  "paintboard": {
+    "form": {
+      "selectModel": "選擇模型",
+      "startGeneration": "開始生成",
+      "submitting": "提交中...",
+      "taskSubmitted": "任務提交成功",
+      "taskSubmitFailed": "任務提交失敗",
+      "invalidModel": "無效的服務或模型資訊",
+      "selectModelFirst": "請選擇模型",
+      "fields": {
+        "prompt": "提示詞",
+        "text": "文字",
+        "aspectRatio": "寬高比",
+        "duration": "時長",
+        "firstFrame": "首幀",
+        "lastFrame": "尾幀",
+        "referenceImage": "參考圖片",
+        "voice_id": "聲音",
+        "mode": "模式",
+        "speed": "語速",
+        "vol": "音量",
+        "pitch": "音調",
+        "emotion": "情感",
+        "resolution": "解析度",
+        "advanced": "進階設定",
+        "video": "影片",
+        "audio": "音訊"
+      }
+    }
+  },
+  "flowcanvas": {
+    "title": "FlowCanvas",
+    "newProject": "新建專案",
+    "emptyState": {
+      "title": "還沒有專案",
+      "description": "建立您的第一個 FlowCanvas 專案，開始建構視覺化工作流",
+      "createFirst": "建立第一個專案"
+    },
+    "project": {
+      "updatedAt": "更新於",
+      "unnamed": "未命名範本",
+      "namePlaceholder": "輸入範本名稱",
+      "errors": {
+        "loadFailed": "載入專案失敗",
+        "updateFailed": "更新專案失敗",
+        "updateNameFailed": "更新專案名稱失敗",
+        "syncFailed": "同步失敗",
+        "importFailed": "匯入失敗"
+      },
+      "messages": {
+        "dataImport": "Canvas資料匯入",
+        "importSuccess": "Canvas資料匯入成功"
+      }
+    },
+    "toast": {
+      "createSuccess": "專案建立成功",
+      "createError": "建立專案失敗",
+      "deleteSuccess": "專案刪除成功",
+      "deleteError": "刪除專案失敗",
+      "loadError": "載入專案失敗"
+    },
+    "confirmDelete": "確定要刪除專案「{name}」嗎？此操作無法復原。",
+    "toolbar": {
+      "execute": "執行",
+      "executeSelected": "執行選中節點"
+    },
+    "contextMenu": {
+      "searchPlaceholder": "搜尋節點...",
+      "noMatch": "未找到符合的節點",
+      "nodes": {
+        "text": {
+          "label": "文字節點",
+          "description": "用於顯示和處理文字內容",
+          "defaultLabel": "文字節點",
+          "defaultDescription": "雙擊編輯文字內容",
+          "defaultText": "點擊編輯文字"
+        },
+        "image": {
+          "label": "圖片節點",
+          "description": "用於上傳和顯示圖片",
+          "defaultLabel": "圖片節點",
+          "defaultDescription": "點擊上傳圖片"
+        },
+        "video": {
+          "label": "影片節點",
+          "description": "用於上傳和播放影片",
+          "defaultLabel": "影片節點",
+          "defaultDescription": "點擊上傳影片"
+        },
+        "audio": {
+          "label": "音訊節點",
+          "description": "用於上傳和播放音訊",
+          "defaultLabel": "音訊節點",
+          "defaultDescription": "點擊上傳音訊"
+        },
+        "music": {
+          "label": "音樂節點",
+          "description": "用於生成音樂",
+          "defaultLabel": "音樂節點",
+          "defaultDescription": "點擊上傳音樂"
+        },
+        "lipsync": {
+          "label": "唇形同步節點",
+          "description": "用於唇形同步",
+          "defaultLabel": "唇形同步節點",
+          "defaultDescription": "點擊上傳影片和音訊"
+        }
+      }
+    },
+    "nodes": {
+      "uploading": "上傳中...",
+      "uploadAudio": "上傳本地音訊（最大 10MB）",
+      "uploadImage": "上傳本地圖片（最大 10MB）",
+      "generateAudio": "輸入提示詞生成音訊",
+      "generateImage": "輸入提示詞生成圖片",
+      "selectAudioFile": "請選擇音訊檔案",
+      "selectImageFile": "請選擇圖片檔案",
+      "audioUploadFailed": "音訊上傳失敗，請重試",
+      "invalidPromptOrModel": "無效的提示詞或模型",
+      "failedToGenerateAudio": "生成音訊失敗",
+      "invalidPromptModelOrRatio": "無效的提示詞、模型或寬高比",
+      "failedToGenerateImage": "生成圖片失敗",
+      "connectInput": "連接節點輸入：",
+      "videoInput": "• 影片:",
+      "audioInput": "• 音訊:",
+      "connected": "已連接 {count} 個",
+      "notConnected": "未連接",
+      "startLipsync": "點擊下方按鈕開始唇形同步",
+      "pleaseConnectInputs": "請連接影片和音訊輸入",
+      "missingVideoOrAudio": "缺少影片或音訊輸入",
+      "noModelSelected": "未選擇模型",
+      "invalidVideoOrAudioUrl": "影片或音訊URL無效",
+      "lipsyncFailed": "唇形同步失敗",
+      "lipsyncTimeout": "唇形同步逾時",
+      "keyboardShortcuts": "快速鍵",
+      "previous": "上一張",
+      "next": "下一張",
+      "setCover": "設為封面",
+      "close": "關閉",
+      "scroll": "捲動",
+      "navigate": "瀏覽",
+      "currentCover": "目前封面",
+      "setAsCover": "設為封面"
+    },
+    "nodeTooltips": {
+      "common": {
+        "selectModel": "選擇模型",
+        "aspect": "寬高比",
+        "duration": "時長",
+        "resolution": "解析度",
+        "selectVoice": "選擇音色",
+        "lyrics": "歌詞",
+        "prompt": "提示詞"
+      },
+      "text": {
+        "placeholder": "與 AI 聊天，輸入 @ 提及",
+        "selectModel": "選擇模型",
+        "failed": "AI 文字生成失敗"
+      },
+      "image": {
+        "placeholder": "輸入提示詞生成圖片，輸入 @ 提及"
+      },
+      "video": {
+        "placeholder": "輸入提示詞生成影片。第一張圖片將用作首幀"
+      },
+      "audio": {
+        "placeholder": "輸入文字生成音訊，輸入 @ 提及"
+      },
+      "music": {
+        "lyricsPlaceholder": "在此輸入歌詞，輸入 @ 提及",
+        "promptPlaceholder": "輸入提示詞描述音樂風格，輸入 @ 提及"
+      },
+      "lipsync": {
+        "connectAlert": "請先連接影片和音訊輸入",
+        "selectModelAlert": "請選擇模型",
+        "failed": "唇形同步失敗",
+        "inputStatus": "輸入狀態：",
+        "videoInput": "影片輸入:",
+        "audioInput": "音訊輸入:",
+        "items": "個",
+        "connected": "✓ {count} 個",
+        "notConnected": "✗ 未連接",
+        "selectModel": "選擇唇形同步模型",
+        "selectModelPlaceholder": "選擇唇形同步模型"
+      }
+    }
+  },
+  "voices": {
+    "title": "音色管理",
+    "description": "管理和設定多個平台的自訂音色",
+    "tabs": {
+      "voices": "我的音色",
+      "cloneTasks": "複製任務"
+    },
+    "providers": {
+      "all": "全部平台",
+      "selectPlaceholder": "選擇平台"
+    },
+    "actions": {
+      "cloneVoice": "複製音色",
+      "deleteVoice": "刪除音色",
+      "startClone": "開始複製"
+    },
+    "emptyState": {
+      "voices": "暫無音色，點擊右上角新增音色",
+      "cloneTasks": "暫無複製任務"
+    },
+    "toast": {
+      "loadVoicesFailed": "載入音色清單失敗",
+      "loadCloneTasksFailed": "載入複製任務失敗",
+      "voiceDeleted": "音色已刪除",
+      "deleteVoiceFailed": "刪除音色失敗",
+      "cloneSuccess": "音色複製成功！",
+      "cloneFailed": "複製音色失敗",
+      "fillAllFields": "請填寫所有必填欄位"
+    },
+    "confirmDelete": "確定要刪除這個音色嗎？",
+    "cloneDialog": {
+      "title": "複製音色",
+      "description": "上傳音訊檔案來複製新的音色",
+      "fields": {
+        "name": "音色名稱",
+        "namePlaceholder": "輸入音色名稱",
+        "description": "描述",
+        "descriptionPlaceholder": "輸入音色描述",
+        "model": "模型",
+        "modelPlaceholder": "選擇支援複製的模型",
+        "audioFile": "音訊檔案 URL",
+        "audioFileHint": "請提供可存取的音訊檔案URL，建議時長 10-30 秒",
+        "text": "試聽文字",
+        "textPlaceholder": "輸入試聽文字內容（用於生成預覽音訊）"
+      }
+    },
+    "status": {
+      "pending": "等待中",
+      "processing": "處理中",
+      "completed": "已完成",
+      "failed": "失敗"
+    }
+  }
+}
+

@@ -1,0 +1,589 @@
+{
+  "common": {
+    "welcome": "欢迎",
+    "signin": "登录",
+    "signout": "退出",
+    "settings": "设置",
+    "language": "语言",
+    "cancel": "取消",
+    "delete": "删除",
+    "deleting": "删除中...",
+    "edit": "编辑",
+    "save": "保存",
+    "saving": "保存中...",
+    "addNew": "添加",
+    "remove": "删除",
+    "removing": "删除中...",
+    "creating": "创建中...",
+    "loading": "加载中...",
+    "required": "必填",
+    "search": "搜索",
+    "filter": "筛选",
+    "close": "关闭",
+    "open": "打开",
+    "download": "下载",
+    "upload": "上传",
+    "time": {
+      "justUpdated": "刚刚更新",
+      "minutesAgo": "{count}分钟前更新",
+      "hoursAgo": "{count}小时前更新",
+      "daysAgo": "{count}天前更新"
+    },
+    "sync": {
+      "syncing": "正在同步中...",
+      "synced": "已同步"
+    },
+    "modelSelector": {
+      "searchPlaceholder": "搜索模型...",
+      "noModelsFound": "未找到模型"
+    },
+    "aigcModelSelector": {
+      "title": "AIGC 模型选择器",
+      "model": "模型",
+      "searchPlaceholder": "搜索模型名称或描述...",
+      "categories": {
+        "all": "全部",
+        "textToImage": "文本生成图片",
+        "imageToImage": "图片生成图片",
+        "video": "视频生成",
+        "speech": "语音生成"
+      },
+      "generationTypes": {
+        "textToImage": "文本生成图片",
+        "imageToImage": "图片生成图片",
+        "textToVideo": "文本生成视频",
+        "imageToVideo": "图片生成视频",
+        "keyframeToVideo": "关键帧生成视频",
+        "textToSpeech": "语音合成"
+      },
+      "noModels": "暂无可用模型",
+      "noMatch": "未找到匹配的模型"
+    },
+    "agentSelector": {
+      "title": "选择智能体",
+      "funmax": "FunMax",
+      "system": "系统",
+      "defaultDescription": "使用默认 FunMax 智能体及标准配置",
+      "default": "默认",
+      "tools": "工具",
+      "moreTools": "+{count} 更多"
+    },
+    "voiceSelector": {
+      "searchPlaceholder": "搜索音色...",
+      "noVoicesFound": "未找到音色"
+    },
+    "confirm": {
+      "cancel": "取消",
+      "confirm": "确认",
+      "processing": "处理中..."
+    }
+  },
+  "errors": {
+    "general": "发生错误",
+    "notFound": "页面未找到",
+    "unauthorized": "未授权访问"
+  },
+  "home": {
+    "nav": {
+      "home": "首页",
+      "features": "功能",
+      "openSource": "开源",
+      "pricing": "定价",
+      "github": "GitHub",
+      "dashboard": "控制台"
+    },
+    "hero": {
+      "title": "HeyFun",
+      "badge": "AI Studio",
+      "subtitle": "智能代理 • 自动化工作流 • 创意 AI 平台",
+      "getStarted": "开始使用",
+      "features": {
+        "agents": {
+          "title": "AI 代理",
+          "description": "智能自主代理"
+        },
+        "workflows": {
+          "title": "工作流",
+          "description": "自动化任务编排"
+        },
+        "integration": {
+          "title": "集成",
+          "description": "无缝 AI 服务连接"
+        },
+        "studio": {
+          "title": "工作室",
+          "description": "创意 AI 开发平台"
+        }
+      }
+    }
+  },
+  "dashboard": {
+    "sidebar": {
+      "flowcanvas": "FlowCanvas",
+      "chat": "聊天",
+      "tasks": "任务",
+      "paintboard": "画板",
+      "workspace": "工作空间",
+      "tools": "工具",
+      "settings": "设置"
+    }
+  },
+  "chat": {
+    "sidebar": {
+      "title": "聊天历史",
+      "newChat": "新建聊天",
+      "noHistory": "暂无聊天记录"
+    },
+    "input": {
+      "placeholder": "让我们一起想象不可能，共创未来",
+      "placeholderThinking": "思考中...",
+      "placeholderTerminating": "终止中...",
+      "placeholderCompleted": "任务完成！",
+      "selectModel": "选择模型",
+      "selectAgent": "选择代理",
+      "tools": "工具",
+      "files": "个文件",
+      "attachFiles": "附加文件",
+      "sendMessage": "发送消息",
+      "terminateTask": "终止任务"
+    },
+    "messages": {
+      "preparing": "准备中...",
+      "prepared": "已准备",
+      "planning": "规划中...",
+      "planCompleted": "规划完成",
+      "taskCompleted": "太棒了！任务完成",
+      "taskTerminated": "任务已被用户终止",
+      "taskError": "哎呀！出错了",
+      "inputTokens": "输入",
+      "completionTokens": "输出"
+    },
+    "confirm": {
+      "terminate": {
+        "title": "终止任务",
+        "description": "确定要终止此任务吗？",
+        "confirm": "终止",
+        "cancel": "取消",
+        "terminating": "终止中..."
+      }
+    }
+  },
+  "tasks": {
+    "sidebar": {
+      "title": "最近任务",
+      "newTask": "新建任务"
+    },
+    "page": {
+      "emptyState": {
+        "subtitle": "嘿！让我们一起为这个世界带来一点乐趣吧。"
+      }
+    },
+    "input": {
+      "tools": {
+        "title": "工具配置",
+        "addCustom": "添加新的自定义工具",
+        "addNew": {
+          "title": "添加一个新的自定义工具",
+          "namePlaceholder": "输入工具名称",
+          "configPlaceholder": "输入工具配置，示例：\n{\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n}",
+          "add": "添加",
+          "nameRequired": "工具名称必填",
+          "configRequired": "工具配置必填",
+          "success": "工具安装成功"
+        },
+        "market": {
+          "title": "工具市场",
+          "description": "从我们的市场发现和安装新工具",
+          "browse": "浏览市场"
+        },
+        "confirm": {
+          "remove": "确定要删除此自定义工具吗？",
+          "confirmRemove": "确认删除",
+          "cancel": "取消"
+        },
+        "tooltip": {
+          "viewDetails": "点击查看详情"
+        },
+        "badge": {
+          "mcp": "MCP",
+          "custom": "自定义"
+        }
+      },
+      "share": {
+        "title": "分享任务",
+        "description": "分享此任务",
+        "duration": "有效期",
+        "durationPlaceholder": "选择有效期",
+        "days7": "7 天",
+        "days30": "30 天",
+        "days60": "60 天",
+        "days180": "180 天",
+        "days365": "365 天",
+        "createLink": "创建分享链接并复制",
+        "processing": "处理中...",
+        "linkCopied": "分享链接已复制"
+      }
+    }
+  },
+  "workspace": {
+    "sidebar": {
+      "actions": {
+        "download": "下载",
+        "remove": "删除"
+      },
+      "emptyState": {
+        "title": "未找到文件",
+        "description": "工作空间为空"
+      },
+      "loadError": "加载失败。点击重试。"
+    },
+    "page": {
+      "emptyState": {
+        "title": "工作空间",
+        "description": "从侧边栏选择一个文件以查看其内容。"
+      }
+    }
+  },
+  "tools": {
+    "page": {
+      "title": "工具市场",
+      "search": {
+        "placeholder": "按名称或描述搜索工具..."
+      },
+      "filter": {
+        "placeholder": "筛选状态",
+        "all": "所有工具",
+        "installed": "已安装",
+        "notInstalled": "未安装"
+      },
+      "results": {
+        "showing": "显示所有 {total} 个工具",
+        "filtered": "显示 {count} / {total} 个工具"
+      },
+      "emptyState": {
+        "title": "未找到工具",
+        "description": "尝试调整搜索查询或筛选条件以找到您要查找的工具。"
+      },
+      "badge": {
+        "installed": "已安装"
+      },
+      "item": {
+        "by": "作者："
+      }
+    }
+  },
+  "config": {
+    "language": "语言",
+    "preferences": "偏好设置",
+    "preferencesDescription": "配置你的应用程序偏好设置",
+    "languageSelectPlaceholder": "选择语言",
+    "toast": {
+      "loadConfigError": "加载配置失败",
+      "updateSuccess": "偏好设置已更新",
+      "updateError": "更新偏好设置失败"
+    },
+    "appearance": "外观",
+    "apperanceThemes": {
+      "light": "亮色",
+      "dark": "暗色",
+      "system": "系统"
+    },
+    "llm": {
+      "title": "模型",
+      "description": "配置你的模型",
+      "model": "模型",
+      "apiKey": "API 密钥",
+      "apiKeyPlaceholder": "输入你的 API 密钥",
+      "baseUrl": "API 基础 URL",
+      "baseUrlPlaceholder": "输入你的 API 基础 URL",
+      "maxTokens": "最大令牌数",
+      "temperature": "温度",
+      "getApiKey": "从 DeepSeek 获取 API 密钥",
+      "confirmDelete": "确定要删除此模型吗？",
+      "modelRemoved": "模型已删除",
+      "configUpdated": "配置已更新",
+      "configUpdateError": "更新配置失败",
+      "encryptionNote": "你的密钥将使用",
+      "encryptionTech": "PKCS1_OAEP",
+      "encryptionTechNote": "加密技术进行加密和存储",
+      "provider": {
+        "configureProvider": "配置提供商",
+        "supportedModels": "支持的模型",
+        "searchModel": "搜索模型...",
+        "modelsCount": "{count} 个模型",
+        "contextLength": "{length}K 上下文"
+      }
+    },
+    "agents": {
+      "title": "智能体",
+      "description": "配置具有特定提示词和工具的自定义智能体",
+      "createAgent": "创建智能体",
+      "editAgent": "编辑智能体",
+      "createNew": "创建新智能体",
+      "configureDescription": "配置具有特定提示词和工具的自定义智能体",
+      "default": "默认",
+      "form": {
+        "name": "名称",
+        "namePlaceholder": "输入智能体名称",
+        "description": "描述",
+        "descriptionPlaceholder": "输入智能体描述",
+        "systemPrompt": "系统提示词",
+        "systemPromptPlaceholder": "输入自定义系统提示词模板",
+        "tools": "工具",
+        "toolsDescription": "选择此智能体可以使用的工具（待实现：工具选择器）",
+        "toolsCount": "工具 ({count})",
+        "cancel": "取消",
+        "create": "创建智能体",
+        "update": "更新智能体",
+        "saving": "保存中..."
+      }
+    },
+    "sidebar": {
+      "models": "模型",
+      "aigc": "画板",
+      "agents": "智能体",
+      "voices": "音色",
+      "preferences": "偏好设置"
+    }
+  },
+  "paintboard": {
+    "form": {
+      "selectModel": "选择模型",
+      "startGeneration": "开始生成",
+      "submitting": "提交中...",
+      "taskSubmitted": "任务提交成功",
+      "taskSubmitFailed": "任务提交失败",
+      "invalidModel": "无效的服务或模型信息",
+      "selectModelFirst": "请选择模型",
+      "fields": {
+        "prompt": "提示词",
+        "text": "文本",
+        "aspectRatio": "宽高比",
+        "duration": "时长",
+        "firstFrame": "首帧",
+        "lastFrame": "尾帧",
+        "referenceImage": "参考图片",
+        "voice_id": "声音",
+        "mode": "模式",
+        "speed": "语速",
+        "vol": "音量",
+        "pitch": "音调",
+        "emotion": "情感",
+        "resolution": "分辨率",
+        "advanced": "高级设置",
+        "video": "视频",
+        "audio": "音频"
+      }
+    }
+  },
+  "flowcanvas": {
+    "title": "FlowCanvas",
+    "newProject": "新建项目",
+    "emptyState": {
+      "title": "还没有项目",
+      "description": "创建您的第一个 FlowCanvas 项目，开始构建可视化工作流",
+      "createFirst": "创建第一个项目"
+    },
+    "project": {
+      "updatedAt": "更新于",
+      "unnamed": "未命名模板",
+      "namePlaceholder": "输入模板名称",
+      "errors": {
+        "loadFailed": "加载项目失败",
+        "updateFailed": "更新项目失败",
+        "updateNameFailed": "更新项目名称失败",
+        "syncFailed": "同步失败",
+        "importFailed": "导入失败"
+      },
+      "messages": {
+        "dataImport": "Canvas数据导入",
+        "importSuccess": "Canvas数据导入成功"
+      }
+    },
+    "toast": {
+      "createSuccess": "项目创建成功",
+      "createError": "创建项目失败",
+      "deleteSuccess": "项目删除成功",
+      "deleteError": "删除项目失败",
+      "loadError": "加载项目失败"
+    },
+    "confirmDelete": "确定要删除项目 \"{name}\" 吗？此操作不可撤销。",
+    "toolbar": {
+      "execute": "执行",
+      "executeSelected": "执行选中节点"
+    },
+    "contextMenu": {
+      "searchPlaceholder": "搜索节点...",
+      "noMatch": "未找到匹配的节点",
+      "nodes": {
+        "text": {
+          "label": "文本节点",
+          "description": "用于显示和处理文本内容",
+          "defaultLabel": "文本节点",
+          "defaultDescription": "双击编辑文本内容",
+          "defaultText": "点击编辑文本"
+        },
+        "image": {
+          "label": "图片节点",
+          "description": "用于上传和显示图片",
+          "defaultLabel": "图片节点",
+          "defaultDescription": "点击上传图片"
+        },
+        "video": {
+          "label": "视频节点",
+          "description": "用于上传和播放视频",
+          "defaultLabel": "视频节点",
+          "defaultDescription": "点击上传视频"
+        },
+        "audio": {
+          "label": "音频节点",
+          "description": "用于上传和播放音频",
+          "defaultLabel": "音频节点",
+          "defaultDescription": "点击上传音频"
+        },
+        "music": {
+          "label": "音乐节点",
+          "description": "用于生成音乐",
+          "defaultLabel": "音乐节点",
+          "defaultDescription": "点击上传音乐"
+        },
+        "lipsync": {
+          "label": "唇形同步节点",
+          "description": "用于唇形同步",
+          "defaultLabel": "唇形同步节点",
+          "defaultDescription": "点击上传视频和音频"
+        }
+      }
+    },
+    "nodes": {
+      "uploading": "上传中...",
+      "uploadAudio": "上传本地音频（最大 10MB）",
+      "uploadImage": "上传本地图片（最大 10MB）",
+      "generateAudio": "输入提示词生成音频",
+      "generateImage": "输入提示词生成图片",
+      "selectAudioFile": "请选择音频文件",
+      "selectImageFile": "请选择图片文件",
+      "audioUploadFailed": "音频上传失败，请重试",
+      "invalidPromptOrModel": "无效的提示词或模型",
+      "failedToGenerateAudio": "生成音频失败",
+      "invalidPromptModelOrRatio": "无效的提示词、模型或宽高比",
+      "failedToGenerateImage": "生成图片失败",
+      "connectInput": "连接节点输入：",
+      "videoInput": "• 视频:",
+      "audioInput": "• 音频:",
+      "connected": "已连接 {count} 个",
+      "notConnected": "未连接",
+      "startLipsync": "点击下方按钮开始唇形同步",
+      "pleaseConnectInputs": "请连接视频和音频输入",
+      "missingVideoOrAudio": "缺少视频或音频输入",
+      "noModelSelected": "未选择模型",
+      "invalidVideoOrAudioUrl": "视频或音频URL无效",
+      "lipsyncFailed": "唇形同步失败",
+      "lipsyncTimeout": "唇形同步超时",
+      "keyboardShortcuts": "快捷键",
+      "previous": "上一张",
+      "next": "下一张",
+      "setCover": "设为封面",
+      "close": "关闭",
+      "scroll": "滚动",
+      "navigate": "浏览",
+      "currentCover": "当前封面",
+      "setAsCover": "设为封面"
+    },
+    "nodeTooltips": {
+      "common": {
+        "selectModel": "选择模型",
+        "aspect": "宽高比",
+        "duration": "时长",
+        "resolution": "分辨率",
+        "selectVoice": "选择音色",
+        "lyrics": "歌词",
+        "prompt": "提示词"
+      },
+      "text": {
+        "placeholder": "与 AI 聊天，输入 @ 提及",
+        "selectModel": "选择模型",
+        "failed": "AI 文本生成失败"
+      },
+      "image": {
+        "placeholder": "输入提示词生成图片，输入 @ 提及"
+      },
+      "video": {
+        "placeholder": "输入提示词生成视频。第一张图片将用作首帧"
+      },
+      "audio": {
+        "placeholder": "输入文本生成音频，输入 @ 提及"
+      },
+      "music": {
+        "lyricsPlaceholder": "在此输入歌词，输入 @ 提及",
+        "promptPlaceholder": "输入提示词描述音乐风格，输入 @ 提及"
+      },
+      "lipsync": {
+        "connectAlert": "请先连接视频和音频输入",
+        "selectModelAlert": "请选择模型",
+        "failed": "唇形同步失败",
+        "inputStatus": "输入状态：",
+        "videoInput": "视频输入:",
+        "audioInput": "音频输入:",
+        "items": "个",
+        "connected": "✓ {count} 个",
+        "notConnected": "✗ 未连接",
+        "selectModel": "选择唇形同步模型",
+        "selectModelPlaceholder": "选择唇形同步模型"
+      }
+    }
+  },
+  "voices": {
+    "title": "音色管理",
+    "description": "管理和配置多个平台的自定义音色",
+    "tabs": {
+      "voices": "我的音色",
+      "cloneTasks": "克隆任务"
+    },
+    "providers": {
+      "all": "全部平台",
+      "selectPlaceholder": "选择平台"
+    },
+    "actions": {
+      "cloneVoice": "克隆音色",
+      "deleteVoice": "删除音色",
+      "startClone": "开始克隆"
+    },
+    "emptyState": {
+      "voices": "暂无音色，点击右上角添加音色",
+      "cloneTasks": "暂无克隆任务"
+    },
+    "toast": {
+      "loadVoicesFailed": "加载音色列表失败",
+      "loadCloneTasksFailed": "加载克隆任务失败",
+      "voiceDeleted": "音色已删除",
+      "deleteVoiceFailed": "删除音色失败",
+      "cloneSuccess": "音色克隆成功！",
+      "cloneFailed": "克隆音色失败",
+      "fillAllFields": "请填写所有必填字段"
+    },
+    "confirmDelete": "确定要删除这个音色吗？",
+    "cloneDialog": {
+      "title": "克隆音色",
+      "description": "上传音频文件来克隆新的音色",
+      "fields": {
+        "name": "音色名称",
+        "namePlaceholder": "输入音色名称",
+        "description": "描述",
+        "descriptionPlaceholder": "输入音色描述",
+        "model": "模型",
+        "modelPlaceholder": "选择支持克隆的模型",
+        "audioFile": "音频文件 URL",
+        "audioFileHint": "请提供可访问的音频文件URL，建议时长 10-30 秒",
+        "text": "试听文本",
+        "textPlaceholder": "输入试听文本内容（用于生成预览音频）"
+      }
+    },
+    "status": {
+      "pending": "等待中",
+      "processing": "处理中",
+      "completed": "已完成",
+      "failed": "失败"
+    }
+  }
+}

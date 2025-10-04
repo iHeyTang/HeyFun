@@ -19,6 +19,7 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/dropdown-menu';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface TreeNode extends WorkspaceItem {
   path: string;
@@ -311,6 +312,7 @@ export function WorkspaceSidebar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentPath = searchParams.get('path') || '';
+  const t = useTranslations('workspace.sidebar');
 
   const { treeState, buildTreeStructure, toggleDirectory, initializeRootData, removeFromTree } = useWorkspaceFile();
 
@@ -372,7 +374,7 @@ export function WorkspaceSidebar() {
               router.push(`/dashboard/workspace?path=${encodeURIComponent(node.path)}`);
             }
           }}
-          title={hasError ? 'Failed to load directory. Click to retry.' : undefined}
+          title={hasError ? t('loadError') : undefined}
         >
           {node.isDirectory && (
             <div className="mr-1 flex h-4 w-4 items-center justify-center">
@@ -408,13 +410,13 @@ export function WorkspaceSidebar() {
               <DropdownMenuItem className="cursor-pointer">
                 <Link href={`/dashboard/api/workspace/download?path=${node.path}`} download={node.name} className="flex cursor-pointer gap-2">
                   <Download className="h-4 w-4" />
-                  Download
+                  {t('actions.download')}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer" onClick={() => removeFile(node.path)}>
                 <div className="text-destructive/80 flex items-center gap-2">
                   <Trash2 className="text-currentColor h-4 w-4" />
-                  Remove
+                  {t('actions.remove')}
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -441,8 +443,8 @@ export function WorkspaceSidebar() {
   const EmptyState = () => (
     <div className="flex h-full flex-col items-center justify-center px-4 text-center">
       <FolderOpen className="text-muted-foreground/50 mb-4 h-8 w-8" />
-      <h3 className="text-muted-foreground mb-1 text-sm font-medium">No files found</h3>
-      <p className="text-muted-foreground/70 text-xs">Workspace is empty</p>
+      <h3 className="text-muted-foreground mb-1 text-sm font-medium">{t('emptyState.title')}</h3>
+      <p className="text-muted-foreground/70 text-xs">{t('emptyState.description')}</p>
     </div>
   );
 

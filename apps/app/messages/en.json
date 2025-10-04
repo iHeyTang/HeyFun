@@ -17,6 +17,12 @@
     "creating": "Creating...",
     "loading": "Loading...",
     "required": "Required",
+    "search": "Search",
+    "filter": "Filter",
+    "close": "Close",
+    "open": "Open",
+    "download": "Download",
+    "upload": "Upload",
     "time": {
       "justUpdated": "Just updated",
       "minutesAgo": "Updated {count} minutes ago",
@@ -26,12 +32,245 @@
     "sync": {
       "syncing": "Syncing...",
       "synced": "Synced"
+    },
+    "modelSelector": {
+      "searchPlaceholder": "Search model...",
+      "noModelsFound": "No models found"
+    },
+    "aigcModelSelector": {
+      "title": "AIGC Model Selector",
+      "model": "Model",
+      "searchPlaceholder": "Search model name or description...",
+      "categories": {
+        "all": "All",
+        "textToImage": "Text to Image",
+        "imageToImage": "Image to Image",
+        "video": "Video Generation",
+        "speech": "Speech Generation"
+      },
+      "generationTypes": {
+        "textToImage": "Text to Image",
+        "imageToImage": "Image to Image",
+        "textToVideo": "Text to Video",
+        "imageToVideo": "Image to Video",
+        "keyframeToVideo": "Keyframe to Video",
+        "textToSpeech": "Speech"
+      },
+      "noModels": "No models available",
+      "noMatch": "No matching models found"
+    },
+    "agentSelector": {
+      "title": "Select Agent",
+      "funmax": "FunMax",
+      "system": "System",
+      "defaultDescription": "Use the default FunMax agent with standard configuration",
+      "default": "Default",
+      "tools": "Tools",
+      "moreTools": "+{count} more"
+    },
+    "voiceSelector": {
+      "searchPlaceholder": "Search voice...",
+      "noVoicesFound": "No voices found"
+    },
+    "confirm": {
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "processing": "Processing..."
     }
   },
   "errors": {
     "general": "Something went wrong",
     "notFound": "Page not found",
     "unauthorized": "Unauthorized access"
+  },
+  "home": {
+    "nav": {
+      "home": "Home",
+      "features": "Features",
+      "openSource": "Open Source",
+      "pricing": "Pricing",
+      "github": "GitHub",
+      "dashboard": "Dashboard"
+    },
+    "hero": {
+      "title": "HeyFun",
+      "badge": "AI Studio",
+      "subtitle": "Intelligent Agents • Automated Workflows • Creative AI Platform",
+      "getStarted": "Get Started",
+      "features": {
+        "agents": {
+          "title": "AI Agents",
+          "description": "Intelligent Autonomous Agents"
+        },
+        "workflows": {
+          "title": "Workflows",
+          "description": "Automated Task Orchestration"
+        },
+        "integration": {
+          "title": "Integration",
+          "description": "Seamless AI Service Connection"
+        },
+        "studio": {
+          "title": "Studio",
+          "description": "Creative AI Development Platform"
+        }
+      }
+    }
+  },
+  "dashboard": {
+    "sidebar": {
+      "flowcanvas": "FlowCanvas",
+      "chat": "Chat",
+      "tasks": "Tasks",
+      "paintboard": "Paintboard",
+      "workspace": "Workspace",
+      "tools": "Tools",
+      "settings": "Settings"
+    }
+  },
+  "chat": {
+    "sidebar": {
+      "title": "Chat History",
+      "newChat": "New Chat",
+      "noHistory": "No chat history yet"
+    },
+    "input": {
+      "placeholder": "Let's Imagine the Impossible, Create the Future Together",
+      "placeholderThinking": "Thinking...",
+      "placeholderTerminating": "Terminating...",
+      "placeholderCompleted": "Task completed!",
+      "selectModel": "Select Model",
+      "selectAgent": "Select Agent",
+      "tools": "Tools",
+      "files": "File(s)",
+      "attachFiles": "Attach files",
+      "sendMessage": "Send message",
+      "terminateTask": "Terminate task"
+    },
+    "messages": {
+      "preparing": "Preparing...",
+      "prepared": "Prepared",
+      "planning": "Planning...",
+      "planCompleted": "Plan Completed",
+      "taskCompleted": "Awesome! Task Completed",
+      "taskTerminated": "Task Terminated By User",
+      "taskError": "Oops! something went wrong",
+      "inputTokens": "input",
+      "completionTokens": "completion"
+    },
+    "confirm": {
+      "terminate": {
+        "title": "Terminate Task",
+        "description": "Are you sure you want to terminate this task?",
+        "confirm": "Terminate",
+        "cancel": "Cancel",
+        "terminating": "Terminating..."
+      }
+    }
+  },
+  "tasks": {
+    "sidebar": {
+      "title": "Recent Tasks",
+      "newTask": "New Task"
+    },
+    "page": {
+      "emptyState": {
+        "subtitle": "Hey! Let's bring a little fun to this world together."
+      }
+    },
+    "input": {
+      "tools": {
+        "title": "Tools Configuration",
+        "addCustom": "Add a new custom tool",
+        "addNew": {
+          "title": "Add a new custom tool",
+          "namePlaceholder": "Enter the tool name",
+          "configPlaceholder": "Enter the tool config, example:\n{\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n}",
+          "add": "Add",
+          "nameRequired": "Tool name is required",
+          "configRequired": "Tool config is required",
+          "success": "Tool installed successfully"
+        },
+        "market": {
+          "title": "Tool Market",
+          "description": "Discover and install new tools from our marketplace",
+          "browse": "Browse Market"
+        },
+        "confirm": {
+          "remove": "Are you sure you want to remove this custom tool?",
+          "confirmRemove": "Confirm Remove",
+          "cancel": "Cancel"
+        },
+        "tooltip": {
+          "viewDetails": "Click to view details"
+        },
+        "badge": {
+          "mcp": "MCP",
+          "custom": "CUSTOM"
+        }
+      },
+      "share": {
+        "title": "Share Task",
+        "description": "Share this task",
+        "duration": "Duration",
+        "durationPlaceholder": "Select duration",
+        "days7": "7 days",
+        "days30": "30 days",
+        "days60": "60 days",
+        "days180": "180 days",
+        "days365": "365 days",
+        "createLink": "Create Share Link and Copy",
+        "processing": "Processing...",
+        "linkCopied": "Share Link Copied"
+      }
+    }
+  },
+  "workspace": {
+    "sidebar": {
+      "actions": {
+        "download": "Download",
+        "remove": "Remove"
+      },
+      "emptyState": {
+        "title": "No files found",
+        "description": "Workspace is empty"
+      },
+      "loadError": "Failed to load directory. Click to retry."
+    },
+    "page": {
+      "emptyState": {
+        "title": "Workspace",
+        "description": "Select a file from the sidebar to view its contents."
+      }
+    }
+  },
+  "tools": {
+    "page": {
+      "title": "Tool Market",
+      "search": {
+        "placeholder": "Search tools by name or description..."
+      },
+      "filter": {
+        "placeholder": "Filter status",
+        "all": "All Tools",
+        "installed": "Installed",
+        "notInstalled": "Not Installed"
+      },
+      "results": {
+        "showing": "Showing all {total} tools",
+        "filtered": "Showing {count} of {total} tools"
+      },
+      "emptyState": {
+        "title": "No tools found",
+        "description": "Try adjusting your search query or filter criteria to find the tools you're looking for."
+      },
+      "badge": {
+        "installed": "Installed"
+      },
+      "item": {
+        "by": "by"
+      }
+    }
   },
   "config": {
     "language": "Language",
@@ -66,7 +305,38 @@
       "configUpdateError": "Failed to update configuration",
       "encryptionNote": "Your key will be encrypted and stored using",
       "encryptionTech": "PKCS1_OAEP",
-      "encryptionTechNote": "encryption technology"
+      "encryptionTechNote": "encryption technology",
+      "provider": {
+        "configureProvider": "Configure Provider",
+        "supportedModels": "Supported Models",
+        "searchModel": "Search model...",
+        "modelsCount": "{count} models",
+        "contextLength": "{length}K context"
+      }
+    },
+    "agents": {
+      "title": "Agents",
+      "description": "Configure custom agents with specific prompt and tools",
+      "createAgent": "Create Agent",
+      "editAgent": "Edit Agent",
+      "createNew": "Create New Agent",
+      "configureDescription": "Configure your custom agent with specific prompt and tools",
+      "default": "Default",
+      "form": {
+        "name": "Name",
+        "namePlaceholder": "Enter agent name",
+        "description": "Description",
+        "descriptionPlaceholder": "Enter agent description",
+        "systemPrompt": "System Prompt",
+        "systemPromptPlaceholder": "Enter custom system prompt template",
+        "tools": "Tools",
+        "toolsDescription": "Select tools this agent can use (TODO: Implement tool selector)",
+        "toolsCount": "Tools ({count})",
+        "cancel": "Cancel",
+        "create": "Create Agent",
+        "update": "Update Agent",
+        "saving": "Saving..."
+      }
     },
     "sidebar": {
       "models": "Models",
@@ -78,6 +348,13 @@
   },
   "paintboard": {
     "form": {
+      "selectModel": "Select Model",
+      "startGeneration": "Start Generation",
+      "submitting": "Submitting...",
+      "taskSubmitted": "Task submitted successfully",
+      "taskSubmitFailed": "Task submission failed",
+      "invalidModel": "Invalid service or model information",
+      "selectModelFirst": "Please select model",
       "fields": {
         "prompt": "Prompt",
         "text": "Text",
@@ -130,7 +407,131 @@
       "deleteError": "Failed to delete project",
       "loadError": "Failed to load projects"
     },
-    "confirmDelete": "Are you sure you want to delete project \"{name}\"? This action cannot be undone."
+    "confirmDelete": "Are you sure you want to delete project \"{name}\"? This action cannot be undone.",
+    "toolbar": {
+      "execute": "Execute",
+      "executeSelected": "Execute selected nodes"
+    },
+    "contextMenu": {
+      "searchPlaceholder": "Search nodes...",
+      "noMatch": "No matching nodes found",
+      "nodes": {
+        "text": {
+          "label": "Text Node",
+          "description": "For displaying and processing text content",
+          "defaultLabel": "Text Node",
+          "defaultDescription": "Double click to edit text content",
+          "defaultText": "Click to edit text"
+        },
+        "image": {
+          "label": "Image Node",
+          "description": "For uploading and displaying images",
+          "defaultLabel": "Image Node",
+          "defaultDescription": "Click to upload image"
+        },
+        "video": {
+          "label": "Video Node",
+          "description": "For uploading and playing videos",
+          "defaultLabel": "Video Node",
+          "defaultDescription": "Click to upload video"
+        },
+        "audio": {
+          "label": "Audio Node",
+          "description": "For uploading and playing audio",
+          "defaultLabel": "Audio Node",
+          "defaultDescription": "Click to upload audio"
+        },
+        "music": {
+          "label": "Music Node",
+          "description": "For generating music",
+          "defaultLabel": "Music Node",
+          "defaultDescription": "Click to upload music"
+        },
+        "lipsync": {
+          "label": "Lipsync Node",
+          "description": "For lip synchronization",
+          "defaultLabel": "Lipsync Node",
+          "defaultDescription": "Click to upload video and audio"
+        }
+      }
+    },
+    "nodes": {
+      "uploading": "Uploading...",
+      "uploadAudio": "Upload local audio (up to 10MB)",
+      "uploadImage": "Upload local image (up to 10MB)",
+      "generateAudio": "Enter prompt to generate audio",
+      "generateImage": "Enter prompt to generate an image",
+      "selectAudioFile": "Please select an audio file",
+      "selectImageFile": "Please select an image file",
+      "audioUploadFailed": "Audio upload failed. Please try again.",
+      "invalidPromptOrModel": "Invalid prompt or model",
+      "failedToGenerateAudio": "Failed to generate audio",
+      "invalidPromptModelOrRatio": "Invalid prompt, model, or aspect ratio",
+      "failedToGenerateImage": "Failed to generate image",
+      "connectInput": "Connect node inputs:",
+      "videoInput": "• Video:",
+      "audioInput": "• Audio:",
+      "connected": "Connected {count} item(s)",
+      "notConnected": "Not connected",
+      "startLipsync": "Click the button below to start lip sync",
+      "pleaseConnectInputs": "Please connect video and audio inputs",
+      "missingVideoOrAudio": "Missing video or audio input",
+      "noModelSelected": "No model selected",
+      "invalidVideoOrAudioUrl": "Invalid video or audio URL",
+      "lipsyncFailed": "Lip sync failed",
+      "lipsyncTimeout": "Lip sync timeout",
+      "keyboardShortcuts": "Keyboard Shortcuts",
+      "previous": "Previous",
+      "next": "Next",
+      "setCover": "Set Cover",
+      "close": "Close",
+      "scroll": "Scroll",
+      "navigate": "Navigate",
+      "currentCover": "Current cover",
+      "setAsCover": "Set as cover"
+    },
+    "nodeTooltips": {
+      "common": {
+        "selectModel": "Select a model",
+        "aspect": "Aspect",
+        "duration": "Duration",
+        "resolution": "Resolution",
+        "selectVoice": "Select Voice",
+        "lyrics": "Lyrics",
+        "prompt": "Prompt"
+      },
+      "text": {
+        "placeholder": "chat with AI, input @ to mention",
+        "selectModel": "Select Model",
+        "failed": "AI text generation failed"
+      },
+      "image": {
+        "placeholder": "Enter prompt to generate an image, input @ to mention"
+      },
+      "video": {
+        "placeholder": "Enter prompt to generate a video. First image will be used as the first frame"
+      },
+      "audio": {
+        "placeholder": "Enter text to generate audio, input @ to mention"
+      },
+      "music": {
+        "lyricsPlaceholder": "Enter lyrics here, input @ to mention",
+        "promptPlaceholder": "Enter prompt to describe music style, input @ to mention"
+      },
+      "lipsync": {
+        "connectAlert": "Please connect video and audio inputs first",
+        "selectModelAlert": "Please select a model",
+        "failed": "Lipsync failed",
+        "inputStatus": "Input Status:",
+        "videoInput": "Video Input:",
+        "audioInput": "Audio Input:",
+        "items": "items",
+        "connected": "✓ {count} file(s)",
+        "notConnected": "✗ Not Connected",
+        "selectModel": "Select lipsync model",
+        "selectModelPlaceholder": "Select lipsync model"
+      }
+    }
   },
   "voices": {
     "title": "Voice Management",

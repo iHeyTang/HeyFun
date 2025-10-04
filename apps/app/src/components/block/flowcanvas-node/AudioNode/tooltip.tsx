@@ -13,6 +13,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AudioNodeActionData, AudioNodeProcessor } from './processor';
 import { getAigcVoiceList } from '@/actions/llm';
 import { VoiceSelectorDialog, VoiceSelectorRef } from '@/components/features/voice-selector';
+import { useTranslations } from 'next-intl';
 
 export interface AudioNodeTooltipProps {
   nodeId: string;
@@ -25,6 +26,8 @@ const processor = new AudioNodeProcessor();
 
 const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: AudioNodeTooltipProps) => {
   const { getSignedUrl } = useSignedUrl();
+  const t = useTranslations('flowcanvas.nodeTooltips');
+  const tCommon = useTranslations('flowcanvas.nodeTooltips.common');
 
   const flowGraph = useFlowGraph();
   const { availableModels } = useAigc();
@@ -163,7 +166,7 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       <TiptapEditor
         value={localPrompt}
         onChange={handlePromptChange}
-        placeholder="Enter text to generate audio, input @ to mention"
+        placeholder={t('audio.placeholder')}
         className="h-24 w-full resize-none border-none! outline-none!"
         mentionSuggestionItems={insertItems}
         ref={editorRef}
@@ -185,7 +188,7 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             }}
           >
             <SelectTrigger size="sm" className="text-xs">
-              <SelectValue placeholder="Select a model" />
+              <SelectValue placeholder={tCommon('selectModel')} />
             </SelectTrigger>
             <SelectContent>
               {availableModels
@@ -199,7 +202,7 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           </Select>
           {voiceList.length > 0 && (
             <Button variant="outline" size="sm" className="justify-start p-4 text-xs font-normal" onClick={() => voiceSelectorRef.current?.open()}>
-              <span>{selectedVoice?.name || 'Select Voice'}</span>
+              <span>{selectedVoice?.name || tCommon('selectVoice')}</span>
             </Button>
           )}
         </div>

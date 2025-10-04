@@ -8,6 +8,7 @@ import { Bot, Check } from 'lucide-react';
 import { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useTranslations } from 'next-intl';
 
 export interface AgentInfo {
   id: string;
@@ -50,6 +51,7 @@ interface AgentSelectorDialogProps {
 export const AgentSelectorDialog = forwardRef<AgentSelectorRef, AgentSelectorDialogProps>(
   ({ availableAgents, selectedAgent, onAgentSelect, storageKey }, ref) => {
     const [isOpen, setIsOpen] = useState(false);
+    const t = useTranslations('common.agentSelector');
 
     useImperativeHandle(ref, () => ({
       open: () => setIsOpen(true),
@@ -65,7 +67,7 @@ export const AgentSelectorDialog = forwardRef<AgentSelectorRef, AgentSelectorDia
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Select Agent</DialogTitle>
+            <DialogTitle>{t('title')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {/* Default option */}
@@ -77,12 +79,12 @@ export const AgentSelectorDialog = forwardRef<AgentSelectorRef, AgentSelectorDia
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Bot className="h-5 w-5" />
-                    <CardTitle className="text-base">FunMax</CardTitle>
+                    <CardTitle className="text-base">{t('funmax')}</CardTitle>
                     {selectedAgent === null && <Check className="text-primary h-4 w-4" />}
                   </div>
-                  <Badge variant="secondary">System</Badge>
+                  <Badge variant="secondary">{t('system')}</Badge>
                 </div>
-                <CardDescription>Use the default FunMax agent with standard configuration</CardDescription>
+                <CardDescription>{t('defaultDescription')}</CardDescription>
               </CardHeader>
             </Card>
 
@@ -100,14 +102,14 @@ export const AgentSelectorDialog = forwardRef<AgentSelectorRef, AgentSelectorDia
                       <CardTitle className="text-base">{agent.name}</CardTitle>
                       {selectedAgent?.id === agent.id && <Check className="text-primary h-4 w-4" />}
                     </div>
-                    {agent.isDefault && <Badge variant="default">Default</Badge>}
+                    {agent.isDefault && <Badge variant="default">{t('default')}</Badge>}
                   </div>
                   <CardDescription>{agent.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="space-y-2">
                     <div>
-                      <p className="text-muted-foreground text-xs font-medium">Tools ({agent.tools.length})</p>
+                      <p className="text-muted-foreground text-xs font-medium">{t('tools')} ({agent.tools.length})</p>
                       <div className="mt-1 flex flex-wrap gap-1">
                         {agent.tools.slice(0, 3).map(tool => (
                           <Badge key={tool} variant="outline" className="text-xs">
@@ -116,7 +118,7 @@ export const AgentSelectorDialog = forwardRef<AgentSelectorRef, AgentSelectorDia
                         ))}
                         {agent.tools.length > 3 && (
                           <Badge variant="outline" className="text-xs">
-                            +{agent.tools.length - 3} more
+                            {t('moreTools', { count: agent.tools.length - 3 })}
                           </Badge>
                         )}
                       </div>

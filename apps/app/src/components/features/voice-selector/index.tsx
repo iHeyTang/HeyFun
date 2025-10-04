@@ -6,6 +6,7 @@ import { useSignedUrl } from '@/hooks/use-signed-url';
 import { Voice } from '@repo/llm/aigc';
 import { Check, Mic, Play, Search } from 'lucide-react';
 import { useImperativeHandle, useMemo, useState, forwardRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 export type VoiceSelectorRef = {
   open: () => void;
@@ -22,6 +23,7 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
   const [search, setSearch] = useState('');
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const t = useTranslations('common.voiceSelector');
 
   const { getSignedUrl } = useSignedUrl();
 
@@ -106,7 +108,7 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
             <Search className="text-muted-foreground h-4 w-4" />
           </div>
           <Input
-            placeholder="搜索音色..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="h-12 rounded-none border-0 pr-4 pl-12 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -116,7 +118,7 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
         <div className="max-h-96 overflow-y-auto">
           {filteredVoices.length === 0 && (
             <div className="flex items-center justify-center py-12">
-              <div className="text-muted-foreground text-sm">未找到音色</div>
+              <div className="text-muted-foreground text-sm">{t('noVoicesFound')}</div>
             </div>
           )}
 

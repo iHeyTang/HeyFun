@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { LipsyncNodeActionData } from './processor';
 import { LipsyncNodeTooltip, LipsyncNodeTooltipProps } from './tooltip';
+import { useTranslations } from 'next-intl';
 
 interface LipsyncNodeProps {
   data: NodeData<LipsyncNodeActionData>;
@@ -14,6 +15,8 @@ interface LipsyncNodeProps {
 export { LipsyncNodeProcessor } from './processor';
 
 export default function LipsyncNode({ data, id }: LipsyncNodeProps) {
+  const t = useTranslations('flowcanvas.nodes');
+
   const flowGraph = useFlowGraph();
   const [videoUrl, setVideoUrl] = useState<string | undefined>();
   const [videoKey, setVideoKey] = useState<string | undefined>(data.output?.videos?.[0]?.key);
@@ -109,11 +112,15 @@ export default function LipsyncNode({ data, id }: LipsyncNodeProps) {
           ) : (
             <div className="bg-muted flex items-center justify-center rounded p-2 text-center transition-colors">
               <div className="flex h-32 flex-col justify-center gap-1 space-y-1 p-4 text-sm">
-                <div className="text-muted-foreground text-left">连接节点输入：</div>
-                <div className="text-left text-xs">• 视频: {videoCount > 0 ? `已连接 ${videoCount} 个` : '未连接'}</div>
-                <div className="text-left text-xs">• 音频: {audioCount > 0 ? `已连接 ${audioCount} 个` : '未连接'}</div>
+                <div className="text-muted-foreground text-left">{t('connectInput')}</div>
+                <div className="text-left text-xs">
+                  {t('videoInput')} {videoCount > 0 ? t('connected', { count: videoCount }) : t('notConnected')}
+                </div>
+                <div className="text-left text-xs">
+                  {t('audioInput')} {audioCount > 0 ? t('connected', { count: audioCount }) : t('notConnected')}
+                </div>
                 <div className="text-muted-foreground text-left text-xs">
-                  {videoCount > 0 && audioCount > 0 ? '点击下方按钮开始唇形同步' : '请连接视频和音频输入'}
+                  {videoCount > 0 && audioCount > 0 ? t('startLipsync') : t('pleaseConnectInputs')}
                 </div>
               </div>
             </div>

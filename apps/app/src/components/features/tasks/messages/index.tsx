@@ -7,6 +7,7 @@ import { ToolMessageContent } from './tools';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTranslations } from 'next-intl';
 
 interface ChatMessageProps {
   messages: AggregatedMessage[];
@@ -18,7 +19,7 @@ const UserMessage = ({ message }: { message: Message<{ request: string }> }) => 
   </div>
 );
 
-const PrepareMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:lifecycle:prepare' } }) => {
+const PrepareMessage = ({ message, t }: { message: AggregatedMessage & { type: 'agent:lifecycle:prepare' }; t: any }) => {
   const prepareCompleteMessage = message.messages.find(msg => msg.type === 'agent:lifecycle:prepare:complete') as
     | (AggregatedMessage & { type: 'agent:lifecycle:prepare:complete' })
     | undefined;
@@ -33,19 +34,19 @@ const PrepareMessage = ({ message }: { message: AggregatedMessage & { type: 'age
             className={cn('cursor-pointer font-mono text-xs', prepareCompleteMessage && 'text-muted-foreground')}
           >
             <span className="spinning-animation">⚙️ </span>
-            <span>Preparing...</span>
+            <span>{t('preparing')}</span>
           </Badge>
         </div>
       ) : (
         <Badge variant="outline" className="cursor-pointer font-mono">
-          ⚙️ Prepared
+          ⚙️ {t('prepared')}
         </Badge>
       )}
     </div>
   );
 };
 
-const PlanMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:lifecycle:plan' } }) => {
+const PlanMessage = ({ message, t }: { message: AggregatedMessage & { type: 'agent:lifecycle:plan' }; t: any }) => {
   const planCompleteMessage = message.messages.find(msg => msg.type === 'agent:lifecycle:plan:complete') as
     | (AggregatedMessage & { type: 'agent:lifecycle:plan:complete' })
     | undefined;
@@ -57,7 +58,7 @@ const PlanMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:
         <div className="space-y-2">
           <div className="text-muted-foreground mt-2 mb-2 font-mono text-xs">
             <Badge variant="outline" className="cursor-pointer font-mono text-xs">
-              <span>📝 Plan Completed</span>
+              <span>📝 {t('planCompleted')}</span>
             </Badge>
           </div>
           <div className="bg-muted rounded-lg">
@@ -68,7 +69,7 @@ const PlanMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:
         <div className="text-muted-foreground mt-2 mb-2 font-mono text-xs">
           <Badge className="cursor-pointer font-mono text-xs">
             <span className="thinking-animation">📝</span>
-            <span>Planning...</span>
+            <span>{t('planning')}</span>
           </Badge>
         </div>
       )}
@@ -80,17 +81,17 @@ interface CompletionMessageProps {
   message: Message<{ results: string[]; total_input_tokens: number; total_completion_tokens: number }>;
 }
 
-const CompletionMessage = ({ message }: CompletionMessageProps) => {
+const CompletionMessage = ({ message, t }: CompletionMessageProps & { t: any }) => {
   const showTokenCount = message.content.total_input_tokens || message.content.total_completion_tokens;
   return (
     <Badge className="cursor-pointer font-mono">
-      🎉 Awesome! Task Completed{' '}
+      🎉 {t('taskCompleted')}{' '}
       {showTokenCount && (
         <>
           (
           <span>
-            {formatNumber(message.content.total_input_tokens || 0, { autoUnit: true })} input;{' '}
-            {formatNumber(message.content.total_completion_tokens || 0, { autoUnit: true })} completion
+            {formatNumber(message.content.total_input_tokens || 0, { autoUnit: true })} {t('inputTokens')};{' '}
+            {formatNumber(message.content.total_completion_tokens || 0, { autoUnit: true })} {t('completionTokens')}
           </span>
           )
         </>
@@ -103,17 +104,17 @@ interface TerminatedMessageProps {
   message: Message<{ total_input_tokens?: number; total_completion_tokens?: number }>;
 }
 
-const TerminatedMessage = ({ message }: TerminatedMessageProps) => {
+const TerminatedMessage = ({ message, t }: TerminatedMessageProps & { t: any }) => {
   const showTokenCount = message.content.total_input_tokens || message.content.total_completion_tokens;
   return (
     <Badge className="cursor-pointer font-mono">
-      🚫 Task Terminated By User{' '}
+      🚫 {t('taskTerminated')}{' '}
       {showTokenCount && (
         <>
           (
           <span>
-            {formatNumber(message.content.total_input_tokens || 0, { autoUnit: true })} input;{' '}
-            {formatNumber(message.content.total_completion_tokens || 0, { autoUnit: true })} completion
+            {formatNumber(message.content.total_input_tokens || 0, { autoUnit: true })} {t('inputTokens')};{' '}
+            {formatNumber(message.content.total_completion_tokens || 0, { autoUnit: true })} {t('completionTokens')}
           </span>
           )
         </>
@@ -122,20 +123,26 @@ const TerminatedMessage = ({ message }: TerminatedMessageProps) => {
   );
 };
 
-const ErrorMessage = ({ message }: { message: Message<{ error: string; total_input_tokens?: number; total_completion_tokens?: number }> }) => {
+const ErrorMessage = ({
+  message,
+  t,
+}: {
+  message: Message<{ error: string; total_input_tokens?: number; total_completion_tokens?: number }>;
+  t: any;
+}) => {
   const showTokenCount = message.content.total_input_tokens || message.content.total_completion_tokens;
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge className="cursor-pointer font-mono">
-            🚫 Oops! something went wrong{' '}
+            🚫 {t('taskError')}{' '}
             {showTokenCount && (
               <>
                 (
                 <span>
-                  {formatNumber(message.content.total_input_tokens || 0, { autoUnit: true })} input;{' '}
-                  {formatNumber(message.content.total_completion_tokens || 0, { autoUnit: true })} completion
+                  {formatNumber(message.content.total_input_tokens || 0, { autoUnit: true })} {t('inputTokens')};{' '}
+                  {formatNumber(message.content.total_completion_tokens || 0, { autoUnit: true })} {t('completionTokens')}
                 </span>
                 )
               </>
@@ -197,7 +204,7 @@ const StepMessage = ({ message }: { message: AggregatedMessage & { type: 'agent:
   );
 };
 
-const LifecycleMessage = ({ message }: { message: AggregatedMessage }) => {
+const LifecycleMessage = ({ message, t }: { message: AggregatedMessage; t: any }) => {
   if (!('messages' in message)) return null;
 
   return (
@@ -217,7 +224,7 @@ const LifecycleMessage = ({ message }: { message: AggregatedMessage }) => {
         if (msg.type === 'agent:lifecycle:prepare') {
           return (
             <div key={index} className="container mx-auto max-w-4xl">
-              <PrepareMessage message={msg as AggregatedMessage & { type: 'agent:lifecycle:prepare' }} />
+              <PrepareMessage message={msg as AggregatedMessage & { type: 'agent:lifecycle:prepare' }} t={t} />
             </div>
           );
         }
@@ -225,7 +232,7 @@ const LifecycleMessage = ({ message }: { message: AggregatedMessage }) => {
         if (msg.type === 'agent:lifecycle:plan') {
           return (
             <div key={index} className="container mx-auto max-w-4xl">
-              <PlanMessage message={msg as AggregatedMessage & { type: 'agent:lifecycle:plan' }} />
+              <PlanMessage message={msg as AggregatedMessage & { type: 'agent:lifecycle:plan' }} t={t} />
             </div>
           );
         }
@@ -234,7 +241,7 @@ const LifecycleMessage = ({ message }: { message: AggregatedMessage }) => {
         if (msg.type === 'agent:lifecycle:complete') {
           return (
             <div key={index} className="container mx-auto max-w-4xl">
-              <CompletionMessage message={msg as Message<{ results: string[]; total_input_tokens: number; total_completion_tokens: number }>} />
+              <CompletionMessage message={msg as Message<{ results: string[]; total_input_tokens: number; total_completion_tokens: number }>} t={t} />
             </div>
           );
         }
@@ -243,7 +250,7 @@ const LifecycleMessage = ({ message }: { message: AggregatedMessage }) => {
         if (msg.type === 'agent:lifecycle:terminated') {
           return (
             <div key={index} className="container mx-auto max-w-4xl">
-              <TerminatedMessage message={msg} />
+              <TerminatedMessage message={msg} t={t} />
             </div>
           );
         }
@@ -252,7 +259,7 @@ const LifecycleMessage = ({ message }: { message: AggregatedMessage }) => {
         if (msg.type === 'agent:lifecycle:error') {
           return (
             <div key={index} className="container mx-auto max-w-4xl">
-              <ErrorMessage message={msg} />
+              <ErrorMessage message={msg} t={t} />
             </div>
           );
         }
@@ -272,20 +279,22 @@ const LifecycleMessage = ({ message }: { message: AggregatedMessage }) => {
   );
 };
 
-const ChatMessage = ({ message }: { message: AggregatedMessage }) => {
+const ChatMessage = ({ message, t }: { message: AggregatedMessage; t: any }) => {
   if (!message.type?.startsWith('agent:lifecycle')) {
     return <Markdown>{message.content}</Markdown>;
   }
 
-  return <LifecycleMessage message={message} />;
+  return <LifecycleMessage message={message} t={t} />;
 };
 
 export const ChatMessages = ({ messages = [] }: ChatMessageProps) => {
+  const t = useTranslations('chat.messages');
+
   return (
     <div className="h-full space-y-4">
       {messages.map((message, index) => (
         <div key={message.key || index} className="first:pt-0">
-          <ChatMessage message={message} />
+          <ChatMessage message={message} t={t} />
         </div>
       ))}
     </div>

@@ -13,7 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       alternates: {
         languages: {
           en: `${baseUrl}/en`,
-          zh: `${baseUrl}/zh`,
+          'zh-CN': `${baseUrl}/zh-CN`,
         },
       },
     },

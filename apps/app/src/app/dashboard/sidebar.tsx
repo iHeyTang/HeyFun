@@ -8,47 +8,56 @@ import { Bot, BoxIcon, Flower, FolderOpen, MessageSquare, Palette, SettingsIcon 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { create } from 'zustand';
+import { useTranslations } from 'next-intl';
 
-const navItems = [
-  {
-    icon: Flower,
-    label: 'Flowcanvas',
-    path: '/dashboard/flowcanvas',
-  },
-  {
-    icon: MessageSquare,
-    label: 'Chat',
-    path: '/dashboard/chat',
-  },
-  {
-    icon: Bot,
-    label: 'Tasks',
-    path: '/dashboard/tasks',
-  },
-  {
-    icon: Palette,
-    label: 'Paintboard',
-    path: '/dashboard/paintboard',
-  },
-  {
-    icon: FolderOpen,
-    label: 'Workspace',
-    path: '/dashboard/workspace',
-  },
-];
+const useNavItems = () => {
+  const t = useTranslations('dashboard.sidebar');
 
-const bottomNavItems = [
-  {
-    icon: BoxIcon,
-    label: 'Tools',
-    path: '/dashboard/tools',
-  },
-  {
-    icon: SettingsIcon,
-    label: 'Settings',
-    path: '/dashboard/settings',
-  },
-];
+  return [
+    {
+      icon: Flower,
+      label: t('flowcanvas'),
+      path: '/dashboard/flowcanvas',
+    },
+    {
+      icon: MessageSquare,
+      label: t('chat'),
+      path: '/dashboard/chat',
+    },
+    {
+      icon: Bot,
+      label: t('tasks'),
+      path: '/dashboard/tasks',
+    },
+    {
+      icon: Palette,
+      label: t('paintboard'),
+      path: '/dashboard/paintboard',
+    },
+    {
+      icon: FolderOpen,
+      label: t('workspace'),
+      path: '/dashboard/workspace',
+    },
+  ];
+};
+
+const useBottomNavItems = () => {
+  const t = useTranslations('dashboard.sidebar');
+
+  return [
+    {
+      icon: BoxIcon,
+      label: t('tools'),
+      path: '/dashboard/tools',
+    },
+    {
+      icon: SettingsIcon,
+      label: t('settings'),
+      path: '/dashboard/settings',
+    },
+  ];
+};
 
 export const useRecentTasks = create<{ tasks: Tasks[]; refreshTasks: () => Promise<void> }>(set => ({
   tasks: [],
@@ -61,6 +70,8 @@ export const useRecentTasks = create<{ tasks: Tasks[]; refreshTasks: () => Promi
 export function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const navItems = useNavItems();
+  const bottomNavItems = useBottomNavItems();
 
   if (pathname === '/signin' || pathname === '/signup') {
     return null;

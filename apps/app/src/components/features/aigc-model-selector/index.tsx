@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GenerationType } from '@repo/llm/aigc';
 import { Image, Mic, Search, Sparkles, Video } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 type ModelInfo = NonNullable<Awaited<ReturnType<typeof getAigcModels>>['data']>[number];
 
@@ -31,29 +32,32 @@ const generationTypeIcons = {
   'text-to-speech': Mic,
 };
 
-// 生成类型中文名称映射
-const generationTypeNames = {
-  'text-to-image': 'Text to Image',
-  'image-to-image': 'Image to Image',
-  'text-to-video': 'Text to Video',
-  'image-to-video': 'Image to Video',
-  'keyframe-to-video': 'Keyframe to Video',
-  'text-to-speech': 'Speech',
-};
-
-// 分类配置
-const categories = [
-  { key: 'all', label: 'All', icon: Sparkles },
-  { key: 'text-to-image', label: 'Text to Image', icon: Image },
-  { key: 'image-to-image', label: 'Image to Image', icon: Image },
-  { key: 'video', label: 'Video Generation', icon: Video },
-  { key: 'speech', label: 'Speech Generation', icon: Mic },
-];
-
-export function AigcModelSelector({ models, selectedModel, onModelSelect, placeholder = '选择模型' }: ModelSelectorProps) {
+export function AigcModelSelector({ models, selectedModel, onModelSelect, placeholder }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const t = useTranslations('common.aigcModelSelector');
+  const tTypes = useTranslations('common.aigcModelSelector.generationTypes');
+  const tCategories = useTranslations('common.aigcModelSelector.categories');
+
+  // 生成类型名称映射
+  const generationTypeNames = {
+    'text-to-image': tTypes('textToImage'),
+    'image-to-image': tTypes('imageToImage'),
+    'text-to-video': tTypes('textToVideo'),
+    'image-to-video': tTypes('imageToVideo'),
+    'keyframe-to-video': tTypes('keyframeToVideo'),
+    'text-to-speech': tTypes('textToSpeech'),
+  };
+
+  // 分类配置
+  const categories = [
+    { key: 'all', label: tCategories('all'), icon: Sparkles },
+    { key: 'text-to-image', label: tCategories('textToImage'), icon: Image },
+    { key: 'image-to-image', label: tCategories('imageToImage'), icon: Image },
+    { key: 'video', label: tCategories('video'), icon: Video },
+    { key: 'speech', label: tCategories('speech'), icon: Mic },
+  ];
 
   const selectedModelInfo = useMemo(() => {
     return models.find(model => model.name === selectedModel);
@@ -99,7 +103,7 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">Model</label>
+      <label className="text-sm font-medium">{t('model')}</label>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
@@ -118,7 +122,7 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
 
         <DialogContent style={{ maxWidth: '80vw' }}>
           <DialogHeader>
-            <DialogTitle>Aigc Model Selector</DialogTitle>
+            <DialogTitle>{t('title')}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -126,7 +130,7 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
             <div className="relative">
               <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
               <Input
-                placeholder="Search model name or description..."
+                placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -186,7 +190,7 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
                   </div>
 
                   {filteredModels.length === 0 && (
-                    <div className="text-muted-foreground py-8 text-center">{searchQuery ? '未找到匹配的模型' : '暂无可用模型'}</div>
+                    <div className="text-muted-foreground py-8 text-center">{searchQuery ? t('noMatch') : t('noModels')}</div>
                   )}
                 </ScrollArea>
               </TabsContent>

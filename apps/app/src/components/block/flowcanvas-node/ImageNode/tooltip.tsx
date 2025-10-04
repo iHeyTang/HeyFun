@@ -13,6 +13,7 @@ import { RatioIcon } from '../../ratio-icon';
 import { ImageNodeActionData, ImageNodeProcessor } from './processor';
 import { FullscreenModal, fullscreenModalRef } from '@/components/block/preview/fullscreen';
 import { ImageJsonSchema } from '@repo/llm/aigc';
+import { useTranslations } from 'next-intl';
 
 export interface ImageNodeTooltipProps {
   nodeId: string;
@@ -25,6 +26,8 @@ const processor = new ImageNodeProcessor();
 
 const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: ImageNodeTooltipProps) => {
   const { getSignedUrl } = useSignedUrl();
+  const t = useTranslations('flowcanvas.nodeTooltips');
+  const tCommon = useTranslations('flowcanvas.nodeTooltips.common');
 
   const editorRef = useRef<TiptapEditorRef>(null);
   const flowGraph = useFlowGraph();
@@ -181,7 +184,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       <TiptapEditor
         value={localPrompt}
         onChange={handlePromptChange}
-        placeholder="Enter prompt to generate an image, input @ to mention"
+        placeholder={t('image.placeholder')}
         className="h-24 w-full resize-none border-none! outline-none!"
         mentionSuggestionItems={insertItems}
         ref={editorRef}
@@ -200,7 +203,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             }}
           >
             <SelectTrigger size="sm" className="text-xs" hideIcon>
-              <SelectValue placeholder="Select a model" />
+              <SelectValue placeholder={tCommon('selectModel')} />
             </SelectTrigger>
             <SelectContent>
               {availableModels
@@ -221,7 +224,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
               }}
             >
               <SelectTrigger size="sm" className="text-xs" hideIcon>
-                <SelectValue placeholder="Aspect" />
+                <SelectValue placeholder={tCommon('aspect')} />
               </SelectTrigger>
               <SelectContent>
                 {selectedModelParamsSchema.aspectRatio.enum.map(option => {

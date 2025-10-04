@@ -6,6 +6,7 @@ import { useSignedUrl } from '@/hooks/use-signed-url';
 import { WandSparkles } from 'lucide-react';
 import { memo, useEffect, useMemo, useState } from 'react';
 import { LipsyncNodeActionData, LipsyncNodeProcessor } from './processor';
+import { useTranslations } from 'next-intl';
 
 export interface LipsyncNodeTooltipProps {
   nodeId: string;
@@ -18,6 +19,8 @@ const processor = new LipsyncNodeProcessor();
 
 const LipsyncNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: LipsyncNodeTooltipProps) => {
   const { getSignedUrl } = useSignedUrl();
+  const t = useTranslations('flowcanvas.nodeTooltips.lipsync');
+  const tCommon = useTranslations('flowcanvas.nodeTooltips.common');
 
   const flowGraph = useFlowGraph();
   const { availableModels } = useAigc();
@@ -115,12 +118,12 @@ const LipsyncNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange,
         onSubmitSuccess?.({ videos: result.data?.videos });
       } else {
         updateStatus(NodeStatus.FAILED);
-        alert(result.error || '唇形同步失败');
+        alert(result.error || t('failed'));
       }
     } catch (error: any) {
       console.error(error);
       updateStatus(NodeStatus.FAILED, { error: error?.message || error });
-      alert(error?.message || '唇形同步失败');
+      alert(error?.message || t('failed'));
     }
   };
 
@@ -128,18 +131,18 @@ const LipsyncNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange,
     <div className="nodrag flex min-w-[480px] flex-col gap-4 overflow-hidden rounded-lg p-4">
       {/* 输入信息提示 */}
       <div className="border-border text-muted-foreground rounded border p-3 text-sm">
-        <div className="mb-2 font-medium">输入状态：</div>
+        <div className="mb-2 font-medium">{t('inputStatus')}</div>
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <span>视频输入:</span>
+            <span>{t('videoInput')}</span>
             <span className={inputInfo.hasVideo ? 'text-green-500' : 'text-red-500'}>
-              {inputInfo.hasVideo ? `✓ ${inputInfo.videoCount} 个` : '✗ 未连接'}
+              {inputInfo.hasVideo ? `✓ ${inputInfo.videoCount} ${t('items')}` : t('notConnected')}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span>音频输入:</span>
+            <span>{t('audioInput')}</span>
             <span className={inputInfo.hasAudio ? 'text-green-500' : 'text-red-500'}>
-              {inputInfo.hasAudio ? `✓ ${inputInfo.audioCount} 个` : '✗ 未连接'}
+              {inputInfo.hasAudio ? `✓ ${inputInfo.audioCount} ${t('items')}` : t('notConnected')}
             </span>
           </div>
         </div>
@@ -159,7 +162,7 @@ const LipsyncNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange,
             }}
           >
             <SelectTrigger size="sm" className="text-xs">
-              <SelectValue placeholder="选择唇形同步模型" />
+              <SelectValue placeholder={t('selectModel')} />
             </SelectTrigger>
             <SelectContent>
               {availableModels

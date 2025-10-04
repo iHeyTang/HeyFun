@@ -9,12 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getAgents, createAgent, updateAgent, deleteAgent, Agent, getAgent } from '@/actions/agents';
+import { useTranslations } from 'next-intl';
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const t = useTranslations('config.agents');
 
   useEffect(() => {
     loadAgents();
@@ -84,20 +86,20 @@ export default function AgentsPage() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Agents</h1>
-          <p className="text-muted-foreground">Configure custom agents with specific prompt and tools</p>
+          <h1 className="text-2xl font-semibold">{t('title')}</h1>
+          <p className="text-muted-foreground">{t('description')}</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={handleCreateAgent}>
               <Plus className="mr-2 h-4 w-4" />
-              Create Agent
+              {t('createAgent')}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingAgent ? 'Edit Agent' : 'Create New Agent'}</DialogTitle>
-              <DialogDescription>Configure your custom agent with specific prompt and tools</DialogDescription>
+              <DialogTitle>{editingAgent ? t('editAgent') : t('createNew')}</DialogTitle>
+              <DialogDescription>{t('configureDescription')}</DialogDescription>
             </DialogHeader>
             <AgentForm agentId={editingAgent?.id} onSave={handleSaveAgent} onCancel={() => setIsDialogOpen(false)} isSaving={isSaving} />
           </DialogContent>
@@ -112,7 +114,7 @@ export default function AgentsPage() {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     {agent.name}
-                    {agent.isDefault && <span className="bg-primary/10 text-primary rounded-md px-2 py-1 text-xs">Default</span>}
+                    {agent.isDefault && <span className="bg-primary/10 text-primary rounded-md px-2 py-1 text-xs">{t('default')}</span>}
                   </CardTitle>
                   <CardDescription>{agent.description}</CardDescription>
                 </div>
@@ -131,7 +133,7 @@ export default function AgentsPage() {
             <CardContent>
               <div className="space-y-2">
                 <div>
-                  <Label className="text-xs font-medium">Tools ({agent.tools.length})</Label>
+                  <Label className="text-xs font-medium">{t('form.toolsCount', { count: agent.tools.length })}</Label>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {agent.tools.map(tool => (
                       <span key={tool} className="bg-muted rounded px-2 py-1 text-xs">
@@ -158,6 +160,7 @@ interface AgentFormProps {
 
 function AgentForm({ agentId, onSave, onCancel, isSaving }: AgentFormProps) {
   const [agent, setAgent] = useState<Agent | null>(null);
+  const t = useTranslations('config.agents.form');
 
   const [formData, setFormData] = useState({
     name: agent?.name || '',
@@ -190,49 +193,49 @@ function AgentForm({ agentId, onSave, onCancel, isSaving }: AgentFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name">{t('name')}</Label>
         <Input
           id="name"
           value={formData.name}
           onChange={e => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Enter agent name"
+          placeholder={t('namePlaceholder')}
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">{t('description')}</Label>
         <Textarea
           id="description"
           value={formData.description}
           onChange={e => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Enter agent description"
+          placeholder={t('descriptionPlaceholder')}
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="system-prompt">System Prompt</Label>
+        <Label htmlFor="system-prompt">{t('systemPrompt')}</Label>
         <Textarea
           id="system-prompt"
           value={formData.systemPromptTemplate}
           onChange={e => setFormData({ ...formData, systemPromptTemplate: e.target.value })}
-          placeholder="Enter custom system prompt template"
+          placeholder={t('systemPromptPlaceholder')}
           rows={4}
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Tools</Label>
-        <p className="text-muted-foreground text-sm">Select tools this agent can use (TODO: Implement tool selector)</p>
+        <Label>{t('tools')}</Label>
+        <p className="text-muted-foreground text-sm">{t('toolsDescription')}</p>
       </div>
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>
-          Cancel
+          {t('cancel')}
         </Button>
         <Button type="submit" disabled={isSaving}>
-          {isSaving ? 'Saving...' : agent ? 'Update Agent' : 'Create Agent'}
+          {isSaving ? t('saving') : agent ? t('update') : t('create')}
         </Button>
       </div>
     </form>

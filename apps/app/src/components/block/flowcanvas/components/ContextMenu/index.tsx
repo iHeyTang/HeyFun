@@ -1,71 +1,7 @@
 import { Panel } from '@xyflow/react';
 import React, { useEffect, useRef, useState } from 'react';
 import type { NodeType } from './hooks/useContextMenu';
-
-// 可用的节点类型
-const AVAILABLE_NODE_TYPES: NodeType[] = [
-  {
-    type: 'text',
-    label: 'Text Node',
-    description: '用于显示和处理文本内容',
-    defaultData: {
-      label: 'Text Node',
-      description: '双击编辑文本内容',
-      text: '点击编辑文本',
-    },
-  },
-  {
-    type: 'image',
-    label: 'Image Node',
-    description: '用于上传和显示图片',
-    defaultData: {
-      label: 'Image Node',
-      description: '点击上传图片',
-      width: 200,
-      height: 150,
-    },
-  },
-  {
-    type: 'video',
-    label: 'Video Node',
-    description: '用于上传和播放视频',
-    defaultData: {
-      label: 'Video Node',
-      description: '点击上传视频',
-      controls: true,
-      autoPlay: false,
-    },
-  },
-  {
-    type: 'audio',
-    label: 'Audio Node',
-    description: '用于上传和播放音频',
-    defaultData: {
-      label: 'Audio Node',
-      description: '点击上传音频',
-    },
-  },
-  {
-    type: 'music',
-    label: 'Music Node',
-    description: '用于生成音乐',
-    defaultData: {
-      label: 'Music Node',
-      description: '点击上传音乐',
-    },
-  },
-  {
-    type: 'lipsync',
-    label: 'Lipsync Node',
-    description: '用于唇形同步',
-    defaultData: {
-      label: 'Lipsync Node',
-      description: '点击上传视频和音频',
-      videos: [],
-      audios: [],
-    },
-  },
-];
+import { useTranslations } from 'next-intl';
 
 export { useContextMenu } from './hooks/useContextMenu';
 
@@ -81,6 +17,74 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
   const menuRef = useRef<HTMLDivElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [adjustedPosition, setAdjustedPosition] = useState(position);
+  const t = useTranslations('flowcanvas.contextMenu');
+  const tNodes = useTranslations('flowcanvas.contextMenu.nodes');
+
+  // 可用的节点类型（使用翻译）
+  const AVAILABLE_NODE_TYPES: NodeType[] = [
+    {
+      type: 'text',
+      label: tNodes('text.label'),
+      description: tNodes('text.description'),
+      defaultData: {
+        label: tNodes('text.defaultLabel'),
+        description: tNodes('text.defaultDescription'),
+        text: tNodes('text.defaultText'),
+      },
+    },
+    {
+      type: 'image',
+      label: tNodes('image.label'),
+      description: tNodes('image.description'),
+      defaultData: {
+        label: tNodes('image.defaultLabel'),
+        description: tNodes('image.defaultDescription'),
+        width: 200,
+        height: 150,
+      },
+    },
+    {
+      type: 'video',
+      label: tNodes('video.label'),
+      description: tNodes('video.description'),
+      defaultData: {
+        label: tNodes('video.defaultLabel'),
+        description: tNodes('video.defaultDescription'),
+        controls: true,
+        autoPlay: false,
+      },
+    },
+    {
+      type: 'audio',
+      label: tNodes('audio.label'),
+      description: tNodes('audio.description'),
+      defaultData: {
+        label: tNodes('audio.defaultLabel'),
+        description: tNodes('audio.defaultDescription'),
+      },
+    },
+    {
+      type: 'music',
+      label: tNodes('music.label'),
+      description: tNodes('music.description'),
+      defaultData: {
+        label: tNodes('music.defaultLabel'),
+        description: tNodes('music.defaultDescription'),
+      },
+    },
+    {
+      type: 'lipsync',
+      label: tNodes('lipsync.label'),
+      description: tNodes('lipsync.description'),
+      defaultData: {
+        label: tNodes('lipsync.defaultLabel'),
+        description: tNodes('lipsync.defaultDescription'),
+        videos: [],
+        audios: [],
+      },
+    },
+  ];
+
   // 过滤节点类型
   const filteredNodeTypes = AVAILABLE_NODE_TYPES.filter(
     nodeType =>
@@ -200,7 +204,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
           <div className="relative">
             <input
               type="text"
-              placeholder="Search nodes..."
+              placeholder={t('searchPlaceholder')}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="bg-input focus:ring-ring focus:bg-input placeholder:text-muted-foreground text-foreground w-full rounded-lg border-0 px-3 py-2.5 text-sm transition-all duration-200 focus:ring-2 focus:outline-none"
@@ -228,6 +232,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <div className="text-foreground text-sm font-medium transition-colors">{nodeType.label}</div>
+                    <div className="text-muted-foreground text-xs">{nodeType.description}</div>
                   </div>
                 </div>
               </button>
@@ -235,7 +240,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
           ) : (
             <div className="text-muted-foreground py-8 text-center">
               <div className="mb-2 text-xl">🔍</div>
-              <p className="text-sm">No matching nodes found</p>
+              <p className="text-sm">{t('noMatch')}</p>
             </div>
           )}
         </div>

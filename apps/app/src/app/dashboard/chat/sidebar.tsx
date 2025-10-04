@@ -8,10 +8,12 @@ import { MessageSquare, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 export function ChatHistorySidebar() {
   const { sessions, refreshSessions, loading } = useRecentChatSessions();
   const pathname = usePathname();
+  const t = useTranslations('chat.sidebar');
 
   const currentSessionId = pathname.split('/').pop();
 
@@ -22,7 +24,7 @@ export function ChatHistorySidebar() {
   return (
     <div className="bg-muted/20 flex h-full flex-col gap-2 pt-2">
       <div className="flex items-center justify-between px-2">
-        <div className="text-muted-foreground text-xs font-medium whitespace-nowrap">Chat History</div>
+        <div className="text-muted-foreground text-xs font-medium whitespace-nowrap">{t('title')}</div>
         <Button variant="ghost" size="sm" className="h-6 w-6 p-0" asChild>
           <Link href="/dashboard/chat">
             <Plus className="h-3 w-3" />
@@ -45,7 +47,7 @@ export function ChatHistorySidebar() {
             })}
           </div>
         ) : sessions.length === 0 ? (
-          <div className="text-muted-foreground px-2 py-4 text-center text-xs">No chat history yet</div>
+          <div className="text-muted-foreground px-2 py-4 text-center text-xs">{t('noHistory')}</div>
         ) : (
           sessions.map(session => (
             <Link
@@ -57,7 +59,7 @@ export function ChatHistorySidebar() {
               )}
             >
               <MessageSquare className="h-3 w-3 flex-shrink-0" />
-              <div className="truncate">{session.title || 'New Chat'}</div>
+              <div className="truncate">{session.title || t('newChat')}</div>
             </Link>
           ))
         )}

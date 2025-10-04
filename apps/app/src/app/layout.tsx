@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     canonical: '/',
     languages: {
       'en-US': '/en',
-      'zh-CN': '/zh',
+      'zh-CN': '/zh-CN',
     },
   },
   icons: {

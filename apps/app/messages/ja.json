@@ -1,0 +1,590 @@
+{
+  "common": {
+    "welcome": "ようこそ",
+    "signin": "ログイン",
+    "signout": "ログアウト",
+    "settings": "設定",
+    "language": "言語",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "deleting": "削除中...",
+    "edit": "編集",
+    "save": "保存",
+    "saving": "保存中...",
+    "addNew": "追加",
+    "remove": "削除",
+    "removing": "削除中...",
+    "creating": "作成中...",
+    "loading": "読み込み中...",
+    "required": "必須",
+    "search": "検索",
+    "filter": "フィルター",
+    "close": "閉じる",
+    "open": "開く",
+    "download": "ダウンロード",
+    "upload": "アップロード",
+    "time": {
+      "justUpdated": "たった今更新",
+      "minutesAgo": "{count}分前に更新",
+      "hoursAgo": "{count}時間前に更新",
+      "daysAgo": "{count}日前に更新"
+    },
+    "sync": {
+      "syncing": "同期中...",
+      "synced": "同期済み"
+    },
+    "modelSelector": {
+      "searchPlaceholder": "モデルを検索...",
+      "noModelsFound": "モデルが見つかりません"
+    },
+    "aigcModelSelector": {
+      "title": "AIGC モデルセレクター",
+      "model": "モデル",
+      "searchPlaceholder": "モデル名または説明を検索...",
+      "categories": {
+        "all": "すべて",
+        "textToImage": "テキストから画像",
+        "imageToImage": "画像から画像",
+        "video": "動画生成",
+        "speech": "音声生成"
+      },
+      "generationTypes": {
+        "textToImage": "テキストから画像",
+        "imageToImage": "画像から画像",
+        "textToVideo": "テキストから動画",
+        "imageToVideo": "画像から動画",
+        "keyframeToVideo": "キーフレームから動画",
+        "textToSpeech": "音声合成"
+      },
+      "noModels": "利用可能なモデルがありません",
+      "noMatch": "一致するモデルが見つかりません"
+    },
+    "agentSelector": {
+      "title": "エージェントを選択",
+      "funmax": "FunMax",
+      "system": "システム",
+      "defaultDescription": "標準設定でデフォルトのFunMaxエージェントを使用",
+      "default": "デフォルト",
+      "tools": "ツール",
+      "moreTools": "+{count} 件"
+    },
+    "voiceSelector": {
+      "searchPlaceholder": "音声を検索...",
+      "noVoicesFound": "音声が見つかりません"
+    },
+    "confirm": {
+      "cancel": "キャンセル",
+      "confirm": "確認",
+      "processing": "処理中..."
+    }
+  },
+  "errors": {
+    "general": "エラーが発生しました",
+    "notFound": "ページが見つかりません",
+    "unauthorized": "未認証のアクセス"
+  },
+  "home": {
+    "nav": {
+      "home": "ホーム",
+      "features": "機能",
+      "openSource": "オープンソース",
+      "pricing": "料金",
+      "github": "GitHub",
+      "dashboard": "ダッシュボード"
+    },
+    "hero": {
+      "title": "HeyFun",
+      "badge": "AI Studio",
+      "subtitle": "インテリジェントエージェント • 自動化ワークフロー • クリエイティブAIプラットフォーム",
+      "getStarted": "始める",
+      "features": {
+        "agents": {
+          "title": "AIエージェント",
+          "description": "インテリジェント自律エージェント"
+        },
+        "workflows": {
+          "title": "ワークフロー",
+          "description": "自動化されたタスクオーケストレーション"
+        },
+        "integration": {
+          "title": "統合",
+          "description": "シームレスなAIサービス接続"
+        },
+        "studio": {
+          "title": "スタジオ",
+          "description": "クリエイティブAI開発プラットフォーム"
+        }
+      }
+    }
+  },
+  "dashboard": {
+    "sidebar": {
+      "flowcanvas": "FlowCanvas",
+      "chat": "チャット",
+      "tasks": "タスク",
+      "paintboard": "ペイントボード",
+      "workspace": "ワークスペース",
+      "tools": "ツール",
+      "settings": "設定"
+    }
+  },
+  "chat": {
+    "sidebar": {
+      "title": "チャット履歴",
+      "newChat": "新しいチャット",
+      "noHistory": "チャット履歴がありません"
+    },
+    "input": {
+      "placeholder": "不可能を想像し、共に未来を創造しよう",
+      "placeholderThinking": "考え中...",
+      "placeholderTerminating": "終了中...",
+      "placeholderCompleted": "タスク完了！",
+      "selectModel": "モデルを選択",
+      "selectAgent": "エージェントを選択",
+      "tools": "ツール",
+      "files": "ファイル",
+      "attachFiles": "ファイルを添付",
+      "sendMessage": "メッセージを送信",
+      "terminateTask": "タスクを終了"
+    },
+    "messages": {
+      "preparing": "準備中...",
+      "prepared": "準備完了",
+      "planning": "計画中...",
+      "planCompleted": "計画完了",
+      "taskCompleted": "素晴らしい！タスク完了",
+      "taskTerminated": "タスクはユーザーによって終了されました",
+      "taskError": "おっと！何か問題が発生しました",
+      "inputTokens": "入力",
+      "completionTokens": "出力"
+    },
+    "confirm": {
+      "terminate": {
+        "title": "タスクを終了",
+        "description": "このタスクを終了してもよろしいですか？",
+        "confirm": "終了",
+        "cancel": "キャンセル",
+        "terminating": "終了中..."
+      }
+    }
+  },
+  "tasks": {
+    "sidebar": {
+      "title": "最近のタスク",
+      "newTask": "新しいタスク"
+    },
+    "page": {
+      "emptyState": {
+        "subtitle": "ねえ！一緒にこの世界に少し楽しさをもたらしましょう。"
+      }
+    },
+    "input": {
+      "tools": {
+        "title": "ツール設定",
+        "addCustom": "新しいカスタムツールを追加",
+        "addNew": {
+          "title": "新しいカスタムツールを追加",
+          "namePlaceholder": "ツール名を入力",
+          "configPlaceholder": "ツール設定を入力、例：\n{\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n}",
+          "add": "追加",
+          "nameRequired": "ツール名は必須です",
+          "configRequired": "ツール設定は必須です",
+          "success": "ツールのインストールに成功しました"
+        },
+        "market": {
+          "title": "ツールマーケット",
+          "description": "マーケットプレイスから新しいツールを発見してインストール",
+          "browse": "マーケットを閲覧"
+        },
+        "confirm": {
+          "remove": "このカスタムツールを削除してもよろしいですか？",
+          "confirmRemove": "削除を確認",
+          "cancel": "キャンセル"
+        },
+        "tooltip": {
+          "viewDetails": "クリックして詳細を表示"
+        },
+        "badge": {
+          "mcp": "MCP",
+          "custom": "カスタム"
+        }
+      },
+      "share": {
+        "title": "タスクを共有",
+        "description": "このタスクを共有",
+        "duration": "有効期間",
+        "durationPlaceholder": "有効期間を選択",
+        "days7": "7日間",
+        "days30": "30日間",
+        "days60": "60日間",
+        "days180": "180日間",
+        "days365": "365日間",
+        "createLink": "共有リンクを作成してコピー",
+        "processing": "処理中...",
+        "linkCopied": "共有リンクをコピーしました"
+      }
+    }
+  },
+  "workspace": {
+    "sidebar": {
+      "actions": {
+        "download": "ダウンロード",
+        "remove": "削除"
+      },
+      "emptyState": {
+        "title": "ファイルが見つかりません",
+        "description": "ワークスペースは空です"
+      },
+      "loadError": "読み込みに失敗しました。クリックして再試行してください。"
+    },
+    "page": {
+      "emptyState": {
+        "title": "ワークスペース",
+        "description": "サイドバーからファイルを選択して内容を表示します。"
+      }
+    }
+  },
+  "tools": {
+    "page": {
+      "title": "ツールマーケット",
+      "search": {
+        "placeholder": "名前または説明でツールを検索..."
+      },
+      "filter": {
+        "placeholder": "ステータスでフィルター",
+        "all": "すべてのツール",
+        "installed": "インストール済み",
+        "notInstalled": "未インストール"
+      },
+      "results": {
+        "showing": "全{total}個のツールを表示",
+        "filtered": "{count} / {total} 個のツールを表示"
+      },
+      "emptyState": {
+        "title": "ツールが見つかりません",
+        "description": "検索クエリやフィルター条件を調整して、お探しのツールを見つけてください。"
+      },
+      "badge": {
+        "installed": "インストール済み"
+      },
+      "item": {
+        "by": "作成者："
+      }
+    }
+  },
+  "config": {
+    "language": "言語",
+    "preferences": "設定",
+    "preferencesDescription": "アプリケーションの設定を構成",
+    "languageSelectPlaceholder": "言語を選択",
+    "toast": {
+      "loadConfigError": "設定の読み込みに失敗しました",
+      "updateSuccess": "設定を更新しました",
+      "updateError": "設定の更新に失敗しました"
+    },
+    "appearance": "外観",
+    "apperanceThemes": {
+      "light": "ライト",
+      "dark": "ダーク",
+      "system": "システム"
+    },
+    "llm": {
+      "title": "モデル",
+      "description": "モデルを設定",
+      "model": "モデル",
+      "apiKey": "APIキー",
+      "apiKeyPlaceholder": "APIキーを入力",
+      "baseUrl": "APIベースURL",
+      "baseUrlPlaceholder": "APIベースURLを入力",
+      "maxTokens": "最大トークン数",
+      "temperature": "温度",
+      "getApiKey": "DeepSeekからAPIキーを取得",
+      "confirmDelete": "このモデルを削除してもよろしいですか？",
+      "modelRemoved": "モデルを削除しました",
+      "configUpdated": "設定を更新しました",
+      "configUpdateError": "設定の更新に失敗しました",
+      "encryptionNote": "あなたのキーは",
+      "encryptionTech": "PKCS1_OAEP",
+      "encryptionTechNote": "暗号化技術を使用して暗号化され、保存されます",
+      "provider": {
+        "configureProvider": "プロバイダーを設定",
+        "supportedModels": "サポートされているモデル",
+        "searchModel": "モデルを検索...",
+        "modelsCount": "{count}個のモデル",
+        "contextLength": "{length}Kコンテキスト"
+      }
+    },
+    "agents": {
+      "title": "エージェント",
+      "description": "特定のプロンプトとツールを持つカスタムエージェントを設定",
+      "createAgent": "エージェントを作成",
+      "editAgent": "エージェントを編集",
+      "createNew": "新しいエージェントを作成",
+      "configureDescription": "特定のプロンプトとツールを持つカスタムエージェントを設定",
+      "default": "デフォルト",
+      "form": {
+        "name": "名前",
+        "namePlaceholder": "エージェント名を入力",
+        "description": "説明",
+        "descriptionPlaceholder": "エージェントの説明を入力",
+        "systemPrompt": "システムプロンプト",
+        "systemPromptPlaceholder": "カスタムシステムプロンプトテンプレートを入力",
+        "tools": "ツール",
+        "toolsDescription": "このエージェントが使用できるツールを選択（TODO：ツールセレクターの実装）",
+        "toolsCount": "ツール（{count}）",
+        "cancel": "キャンセル",
+        "create": "エージェントを作成",
+        "update": "エージェントを更新",
+        "saving": "保存中..."
+      }
+    },
+    "sidebar": {
+      "models": "モデル",
+      "aigc": "ペイントボード",
+      "agents": "エージェント",
+      "voices": "音声",
+      "preferences": "設定"
+    }
+  },
+  "paintboard": {
+    "form": {
+      "selectModel": "モデルを選択",
+      "startGeneration": "生成を開始",
+      "submitting": "送信中...",
+      "taskSubmitted": "タスクの送信に成功しました",
+      "taskSubmitFailed": "タスクの送信に失敗しました",
+      "invalidModel": "無効なサービスまたはモデル情報",
+      "selectModelFirst": "モデルを選択してください",
+      "fields": {
+        "prompt": "プロンプト",
+        "text": "テキスト",
+        "aspectRatio": "アスペクト比",
+        "duration": "期間",
+        "firstFrame": "最初のフレーム",
+        "lastFrame": "最後のフレーム",
+        "referenceImage": "参照画像",
+        "voice_id": "音声",
+        "mode": "モード",
+        "speed": "速度",
+        "vol": "音量",
+        "pitch": "ピッチ",
+        "emotion": "感情",
+        "resolution": "解像度",
+        "advanced": "詳細設定",
+        "video": "動画",
+        "audio": "音声"
+      }
+    }
+  },
+  "flowcanvas": {
+    "title": "FlowCanvas",
+    "newProject": "新しいプロジェクト",
+    "emptyState": {
+      "title": "まだプロジェクトがありません",
+      "description": "最初のFlowCanvasプロジェクトを作成して、ビジュアルワークフローの構築を始めましょう",
+      "createFirst": "最初のプロジェクトを作成"
+    },
+    "project": {
+      "updatedAt": "更新日",
+      "unnamed": "無題のテンプレート",
+      "namePlaceholder": "テンプレート名を入力",
+      "errors": {
+        "loadFailed": "プロジェクトの読み込みに失敗しました",
+        "updateFailed": "プロジェクトの更新に失敗しました",
+        "updateNameFailed": "プロジェクト名の更新に失敗しました",
+        "syncFailed": "同期に失敗しました",
+        "importFailed": "インポートに失敗しました"
+      },
+      "messages": {
+        "dataImport": "キャンバスデータのインポート",
+        "importSuccess": "キャンバスデータのインポートに成功しました"
+      }
+    },
+    "toast": {
+      "createSuccess": "プロジェクトを作成しました",
+      "createError": "プロジェクトの作成に失敗しました",
+      "deleteSuccess": "プロジェクトを削除しました",
+      "deleteError": "プロジェクトの削除に失敗しました",
+      "loadError": "プロジェクトの読み込みに失敗しました"
+    },
+    "confirmDelete": "プロジェクト「{name}」を削除してもよろしいですか？この操作は元に戻せません。",
+    "toolbar": {
+      "execute": "実行",
+      "executeSelected": "選択したノードを実行"
+    },
+    "contextMenu": {
+      "searchPlaceholder": "ノードを検索...",
+      "noMatch": "一致するノードが見つかりません",
+      "nodes": {
+        "text": {
+          "label": "テキストノード",
+          "description": "テキストコンテンツの表示と処理用",
+          "defaultLabel": "テキストノード",
+          "defaultDescription": "ダブルクリックしてテキストコンテンツを編集",
+          "defaultText": "クリックしてテキストを編集"
+        },
+        "image": {
+          "label": "画像ノード",
+          "description": "画像のアップロードと表示用",
+          "defaultLabel": "画像ノード",
+          "defaultDescription": "クリックして画像をアップロード"
+        },
+        "video": {
+          "label": "動画ノード",
+          "description": "動画のアップロードと再生用",
+          "defaultLabel": "動画ノード",
+          "defaultDescription": "クリックして動画をアップロード"
+        },
+        "audio": {
+          "label": "音声ノード",
+          "description": "音声のアップロードと再生用",
+          "defaultLabel": "音声ノード",
+          "defaultDescription": "クリックして音声をアップロード"
+        },
+        "music": {
+          "label": "音楽ノード",
+          "description": "音楽の生成用",
+          "defaultLabel": "音楽ノード",
+          "defaultDescription": "クリックして音楽をアップロード"
+        },
+        "lipsync": {
+          "label": "リップシンクノード",
+          "description": "リップシンク用",
+          "defaultLabel": "リップシンクノード",
+          "defaultDescription": "クリックして動画と音声をアップロード"
+        }
+      }
+    },
+    "nodes": {
+      "uploading": "アップロード中...",
+      "uploadAudio": "ローカル音声をアップロード（最大10MB）",
+      "uploadImage": "ローカル画像をアップロード（最大10MB）",
+      "generateAudio": "プロンプトを入力して音声を生成",
+      "generateImage": "プロンプトを入力して画像を生成",
+      "selectAudioFile": "音声ファイルを選択してください",
+      "selectImageFile": "画像ファイルを選択してください",
+      "audioUploadFailed": "音声のアップロードに失敗しました。もう一度お試しください。",
+      "invalidPromptOrModel": "無効なプロンプトまたはモデル",
+      "failedToGenerateAudio": "音声の生成に失敗しました",
+      "invalidPromptModelOrRatio": "無効なプロンプト、モデル、またはアスペクト比",
+      "failedToGenerateImage": "画像の生成に失敗しました",
+      "connectInput": "ノード入力を接続：",
+      "videoInput": "• 動画：",
+      "audioInput": "• 音声：",
+      "connected": "{count}個接続済み",
+      "notConnected": "未接続",
+      "startLipsync": "下のボタンをクリックしてリップシンクを開始",
+      "pleaseConnectInputs": "動画と音声の入力を接続してください",
+      "missingVideoOrAudio": "動画または音声入力がありません",
+      "noModelSelected": "モデルが選択されていません",
+      "invalidVideoOrAudioUrl": "無効な動画または音声URL",
+      "lipsyncFailed": "リップシンクに失敗しました",
+      "lipsyncTimeout": "リップシンクがタイムアウトしました",
+      "keyboardShortcuts": "キーボードショートカット",
+      "previous": "前へ",
+      "next": "次へ",
+      "setCover": "カバーに設定",
+      "close": "閉じる",
+      "scroll": "スクロール",
+      "navigate": "ナビゲート",
+      "currentCover": "現在のカバー",
+      "setAsCover": "カバーに設定"
+    },
+    "nodeTooltips": {
+      "common": {
+        "selectModel": "モデルを選択",
+        "aspect": "アスペクト比",
+        "duration": "期間",
+        "resolution": "解像度",
+        "selectVoice": "音声を選択",
+        "lyrics": "歌詞",
+        "prompt": "プロンプト"
+      },
+      "text": {
+        "placeholder": "AIとチャット、@を入力してメンション",
+        "selectModel": "モデルを選択",
+        "failed": "AIテキスト生成に失敗しました"
+      },
+      "image": {
+        "placeholder": "プロンプトを入力して画像を生成、@を入力してメンション"
+      },
+      "video": {
+        "placeholder": "プロンプトを入力して動画を生成。最初の画像が最初のフレームとして使用されます"
+      },
+      "audio": {
+        "placeholder": "テキストを入力して音声を生成、@を入力してメンション"
+      },
+      "music": {
+        "lyricsPlaceholder": "ここに歌詞を入力、@を入力してメンション",
+        "promptPlaceholder": "プロンプトを入力して音楽スタイルを説明、@を入力してメンション"
+      },
+      "lipsync": {
+        "connectAlert": "最初に動画と音声の入力を接続してください",
+        "selectModelAlert": "モデルを選択してください",
+        "failed": "リップシンクに失敗しました",
+        "inputStatus": "入力ステータス：",
+        "videoInput": "動画入力：",
+        "audioInput": "音声入力：",
+        "items": "個",
+        "connected": "✓ {count}個",
+        "notConnected": "✗ 未接続",
+        "selectModel": "リップシンクモデルを選択",
+        "selectModelPlaceholder": "リップシンクモデルを選択"
+      }
+    }
+  },
+  "voices": {
+    "title": "音声管理",
+    "description": "複数のプラットフォームでカスタム音声を管理および設定",
+    "tabs": {
+      "voices": "マイボイス",
+      "cloneTasks": "クローンタスク"
+    },
+    "providers": {
+      "all": "すべてのプラットフォーム",
+      "selectPlaceholder": "プラットフォームを選択"
+    },
+    "actions": {
+      "cloneVoice": "音声をクローン",
+      "deleteVoice": "音声を削除",
+      "startClone": "クローンを開始"
+    },
+    "emptyState": {
+      "voices": "まだ音声がありません。右上のボタンをクリックして音声を追加してください",
+      "cloneTasks": "まだクローンタスクがありません"
+    },
+    "toast": {
+      "loadVoicesFailed": "音声の読み込みに失敗しました",
+      "loadCloneTasksFailed": "クローンタスクの読み込みに失敗しました",
+      "voiceDeleted": "音声を削除しました",
+      "deleteVoiceFailed": "音声の削除に失敗しました",
+      "cloneSuccess": "音声のクローンに成功しました！",
+      "cloneFailed": "音声のクローンに失敗しました",
+      "fillAllFields": "すべての必須フィールドを入力してください"
+    },
+    "confirmDelete": "この音声を削除してもよろしいですか？",
+    "cloneDialog": {
+      "title": "音声をクローン",
+      "description": "音声ファイルをアップロードして新しい音声をクローン",
+      "fields": {
+        "name": "音声名",
+        "namePlaceholder": "音声名を入力",
+        "description": "説明",
+        "descriptionPlaceholder": "音声の説明を入力",
+        "model": "モデル",
+        "modelPlaceholder": "クローンをサポートするモデルを選択",
+        "audioFile": "音声ファイルURL",
+        "audioFileHint": "アクセス可能な音声ファイルURLを提供してください。推奨時間は10〜30秒です",
+        "text": "プレビューテキスト",
+        "textPlaceholder": "プレビューテキストを入力（プレビュー音声の生成に使用）"
+      }
+    },
+    "status": {
+      "pending": "保留中",
+      "processing": "処理中",
+      "completed": "完了",
+      "failed": "失敗"
+    }
+  }
+}
+

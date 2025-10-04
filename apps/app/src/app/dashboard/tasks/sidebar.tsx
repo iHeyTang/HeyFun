@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
+import { useTranslations } from 'next-intl';
 
 export const useRecentTasks = create<{ tasks: Tasks[]; refreshTasks: () => Promise<void> }>(set => ({
   tasks: [],
@@ -26,6 +27,7 @@ export function TaskHistorySidebar() {
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const shareDialogRef = useRef<ShareDialogRef>(null);
   const currentTaskId = pathname.split('/').pop();
+  const t = useTranslations('tasks.sidebar');
 
   useEffect(() => {
     refreshTasks();
@@ -44,7 +46,7 @@ export function TaskHistorySidebar() {
   return (
     <div className="bg-muted/20 flex h-full flex-col gap-2 pt-2">
       <div className="flex items-center justify-between px-2">
-        <div className="text-muted-foreground text-xs font-medium whitespace-nowrap">Recent Tasks</div>
+        <div className="text-muted-foreground text-xs font-medium whitespace-nowrap">{t('title')}</div>
         <Button variant="ghost" size="icon" className="h-5 w-5" onClick={handleNewTask}>
           <Plus className="h-3 w-3" />
         </Button>

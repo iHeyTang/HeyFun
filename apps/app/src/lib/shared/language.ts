@@ -8,7 +8,8 @@
 
 export const LANGUAGE_CODES = {
   en: 'English',
-  zh: 'Chinese',
+  'zh-CN': 'Chinese Simplified',
+  'zh-TW': 'Chinese Traditional',
   ko: 'Korean',
   ja: 'Japanese',
 };

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ImageNodeActionData } from './processor';
 import { ImageNodeTooltip, ImageNodeTooltipProps } from './tooltip';
 import { ImagePreview } from './preview';
+import { useTranslations } from 'next-intl';
 
 interface ImageNodeProps {
   data: NodeData<ImageNodeActionData>;
@@ -16,6 +17,7 @@ export { ImageNodeProcessor } from './processor';
 
 export default function ImageNode({ id, data }: ImageNodeProps) {
   const { getSignedUrl } = useSignedUrl();
+  const t = useTranslations('flowcanvas.nodes');
 
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
@@ -62,7 +64,7 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      alert(t('selectImageFile'));
       return;
     }
 
@@ -134,15 +136,15 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
               {isUploading ? (
                 <div className="text-chart-2 flex flex-col items-center">
                   <div className="border-border-primary border-t-chart-2 mb-2 h-5 w-5 animate-spin rounded-full border-2"></div>
-                  <span>Uploading...</span>
+                  <span>{t('uploading')}</span>
                 </div>
               ) : (
                 <div className="flex h-32 flex-col justify-center gap-1 space-y-1 p-4 text-sm">
                   <div className="cursor-pointer text-left" onClick={handleFileSelect}>
-                    1. Upload local image (up to 10MB)
+                    1. {t('uploadImage')}
                   </div>
                   <div className="text-muted-foreground text-left" onClick={() => {}}>
-                    2. Enter prompt to generate an image
+                    2. {t('generateImage')}
                   </div>
                 </div>
               )}
