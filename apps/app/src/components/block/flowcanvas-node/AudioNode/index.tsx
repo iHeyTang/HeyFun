@@ -1,4 +1,5 @@
 import { getSignedUrl } from '@/actions/oss';
+import { AudioPlayer } from '@/components/block/audio-player';
 import { BaseNode, NodeData, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
 import { uploadFile } from '@/lib/browser/file';
 import { Loader2 } from 'lucide-react';
@@ -124,9 +125,7 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
 
           {audioUrl ? (
             <div className="bg-muted flex w-full items-center justify-center rounded p-4">
-              <audio controls src={audioUrl} className="w-full max-w-[300px]" onLoadedData={() => setIsAudioLoading(false)}>
-                Your browser does not support the audio element.
-              </audio>
+              <AudioPlayer src={audioUrl} className="w-full max-w-[300px]" onLoadedData={() => setIsAudioLoading(false)} />
             </div>
           ) : (
             <div className="bg-muted flex items-center justify-center rounded p-2 text-center transition-colors">
