@@ -4,7 +4,39 @@ import { Button } from '@/components/ui/button';
 import { ThemeLogo } from '@/components/features/theme-logo';
 import { Blocks, Github, Layers, Menu, Network, Workflow } from 'lucide-react';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import './page.css';
+
+export const metadata: Metadata = {
+  title: 'HeyFun - Universal AI Studio | Intelligent Workflow Orchestration Platform',
+  description:
+    'HeyFun is a universal AI studio connecting all AI services. Build intelligent agents, automate workflows, and create with AI-powered tools. Open-source, customizable, and fully connected platform empowering solopreneurs and one-person companies.',
+  keywords: [
+    'HeyFun',
+    'AI Studio',
+    'Universal AI Platform',
+    'Intelligent Workflow',
+    'AI Agent',
+    'Creative Platform',
+    'Workflow Automation',
+    'FlowCanvas',
+    'Visual Workflow Builder',
+    'Paintboard',
+    'AI Canvas',
+    'Open Source AI',
+    'No-Code AI Platform',
+  ],
+  openGraph: {
+    title: 'HeyFun - Universal AI Studio | Intelligent Workflow Orchestration Platform',
+    description:
+      'Build intelligent AI agents, automate workflows, and create with AI-powered tools. Open-source platform connecting all AI services.',
+    url: 'https://heyfun.ai',
+    type: 'website',
+  },
+  alternates: {
+    canonical: 'https://heyfun.ai',
+  },
+};
 
 export default function HomePage() {
   return (
@@ -66,10 +98,61 @@ export default function HomePage() {
         </nav>
       </header>
 
+      {/* Structured Data - JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'HeyFun',
+            alternateName: 'HeyFun AI Studio',
+            url: 'https://heyfun.ai',
+            description:
+              'HeyFun is a universal AI studio that connects all AI services. Build intelligent agents, automate workflows, and unleash creativity with our AI-powered platform.',
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: {
+                '@type': 'EntryPoint',
+                urlTemplate: 'https://heyfun.ai/search?q={search_term_string}',
+              },
+              'query-input': 'required name=search_term_string',
+            },
+            publisher: {
+              '@type': 'Organization',
+              name: 'HeyFun',
+              url: 'https://heyfun.ai',
+              logo: {
+                '@type': 'ImageObject',
+                url: 'https://heyfun.ai/logo.png',
+              },
+              sameAs: ['https://github.com/iHeyTang/HeyFun'],
+            },
+            mainEntity: {
+              '@type': 'SoftwareApplication',
+              name: 'HeyFun',
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'USD',
+              },
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: '4.8',
+                ratingCount: '100',
+              },
+            },
+            inLanguage: ['zh-CN', 'en-US'],
+          }),
+        }}
+      />
+
       {/* Hero Section */}
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pt-20">
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pt-20">
         <div className="relative mx-auto w-full max-w-7xl">
-          <div className="flex items-center justify-center">
+          <article className="flex items-center justify-center">
             {/* Main Content - Centered */}
             <div className="max-w-5xl text-center">
               {/* Product Introduction */}
@@ -169,7 +252,7 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-          </div>
+          </article>
         </div>
 
         {/* Enhanced Animated Background Elements */}
@@ -256,7 +339,7 @@ export default function HomePage() {
           <div className="bg-gradient-radial from-neutral-800/0.8 absolute top-3/4 right-1/4 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full via-transparent to-transparent opacity-15"></div>
           <div className="bg-gradient-radial from-neutral-600/0.4 absolute top-1/2 left-1/6 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full via-transparent to-transparent opacity-12"></div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

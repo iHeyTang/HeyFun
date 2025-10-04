@@ -1,0 +1,27 @@
+# HeyFun AI Studio - Robots.txt
+# 允许所有搜索引擎爬取
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /_next/
+Disallow: /admin/
+
+# Sitemap location
+Sitemap: https://heyfun.ai/sitemap.xml
+
+# 针对特定爬虫的优化
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+
+# 爬取延迟(秒)
+Crawl-delay: 1
+

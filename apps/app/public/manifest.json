@@ -1,0 +1,29 @@
+{
+  "name": "HeyFun - Universal AI Studio",
+  "short_name": "HeyFun",
+  "description": "Universal AI Studio - Creative platform connecting all AI services",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business", "utilities"],
+  "lang": "en-US",
+  "dir": "auto",
+  "scope": "/",
+  "prefer_related_applications": false
+}
