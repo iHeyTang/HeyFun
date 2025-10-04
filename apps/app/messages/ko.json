@@ -186,7 +186,7 @@
         "addNew": {
           "title": "새 사용자 정의 도구 추가",
           "namePlaceholder": "도구 이름 입력",
-          "configPlaceholder": "도구 구성 입력, 예:\n{\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n}",
+          "configPlaceholder": "도구 구성 입력, 예:\n'{'\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n'}'",
           "add": "추가",
           "nameRequired": "도구 이름은 필수입니다",
           "configRequired": "도구 구성은 필수입니다",

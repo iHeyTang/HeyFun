@@ -186,7 +186,7 @@
         "addNew": {
           "title": "新しいカスタムツールを追加",
           "namePlaceholder": "ツール名を入力",
-          "configPlaceholder": "ツール設定を入力、例：\n{\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n}",
+          "configPlaceholder": "ツール設定を入力、例：\n'{'\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n'}'",
           "add": "追加",
           "nameRequired": "ツール名は必須です",
           "configRequired": "ツール設定は必須です",

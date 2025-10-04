@@ -186,7 +186,7 @@
         "addNew": {
           "title": "新增一個新的自訂工具",
           "namePlaceholder": "輸入工具名稱",
-          "configPlaceholder": "輸入工具設定，範例：\n{\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n}",
+          "configPlaceholder": "輸入工具設定，範例：\n'{'\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n'}'",
           "add": "新增",
           "nameRequired": "工具名稱必填",
           "configRequired": "工具設定必填",

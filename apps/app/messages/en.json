@@ -186,7 +186,7 @@
         "addNew": {
           "title": "Add a new custom tool",
           "namePlaceholder": "Enter the tool name",
-          "configPlaceholder": "Enter the tool config, example:\n{\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n}",
+          "configPlaceholder": "Enter the tool config, example:\n'{'\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-everything\"]\n'}'",
           "add": "Add",
           "nameRequired": "Tool name is required",
           "configRequired": "Tool config is required",
