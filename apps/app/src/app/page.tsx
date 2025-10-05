@@ -54,21 +54,21 @@ export default async function HomePage() {
             {/* Logo */}
             <div className="flex items-center gap-2">
               <ThemeLogo width={24} height={24} alt="HeyFun" className="object-contain" />
-              <span className="text-lg font-bold tracking-wide text-neutral-900">HeyFun</span>
+              <span className="text-lg font-bold tracking-wide">HeyFun</span>
             </div>
 
             {/* Navigation Links */}
             <div className="hidden flex-1 items-center justify-center gap-8 md:flex">
-              <Link href="/" className="text-sm font-normal text-neutral-800 transition-colors hover:text-neutral-900">
+              <Link href="/" className="text-sm font-normal transition-colors hover:text-neutral-500">
                 {tNav('home')}
               </Link>
-              <Link href="/" className="text-sm font-normal text-neutral-800 transition-colors hover:text-neutral-900">
+              <Link href="/" className="text-sm font-normal transition-colors hover:text-neutral-500">
                 {tNav('features')}
               </Link>
-              <Link href="/" className="text-sm font-normal text-neutral-800 transition-colors hover:text-neutral-900">
+              <Link href="/" className="text-sm font-normal transition-colors hover:text-neutral-500">
                 {tNav('openSource')}
               </Link>
-              <Link href="/" className="text-sm font-normal text-neutral-800 transition-colors hover:text-neutral-900">
+              <Link href="/" className="text-sm font-normal transition-colors hover:text-neutral-500">
                 {tNav('pricing')}
               </Link>
             </div>
@@ -81,7 +81,7 @@ export default async function HomePage() {
               <Link
                 href="https://github.com/iHeyTang/HeyFun"
                 target="_blank"
-                className="hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-normal text-neutral-800 transition-all hover:text-neutral-900 sm:flex"
+                className="hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-normal transition-all hover:text-neutral-900 sm:flex"
               >
                 <Github className="h-3 w-3" />
                 <span>{tNav('github')}</span>
@@ -97,7 +97,7 @@ export default async function HomePage() {
               </Link>
 
               {/* Mobile Menu */}
-              <Button size="sm" variant="ghost" className="text-neutral-800 hover:bg-white hover:text-neutral-900 md:hidden">
+              <Button size="sm" variant="ghost" className="hover:bg-white hover:text-neutral-900 md:hidden">
                 <Menu className="h-4 w-4" />
               </Button>
             </div>
@@ -167,7 +167,7 @@ export default async function HomePage() {
                 {/* Main Title */}
                 <div className="animate-fade-in-title space-y-6">
                   <div className="relative px-4 py-8">
-                    <h1 className="text-6xl leading-none font-bold tracking-tight text-neutral-900 md:text-7xl lg:text-8xl">
+                    <h1 className="text-6xl leading-none font-bold tracking-tight md:text-7xl lg:text-8xl">
                       <span className="shimmer-text-dark relative inline-block py-2">
                         HeyFun
                         <div className="absolute -inset-2 bg-gradient-to-r from-transparent via-neutral-600/20 to-transparent opacity-50 blur-sm"></div>
@@ -198,7 +198,7 @@ export default async function HomePage() {
                   {/* Enhanced Badge */}
                   <div className="flex justify-center pt-4">
                     <div className="group relative">
-                      <Badge className="cursor-default border-neutral-300 bg-white px-8 py-2 text-sm font-medium text-neutral-800 backdrop-blur-sm transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg">
+                      <Badge className="cursor-default border-neutral-300 px-8 py-2 text-sm font-medium backdrop-blur-sm transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg">
                         {tHero('badge')}
                       </Badge>
                       <div className="absolute inset-0 rounded-full bg-gradient-to-r from-neutral-800/5 to-neutral-800/5 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100"></div>
@@ -211,7 +211,7 @@ export default async function HomePage() {
                   <div className="relative">
                     <div className="absolute -inset-2 bg-gradient-to-r from-transparent via-neutral-800/2.5 to-transparent blur-xl"></div>
                   </div>
-                  <p className="mx-auto max-w-2xl text-lg leading-relaxed font-normal text-neutral-600">{tHero('subtitle')}</p>
+                  <p className="mx-auto max-w-2xl text-lg leading-relaxed font-normal">{tHero('subtitle')}</p>
                 </div>
 
                 {/* Enhanced Core Features */}
@@ -229,14 +229,13 @@ export default async function HomePage() {
                         style={{ animationDelay: feature.delay }}
                       >
                         <div className="relative">
-                          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-neutral-200 shadow-lg transition-all duration-300 group-hover:bg-neutral-800/10 group-hover:shadow-xl">
-                            <feature.icon className="h-7 w-7 text-neutral-900 transition-all duration-300 group-hover:scale-110" />
+                          <div className="bg-neutral flex h-16 w-16 items-center justify-center rounded-lg shadow-md transition-all duration-300 group-hover:shadow">
+                            <feature.icon className="h-7 w-7 transition-all duration-300 group-hover:scale-110" />
                           </div>
-                          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-neutral-800/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-base font-semibold text-neutral-900">{feature.title}</p>
-                          <p className="text-sm font-normal text-neutral-600">{feature.desc}</p>
+                          <p className="text-base font-semibold">{feature.title}</p>
+                          <p className="text-sm font-normal">{feature.desc}</p>
                         </div>
                       </div>
                     ))}
