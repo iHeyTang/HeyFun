@@ -23,7 +23,6 @@ export default function MusicNode({ data, id }: MusicNodeProps) {
 
   // 监听data.output变化，强制更新组件状态
   useEffect(() => {
-    console.log('data.output', data.output?.musics);
     const newMusicKey = data.output?.musics?.[0]?.key;
     if (newMusicKey !== musicKey) {
       console.log(`MusicNode ${id} - 检测到输出数据变化:`, {

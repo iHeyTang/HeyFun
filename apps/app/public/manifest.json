@@ -1,29 +1,81 @@
 {
-  "name": "HeyFun - Universal AI Studio",
+  "name": "HeyFun - 通用 AI 助手工作室",
   "short_name": "HeyFun",
-  "description": "Universal AI Studio - Creative platform connecting all AI services",
+  "description": "通用领域全能 AI 助手，为 AI 时代的超级个体和一人公司提供最有力的支持",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/favicon.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/favicon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
   ],
-  "categories": ["productivity", "business", "utilities"],
-  "lang": "en-US",
+  "categories": ["productivity", "business", "utilities", "developer-tools"],
+  "lang": "zh-CN",
   "dir": "auto",
   "scope": "/",
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "聊天助手",
+      "short_name": "聊天",
+      "description": "开始与 AI 对话",
+      "url": "/dashboard/chat",
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "工作流画布",
+      "short_name": "画布",
+      "description": "创建 AI 工作流",
+      "url": "/dashboard/flowcanvas",
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "任务中心",
+      "short_name": "任务",
+      "description": "查看 AI 任务",
+      "url": "/dashboard/tasks",
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/logo.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ]
 }
