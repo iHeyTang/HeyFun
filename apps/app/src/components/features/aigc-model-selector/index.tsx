@@ -102,12 +102,12 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
   };
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col space-y-1">
       <label className="text-sm font-medium">{t('model')}</label>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" className="h-auto w-full justify-start p-4" onClick={() => setIsOpen(true)}>
+          <Button variant="outline" className="h-auto w-full justify-start p-4 shadow-none" onClick={() => setIsOpen(true)}>
             <div className="flex w-full flex-col items-start space-y-2">
               {selectedModelInfo ? (
                 <>
@@ -129,12 +129,7 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
             {/* 搜索框 */}
             <div className="relative">
               <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-              <Input
-                placeholder={t('searchPlaceholder')}
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+              <Input placeholder={t('searchPlaceholder')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
             </div>
 
             {/* 分类标签页 */}

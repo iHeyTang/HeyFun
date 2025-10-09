@@ -72,7 +72,7 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
 
     const result = await submitGenerationTask({
       model: selectedModel,
-      params: { prompt: processedPrompt, aspectRatio, duration: Number(duration), firstFrame: referenceImages?.[0], resolution },
+      params: { prompt: processedPrompt, aspectRatio, duration, firstFrame: referenceImages?.[0], resolution },
     });
 
     if (result.error || !result.data?.id) {

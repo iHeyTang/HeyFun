@@ -25,7 +25,7 @@ export const videoParamsSchema = z.object({
   referenceImage: z.array(z.string()).optional(),
   aspectRatio: z.string().optional(),
   resolution: z.string().optional(),
-  duration: z.number().optional(),
+  duration: z.string().optional(),
   advanced: z.any().optional(),
 });
 
@@ -36,7 +36,7 @@ export type VideoJsonSchema = {
   referenceImage: JSONSchema.ArraySchema;
   aspectRatio: JSONSchema.StringSchema;
   resolution: JSONSchema.StringSchema;
-  duration: JSONSchema.NumberSchema;
+  duration: JSONSchema.StringSchema;
   advanced: JSONSchema.ObjectSchema;
 };
 

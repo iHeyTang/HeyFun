@@ -6,18 +6,21 @@ import {
   submitTaskParamsSchema,
   t2aParamsSchema,
   videoParamsSchema,
+  lipSyncParamsSchema,
+  musicParamsSchema,
   type ImageJsonSchema,
   type SubmitTaskParamsJsonSchema,
   type T2aJsonSchema,
   type VideoJsonSchema,
+  type LipSyncJsonSchema,
+  type MusicJsonSchema,
   type Voice,
   type VoiceCloneParams,
   type VoiceCloneResult,
-  type MusicJsonSchema,
 } from './core/base-model';
 
 import { GenerationTaskResult, GenerationType } from './types';
-export { imageParamsSchema, submitTaskParamsSchema, t2aParamsSchema, videoParamsSchema };
+export { imageParamsSchema, submitTaskParamsSchema, t2aParamsSchema, videoParamsSchema, lipSyncParamsSchema, musicParamsSchema };
 export type {
   BaseAigcModel,
   GenerationTaskResult,
@@ -27,10 +30,11 @@ export type {
   SubmitTaskParamsJsonSchema,
   T2aJsonSchema,
   VideoJsonSchema,
+  LipSyncJsonSchema,
+  MusicJsonSchema,
   Voice,
   VoiceCloneParams,
   VoiceCloneResult,
-  MusicJsonSchema,
 };
 
 // Providers

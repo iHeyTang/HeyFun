@@ -373,7 +373,8 @@
         "resolution": "Resolution",
         "advanced": "Advanced Settings",
         "video": "Video",
-        "audio": "Audio"
+        "audio": "Audio",
+        "lyrics": "Lyrics"
       }
     }
   },

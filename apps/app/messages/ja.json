@@ -373,7 +373,8 @@
         "resolution": "解像度",
         "advanced": "詳細設定",
         "video": "動画",
-        "audio": "音声"
+        "audio": "音声",
+        "lyrics": "歌詞"
       }
     }
   },

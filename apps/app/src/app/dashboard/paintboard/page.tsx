@@ -1,6 +1,6 @@
 'use client';
 
-import { UnifiedGenerationForm } from '@/app/dashboard/paintboard/generation-form';
+import { PaintBoardForm } from '@/app/dashboard/paintboard/paintboard-form';
 import { PaintboardTaskHistory, type TaskHistoryRef } from '@/app/dashboard/paintboard/task-history';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useRef } from 'react';
@@ -24,7 +24,7 @@ export default function GeneralGenerationPage() {
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full w-full">
       <ResizablePanel defaultSize={24} minSize={10}>
-        <UnifiedGenerationForm onSubmitSuccess={handleFormSubmitSuccess} />
+        <PaintBoardForm onSubmitSuccess={handleFormSubmitSuccess} />
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel defaultSize={76} minSize={50}>
