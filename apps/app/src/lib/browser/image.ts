@@ -14,17 +14,3 @@ export const getImageUrl = (path: string) => {
   }
   return getBase64ImageUrl(path);
 };
-
-export const getFilePath = (path: string | undefined) => {
-  if (!path?.includes('/workspace')) return undefined;
-
-  const workspacePath = path.slice(path.indexOf('/workspace'));
-  const parts = workspacePath.split('/');
-
-  if (parts.length >= 3) {
-    const newPath = `/workspace/${parts.slice(3).join('/')}`;
-    return `/api${newPath}`;
-  }
-
-  return `/api${workspacePath}`;
-};

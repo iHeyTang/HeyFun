@@ -11,7 +11,7 @@ const paramsSchema = z.object({
 
 /**
  * Sora 2
- * https://doc.302.ai/api-322183267
+ * https://doc.302.ai/357810967e0
  */
 export class SoraVideo2 extends BaseAigcModel {
   name = 'sora-video-2';

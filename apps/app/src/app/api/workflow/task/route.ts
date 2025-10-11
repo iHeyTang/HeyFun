@@ -70,7 +70,6 @@ export const { POST } = serve<FunMaxConfig>(async context => {
     });
 
     stepCount++;
-    console.log('result', result);
 
     if (stepCount >= (context.requestPayload.max_steps || 10)) {
       break;

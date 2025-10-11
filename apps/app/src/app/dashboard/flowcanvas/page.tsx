@@ -32,7 +32,6 @@ export default function FlowCanvasListPage() {
     try {
       setLoading(true);
       const result = await getFlowCanvasProjects({ page: 1, pageSize: 50 });
-      console.log('result', result);
       if (result.data) {
         setProjects(result.data.projects);
       } else {

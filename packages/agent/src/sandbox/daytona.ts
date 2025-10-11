@@ -209,7 +209,7 @@ export class DaytonaSandboxManager extends BaseSandboxManager {
       volumes: [{ volumeId: volume.id, mountPath: '/heyfun/workspace' }],
     });
     const runner = new DaytonaSandboxRunner(id, sandbox);
-    await sandbox.fs.createFolder('/heyfun/workspace', '755');
+    await sandbox.fs.createFolder('/heyfun/workspace', '777');
     return runner;
   }
 

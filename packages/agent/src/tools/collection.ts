@@ -29,19 +29,20 @@ export class ToolCollection {
       headers: mcpUniUrl.headers,
     });
 
-    const transport = new StreamableHTTPClientTransport(new URL(mcpUniUrl.url), {
-      requestInit: {
-        headers: { ...mcpUniUrl.headers },
-        cache: 'no-store',
-      },
-    });
-
     let retryCount = 0;
     const maxRetries = 10;
     const retryDelay = 5000; // 10秒
 
     while (retryCount < maxRetries) {
       try {
+        // 在每次尝试时创建新的 transport 实例
+        const transport = new StreamableHTTPClientTransport(new URL(mcpUniUrl.url), {
+          requestInit: {
+            headers: { ...mcpUniUrl.headers },
+            cache: 'no-store',
+          },
+        });
+
         await this.mcpUni.connect(transport);
         console.log('MCP Uni connected');
         break;
