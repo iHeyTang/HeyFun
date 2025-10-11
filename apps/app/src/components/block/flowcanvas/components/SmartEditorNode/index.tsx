@@ -154,9 +154,5 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(funct
     };
   }, [editor]);
 
-  return (
-    <div className={cn('relative flex h-full flex-col', className)}>
-      <EditorContent editor={editor} className="flex-1 overflow-auto rounded-md" />
-    </div>
-  );
+  return <EditorContent editor={editor} className={cn('h-full overflow-auto rounded-md', className)} />;
 });

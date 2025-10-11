@@ -8,24 +8,19 @@ import { NodeTooltip, NodeTooltipContent, NodeTooltipTrigger } from '../NodeTool
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface BaseNodeProps {
-  data: NodeData;
   id: string; // 添加nodeId prop
+  data: NodeData;
   children?: React.ReactNode;
   className?: string;
   showHandles?: boolean;
-  onDragStart?: () => void;
-  onDragEnd?: () => void;
-  onBlur?: () => void;
   tooltip?: React.ReactNode;
+  onBlur?: () => void;
 }
 
-export default function BaseNode({ data, id, children, className = '', showHandles = true, onDragStart, onDragEnd, tooltip, onBlur }: BaseNodeProps) {
+export default function BaseNode({ data, id, children, className = '', showHandles = true, tooltip, onBlur }: BaseNodeProps) {
   const flowGraph = useFlowGraph();
   const { focusedNodeId } = useFlowGraphContext();
   const { zoom } = useViewport(); // 获取当前画布缩放比例
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
-  const dragThreshold = 5; // 拖动阈值，超过这个距离才算拖动
 
   // 可编辑标签的状态
   const [isEditingLabel, setIsEditingLabel] = useState(false);
@@ -84,42 +79,6 @@ export default function BaseNode({ data, id, children, className = '', showHandl
     }
   };
 
-  // 处理鼠标按下事件
-  const handleMouseDown = (event: React.MouseEvent) => {
-    // 检查是否点击在nodrag元素上
-    const target = event.target as HTMLElement;
-    if (target.closest('.nodrag')) {
-      return;
-    }
-
-    dragStartPos.current = { x: event.clientX, y: event.clientY };
-    setIsDragging(false);
-  };
-
-  // 处理鼠标移动事件
-  const handleMouseMove = (event: React.MouseEvent) => {
-    if (!dragStartPos.current) return;
-
-    const deltaX = Math.abs(event.clientX - dragStartPos.current.x);
-    const deltaY = Math.abs(event.clientY - dragStartPos.current.y);
-
-    if (deltaX > dragThreshold || deltaY > dragThreshold) {
-      if (!isDragging) {
-        setIsDragging(true);
-        onDragStart?.();
-      }
-    }
-  };
-
-  // 处理鼠标抬起事件
-  const handleMouseUp = () => {
-    if (isDragging) {
-      onDragEnd?.();
-    }
-    dragStartPos.current = null;
-    setIsDragging(false);
-  };
-
   // 转换字符串位置为Position枚举
   const getPosition = (pos: Position | string): Position => {
     if (typeof pos === 'string') {
@@ -149,14 +108,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
         </NodeTooltipContent>
       )}
       <NodeTooltipTrigger>
-        <div
-          className={cn('relative')}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onBlur={onBlur}
-        >
+        <div className={cn('relative')} onBlur={onBlur}>
           {/* 标题和状态在卡片外部左上角 */}
           <div className="mb-1 flex items-center justify-between text-xs">
             <div className="flex items-center gap-1">
@@ -184,7 +136,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
           </div>
 
           {/* 卡片主体 */}
-          <div className={cn('group relative transition-all duration-200', isDragging ? 'cursor-grabbing' : 'cursor-grab')}>
+          <div className={cn('group relative transition-all duration-200')}>
             {/* 渲染输入端口 */}
             {showHandles && (
               <Handle

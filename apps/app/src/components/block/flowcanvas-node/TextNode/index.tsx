@@ -16,9 +16,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
   const flowGraph = useFlowGraph();
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(data.output?.texts?.[0] || '');
-  const [isDragging, setIsDragging] = useState(false);
   const editorRef = useRef<TiptapEditorRef>(null);
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const status = useNodeStatusById(id);
 
   // 监听data.output变化，强制更新组件状态
@@ -30,9 +28,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
   }, [data.output?.texts, isEditing]);
 
   const handleTextDoubleClick = () => {
-    if (!isDragging) {
-      setIsEditing(true);
-    }
+    setIsEditing(true);
   };
 
   const handleTextChange = (newText: string) => {
@@ -72,30 +68,6 @@ export default function TextNode({ data, id }: TextNodeProps) {
     }
   };
 
-  // 处理拖动开始
-  const handleDragStart = () => {
-    setIsDragging(true);
-    // 清除点击定时器
-    if (clickTimeoutRef.current) {
-      clearTimeout(clickTimeoutRef.current);
-      clickTimeoutRef.current = null;
-    }
-  };
-
-  // 处理拖动结束
-  const handleDragEnd = () => {
-    setIsDragging(false);
-  };
-
-  // 清理定时器
-  useEffect(() => {
-    return () => {
-      if (clickTimeoutRef.current) {
-        clearTimeout(clickTimeoutRef.current);
-      }
-    };
-  }, []);
-
   // 处理actionData变化 - 使用 useCallback 稳定函数引用
   const handleActionDataChange = useCallback<NonNullable<TextNodeTooltipProps['onValueChange']>>(
     newActionData => {
@@ -119,8 +91,6 @@ export default function TextNode({ data, id }: TextNodeProps) {
       data={data}
       id={id}
       className={`bg-card h-fit w-fit`}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
       onBlur={handleTextBlur}
       tooltip={
         <TextNodeTooltip nodeId={id} value={data.actionData} onValueChange={handleActionDataChange} onSubmitSuccess={handleTooltipSubmitSuccess} />
