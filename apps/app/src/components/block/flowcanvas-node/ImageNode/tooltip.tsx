@@ -90,7 +90,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       if (result.success) {
         updateStatus(NodeStatus.COMPLETED);
         onSubmitSuccess?.({ images: [...(node.data.output?.images || []), ...(result.data?.images || [])] });
-        onValueChange?.({ ...actionData, selectedKey: result.data?.images?.[0] });
+        onValueChange?.({ ...actionData });
       } else {
         updateStatus(NodeStatus.FAILED);
       }
@@ -137,25 +137,22 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     [nodeInputs],
   );
 
-  const handleMentionClick = useCallback(
-    async (mentionId: string) => {
-      const type = mentionId.split(':')[0];
-      if (type === 'image') {
-        const key = mentionId.split(':')[1] || '';
-        const url = `/api/oss/${key}`;
-        fullscreenModalRef.current?.show(url, 'image');
-        return;
-      }
+  const handleMentionClick = useCallback(async (mentionId: string) => {
+    const type = mentionId.split(':')[0];
+    if (type === 'image') {
+      const key = mentionId.split(':')[1] || '';
+      const url = `/api/oss/${key}`;
+      fullscreenModalRef.current?.show(url, 'image');
+      return;
+    }
 
-      if (type === 'video') {
-        const key = mentionId.split(':')[1] || '';
-        const url = `/api/oss/${key}`;
-        fullscreenModalRef.current?.show(url, 'video');
-        return;
-      }
-    },
-    [],
-  );
+    if (type === 'video') {
+      const key = mentionId.split(':')[1] || '';
+      const url = `/api/oss/${key}`;
+      fullscreenModalRef.current?.show(url, 'video');
+      return;
+    }
+  }, []);
 
   return (
     <div className="flex min-w-[480px] flex-col gap-2 overflow-hidden rounded-lg p-4">
@@ -236,7 +233,6 @@ export const ImageNodeTooltip = memo(ImageNodeTooltipComponent, (prevProps, next
     prevProps.value?.prompt === nextProps.value?.prompt &&
     prevProps.value?.selectedModel === nextProps.value?.selectedModel &&
     prevProps.value?.aspectRatio === nextProps.value?.aspectRatio &&
-    prevProps.value?.selectedKey === nextProps.value?.selectedKey &&
     prevProps.onValueChange === nextProps.onValueChange &&
     prevProps.onSubmitSuccess === nextProps.onSubmitSuccess
   );

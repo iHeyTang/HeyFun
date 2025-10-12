@@ -1,5 +1,7 @@
-import { getPaintboardTask, submitGenerationTask } from '@/actions/paintboard';
+import { submitGenerationTask } from '@/actions/paintboard';
 import { BaseNodeActionData, BaseNodeProcessor, NodeExecutorExecuteResult } from '@/components/block/flowcanvas';
+import { processMentions } from '../../flowcanvas/utils/prompt-processor';
+import { pollGenerationTask, resultMappers } from '../../flowcanvas/utils/task-polling';
 
 export type ImageNodeActionData = {
   prompt?: string;
@@ -34,42 +36,19 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
       };
     }
 
-    let processedPrompt = prompt;
-
-    // 处理 prompt 中的 @text 提及
-    const textPattern = /@text:([^\s]+)/g;
-    const textMatches = [...prompt.matchAll(textPattern)];
-    textMatches.forEach(match => {
-      const nodeId = match[1];
-      if (nodeId) {
-        const textNode = data.input.texts.find(text => text.nodeId === nodeId);
-        if (textNode?.texts?.[0]) {
-          processedPrompt = processedPrompt.replace(match[0], textNode.texts[0]);
-        }
-      }
+    // 使用工具函数处理 prompt 中的所有提及
+    const { processedPrompt, mentionedImages } = processMentions(prompt, {
+      textNodes: data.input.texts,
+      availableImages: images,
     });
 
-    // 处理 prompt 中的 @image 提及
-    const imagePattern = /@image:([^\s]+)/g;
-    const mentionedImages: string[] = [];
-
-    // 提取所有提及的图片key，并替换为"图X"
-    const imageMatches = [...processedPrompt.matchAll(imagePattern)];
-    imageMatches.forEach((match, index) => {
-      const imageKey = match[1];
-      if (imageKey) {
-        const imageExists = images.includes(imageKey);
-        if (imageExists) {
-          mentionedImages.push(`/api/oss/${imageKey}`);
-          processedPrompt = processedPrompt.replace(match[0], `图${index + 1}`);
-        }
-      }
-    });
+    // 将提及的图片 key 转换为完整 URL
+    const mentionedImageUrls = mentionedImages.map(key => `/api/oss/${key}`);
 
     const selectedImage = images.find(key => key === selectedKey);
 
-    // 如果 prompt 中有提及图片，使用提及的图片；否则使用输入的所有图片
-    const referenceImages = mentionedImages.length > 0 ? mentionedImages : selectedImage ? [selectedImage] : images[0] ? [images[0]] : [];
+    // 如果 prompt 中有提及图片，使用提及的图片；否则使用选中的或第一张图片
+    const referenceImages = mentionedImageUrls.length > 0 ? mentionedImageUrls : selectedImage ? [selectedImage] : images[0] ? [images[0]] : [];
 
     const result = await submitGenerationTask({
       model: selectedModel,
@@ -90,44 +69,15 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
       };
     }
 
-    const expiredTime = startTime + 5 * 60 * 1000;
-
-    while (Date.now() < expiredTime) {
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      const taskResult = await getPaintboardTask({ taskId: result.data.id });
-      console.log('taskResult', taskResult);
-      if (taskResult.data?.status === 'completed') {
-        // 存储key而不是URL
-        return {
-          success: true,
-          timestamp: new Date(),
-          executionTime: Date.now() - startTime,
-          data: { images: taskResult.data.results.map(result => result.key) },
-        };
-      }
-
-      if (taskResult.data?.status === 'pending') {
-        continue;
-      }
-
-      if (taskResult.data?.status === 'failed') {
-        return {
-          success: false,
-          timestamp: new Date(),
-          executionTime: Date.now() - startTime,
-          error: taskResult.data.error || 'Failed to generate image',
-          data: { images: [] },
-        };
-      }
-    }
-
-    return {
-      success: false,
-      timestamp: new Date(),
-      executionTime: Date.now() - startTime,
-      error: 'Failed to generate image',
-      data: { images: [] },
-    };
+    // 使用工具函数轮询任务状态
+    return pollGenerationTask({
+      taskId: result.data.id,
+      startTime,
+      resultMapper: resultMappers.images,
+      errorMessage: {
+        failed: 'Failed to generate image',
+        timeout: 'Image generation timeout',
+      },
+    });
   }
 }

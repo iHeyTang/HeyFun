@@ -1,5 +1,6 @@
-import { getPaintboardTask, submitGenerationTask } from '@/actions/paintboard';
+import { submitGenerationTask } from '@/actions/paintboard';
 import { BaseNodeActionData, BaseNodeProcessor, NodeExecutorExecuteResult } from '@/components/block/flowcanvas';
+import { pollGenerationTask, resultMappers } from '../../flowcanvas/utils/task-polling';
 
 export type LipsyncNodeActionData = {
   selectedModel?: string;
@@ -66,43 +67,16 @@ export class LipsyncNodeProcessor extends BaseNodeProcessor<LipsyncNodeActionDat
       };
     }
 
-    const expiredTime = startTime + 10 * 60 * 1000; // 唇形同步需要较长时间，10分钟
-
-    while (Date.now() < expiredTime) {
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      const taskResult = await getPaintboardTask({ taskId: result.data.id });
-      if (taskResult.data?.status === 'completed') {
-        // 存储key而不是URL
-        return {
-          success: true,
-          timestamp: new Date(),
-          executionTime: Date.now() - startTime,
-          data: { videos: taskResult.data.results.map(result => result.key) },
-        };
-      }
-
-      if (taskResult.data?.status === 'pending') {
-        continue;
-      }
-
-      if (taskResult.data?.status === 'failed') {
-        return {
-          success: false,
-          timestamp: new Date(),
-          executionTime: Date.now() - startTime,
-          error: taskResult.data.error || '唇形同步失败',
-          data: { videos: [] },
-        };
-      }
-    }
-
-    return {
-      success: false,
-      timestamp: new Date(),
-      executionTime: Date.now() - startTime,
-      error: '唇形同步超时',
-      data: { videos: [] },
-    };
+    // 使用工具函数轮询任务状态
+    return pollGenerationTask({
+      taskId: result.data.id,
+      timeout: 10 * 60 * 1000, // 唇形同步需要较长时间，10分钟
+      startTime,
+      resultMapper: resultMappers.videos,
+      errorMessage: {
+        failed: '唇形同步失败',
+        timeout: '唇形同步超时',
+      },
+    });
   }
 }

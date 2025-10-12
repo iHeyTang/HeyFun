@@ -1,5 +1,7 @@
-import { getPaintboardTask, submitGenerationTask } from '@/actions/paintboard';
+import { submitGenerationTask } from '@/actions/paintboard';
 import { BaseNodeActionData, BaseNodeProcessor, NodeExecutorExecuteResult } from '@/components/block/flowcanvas';
+import { processMentions } from '../../flowcanvas/utils/prompt-processor';
+import { pollGenerationTask, resultMappers } from '../../flowcanvas/utils/task-polling';
 
 export type MusicNodeActionData = {
   lyrics?: string;
@@ -31,32 +33,14 @@ export class MusicNodeProcessor extends BaseNodeProcessor<MusicNodeActionData> {
       };
     }
 
-    let processedLyrics = lyrics || '';
-    let processedPrompt = prompt || '';
-
-    // 处理 lyrics 中的 @text 提及
-    const textPattern = /@text:([^\s]+)/g;
-    const lyricsMatches = [...processedLyrics.matchAll(textPattern)];
-    lyricsMatches.forEach(match => {
-      const nodeId = match[1];
-      if (nodeId) {
-        const textNode = data.input.texts.find(text => text.nodeId === nodeId);
-        if (textNode?.texts?.[0]) {
-          processedLyrics = processedLyrics.replace(match[0], textNode.texts[0]);
-        }
-      }
+    // 使用工具函数处理 lyrics 和 prompt 中的 @text 提及
+    const { processedPrompt: processedLyrics } = processMentions(lyrics || '', {
+      textNodes: data.input.texts,
+      availableImages: [],
     });
-
-    // 处理 prompt 中的 @text 提及
-    const promptMatches = [...processedPrompt.matchAll(textPattern)];
-    promptMatches.forEach(match => {
-      const nodeId = match[1];
-      if (nodeId) {
-        const textNode = data.input.texts.find(text => text.nodeId === nodeId);
-        if (textNode?.texts?.[0]) {
-          processedPrompt = processedPrompt.replace(match[0], textNode.texts[0]);
-        }
-      }
+    const { processedPrompt } = processMentions(prompt || '', {
+      textNodes: data.input.texts,
+      availableImages: [],
     });
 
     const result = await submitGenerationTask({
@@ -77,43 +61,15 @@ export class MusicNodeProcessor extends BaseNodeProcessor<MusicNodeActionData> {
       };
     }
 
-    const expiredTime = startTime + 5 * 60 * 1000;
-
-    while (Date.now() < expiredTime) {
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      const taskResult = await getPaintboardTask({ taskId: result.data.id });
-      if (taskResult.data?.status === 'completed') {
-        // 存储key而不是URL
-        return {
-          success: true,
-          timestamp: new Date(),
-          executionTime: Date.now() - startTime,
-          data: { musics: taskResult.data.results.map(result => result.key) },
-        };
-      }
-
-      if (taskResult.data?.status === 'pending') {
-        continue;
-      }
-
-      if (taskResult.data?.status === 'failed') {
-        return {
-          success: false,
-          timestamp: new Date(),
-          executionTime: Date.now() - startTime,
-          error: taskResult.data.error || 'Failed to generate music',
-          data: { musics: [] },
-        };
-      }
-    }
-
-    return {
-      success: false,
-      timestamp: new Date(),
-      executionTime: Date.now() - startTime,
-      error: 'Failed to generate music',
-      data: { musics: [] },
-    };
+    // 使用工具函数轮询任务状态
+    return pollGenerationTask({
+      taskId: result.data.id,
+      startTime,
+      resultMapper: resultMappers.musics,
+      errorMessage: {
+        failed: 'Failed to generate music',
+        timeout: 'Music generation timeout',
+      },
+    });
   }
 }
