@@ -76,7 +76,7 @@ export class AudioNodeProcessor extends BaseNodeProcessor<AudioNodeActionData> {
           success: true,
           timestamp: new Date(),
           executionTime: Date.now() - startTime,
-          data: { audios: taskResult.data.results.map(result => ({ key: result.key })) },
+          data: { audios: taskResult.data.results.map(result => result.key) },
         };
       }
 

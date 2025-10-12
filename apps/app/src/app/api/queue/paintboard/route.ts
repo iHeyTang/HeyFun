@@ -2,6 +2,7 @@
 
 import { restoreAigcTaskResultToStorage } from '@/lib/server/aigc';
 import { prisma } from '@/lib/server/prisma';
+import storage from '@/lib/server/storage';
 import { to } from '@/lib/shared/to';
 import { PaintboardTasks } from '@prisma/client';
 import AIGC, { SubmitTaskParams } from '@repo/llm/aigc';
@@ -14,6 +15,17 @@ export const POST = async (req: Request) => {
     const task = await prisma.paintboardTasks.findUnique({ where: { id: body.taskId } });
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+
+    // 获取引用OSS的URL
+    if ('firstFrame' in task.params && task.params.firstFrame) {
+      task.params.firstFrame = await storage.getSignedUrl(task.params.firstFrame, { expiresIn: 3600 });
+    }
+    if ('lastFrame' in task.params && task.params.lastFrame) {
+      task.params.lastFrame = await storage.getSignedUrl(task.params.lastFrame, { expiresIn: 3600 });
+    }
+    if ('referenceImage' in task.params && task.params.referenceImage) {
+      task.params.referenceImage = await Promise.all(task.params.referenceImage.map(item => storage.getSignedUrl(item, { expiresIn: 3600 })));
     }
 
     const [error, externalTaskId] = await to(AIGC.submitGenerationTask(task.model, task.params));

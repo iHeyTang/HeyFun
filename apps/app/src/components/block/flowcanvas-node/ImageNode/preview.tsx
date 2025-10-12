@@ -5,7 +5,7 @@ import { FullscreenModal, fullscreenModalRef } from './fullscreen';
 
 interface ImagePreviewProps {
   coverKey?: string;
-  images?: { key: string; url: string }[];
+  images?: string[];
   className?: string;
   onLoad?: () => void;
   onSetCover?: (key: string) => void;
@@ -25,7 +25,8 @@ export function ImagePreview({ coverKey, images, className, onLoad, onSetCover }
   const finalClassName = className ? `${defaultClassName} ${className}` : defaultClassName;
 
   const coverUrl = useMemo(() => {
-    return images?.find(image => image.key === coverKey)?.url || images?.[0]?.url;
+    const key = coverKey && images?.includes(coverKey) ? coverKey : images?.[0];
+    return key ? `/api/oss/${key}` : undefined;
   }, [coverKey, images]);
 
   return (

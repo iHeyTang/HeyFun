@@ -25,7 +25,6 @@ export interface ImageNodeTooltipProps {
 const processor = new ImageNodeProcessor();
 
 const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: ImageNodeTooltipProps) => {
-  const { getSignedUrl } = useSignedUrl();
   const t = useTranslations('flowcanvas.nodeTooltips');
   const tCommon = useTranslations('flowcanvas.nodeTooltips.common');
 
@@ -72,39 +71,18 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       const input = flowGraph.getNodeInputsById(nodeId);
 
       const inputTexts = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
-      const inputImages = await Promise.all(
-        Array.from(input.entries()).map(async ([key, value]) => ({
-          nodeId: key,
-          images: await Promise.all(
-            value.images?.map(async img => {
-              const url = await getSignedUrl(img.key!);
-              return { key: img.key, url };
-            }) || [],
-          ),
-        })),
-      );
-      const inputVideos = await Promise.all(
-        Array.from(input.entries()).map(async ([key, value]) => ({
-          nodeId: key,
-          videos: await Promise.all(
-            value.videos?.map(async img => {
-              const url = await getSignedUrl(img.key!);
-              return { key: img.key, url };
-            }) || [],
-          ),
-        })),
-      );
-      const inputAudios = await Promise.all(
-        Array.from(input.entries()).map(async ([key, value]) => ({
-          nodeId: key,
-          audios: await Promise.all(
-            value.audios?.map(async audio => {
-              const url = await getSignedUrl(audio.key!);
-              return { key: audio.key, url };
-            }) || [],
-          ),
-        })),
-      );
+      const inputImages = Array.from(input.entries()).map(([key, value]) => ({
+        nodeId: key,
+        images: value.images || [],
+      }));
+      const inputVideos = Array.from(input.entries()).map(([key, value]) => ({
+        nodeId: key,
+        videos: value.videos || [],
+      }));
+      const inputAudios = Array.from(input.entries()).map(([key, value]) => ({
+        nodeId: key,
+        audios: value.audios || [],
+      }));
 
       const result = await processor.execute({
         input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: [] },
@@ -113,7 +91,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       if (result.success) {
         updateStatus(NodeStatus.COMPLETED);
         onSubmitSuccess?.({ images: [...(node.data.output?.images || []), ...(result.data?.images || [])] });
-        onValueChange?.({ ...actionData, selectedKey: result.data?.images?.[0]?.key });
+        onValueChange?.({ ...actionData, selectedKey: result.data?.images?.[0] });
       } else {
         updateStatus(NodeStatus.FAILED);
       }
@@ -134,13 +112,13 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       const list: MentionItem[] = [];
       nodeInputs.forEach(input => {
         if (input.data.output?.images) {
-          input.data.output.images.forEach(async (image, index) => {
+          input.data.output.images.forEach((imageKey, index) => {
             list.push({
               type: 'image' as const,
-              id: `image:${image.key!}`,
-              imageAlt: image.key || '',
+              id: `image:${imageKey}`,
+              imageAlt: imageKey,
               label: `${input.data.label} ${index + 1}`,
-              imageUrl: image.url ? image.url : await getSignedUrl(image.key!),
+              imageUrl: `/api/oss/${imageKey}`,
             });
           });
         }
@@ -164,18 +142,20 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     async (mentionId: string) => {
       const type = mentionId.split(':')[0];
       if (type === 'image') {
-        const url = await getSignedUrl(mentionId.split(':')[1] || '');
-        fullscreenModalRef.current?.show(url || '', 'image');
+        const key = mentionId.split(':')[1] || '';
+        const url = `/api/oss/${key}`;
+        fullscreenModalRef.current?.show(url, 'image');
         return;
       }
 
       if (type === 'video') {
-        const url = await getSignedUrl(mentionId.split(':')[1] || '');
-        fullscreenModalRef.current?.show(url || '', 'video');
+        const key = mentionId.split(':')[1] || '';
+        const url = `/api/oss/${key}`;
+        fullscreenModalRef.current?.show(url, 'video');
         return;
       }
     },
-    [getSignedUrl],
+    [],
   );
 
   return (

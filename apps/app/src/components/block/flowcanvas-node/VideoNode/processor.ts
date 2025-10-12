@@ -16,7 +16,7 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
     const { actionData } = data;
     const { prompt, selectedModel, aspectRatio, duration, resolution } = actionData || {};
 
-    const images = data.input.images.map(image => image.images?.map(img => img)).flat();
+    const images = data.input.images.map(image => image.images || []).flat();
 
     // 如果输入全部为空，则直接返回
     if (images.length === 0 && !actionData?.prompt) {
@@ -59,16 +59,16 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
     imageMatches.forEach((match, index) => {
       const imageKey = match[1];
       if (imageKey) {
-        const image = images.find(image => image?.key === imageKey);
-        if (image && image?.url) {
-          mentionedImages.push(image.url);
+        const imageExists = images.includes(imageKey);
+        if (imageExists) {
+          mentionedImages.push(imageKey);
           processedPrompt = processedPrompt.replace(match[0], `图${index + 1}`);
         }
       }
     });
 
     // 如果 prompt 中有提及图片，使用提及的图片；否则使用输入的所有图片
-    const referenceImages = mentionedImages.length > 0 ? mentionedImages : images[0]?.url ? [images[0].url] : [];
+    const referenceImages = mentionedImages.length > 0 ? mentionedImages : images[0] ? images[0] : [];
 
     const result = await submitGenerationTask({
       model: selectedModel,
@@ -97,7 +97,7 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
           success: true,
           timestamp: new Date(),
           executionTime: Date.now() - startTime,
-          data: { videos: taskResult.data.results.map(result => ({ key: result.key })) },
+          data: { videos: taskResult.data.results.map(result => result.key) },
         };
       }
 

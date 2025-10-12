@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useTranslations } from 'next-intl';
 
 export interface fullscreenModalRef {
-  show: (data: { coverKey?: string; images?: { key: string; url: string }[] }) => void;
+  show: (data: { coverKey?: string; images?: string[] }) => void;
 }
 
 export interface FullscreenModalProps {
@@ -18,7 +18,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
   const t = useTranslations('flowcanvas.nodes');
 
   const [coverKey, setCoverKey] = useState<string | undefined>();
-  const [images, setImages] = useState<{ key: string; url: string }[] | undefined>();
+  const [images, setImages] = useState<string[] | undefined>();
   const [isClosing, setIsClosing] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -39,14 +39,14 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
   }, [currentIndex, images]);
 
   useImperativeHandle(ref, () => ({
-    show: (data: { coverKey?: string; images?: { key: string; url: string }[] }) => {
+    show: (data: { coverKey?: string; images?: string[] }) => {
       setCoverKey(data.coverKey);
       setImages(data.images);
       setIsClosing(false);
       setIsOpening(true);
       // 找到 coverKey 对应的索引
       if (data.coverKey && data.images) {
-        const index = data.images.findIndex(img => img.key === data.coverKey);
+        const index = data.images.indexOf(data.coverKey);
         setCurrentIndex(index >= 0 ? index : 0);
       } else {
         setCurrentIndex(0);
@@ -95,7 +95,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
     (e: React.MouseEvent) => {
       e.stopPropagation();
       if (images && images.length > 0 && onSetCover && images[currentIndex]) {
-        const newCoverKey = images[currentIndex].key;
+        const newCoverKey = images[currentIndex];
         // 立即更新本地状态，使UI立刻响应
         setCoverKey(newCoverKey);
         // 调用父组件回调
@@ -128,7 +128,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
       } else if (e.key === 'c' || e.key === 'C') {
         // 设置封面：c/C 键
         if (images && images.length > 0 && onSetCover && images[currentIndex]) {
-          const newCoverKey = images[currentIndex].key;
+          const newCoverKey = images[currentIndex];
           setCoverKey(newCoverKey);
           onSetCover(newCoverKey);
         }
@@ -145,9 +145,10 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
     return null;
   }
 
-  const currentImage = images[currentIndex];
+  const currentImageKey = images[currentIndex];
+  const currentImageUrl = currentImageKey ? `/api/oss/${currentImageKey}` : undefined;
   const hasMultipleImages = images.length > 1;
-  const isCurrentImageCover = coverKey && currentImage && currentImage.key === coverKey;
+  const isCurrentImageCover = coverKey && currentImageKey && currentImageKey === coverKey;
 
   return createPortal(
     <div
@@ -169,11 +170,11 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex flex-col gap-2 p-3">
-              {images.map((img, idx) => {
-                const isCover = coverKey && img.key === coverKey;
+              {images.map((imageKey, idx) => {
+                const isCover = coverKey && imageKey === coverKey;
                 return (
                   <button
-                    key={img.key}
+                    key={imageKey}
                     className={`relative h-32 w-32 flex-shrink-0 overflow-hidden rounded border-2 transition-all duration-150 ${
                       idx === currentIndex ? 'border-primary scale-110' : 'border-muted/50 hover:border-muted/70'
                     }`}
@@ -182,7 +183,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
                       setCurrentIndex(idx);
                     }}
                   >
-                    <img src={img.url} alt={`Thumbnail ${idx + 1}`} className="h-full w-full object-cover" />
+                    <img src={`/api/oss/${imageKey}`} alt={`Thumbnail ${idx + 1}`} className="h-full w-full object-cover" />
                     {/* 封面徽标 */}
                     {isCover && (
                       <div className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-yellow-400 shadow-lg">
@@ -198,7 +199,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
 
         {/* 主图片 */}
         <img
-          src={currentImage?.url}
+          src={currentImageUrl}
           className="h-auto max-h-full w-auto max-w-full rounded object-contain shadow-2xl"
           alt={`Image ${currentIndex + 1}/${images.length}`}
           onClick={e => e.stopPropagation()}

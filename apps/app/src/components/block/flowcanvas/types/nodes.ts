@@ -8,10 +8,10 @@ export type NodeType = 'image' | 'video' | 'audio' | 'music' | 'text' | 'default
  * 节点输出接口
  */
 export interface NodeOutput {
-  images?: Array<{ url?: string; key?: string }>;
-  videos?: Array<{ url?: string; key?: string }>;
-  audios?: Array<{ url?: string; key?: string }>;
-  musics?: Array<{ url?: string; key?: string }>;
+  images?: string[];
+  videos?: string[];
+  audios?: string[];
+  musics?: string[];
   texts?: string[];
 }
 
@@ -74,10 +74,10 @@ export interface NodeExecutorExecuteResult {
 export type BaseNodeActionData<T extends Record<string, any> = Record<string, any>> = {
   input: {
     texts: { nodeId: string; texts?: string[] }[];
-    images: { nodeId: string; images?: { url?: string; key?: string }[] }[];
-    videos: { nodeId: string; videos?: { url?: string; key?: string }[] }[];
-    audios: { nodeId: string; audios?: { url?: string; key?: string }[] }[];
-    musics: { nodeId: string; musics?: { url?: string; key?: string }[] }[];
+    images: { nodeId: string; images?: string[] }[];
+    videos: { nodeId: string; videos?: string[] }[];
+    audios: { nodeId: string; audios?: string[] }[];
+    musics: { nodeId: string; musics?: string[] }[];
   };
   actionData?: T;
 };

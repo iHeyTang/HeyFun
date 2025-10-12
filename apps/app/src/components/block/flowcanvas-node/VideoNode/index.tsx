@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { VideoNodeActionData } from './processor';
 import { VideoNodeTooltip, VideoNodeTooltipProps } from './tooltip';
 import { VideoPreview } from '@/components/block/preview/video-preview';
-import { getSignedUrl } from '@/actions/oss';
 
 interface VideoNodeProps {
   data: NodeData<VideoNodeActionData>;
@@ -17,12 +16,9 @@ export { VideoNodeProcessor } from './processor';
 export default function VideoNode({ data, id }: VideoNodeProps) {
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
-  const [videoUrl, setVideoUrl] = useState<string | undefined>();
-  const [videoKey, setVideoKey] = useState<string | undefined>(data.output?.videos?.[0]?.key);
+  const [videoKey, setVideoKey] = useState<string | undefined>(data.output?.videos?.[0]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const status = useNodeStatusById(id);
-
-  const [isVideoLoading, setIsVideoLoading] = useState(false);
 
   const handleUploadFIle = useCallback(async (file: File) => {
     const res = await uploadFile(file, 'flowcanvas');
@@ -31,7 +27,7 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
 
   // 监听data.output变化，强制更新组件状态
   useEffect(() => {
-    const newVideoKey = data.output?.videos?.[0]?.key;
+    const newVideoKey = data.output?.videos?.[0];
     if (newVideoKey !== videoKey) {
       console.log(`VideoNode ${id} - 检测到输出数据变化:`, {
         oldKey: videoKey,
@@ -42,28 +38,6 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
       setVideoKey(newVideoKey);
     }
   }, [data.output, data.output?.videos, id, videoKey, data]);
-
-  // 将key转换为URL进行展示
-  useEffect(() => {
-    if (videoKey) {
-      setIsVideoLoading(true);
-      getSignedUrl({ fileKey: videoKey })
-        .then(result => {
-          if (result.data) {
-            setVideoUrl(result.data);
-          }
-        })
-        .catch(error => {
-          console.error('Failed to get signed URL:', error);
-        })
-        .finally(() => {
-          setIsVideoLoading(false);
-        });
-    } else {
-      setVideoUrl(undefined);
-      setIsVideoLoading(false);
-    }
-  }, [videoKey]);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -82,7 +56,7 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
 
     try {
       const key = await handleUploadFIle(file);
-      flowGraph.updateNodeData(id, { output: { videos: [{ key }] } });
+      flowGraph.updateNodeData(id, { output: { videos: [key] } });
     } catch (error) {
       console.error('Video upload failed:', error);
       alert('Video upload failed. Please try again.');
@@ -111,7 +85,7 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
         }
       >
         <div className="relative">
-          {(status.status === NodeStatus.PROCESSING || isVideoLoading) && (
+          {status.status === NodeStatus.PROCESSING && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded">
               {/* 高斯模糊蒙版 */}
               <div className="bg-accent/20 absolute inset-0 rounded backdrop-blur-lg"></div>
@@ -122,13 +96,12 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
             </div>
           )}
 
-          {videoUrl ? (
+          {videoKey ? (
             <VideoPreview
-              src={videoUrl}
+              src={`/api/oss/${videoKey}`}
               autoPlayOnHover={true}
               className="bg-muted max-h-[200px] w-full rounded"
               loop
-              onLoad={() => setIsVideoLoading(false)}
             />
           ) : (
             <div className="bg-muted flex items-center justify-center rounded p-2 text-center transition-colors">

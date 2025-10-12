@@ -1,4 +1,3 @@
-import { getSignedUrl } from '@/actions/oss';
 import { AudioPlayer } from '@/components/block/audio-player';
 import { BaseNode, NodeData, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
 import { uploadFile } from '@/lib/browser/file';
@@ -20,12 +19,9 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
 
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | undefined>();
-  const [audioKey, setAudioKey] = useState<string | undefined>(data.output?.audios?.[0]?.key);
+  const [audioKey, setAudioKey] = useState<string | undefined>(data.output?.audios?.[0]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const status = useNodeStatusById(id);
-
-  const [isAudioLoading, setIsAudioLoading] = useState(false);
 
   const handleUploadFile = useCallback(async (file: File) => {
     const res = await uploadFile(file, 'flowcanvas');
@@ -34,7 +30,7 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
 
   // 监听data.output变化，强制更新组件状态
   useEffect(() => {
-    const newAudioKey = data.output?.audios?.[0]?.key;
+    const newAudioKey = data.output?.audios?.[0];
     if (newAudioKey !== audioKey) {
       console.log(`AudioNode ${id} - 检测到输出数据变化:`, {
         oldKey: audioKey,
@@ -45,28 +41,6 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
       setAudioKey(newAudioKey);
     }
   }, [data.output, data.output?.audios, id, audioKey, data]);
-
-  // 将key转换为URL进行展示
-  useEffect(() => {
-    if (audioKey) {
-      setIsAudioLoading(true);
-      getSignedUrl({ fileKey: audioKey })
-        .then(result => {
-          if (result.data) {
-            setAudioUrl(result.data);
-          }
-        })
-        .catch(error => {
-          console.error('Failed to get signed URL:', error);
-        })
-        .finally(() => {
-          setIsAudioLoading(false);
-        });
-    } else {
-      setAudioUrl(undefined);
-      setIsAudioLoading(false);
-    }
-  }, [audioKey]);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -85,7 +59,7 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
 
     try {
       const key = await handleUploadFile(file);
-      flowGraph.updateNodeData(id, { output: { audios: [{ key }] } });
+      flowGraph.updateNodeData(id, { output: { audios: [key] } });
     } catch (error) {
       console.error('Audio upload failed:', error);
       alert(t('audioUploadFailed'));
@@ -115,7 +89,7 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
         className="w-100"
       >
         <div className="relative">
-          {(status.status === NodeStatus.PROCESSING || isAudioLoading) && (
+          {status.status === NodeStatus.PROCESSING && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded">
               {/* 高斯模糊蒙版 */}
               <div className="bg-accent/20 absolute inset-0 rounded backdrop-blur-lg"></div>
@@ -126,9 +100,9 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
             </div>
           )}
 
-          {audioUrl ? (
+          {audioKey ? (
             <div className="bg-muted flex w-full items-center justify-center rounded p-4">
-              <AudioPlayer src={audioUrl} className="w-full max-w-[300px]" onLoadedData={() => setIsAudioLoading(false)} />
+              <AudioPlayer src={`/api/oss/${audioKey}`} className="w-full max-w-[300px]" />
             </div>
           ) : (
             <div className="bg-muted flex items-center justify-center rounded p-2 text-center transition-colors">

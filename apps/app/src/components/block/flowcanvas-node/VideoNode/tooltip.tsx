@@ -24,7 +24,6 @@ export interface VideoNodeTooltipProps {
 const processor = new VideoNodeProcessor();
 
 const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: VideoNodeTooltipProps) => {
-  const { getSignedUrl } = useSignedUrl();
   const t = useTranslations('flowcanvas.nodeTooltips');
   const tCommon = useTranslations('flowcanvas.nodeTooltips.common');
 
@@ -84,39 +83,18 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       const input = flowGraph.getNodeInputsById(nodeId);
 
       const inputTexts = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
-      const inputImages = await Promise.all(
-        Array.from(input.entries()).map(async ([key, value]) => ({
-          nodeId: key,
-          images: await Promise.all(
-            value.images?.map(async img => {
-              const url = await getSignedUrl(img.key!);
-              return { key: img.key, url };
-            }) || [],
-          ),
-        })),
-      );
-      const inputVideos = await Promise.all(
-        Array.from(input.entries()).map(async ([key, value]) => ({
-          nodeId: key,
-          videos: await Promise.all(
-            value.videos?.map(async img => {
-              const url = await getSignedUrl(img.key!);
-              return { key: img.key, url };
-            }) || [],
-          ),
-        })),
-      );
-      const inputAudios = await Promise.all(
-        Array.from(input.entries()).map(async ([key, value]) => ({
-          nodeId: key,
-          audios: await Promise.all(
-            value.audios?.map(async audio => {
-              const url = await getSignedUrl(audio.key!);
-              return { key: audio.key, url };
-            }) || [],
-          ),
-        })),
-      );
+      const inputImages = Array.from(input.entries()).map(([key, value]) => ({
+        nodeId: key,
+        images: value.images || [],
+      }));
+      const inputVideos = Array.from(input.entries()).map(([key, value]) => ({
+        nodeId: key,
+        videos: value.videos || [],
+      }));
+      const inputAudios = Array.from(input.entries()).map(([key, value]) => ({
+        nodeId: key,
+        audios: value.audios || [],
+      }));
 
       const result = await processor.execute({
         input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: [] },
@@ -152,13 +130,13 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       const list: MentionItem[] = [];
       nodeInputs.forEach(input => {
         if (input.data.output?.images) {
-          input.data.output.images.forEach(async (image, index) => {
+          input.data.output.images.forEach((imageKey, index) => {
             list.push({
               type: 'image' as const,
-              id: `image:${image.key!}`,
-              imageAlt: image.key || '',
+              id: `image:${imageKey}`,
+              imageAlt: imageKey,
               label: `${input.data.label} ${index + 1}`,
-              imageUrl: image.url ? image.url : await getSignedUrl(image.key!),
+              imageUrl: `/api/oss/${imageKey}`,
             });
           });
         }

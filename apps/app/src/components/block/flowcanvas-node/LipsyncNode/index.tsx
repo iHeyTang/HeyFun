@@ -1,4 +1,3 @@
-import { getSignedUrl } from '@/actions/oss';
 import { BaseNode, NodeData, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
 import { VideoPreview } from '@/components/block/preview/video-preview';
 import { Loader2 } from 'lucide-react';
@@ -18,15 +17,12 @@ export default function LipsyncNode({ data, id }: LipsyncNodeProps) {
   const t = useTranslations('flowcanvas.nodes');
 
   const flowGraph = useFlowGraph();
-  const [videoUrl, setVideoUrl] = useState<string | undefined>();
-  const [videoKey, setVideoKey] = useState<string | undefined>(data.output?.videos?.[0]?.key);
+  const [videoKey, setVideoKey] = useState<string | undefined>(data.output?.videos?.[0]);
   const status = useNodeStatusById(id);
-
-  const [isVideoLoading, setIsVideoLoading] = useState(false);
 
   // 监听data.output变化，强制更新组件状态
   useEffect(() => {
-    const newVideoKey = data.output?.videos?.[0]?.key;
+    const newVideoKey = data.output?.videos?.[0];
     if (newVideoKey !== videoKey) {
       console.log(`LipsyncNode ${id} - 检测到输出数据变化:`, {
         oldKey: videoKey,
@@ -37,28 +33,6 @@ export default function LipsyncNode({ data, id }: LipsyncNodeProps) {
       setVideoKey(newVideoKey);
     }
   }, [data.output, data.output?.videos, id, videoKey, data]);
-
-  // 将key转换为URL进行展示
-  useEffect(() => {
-    if (videoKey) {
-      setIsVideoLoading(true);
-      getSignedUrl({ fileKey: videoKey })
-        .then(result => {
-          if (result.data) {
-            setVideoUrl(result.data);
-          }
-        })
-        .catch(error => {
-          console.error('Failed to get signed URL:', error);
-        })
-        .finally(() => {
-          setIsVideoLoading(false);
-        });
-    } else {
-      setVideoUrl(undefined);
-      setIsVideoLoading(false);
-    }
-  }, [videoKey]);
 
   // 处理actionData变化
   const handleActionDataChange = useCallback<NonNullable<LipsyncNodeTooltipProps['onValueChange']>>(newActionData => {
@@ -90,7 +64,7 @@ export default function LipsyncNode({ data, id }: LipsyncNodeProps) {
         }
       >
         <div className="relative">
-          {(status.status === NodeStatus.PROCESSING || isVideoLoading) && (
+          {status.status === NodeStatus.PROCESSING && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded">
               {/* 高斯模糊蒙版 */}
               <div className="bg-accent/20 absolute inset-0 rounded backdrop-blur-lg"></div>
@@ -101,13 +75,12 @@ export default function LipsyncNode({ data, id }: LipsyncNodeProps) {
             </div>
           )}
 
-          {videoUrl ? (
+          {videoKey ? (
             <VideoPreview
-              src={videoUrl}
+              src={`/api/oss/${videoKey}`}
               autoPlayOnHover={true}
               className="bg-muted max-h-[200px] w-full rounded"
               loop
-              onLoad={() => setIsVideoLoading(false)}
             />
           ) : (
             <div className="bg-muted flex items-center justify-center rounded p-2 text-center transition-colors">

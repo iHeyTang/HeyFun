@@ -18,7 +18,6 @@ export interface LipsyncNodeTooltipProps {
 const processor = new LipsyncNodeProcessor();
 
 const LipsyncNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: LipsyncNodeTooltipProps) => {
-  const { getSignedUrl } = useSignedUrl();
   const t = useTranslations('flowcanvas.nodeTooltips.lipsync');
   const tCommon = useTranslations('flowcanvas.nodeTooltips.common');
 
@@ -75,39 +74,18 @@ const LipsyncNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange,
       const input = flowGraph.getNodeInputsById(nodeId);
 
       const inputTexts = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
-      const inputImages = await Promise.all(
-        Array.from(input.entries()).map(async ([key, value]) => ({
-          nodeId: key,
-          images: await Promise.all(
-            value.images?.map(async img => {
-              const url = await getSignedUrl(img.key!);
-              return { key: img.key, url };
-            }) || [],
-          ),
-        })),
-      );
-      const inputVideos = await Promise.all(
-        Array.from(input.entries()).map(async ([key, value]) => ({
-          nodeId: key,
-          videos: await Promise.all(
-            value.videos?.map(async video => {
-              const url = await getSignedUrl(video.key!);
-              return { key: video.key, url };
-            }) || [],
-          ),
-        })),
-      );
-      const inputAudios = await Promise.all(
-        Array.from(input.entries()).map(async ([key, value]) => ({
-          nodeId: key,
-          audios: await Promise.all(
-            value.audios?.map(async audio => {
-              const url = await getSignedUrl(audio.key!);
-              return { key: audio.key, url };
-            }) || [],
-          ),
-        })),
-      );
+      const inputImages = Array.from(input.entries()).map(([key, value]) => ({
+        nodeId: key,
+        images: value.images || [],
+      }));
+      const inputVideos = Array.from(input.entries()).map(([key, value]) => ({
+        nodeId: key,
+        videos: value.videos || [],
+      }));
+      const inputAudios = Array.from(input.entries()).map(([key, value]) => ({
+        nodeId: key,
+        audios: value.audios || [],
+      }));
 
       const result = await processor.execute({
         input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: [] },

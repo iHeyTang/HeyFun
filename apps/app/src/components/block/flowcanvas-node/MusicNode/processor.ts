@@ -89,7 +89,7 @@ export class MusicNodeProcessor extends BaseNodeProcessor<MusicNodeActionData> {
           success: true,
           timestamp: new Date(),
           executionTime: Date.now() - startTime,
-          data: { musics: taskResult.data.results.map(result => ({ key: result.key })) },
+          data: { musics: taskResult.data.results.map(result => result.key) },
         };
       }
 

@@ -25,7 +25,6 @@ export interface AudioNodeTooltipProps {
 const processor = new AudioNodeProcessor();
 
 const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, onSubmitSuccess }: AudioNodeTooltipProps) => {
-  const { getSignedUrl } = useSignedUrl();
   const t = useTranslations('flowcanvas.nodeTooltips');
   const tCommon = useTranslations('flowcanvas.nodeTooltips.common');
 
@@ -90,28 +89,14 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       const input = flowGraph.getNodeInputsById(nodeId);
 
       const inputTexts = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
-      const inputImages = await Promise.all(
-        Array.from(input.entries()).map(async ([key, value]) => ({
-          nodeId: key,
-          images: await Promise.all(
-            value.images?.map(async img => {
-              const url = await getSignedUrl(img.key!);
-              return { key: img.key, url };
-            }) || [],
-          ),
-        })),
-      );
-      const inputVideos = await Promise.all(
-        Array.from(input.entries()).map(async ([key, value]) => ({
-          nodeId: key,
-          videos: await Promise.all(
-            value.videos?.map(async img => {
-              const url = await getSignedUrl(img.key!);
-              return { key: img.key, url };
-            }) || [],
-          ),
-        })),
-      );
+      const inputImages = Array.from(input.entries()).map(([key, value]) => ({
+        nodeId: key,
+        images: value.images || [],
+      }));
+      const inputVideos = Array.from(input.entries()).map(([key, value]) => ({
+        nodeId: key,
+        videos: value.videos || [],
+      }));
 
       const result = await processor.execute({
         input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: [], musics: [] },

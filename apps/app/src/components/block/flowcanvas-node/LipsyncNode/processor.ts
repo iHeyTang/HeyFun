@@ -13,8 +13,8 @@ export class LipsyncNodeProcessor extends BaseNodeProcessor<LipsyncNodeActionDat
     const { selectedModel } = actionData || {};
 
     // 获取输入的视频和音频
-    const videos = data.input.videos.map(video => video.videos?.map(v => v)).flat();
-    const audios = data.input.audios.map(audio => audio.audios?.map(a => a)).flat();
+    const videos = data.input.videos.map(video => video.videos || []).flat();
+    const audios = data.input.audios.map(audio => audio.audios || []).flat();
 
     // 如果没有视频或音频输入，则直接返回
     if (videos.length === 0 || audios.length === 0) {
@@ -36,23 +36,23 @@ export class LipsyncNodeProcessor extends BaseNodeProcessor<LipsyncNodeActionDat
     }
 
     // 使用第一个视频和第一个音频
-    const inputVideo = videos[0];
-    const inputAudio = audios[0];
+    const inputVideoKey = videos[0];
+    const inputAudioKey = audios[0];
 
-    if (!inputVideo?.url || !inputAudio?.url) {
+    if (!inputVideoKey || !inputAudioKey) {
       return {
         success: false,
         timestamp: new Date(),
         executionTime: Date.now() - startTime,
-        error: '视频或音频URL无效',
+        error: '视频或音频Key无效',
       };
     }
 
     const result = await submitGenerationTask({
       model: selectedModel,
       params: {
-        video: inputVideo.url,
-        audio: inputAudio.url,
+        video: `/api/oss/${inputVideoKey}`,
+        audio: `/api/oss/${inputAudioKey}`,
       },
     });
 
@@ -78,7 +78,7 @@ export class LipsyncNodeProcessor extends BaseNodeProcessor<LipsyncNodeActionDat
           success: true,
           timestamp: new Date(),
           executionTime: Date.now() - startTime,
-          data: { videos: taskResult.data.results.map(result => ({ key: result.key })) },
+          data: { videos: taskResult.data.results.map(result => result.key) },
         };
       }
 
