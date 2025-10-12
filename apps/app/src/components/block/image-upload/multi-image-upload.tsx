@@ -1,6 +1,5 @@
 'use client';
 
-import { useSignedUrl } from '@/hooks/use-signed-url';
 import { uploadFile, validateFile } from '@/lib/browser/file';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -10,7 +9,7 @@ import { toast } from 'sonner';
 
 export interface MultiImageUploadProps {
   value?: string[]; // 上传后的文件URL数组
-  onChange?: (urls: string[]) => void; // 当URL数组变化时回调
+  onChange?: (keys: string[]) => void; // 当URL数组变化时回调
   accept?: string;
   maxSize?: number; // in bytes
   maxFiles?: number; // 最大文件数量
@@ -45,8 +44,6 @@ export const MultiImageUpload = React.forwardRef<HTMLDivElement, MultiImageUploa
     const [uploading, setUploading] = React.useState(false);
     const [uploadingFiles, setUploadingFiles] = React.useState<Set<string>>(new Set());
     const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-    const { getSignedUrl } = useSignedUrl();
 
     const handleFileUpload = async (file: File): Promise<string> => {
       const error = validateFile(file, accept, maxSize);
@@ -88,8 +85,7 @@ export const MultiImageUpload = React.forwardRef<HTMLDivElement, MultiImageUploa
       const uploadPromises = fileArray.map(async file => {
         try {
           const key = await handleFileUpload(file);
-          const url = await getSignedUrl(key);
-          newUrls.push(url);
+          newUrls.push(key);
         } catch (error) {
           errors.push(`${file.name}: ${error instanceof Error ? error.message : 'Upload failed'}`);
         }
@@ -155,10 +151,10 @@ export const MultiImageUpload = React.forwardRef<HTMLDivElement, MultiImageUploa
       <div ref={ref} className={cn('w-full', className)}>
         <div className="flex flex-wrap gap-2">
           {/* 已上传的图片 */}
-          {value.map((url, index) => (
-            <div key={`${url}-${index}`} className={cn(defaultItemClassName, 'w-fit', itemClassName)}>
+          {value.map((key, index) => (
+            <div key={`${key}-${index}`} className={cn(defaultItemClassName, 'w-fit', itemClassName)}>
               <div className="border-border bg-muted/50 overflow relative h-full w-full">
-                <img src={url} alt={`Uploaded image ${index + 1}`} className="h-full w-full rounded-md object-cover" />
+                <img src={`/api/oss/${key}`} alt={`Uploaded image ${index + 1}`} className="h-full w-full rounded-md object-cover" />
 
                 {/* 删除按钮 */}
                 <button
@@ -170,7 +166,7 @@ export const MultiImageUpload = React.forwardRef<HTMLDivElement, MultiImageUploa
                 </button>
 
                 {/* 上传进度指示器 */}
-                {uploadingFiles.has(`${url}-${index}`) && (
+                {uploadingFiles.has(`${key}-${index}`) && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                     <motion.div
                       className="h-6 w-6 rounded-full border-2 border-white border-t-transparent"

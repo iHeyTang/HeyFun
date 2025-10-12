@@ -19,26 +19,26 @@ const useNavItems = () => {
       label: t('flowcanvas'),
       path: '/dashboard/flowcanvas',
     },
-    {
-      icon: MessageSquare,
-      label: t('chat'),
-      path: '/dashboard/chat',
-    },
-    {
-      icon: Bot,
-      label: t('tasks'),
-      path: '/dashboard/tasks',
-    },
+    // {
+    //   icon: MessageSquare,
+    //   label: t('chat'),
+    //   path: '/dashboard/chat',
+    // },
+    // {
+    //   icon: Bot,
+    //   label: t('tasks'),
+    //   path: '/dashboard/tasks',
+    // },
     {
       icon: Palette,
       label: t('paintboard'),
       path: '/dashboard/paintboard',
     },
-    {
-      icon: FolderOpen,
-      label: t('workspace'),
-      path: '/dashboard/workspace',
-    },
+    // {
+    //   icon: FolderOpen,
+    //   label: t('workspace'),
+    //   path: '/dashboard/workspace',
+    // },
   ];
 };
 

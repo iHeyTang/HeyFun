@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/server/prisma';
+import storage from '@/lib/server/storage';
 import { to } from '@/lib/shared/to';
 import { toJson } from '@/lib/utils';
 import AIGC from '@repo/llm/aigc';
@@ -34,7 +35,7 @@ export const { POST } = serve<VoiceCloneWorkflowConfig>(async context => {
     const cloneParams = {
       name: context.requestPayload.name,
       description: context.requestPayload.description,
-      audio: context.requestPayload.audio,
+      audio: await storage.getSignedUrl(context.requestPayload.audio),
       text: context.requestPayload.text,
     };
 

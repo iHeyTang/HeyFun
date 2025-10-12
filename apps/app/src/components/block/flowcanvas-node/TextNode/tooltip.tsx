@@ -3,7 +3,6 @@ import { TiptapEditor, TiptapEditorRef } from '@/components/block/flowcanvas/com
 import { ModelInfo, ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
 import { Button } from '@/components/ui/button';
 import { useLLM } from '@/hooks/use-llm';
-import { useSignedUrl } from '@/hooks/use-signed-url';
 import { MentionOptions } from '@tiptap/extension-mention';
 import { Editor } from '@tiptap/react';
 import { WandSparkles } from 'lucide-react';

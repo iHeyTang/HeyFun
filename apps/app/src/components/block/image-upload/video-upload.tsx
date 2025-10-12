@@ -1,7 +1,6 @@
 'use client';
 
 import { uploadVariants } from '@/components/ui/upload';
-import { useSignedUrl } from '@/hooks/use-signed-url';
 import { uploadFile, validateFile } from '@/lib/browser/file';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -44,8 +43,6 @@ export const VideoUpload = React.forwardRef<HTMLDivElement, VideoUploadProps>(
     const [uploading, setUploading] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    const { getSignedUrl } = useSignedUrl();
-
     const handleFileUpload = async (file: File) => {
       const error = validateFile(file, accept, maxSize);
       if (error) {
@@ -56,8 +53,7 @@ export const VideoUpload = React.forwardRef<HTMLDivElement, VideoUploadProps>(
       setUploading(true);
       try {
         const key = await uploadFile(file, uploadPath);
-        const url = await getSignedUrl(key);
-        onChange?.(url);
+        onChange?.(key);
         toast.success('Video uploaded successfully');
       } catch (error) {
         console.error('Upload error:', error);
@@ -117,7 +113,7 @@ export const VideoUpload = React.forwardRef<HTMLDivElement, VideoUploadProps>(
           // 显示视频预览
           <div className="relative w-full">
             <video
-              src={value}
+              src={`/api/oss/${value}`}
               controls
               className="h-auto max-h-[300px] w-full rounded border object-contain"
               onError={() => {

@@ -1,7 +1,6 @@
 'use client';
 
 import { uploadVariants } from '@/components/ui/upload';
-import { useSignedUrl } from '@/hooks/use-signed-url';
 import { uploadFile, validateFile } from '@/lib/browser/file';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -44,8 +43,6 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
     const [uploading, setUploading] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    const { getSignedUrl } = useSignedUrl();
-
     const handleFileUpload = async (file: File) => {
       const error = validateFile(file, accept, maxSize);
       if (error) {
@@ -56,8 +53,7 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
       setUploading(true);
       try {
         const key = await uploadFile(file, uploadPath);
-        const url = await getSignedUrl(key);
-        onChange?.(url);
+        onChange?.(key);
         toast.success('文件上传成功');
       } catch (error) {
         console.error('Upload error:', error);
@@ -119,7 +115,7 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
           <div className="group relative flex h-full w-full cursor-pointer items-center justify-center" onClick={handleClick}>
             {value && (
               <div className="relative h-full w-full">
-                <img src={value} alt="Uploaded file" className="h-full w-full rounded object-cover" />
+                <img src={`/api/oss/${value}`} alt="Uploaded file" className="h-full w-full rounded object-cover" />
                 <button
                   onClick={e => {
                     e.stopPropagation();

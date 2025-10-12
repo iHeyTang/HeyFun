@@ -3,7 +3,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { isAudioExtension, isImageExtension, isVideoExtension } from '@/lib/shared/file-type';
-import { useSignedUrl } from '@/hooks/use-signed-url';
 import { formatDate } from 'date-fns';
 import { Check, Clock, Copy, Download } from 'lucide-react';
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
@@ -234,7 +233,6 @@ function ResultCard({ result }: ResultCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // 使用简化后的 signed URL hook
-  const { getSignedUrl, error } = useSignedUrl();
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorState, setErrorState] = useState<string | null>(null);
@@ -245,7 +243,7 @@ function ResultCard({ result }: ResultCardProps) {
       try {
         setLoading(true);
         setErrorState(null);
-        const url = await getSignedUrl(result.key);
+        const url = `/api/oss/${result.key}`;
         setSignedUrl(url);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load media';
@@ -257,7 +255,7 @@ function ResultCard({ result }: ResultCardProps) {
     };
 
     fetchSignedUrl();
-  }, [result.key, getSignedUrl]);
+  }, [result.key]);
 
   const handleMouseEnter = () => {
     if (videoRef.current && signedUrl) {
@@ -284,7 +282,7 @@ function ResultCard({ result }: ResultCardProps) {
   }
 
   // 错误状态
-  const errorMsg = errorState || error(result.key);
+  const errorMsg = errorState;
   if (errorMsg || !signedUrl) {
     return (
       <div className="border-destructive bg-destructive/5 flex h-48 w-full items-center justify-center rounded-lg border">

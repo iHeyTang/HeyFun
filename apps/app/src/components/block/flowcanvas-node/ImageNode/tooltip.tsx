@@ -2,7 +2,6 @@ import { NodeOutput, NodeStatus, useFlowGraph, useNodeStatusById } from '@/compo
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAigc } from '@/hooks/use-llm';
-import { useSignedUrl } from '@/hooks/use-signed-url';
 import { MentionOptions } from '@tiptap/extension-mention';
 import { Editor } from '@tiptap/react';
 import { WandSparkles } from 'lucide-react';

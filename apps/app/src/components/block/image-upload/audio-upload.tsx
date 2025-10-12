@@ -1,7 +1,6 @@
 'use client';
 
 import { uploadVariants } from '@/components/ui/upload';
-import { useSignedUrl } from '@/hooks/use-signed-url';
 import { uploadFile, validateFile } from '@/lib/browser/file';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -54,8 +53,6 @@ export const AudioUpload = React.forwardRef<HTMLDivElement, AudioUploadProps>(
     const recordingIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
     const mediaStreamRef = React.useRef<MediaStream | null>(null);
 
-    const { getSignedUrl } = useSignedUrl();
-
     const handleFileUpload = async (file: File) => {
       const error = validateFile(file, accept, maxSize);
       if (error) {
@@ -66,9 +63,7 @@ export const AudioUpload = React.forwardRef<HTMLDivElement, AudioUploadProps>(
       setUploading(true);
       try {
         const key = await uploadFile(file, uploadPath);
-        console.log('key', key);
-        const url = await getSignedUrl(key);
-        onChange?.(url);
+        onChange?.(key);
         toast.success('Audio uploaded successfully');
       } catch (error) {
         console.error('Upload error:', error);
@@ -226,7 +221,7 @@ export const AudioUpload = React.forwardRef<HTMLDivElement, AudioUploadProps>(
           // 显示音频预览
           <div className="relative w-full rounded border p-4">
             <audio
-              src={value}
+              src={`/api/oss/${value}`}
               controls
               className="w-full"
               onError={() => {

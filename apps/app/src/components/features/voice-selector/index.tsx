@@ -2,7 +2,6 @@
 
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { useSignedUrl } from '@/hooks/use-signed-url';
 import { Voice } from '@repo/llm/aigc';
 import { Check, Mic, Play, Search } from 'lucide-react';
 import { useImperativeHandle, useMemo, useState, forwardRef, useEffect } from 'react';
@@ -25,8 +24,6 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const t = useTranslations('common.voiceSelector');
-
-  const { getSignedUrl } = useSignedUrl();
 
   const stopCurrentAudio = () => {
     if (currentAudio) {
@@ -73,7 +70,7 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
     stopCurrentAudio();
 
     if (voice.audio) {
-      const url = voice.audio.startsWith('http') ? voice.audio : await getSignedUrl(voice.audio);
+      const url = `/api/oss/${voice.audio}`;
 
       const audio = new Audio(url);
 

@@ -15,8 +15,6 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
     const { actionData } = data;
     const { prompt, selectedModel, aspectRatio, selectedKey } = actionData || {};
 
-    console.log('ImageNodeProcessor execute', data);
-
     const images = data.input.images.map(image => image.images || []).flat();
 
     // 如果输入全部为空，则直接返回

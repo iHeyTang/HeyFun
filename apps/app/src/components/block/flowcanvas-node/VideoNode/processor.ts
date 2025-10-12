@@ -68,8 +68,7 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
     });
 
     // 如果 prompt 中有提及图片，使用提及的图片；否则使用输入的所有图片
-    const referenceImages = mentionedImages.length > 0 ? mentionedImages : images[0] ? images[0] : [];
-
+    const referenceImages = mentionedImages.length > 0 ? mentionedImages : images[0] ? [images[0]] : [];
     const result = await submitGenerationTask({
       model: selectedModel,
       params: { prompt: processedPrompt, aspectRatio, duration, firstFrame: referenceImages?.[0], resolution },
