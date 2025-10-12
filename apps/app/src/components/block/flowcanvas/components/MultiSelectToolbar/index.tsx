@@ -1,9 +1,10 @@
 import { cn } from '@/lib/utils';
-import { ViewportPortal } from '@xyflow/react';
+import { useStore, ViewportPortal } from '@xyflow/react';
 import { useFlowGraph } from '../../hooks/useFlowGraph';
 import { PlayIcon } from 'lucide-react';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import type { FlowGraphNode } from '../../types/nodes';
 
 export { useMultiSelectToolbar } from './hooks/useMultiSelectToolbar';
 export type { MultiSelectToolbarExtensionContext, MultiSelectToolbarExtensionResult } from './hooks/useMultiSelectToolbar';
@@ -19,115 +20,119 @@ export interface MultiSelectToolbarProps {
   onExecuteSelectedNodes?: (selectedNodes: string[]) => Promise<void>;
 }
 
-export interface MultiSelectToolbarRef {
-  updatePosition: (selectedNodeIds: string[]) => void;
-}
+export const MultiSelectToolbar = ({ selecting, selectedNodes, className, onExecuteSelectedNodes }: MultiSelectToolbarProps) => {
+  const flowGraph = useFlowGraph();
+  const t = useTranslations('flowcanvas.toolbar');
 
-export const MultiSelectToolbar = forwardRef<MultiSelectToolbarRef, MultiSelectToolbarProps>(
-  ({ selecting, selectedNodes, className, onExecuteSelectedNodes }, ref) => {
-    const flowGraph = useFlowGraph();
-    const t = useTranslations('flowcanvas.toolbar');
+  const toolbarRef = useRef<HTMLDivElement>(null);
 
-    const toolbarRef = useRef<HTMLDivElement>(null);
-
-    // 暴露更新位置的方法给父组件
-    useImperativeHandle(
-      ref,
-      () => ({
-        updatePosition: (selectedNodeIds: string[]) => {
-          if (selectedNodeIds.length > 1 && toolbarRef.current) {
-            const bounds = flowGraph.reactFlowInstance.getNodesBounds(selectedNodeIds);
-            toolbarRef.current.style.transform = `translate(${bounds.x}px, ${bounds.y - 40}px)`;
+  // 监听节点位置变化，用于实时更新工具栏位置
+  const nodePositions = useStore(
+    useCallback(
+      store => {
+        const positions: Record<string, { x: number; y: number }> = {};
+        selectedNodes.forEach(nodeId => {
+          const node = store.nodeLookup.get(nodeId) as FlowGraphNode | undefined;
+          if (node) {
+            positions[nodeId] = { x: node.position.x, y: node.position.y };
           }
-        },
-      }),
-      [flowGraph.reactFlowInstance.getNodesBounds, toolbarRef],
-    );
+        });
+        return positions;
+      },
+      [selectedNodes],
+    ),
+  );
 
-    // 执行选中的节点
-    const handleExecuteSelectedNodes = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-      console.log('handleExecuteSelectedNodes 被调用', { event, selectedNodes });
-      event.stopPropagation();
-      event.preventDefault();
-
-      if (selectedNodes.length === 0) {
-        console.log('没有选中的节点，跳过执行');
-        return;
-      }
-
-      console.log('开始执行选中的节点:', selectedNodes);
-
-      try {
-        if (onExecuteSelectedNodes) {
-          // 使用外部提供的执行回调
-          await onExecuteSelectedNodes(selectedNodes);
-        }
-        console.log('所有选中节点执行完成');
-      } catch (error) {
-        console.error('执行选中节点时出错:', error);
-      }
-    };
-
-    const bounds = useMemo(() => {
+  // 计算选中节点的边界
+  const bounds = useMemo(() => {
+    if (selectedNodes.length > 1) {
       return flowGraph.reactFlowInstance.getNodesBounds(selectedNodes);
-    }, [selectedNodes]);
+    }
+    return { x: 0, y: 0, width: 0, height: 0 };
+  }, [selectedNodes, flowGraph.reactFlowInstance, nodePositions]);
 
-    const updatePosition = (selectedNodeIds: string[]) => {
-      if (selectedNodeIds.length > 1 && toolbarRef.current) {
-        toolbarRef.current.style.transform = `translate(${bounds.x}px, ${bounds.y - 60}px)`;
+  // 更新工具栏位置
+  const updatePosition = useCallback(() => {
+    if (selectedNodes.length > 1 && toolbarRef.current) {
+      const newBounds = flowGraph.reactFlowInstance.getNodesBounds(selectedNodes);
+      toolbarRef.current.style.transform = `translate(${newBounds.x}px, ${newBounds.y - 60}px)`;
+    }
+  }, [selectedNodes, flowGraph.reactFlowInstance]);
+
+  // 执行选中的节点
+  const handleExecuteSelectedNodes = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    console.log('handleExecuteSelectedNodes 被调用', { event, selectedNodes });
+    event.stopPropagation();
+    event.preventDefault();
+
+    if (selectedNodes.length === 0) {
+      console.log('没有选中的节点，跳过执行');
+      return;
+    }
+
+    console.log('开始执行选中的节点:', selectedNodes);
+
+    try {
+      if (onExecuteSelectedNodes) {
+        // 使用外部提供的执行回调
+        await onExecuteSelectedNodes(selectedNodes);
       }
-    };
+      console.log('所有选中节点执行完成');
+    } catch (error) {
+      console.error('执行选中节点时出错:', error);
+    }
+  };
 
-    useEffect(() => {
-      updatePosition(selectedNodes);
-    }, [selectedNodes]);
+  // 当选中节点或节点位置变化时更新工具栏位置
+  useEffect(() => {
+    updatePosition();
+  }, [updatePosition, nodePositions]);
 
-    return (
-      <ViewportPortal>
-        <div
-          ref={toolbarRef}
-          className="absolute flex justify-center"
-          style={{
-            width: bounds.width,
-            zIndex: 9999,
-            pointerEvents: 'auto',
-          }}
-        >
-          {selectedNodes.length > 1 && !selecting && (
-            <div
-              className={cn('border-chart-1 bg-card shadow-luxury flex items-center gap-2 rounded-lg border-2 p-2', className)}
-              style={{ pointerEvents: 'auto' }}
-              onClick={e => {
-                console.log('工具栏容器被点击', e);
+  return (
+    <ViewportPortal>
+      <div
+        ref={toolbarRef}
+        className="absolute flex justify-center"
+        style={{
+          width: bounds.width,
+          zIndex: 9999,
+          pointerEvents: 'auto',
+        }}
+      >
+        {selectedNodes.length > 1 && !selecting && (
+          <div
+            className={cn('border-chart-1 bg-card shadow-luxury flex items-center gap-2 rounded-lg border-2 p-2', className)}
+            style={{ pointerEvents: 'auto' }}
+            onClick={e => {
+              console.log('工具栏容器被点击', e);
+              e.stopPropagation();
+            }}
+          >
+            {/* 执行按钮 */}
+            <button
+              onClick={handleExecuteSelectedNodes}
+              onMouseDown={e => {
+                console.log('按钮 mousedown 事件', e);
                 e.stopPropagation();
               }}
+              onMouseUp={e => {
+                console.log('按钮 mouseup 事件', e);
+                e.stopPropagation();
+              }}
+              className="bg-primary text-primary-foreground hover:bg-button-primary-hover flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-200"
+              style={{ pointerEvents: 'auto' }}
+              title={t('executeSelected')}
+              type="button"
             >
-              {/* 执行按钮 */}
-              <button
-                onClick={handleExecuteSelectedNodes}
-                onMouseDown={e => {
-                  console.log('按钮 mousedown 事件', e);
-                  e.stopPropagation();
-                }}
-                onMouseUp={e => {
-                  console.log('按钮 mouseup 事件', e);
-                  e.stopPropagation();
-                }}
-                className="bg-primary text-primary-foreground hover:bg-button-primary-hover flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-200"
-                style={{ pointerEvents: 'auto' }}
-                title={t('executeSelected')}
-                type="button"
-              >
-                <PlayIcon className="h-4 w-4" />
-                {t('execute')}
-              </button>
-            </div>
-          )}
-        </div>
-      </ViewportPortal>
-    );
-  },
-);
+              <PlayIcon className="h-4 w-4" />
+              {t('execute')}
+            </button>
+          </div>
+        )}
+      </div>
+    </ViewportPortal>
+  );
+};
 
 MultiSelectToolbar.displayName = 'MultiSelectToolbar';
 
