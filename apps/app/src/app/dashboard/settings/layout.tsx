@@ -15,7 +15,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       <div className="bg-muted/20 border-muted flex h-full w-[200px] flex-col gap-2 border-r">
         <div className="text-muted-foreground px-2 py-2 text-xs font-medium whitespace-nowrap">Settings</div>
         <div className="flex h-full flex-col pl-0.5">
-          <Link
+          {/* <Link
             href="/dashboard/settings/llm"
             className={cn(
               'hover:bg-muted cursor-pointer p-2 text-sm transition-colors',
@@ -23,8 +23,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             )}
           >
             {t('models')}
-          </Link>
-          <Link
+          </Link> */}
+          {/* <Link
             href="/dashboard/settings/agents"
             className={cn(
               'hover:bg-muted cursor-pointer p-2 text-sm transition-colors',
@@ -32,7 +32,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             )}
           >
             {t('agents')}
-          </Link>
+          </Link> */}
           <Link
             href="/dashboard/settings/voices"
             className={cn(
