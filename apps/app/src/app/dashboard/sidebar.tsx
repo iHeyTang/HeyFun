@@ -46,11 +46,11 @@ const useBottomNavItems = () => {
   const t = useTranslations('dashboard.sidebar');
 
   return [
-    {
-      icon: BoxIcon,
-      label: t('tools'),
-      path: '/dashboard/tools',
-    },
+    // {
+    //   icon: BoxIcon,
+    //   label: t('tools'),
+    //   path: '/dashboard/tools',
+    // },
     {
       icon: SettingsIcon,
       label: t('settings'),

@@ -33,17 +33,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/dashboard/settings',
-        destination: '/dashboard/settings/llm',
-        permanent: true,
-      },
-      {
-        source: '/dashboard/settings/llm',
-        destination: '/dashboard/settings/llm/deepseek',
-        permanent: true,
-      },
-      {
-        source: '/dashboard/settings/aigc',
-        destination: '/dashboard/settings/aigc/doubao',
+        destination: '/dashboard/settings/voices',
         permanent: true,
       },
     ];
