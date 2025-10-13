@@ -1,9 +1,10 @@
 import { prisma } from '@/lib/server/prisma';
-import storage from '@/lib/server/storage';
+import storage, { downloadFile } from '@/lib/server/storage';
 import { to } from '@/lib/shared/to';
 import { toJson } from '@/lib/utils';
 import AIGC from '@repo/llm/aigc';
 import { serve } from '@upstash/workflow/nextjs';
+import { nanoid } from 'nanoid';
 
 export interface VoiceCloneWorkflowConfig {
   task_id: string;
@@ -91,6 +92,35 @@ export const { POST } = serve<VoiceCloneWorkflowConfig>(async context => {
       return;
     }
 
+    // 处理预览音频：如果是URL类型，下载并上传到自己的storage
+    let previewAudioKey: string | undefined;
+    let demoAudioExtra: any;
+
+    if (result.demo_audio?.type === 'url') {
+      const [downloadError, fileData] = await to(downloadFile(result.demo_audio.data));
+      if (!downloadError && fileData) {
+        // 生成存储key
+        const key = `${orgId}/voices/preview/${Date.now()}_${nanoid(8)}.${fileData.extension}`;
+
+        // 上传到storage
+        const [uploadError] = await to(storage.put(key, fileData.buffer));
+        if (!uploadError) {
+          previewAudioKey = key;
+        } else {
+          console.error('上传预览音频失败:', uploadError);
+          // 如果上传失败，保存到extra字段
+          demoAudioExtra = { demo_audio: result.demo_audio };
+        }
+      } else {
+        console.error('下载预览音频失败:', downloadError);
+        // 如果下载失败，保存到extra字段
+        demoAudioExtra = { demo_audio: result.demo_audio };
+      }
+    } else if (result.demo_audio) {
+      // 非URL类型，保存到extra字段
+      demoAudioExtra = { demo_audio: result.demo_audio };
+    }
+
     // 创建音色记录
     const voice = await prisma.voices.create({
       data: {
@@ -101,10 +131,10 @@ export const { POST } = serve<VoiceCloneWorkflowConfig>(async context => {
         model: context.requestPayload.model_name,
         externalVoiceId: result.voiceId,
         sourceAudio: context.requestPayload.audio,
-        previewAudio: result.demo_audio?.type === 'url' ? result.demo_audio.data : undefined,
+        previewAudio: previewAudioKey,
         tags: [],
         status: 'active',
-        extra: result.demo_audio?.type !== 'url' ? { demo_audio: result.demo_audio } : undefined,
+        extra: demoAudioExtra,
       },
     });
 

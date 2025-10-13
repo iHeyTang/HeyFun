@@ -120,7 +120,7 @@ export function VoicesList({ onCloneClick, refreshTrigger }: VoicesListProps) {
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-4">
         <Select value={selectedProvider} onValueChange={setSelectedProvider}>
-          <SelectTrigger className="w-[160px] bg-card/50 text-[13px] backdrop-blur-sm transition-colors hover:border-border hover:bg-card/80">
+          <SelectTrigger className="bg-card/50 hover:border-border hover:bg-card/80 w-[160px] text-[13px] backdrop-blur-sm transition-colors">
             <SelectValue placeholder={t('providers.selectPlaceholder')} />
           </SelectTrigger>
           <SelectContent>
@@ -139,7 +139,7 @@ export function VoicesList({ onCloneClick, refreshTrigger }: VoicesListProps) {
           onClick={onCloneClick}
           variant="outline"
           size="sm"
-          className="bg-card/50 text-[13px] backdrop-blur-sm transition-colors hover:border-border hover:bg-card/80"
+          className="bg-card/50 hover:border-border hover:bg-card/80 text-[13px] backdrop-blur-sm transition-colors"
         >
           <Upload className="mr-1.5 h-3.5 w-3.5" />
           {t('actions.cloneVoice')}
@@ -148,47 +148,45 @@ export function VoicesList({ onCloneClick, refreshTrigger }: VoicesListProps) {
 
       {/* Voice Cards */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {voices.map(voice => (
-          <div
-            key={voice.id}
-            className="group relative overflow-hidden rounded-lg border bg-card/50 backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card/80"
-          >
-            <div className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex flex-1 items-start gap-3">
-                  <div className="bg-muted flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full">
-                    <Mic className="text-muted-foreground h-4 w-4" />
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <div>
-                      <h3 className="text-[14px] font-medium leading-tight text-foreground">{voice.name}</h3>
-                      {voice.description && <p className="text-muted-foreground mt-1 text-[12px] leading-relaxed">{voice.description}</p>}
+        {voices.map(voice => {
+          return (
+            <div
+              key={voice.id}
+              className="group bg-card/50 hover:border-border hover:bg-card/80 relative overflow-hidden rounded-lg border backdrop-blur-sm transition-all duration-200"
+            >
+              <div className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-1 items-start gap-3">
+                    <div className="bg-muted flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full">
+                      <Mic className="text-muted-foreground h-4 w-4" />
                     </div>
-                    <span className="text-muted-foreground inline-block text-[11px] font-medium">{getProviderName(voice.provider)}</span>
+                    <div className="flex-1 space-y-2">
+                      <div>
+                        <h3 className="text-foreground text-[14px] leading-tight font-medium">{voice.name}</h3>
+                        {voice.description && <p className="text-muted-foreground mt-1 text-[12px] leading-relaxed">{voice.description}</p>}
+                      </div>
+                      <span className="text-muted-foreground inline-block text-[11px] font-medium">{getProviderName(voice.provider)}</span>
+                    </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteVoice(voice.id)}
+                    className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    <Trash2 className="text-muted-foreground h-3.5 w-3.5" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteVoice(voice.id)}
-                  className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                >
-                  <Trash2 className="text-muted-foreground h-3.5 w-3.5" />
-                </Button>
-              </div>
 
-              {voice.previewAudio && (
-                <div className="mt-3 border-t pt-3">
-                  <audio
-                    controls
-                    className="w-full"
-                    src={voice.previewAudio}
-                  />
-                </div>
-              )}
+                {voice.previewAudio && (
+                  <div className="mt-3 border-t pt-3">
+                    <audio controls className="w-full" src={`/api/oss/${voice.previewAudio}`} />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {voices.length === 0 && !isLoading && (
