@@ -96,26 +96,8 @@
     "hero": {
       "title": "HeyFun",
       "badge": "AI Studio",
-      "subtitle": "지능형 에이전트 • 자동화 워크플로 • 창의적인 AI 플랫폼",
-      "getStarted": "시작하기",
-      "features": {
-        "agents": {
-          "title": "AI 에이전트",
-          "description": "지능형 자율 에이전트"
-        },
-        "workflows": {
-          "title": "워크플로",
-          "description": "자동화된 작업 오케스트레이션"
-        },
-        "integration": {
-          "title": "통합",
-          "description": "원활한 AI 서비스 연결"
-        },
-        "studio": {
-          "title": "스튜디오",
-          "description": "창의적인 AI 개발 플랫폼"
-        }
-      }
+      "subtitle": "창의적인 AI 플랫폼",
+      "getStarted": "시작하기"
     }
   },
   "dashboard": {

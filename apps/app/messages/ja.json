@@ -96,26 +96,8 @@
     "hero": {
       "title": "HeyFun",
       "badge": "AI Studio",
-      "subtitle": "インテリジェントエージェント • 自動化ワークフロー • クリエイティブAIプラットフォーム",
-      "getStarted": "始める",
-      "features": {
-        "agents": {
-          "title": "AIエージェント",
-          "description": "インテリジェント自律エージェント"
-        },
-        "workflows": {
-          "title": "ワークフロー",
-          "description": "自動化されたタスクオーケストレーション"
-        },
-        "integration": {
-          "title": "統合",
-          "description": "シームレスなAIサービス接続"
-        },
-        "studio": {
-          "title": "スタジオ",
-          "description": "クリエイティブAI開発プラットフォーム"
-        }
-      }
+      "subtitle": "クリエイティブAIプラットフォーム",
+      "getStarted": "始める"
     }
   },
   "dashboard": {

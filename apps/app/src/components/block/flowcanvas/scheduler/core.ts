@@ -285,12 +285,30 @@ export class UnifiedScheduler {
         if (nodeIndex !== -1) {
           const currentNode = this.schema.nodes[nodeIndex];
           if (currentNode) {
-            this.schema.nodes[nodeIndex] = { ...currentNode, data: { ...currentNode.data, output: result.data } };
+            this.schema.nodes[nodeIndex] = {
+              ...currentNode,
+              data: {
+                ...currentNode.data,
+                output: {
+                  images: { list: result.data.images || [], selected: result.data.images?.[0] || '' },
+                  texts: { list: result.data.texts || [], selected: result.data.texts?.[0] || '' },
+                  videos: { list: result.data.videos || [], selected: result.data.videos?.[0] || '' },
+                  audios: { list: result.data.audios || [], selected: result.data.audios?.[0] || '' },
+                  musics: { list: result.data.musics || [], selected: result.data.musics?.[0] || '' },
+                },
+              },
+            };
 
             console.log(`UnifiedScheduler executeNode - 已更新节点 ${nodeId} 的输出数据到schema:`, result.data);
 
             // 立即触发schema变化回调，确保UI能够及时更新
-            this.onNodeOutputChange?.(nodeId, result.data);
+            this.onNodeOutputChange?.(nodeId, {
+              images: { list: result.data.images || [], selected: result.data.images?.[0] || '' },
+              texts: { list: result.data.texts || [], selected: result.data.texts?.[0] || '' },
+              videos: { list: result.data.videos || [], selected: result.data.videos?.[0] || '' },
+              audios: { list: result.data.audios || [], selected: result.data.audios?.[0] || '' },
+              musics: { list: result.data.musics || [], selected: result.data.musics?.[0] || '' },
+            });
 
             // 添加微小延迟确保React状态更新完成
             await new Promise(resolve => setTimeout(resolve, 10));

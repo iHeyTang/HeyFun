@@ -96,26 +96,8 @@
     "hero": {
       "title": "HeyFun",
       "badge": "AI Studio",
-      "subtitle": "Intelligent Agents • Automated Workflows • Creative AI Platform",
-      "getStarted": "Get Started",
-      "features": {
-        "agents": {
-          "title": "AI Agents",
-          "description": "Intelligent Autonomous Agents"
-        },
-        "workflows": {
-          "title": "Workflows",
-          "description": "Automated Task Orchestration"
-        },
-        "integration": {
-          "title": "Integration",
-          "description": "Seamless AI Service Connection"
-        },
-        "studio": {
-          "title": "Studio",
-          "description": "Creative AI Development Platform"
-        }
-      }
+      "subtitle": "Creative AI Platform",
+      "getStarted": "Get Started"
     }
   },
   "dashboard": {

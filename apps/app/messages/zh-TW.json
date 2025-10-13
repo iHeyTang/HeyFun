@@ -96,26 +96,8 @@
     "hero": {
       "title": "HeyFun",
       "badge": "AI Studio",
-      "subtitle": "智慧代理 • 自動化工作流 • 創意 AI 平台",
-      "getStarted": "開始使用",
-      "features": {
-        "agents": {
-          "title": "AI 代理",
-          "description": "智慧自主代理"
-        },
-        "workflows": {
-          "title": "工作流",
-          "description": "自動化任務編排"
-        },
-        "integration": {
-          "title": "整合",
-          "description": "無縫 AI 服務連接"
-        },
-        "studio": {
-          "title": "工作室",
-          "description": "創意 AI 開發平台"
-        }
-      }
+      "subtitle": "創意 AI 平台",
+      "getStarted": "開始使用"
     }
   },
   "dashboard": {
