@@ -145,7 +145,7 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   );
 
   return (
-    <div className="nodrag flex min-w-[480px] flex-col gap-2 overflow-hidden rounded-lg p-4">
+    <div className="nodrag flex flex-col gap-2 overflow-hidden rounded-lg p-4">
       {/* 上半部分：多行文本输入框 */}
       <TiptapEditor
         value={localPrompt}

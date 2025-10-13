@@ -103,7 +103,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
   return (
     <NodeTooltip>
       {tooltip && (
-        <NodeTooltipContent position={Position.Bottom} isVisible={focusedNodeId === id}>
+        <NodeTooltipContent position={Position.Bottom} isVisible={focusedNodeId === id} className="w-full max-w-150">
           {tooltip}
         </NodeTooltipContent>
       )}

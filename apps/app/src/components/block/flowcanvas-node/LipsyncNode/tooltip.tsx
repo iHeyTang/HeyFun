@@ -105,7 +105,7 @@ const LipsyncNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange,
   };
 
   return (
-    <div className="nodrag flex min-w-[480px] flex-col gap-4 overflow-hidden rounded-lg p-4">
+    <div className="nodrag flex flex-col gap-4 overflow-hidden rounded-lg p-4">
       {/* 输入信息提示 */}
       <div className="border-border text-muted-foreground rounded border p-3 text-sm">
         <div className="mb-2 font-medium">{t('inputStatus')}</div>

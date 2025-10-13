@@ -141,7 +141,7 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   );
 
   return (
-    <div className="nodrag flex min-w-[480px] flex-col gap-2 overflow-hidden rounded-lg p-4">
+    <div className="nodrag flex flex-col gap-2 overflow-hidden rounded-lg p-4">
       {/* 歌词输入框 */}
       {selectedModelParamsSchema?.lyrics.type === 'string' && (
         <div className="flex flex-col gap-1">

@@ -134,7 +134,7 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
   );
 
   return (
-    <div className="min-w-[480px] overflow-hidden rounded-lg p-4">
+    <div className="overflow-hidden rounded-lg p-4">
       {/* 上半部分：多行文本输入框 */}
       <TiptapEditor
         value={localPrompt}
