@@ -57,7 +57,7 @@ const MentionNodeView: React.FC<NodeViewProps> = ({ node }) => {
   );
 };
 
-export interface TiptapEditorProps {
+export interface FlowCanvasTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -68,17 +68,16 @@ export interface TiptapEditorProps {
   onMentionClick?: (mentionId: string) => void;
 }
 
-export interface TiptapEditorRef {
+export interface FlowCanvasTextEditorRef {
   focus: () => void;
   blur: () => void;
   getText: () => string | undefined;
 }
 
-export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(function TiptapEditor(
+export const FlowCanvasTextEditor = forwardRef<FlowCanvasTextEditorRef, FlowCanvasTextEditorProps>(function TiptapEditor(
   { value, onChange, placeholder = 'Input content...', className, editable = true, autoFocus = false, nodeId, onMentionClick },
   ref,
 ) {
-  const flowGraph = useFlowGraph();
   const [tooltip, setTooltip] = useState<TooltipState>({ visible: false, x: 0, y: 0, item: null });
   const [hoveredElement, setHoveredElement] = useState<HTMLElement | null>(null);
 

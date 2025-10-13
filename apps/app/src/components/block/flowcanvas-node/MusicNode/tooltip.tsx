@@ -1,5 +1,5 @@
 import { NodeOutput, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
-import { TiptapEditor, TiptapEditorRef } from '@/components/block/flowcanvas/components/SmartEditorNode';
+import { FlowCanvasTextEditor, FlowCanvasTextEditorRef } from '@/components/block/flowcanvas/components/FlowCanvasTextEditor';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAigc } from '@/hooks/use-llm';
@@ -28,8 +28,8 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const [localLyrics, setLocalLyrics] = useState(actionData?.lyrics || '');
   const [localPrompt, setLocalPrompt] = useState(actionData?.prompt || '');
   const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
-  const lyricsEditorRef = useRef<TiptapEditorRef>(null);
-  const promptEditorRef = useRef<TiptapEditorRef>(null);
+  const lyricsEditorRef = useRef<FlowCanvasTextEditorRef>(null);
+  const promptEditorRef = useRef<FlowCanvasTextEditorRef>(null);
 
   const selectedModel = useMemo(() => {
     return availableModels?.find(model => model.name === selectedModelName);
@@ -117,7 +117,7 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       {selectedModelParamsSchema?.lyrics.type === 'string' && (
         <div className="flex flex-col gap-1">
           <label className="text-muted-foreground text-xs">{tCommon('lyrics')}</label>
-          <TiptapEditor
+          <FlowCanvasTextEditor
             value={localLyrics}
             onChange={handleLyricsChange}
             placeholder={t('lyricsPlaceholder')}
@@ -130,7 +130,7 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       {/* 提示词输入框 */}
       <div className="flex flex-col gap-1">
         <label className="text-muted-foreground text-xs">{tCommon('prompt')}</label>
-        <TiptapEditor
+        <FlowCanvasTextEditor
           value={localPrompt}
           onChange={handlePromptChange}
           placeholder={t('promptPlaceholder')}

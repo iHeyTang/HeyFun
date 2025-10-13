@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAigc } from '@/hooks/use-llm';
 import { WandSparkles } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { TiptapEditor, TiptapEditorRef } from '../../flowcanvas/components/SmartEditorNode';
+import { FlowCanvasTextEditor, FlowCanvasTextEditorRef } from '../../flowcanvas/components/FlowCanvasTextEditor';
 import { RatioIcon } from '../../ratio-icon';
 import { ImageNodeActionData, ImageNodeProcessor } from './processor';
 import { FullscreenModal, fullscreenModalRef } from '@/components/block/preview/fullscreen';
@@ -24,7 +24,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const t = useTranslations('flowcanvas.nodeTooltips');
   const tCommon = useTranslations('flowcanvas.nodeTooltips.common');
 
-  const editorRef = useRef<TiptapEditorRef>(null);
+  const editorRef = useRef<FlowCanvasTextEditorRef>(null);
   const flowGraph = useFlowGraph();
   const { availableModels } = useAigc();
   const { updateStatus } = useNodeStatusById(nodeId);
@@ -117,7 +117,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   return (
     <div className="flex flex-col gap-2 overflow-hidden rounded-lg p-4">
       {/* 上半部分：多行文本输入框 */}
-      <TiptapEditor
+      <FlowCanvasTextEditor
         value={localPrompt}
         onChange={handlePromptChange}
         placeholder={t('image.placeholder')}

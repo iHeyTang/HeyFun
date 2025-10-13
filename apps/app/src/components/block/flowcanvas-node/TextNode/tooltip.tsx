@@ -1,5 +1,5 @@
 import { NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
-import { TiptapEditor, TiptapEditorRef } from '@/components/block/flowcanvas/components/SmartEditorNode';
+import { FlowCanvasTextEditor, FlowCanvasTextEditorRef } from '@/components/block/flowcanvas/components/FlowCanvasTextEditor';
 import { ModelInfo, ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
 import { Button } from '@/components/ui/button';
 import { useLLM } from '@/hooks/use-llm';
@@ -27,7 +27,7 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
   const [localPrompt, setLocalPrompt] = useState(actionData?.prompt || '');
   const modelSelectorRef = useRef<ModelSelectorRef>(null);
   const [selectedModel, setSelectedModel] = useState<ModelInfo | null>(null);
-  const editorRef = useRef<TiptapEditorRef>(null);
+  const editorRef = useRef<FlowCanvasTextEditorRef>(null);
 
   // 当外部值改变时同步本地状态
   useEffect(() => {
@@ -96,7 +96,7 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
   return (
     <div className="overflow-hidden rounded-lg p-4">
       {/* 上半部分：多行文本输入框 */}
-      <TiptapEditor
+      <FlowCanvasTextEditor
         value={localPrompt}
         onChange={handlePromptChange}
         placeholder={t('placeholder')}

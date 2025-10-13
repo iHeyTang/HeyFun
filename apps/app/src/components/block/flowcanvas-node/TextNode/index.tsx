@@ -1,5 +1,5 @@
 import { BaseNode, NodeData, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
-import { TiptapEditor, TiptapEditorRef } from '@/components/block/flowcanvas/components/SmartEditorNode';
+import { FlowCanvasTextEditor, FlowCanvasTextEditorRef } from '@/components/block/flowcanvas/components/FlowCanvasTextEditor';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TextNodeActionData } from './processor';
 import { TextNodeTooltip, TextNodeTooltipProps } from './tooltip';
@@ -16,7 +16,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
   const flowGraph = useFlowGraph();
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(data.output?.texts?.[0] || '');
-  const editorRef = useRef<TiptapEditorRef>(null);
+  const editorRef = useRef<FlowCanvasTextEditorRef>(null);
   const status = useNodeStatusById(id);
 
   // 监听data.output变化，强制更新组件状态
@@ -107,7 +107,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
         </div>
       )}
       {isEditing ? (
-        <TiptapEditor
+        <FlowCanvasTextEditor
           ref={editorRef}
           value={text}
           onChange={handleTextChange}
@@ -122,7 +122,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
           className={`border-border-primary text-foreground hover:border-border-secondary hover:bg-accent/50 h-fit min-h-[80px] w-fit min-w-[200px] cursor-pointer rounded border-dashed p-2 text-xs break-words whitespace-pre-wrap transition-colors duration-200`}
           onDoubleClick={handleTextDoubleClick}
         >
-          <TiptapEditor
+          <FlowCanvasTextEditor
             ref={editorRef}
             value={text}
             onChange={handleTextChange}

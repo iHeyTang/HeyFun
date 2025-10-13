@@ -1,5 +1,5 @@
 import { NodeOutput, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
-import { TiptapEditor, TiptapEditorRef } from '@/components/block/flowcanvas/components/SmartEditorNode';
+import { FlowCanvasTextEditor, FlowCanvasTextEditorRef } from '@/components/block/flowcanvas/components/FlowCanvasTextEditor';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAigc } from '@/hooks/use-llm';
@@ -31,7 +31,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const [selectedAspectRatio, setSelectedAspectRatio] = useState(actionData?.aspectRatio);
   const [selectedDuration, setSelectedDuration] = useState(actionData?.duration);
   const [selectedResolution, setSelectedResolution] = useState(actionData?.resolution);
-  const editorRef = useRef<TiptapEditorRef>(null);
+  const editorRef = useRef<FlowCanvasTextEditorRef>(null);
 
   const selectedModel = useMemo(() => {
     return availableModels?.find(model => model.name === selectedModelName);
@@ -118,7 +118,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   return (
     <div className="nodrag flex flex-col gap-2 overflow-hidden rounded-lg p-4">
       {/* 上半部分：多行文本输入框 */}
-      <TiptapEditor
+      <FlowCanvasTextEditor
         value={localPrompt}
         onChange={handlePromptChange}
         placeholder={t('video.placeholder')}
