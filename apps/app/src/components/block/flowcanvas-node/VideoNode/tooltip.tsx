@@ -1,13 +1,10 @@
 import { NodeOutput, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
 import { TiptapEditor, TiptapEditorRef } from '@/components/block/flowcanvas/components/SmartEditorNode';
-import { MentionItem } from '@/components/block/flowcanvas/components/SmartEditorNode/MentionList';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAigc } from '@/hooks/use-llm';
-import { MentionOptions } from '@tiptap/extension-mention';
-import { Editor } from '@tiptap/react';
 import { WandSparkles } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { RatioIcon } from '../../ratio-icon';
 import { VideoNodeActionData, VideoNodeProcessor } from './processor';
 import { VideoJsonSchema } from '@repo/llm/aigc';
@@ -35,11 +32,6 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const [selectedDuration, setSelectedDuration] = useState(actionData?.duration);
   const [selectedResolution, setSelectedResolution] = useState(actionData?.resolution);
   const editorRef = useRef<TiptapEditorRef>(null);
-
-  // 获取节点输入数据
-  const nodeInputs = useMemo(() => {
-    return flowGraph.getPreNodesById(nodeId);
-  }, [flowGraph, nodeId]);
 
   const selectedModel = useMemo(() => {
     return availableModels?.find(model => model.name === selectedModelName);
@@ -123,38 +115,6 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     });
   };
 
-  // 创建插入项配置
-  const insertItems: MentionOptions<MentionItem>['suggestion']['items'] = useCallback(
-    (props: { query: string; editor: Editor }) => {
-      const list: MentionItem[] = [];
-      nodeInputs.forEach(input => {
-        if (input.data.output?.images) {
-          input.data.output.images.forEach((imageKey, index) => {
-            list.push({
-              type: 'image' as const,
-              id: `image:${imageKey}`,
-              imageAlt: imageKey,
-              label: `${input.data.label} ${index + 1}`,
-              imageUrl: `/api/oss/${imageKey}`,
-            });
-          });
-        }
-        if (input.data.output?.texts) {
-          input.data.output.texts.forEach((text, index) => {
-            list.push({
-              type: 'text' as const,
-              id: `text:${input.id}`,
-              label: `${input.data.label} ${index + 1} : ${text.slice(0, 10)}...`,
-              textLength: text.length,
-            });
-          });
-        }
-      });
-      return list;
-    },
-    [nodeInputs],
-  );
-
   return (
     <div className="nodrag flex flex-col gap-2 overflow-hidden rounded-lg p-4">
       {/* 上半部分：多行文本输入框 */}
@@ -163,7 +123,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
         onChange={handlePromptChange}
         placeholder={t('video.placeholder')}
         className="h-24 w-full resize-none border-none! outline-none!"
-        mentionSuggestionItems={insertItems}
+        nodeId={nodeId}
         ref={editorRef}
       />
 

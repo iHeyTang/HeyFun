@@ -1,13 +1,10 @@
 import { NodeOutput, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
 import { TiptapEditor, TiptapEditorRef } from '@/components/block/flowcanvas/components/SmartEditorNode';
-import { MentionItem } from '@/components/block/flowcanvas/components/SmartEditorNode/MentionList';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAigc } from '@/hooks/use-llm';
-import { MentionOptions } from '@tiptap/extension-mention';
-import { Editor } from '@tiptap/react';
 import { WandSparkles } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { MusicNodeActionData, MusicNodeProcessor } from './processor';
 import { MusicJsonSchema } from '@repo/llm/aigc';
 import { useTranslations } from 'next-intl';
@@ -33,11 +30,6 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
   const lyricsEditorRef = useRef<TiptapEditorRef>(null);
   const promptEditorRef = useRef<TiptapEditorRef>(null);
-
-  // 获取节点输入数据
-  const nodeInputs = useMemo(() => {
-    return flowGraph.getPreNodesById(nodeId);
-  }, [flowGraph, nodeId]);
 
   const selectedModel = useMemo(() => {
     return availableModels?.find(model => model.name === selectedModelName);
@@ -119,27 +111,6 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     });
   };
 
-  // 创建插入项配置
-  const insertItems: MentionOptions<MentionItem>['suggestion']['items'] = useCallback(
-    (props: { query: string; editor: Editor }) => {
-      const list: MentionItem[] = [];
-      nodeInputs.forEach(input => {
-        if (input.data.output?.texts) {
-          input.data.output.texts.forEach((text, index) => {
-            list.push({
-              type: 'text' as const,
-              id: `text:${input.id}`,
-              label: `${input.data.label} ${index + 1} : ${text.slice(0, 10)}...`,
-              textLength: text.length,
-            });
-          });
-        }
-      });
-      return list;
-    },
-    [nodeInputs],
-  );
-
   return (
     <div className="nodrag flex flex-col gap-2 overflow-hidden rounded-lg p-4">
       {/* 歌词输入框 */}
@@ -151,7 +122,7 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             onChange={handleLyricsChange}
             placeholder={t('lyricsPlaceholder')}
             className="h-32 w-full resize-none border-none! outline-none!"
-            mentionSuggestionItems={insertItems}
+            nodeId={nodeId}
             ref={lyricsEditorRef}
           />
         </div>
@@ -164,7 +135,7 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           onChange={handlePromptChange}
           placeholder={t('promptPlaceholder')}
           className="h-24 w-full resize-none border-none! outline-none!"
-          mentionSuggestionItems={insertItems}
+          nodeId={nodeId}
           ref={promptEditorRef}
         />
       </div>

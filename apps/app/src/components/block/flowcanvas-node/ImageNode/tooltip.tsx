@@ -2,12 +2,9 @@ import { NodeOutput, NodeStatus, useFlowGraph, useNodeStatusById } from '@/compo
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAigc } from '@/hooks/use-llm';
-import { MentionOptions } from '@tiptap/extension-mention';
-import { Editor } from '@tiptap/react';
 import { WandSparkles } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TiptapEditor, TiptapEditorRef } from '../../flowcanvas/components/SmartEditorNode';
-import { MentionItem } from '../../flowcanvas/components/SmartEditorNode/MentionList';
 import { RatioIcon } from '../../ratio-icon';
 import { ImageNodeActionData, ImageNodeProcessor } from './processor';
 import { FullscreenModal, fullscreenModalRef } from '@/components/block/preview/fullscreen';
@@ -35,11 +32,6 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
   const [selectedAspectRatio, setSelectedAspectRatio] = useState(actionData?.aspectRatio);
   const fullscreenModalRef = useRef<fullscreenModalRef | null>(null);
-
-  // 获取节点输入数据
-  const nodeInputs = useMemo(() => {
-    return flowGraph.getPreNodesById(nodeId);
-  }, [flowGraph, nodeId]);
 
   const selectedModel = useMemo(() => {
     return availableModels?.find(model => model.name === selectedModelName);
@@ -105,38 +97,6 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     onValueChange?.({ ...actionData, prompt: newPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio });
   };
 
-  // 创建插入项配置
-  const insertItems: MentionOptions<MentionItem>['suggestion']['items'] = useCallback(
-    (props: { query: string; editor: Editor }) => {
-      const list: MentionItem[] = [];
-      nodeInputs.forEach(input => {
-        if (input.data.output?.images) {
-          input.data.output.images.forEach((imageKey, index) => {
-            list.push({
-              type: 'image' as const,
-              id: `image:${imageKey}`,
-              imageAlt: imageKey,
-              label: `${input.data.label} ${index + 1}`,
-              imageUrl: `/api/oss/${imageKey}`,
-            });
-          });
-        }
-        if (input.data.output?.texts) {
-          input.data.output.texts.forEach((text, index) => {
-            list.push({
-              type: 'text' as const,
-              id: `text:${input.id}`,
-              label: `${input.data.label} ${index + 1} : ${text.slice(0, 10)}...`,
-              textLength: text.length,
-            });
-          });
-        }
-      });
-      return list;
-    },
-    [nodeInputs],
-  );
-
   const handleMentionClick = useCallback(async (mentionId: string) => {
     const type = mentionId.split(':')[0];
     if (type === 'image') {
@@ -162,7 +122,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
         onChange={handlePromptChange}
         placeholder={t('image.placeholder')}
         className="h-24 w-full resize-none border-none! outline-none!"
-        mentionSuggestionItems={insertItems}
+        nodeId={nodeId}
         ref={editorRef}
         onMentionClick={handleMentionClick}
       />

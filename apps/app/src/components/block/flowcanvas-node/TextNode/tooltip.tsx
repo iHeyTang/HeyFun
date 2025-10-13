@@ -3,11 +3,8 @@ import { TiptapEditor, TiptapEditorRef } from '@/components/block/flowcanvas/com
 import { ModelInfo, ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
 import { Button } from '@/components/ui/button';
 import { useLLM } from '@/hooks/use-llm';
-import { MentionOptions } from '@tiptap/extension-mention';
-import { Editor } from '@tiptap/react';
 import { WandSparkles } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MentionItem } from '../../flowcanvas/components/SmartEditorNode/MentionList';
+import { memo, useEffect, useRef, useState } from 'react';
 import { TextNodeActionData, TextNodeProcessor } from './processor';
 import { useTranslations } from 'next-intl';
 
@@ -31,11 +28,6 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
   const modelSelectorRef = useRef<ModelSelectorRef>(null);
   const [selectedModel, setSelectedModel] = useState<ModelInfo | null>(null);
   const editorRef = useRef<TiptapEditorRef>(null);
-
-  // 获取节点输入数据
-  const nodeInputs = useMemo(() => {
-    return flowGraph.getPreNodesById(nodeId);
-  }, [flowGraph, nodeId]);
 
   // 当外部值改变时同步本地状态
   useEffect(() => {
@@ -101,38 +93,6 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
     onValueChange?.({ prompt: newPrompt, modelId: selectedModel?.id, modelProvider: selectedModel?.provider });
   };
 
-  // 创建插入项配置
-  const insertItems: MentionOptions<MentionItem>['suggestion']['items'] = useCallback(
-    (props: { query: string; editor: Editor }) => {
-      const list: MentionItem[] = [];
-      nodeInputs.forEach(input => {
-        if (input.data.output?.images) {
-          input.data.output.images.forEach((imageKey, index) => {
-            list.push({
-              type: 'image' as const,
-              id: `image:${imageKey}`,
-              imageAlt: imageKey,
-              label: `${input.data.label} ${index + 1}`,
-              imageUrl: `/api/oss/${imageKey}`,
-            });
-          });
-        }
-        if (input.data.output?.texts) {
-          input.data.output.texts.forEach((text, index) => {
-            list.push({
-              type: 'text' as const,
-              id: `text:${input.id}`,
-              label: `${input.data.label} ${index + 1} : ${text.slice(0, 10)}...`,
-              textLength: text.length,
-            });
-          });
-        }
-      });
-      return list;
-    },
-    [nodeInputs],
-  );
-
   return (
     <div className="overflow-hidden rounded-lg p-4">
       {/* 上半部分：多行文本输入框 */}
@@ -141,7 +101,7 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
         onChange={handlePromptChange}
         placeholder={t('placeholder')}
         className="h-24 w-full resize-none border-none! outline-none!"
-        mentionSuggestionItems={insertItems}
+        nodeId={nodeId}
         ref={editorRef}
       />
 

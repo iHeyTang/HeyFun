@@ -115,6 +115,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
           placeholder="Enter text directly, or chat with AI below"
           className="nodrag h-fit min-h-[80px] w-fit min-w-[200px] cursor-text"
           autoFocus={true}
+          nodeId={id}
         />
       ) : (
         <div
@@ -129,6 +130,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
             placeholder="Double click to edit"
             className="h-fit min-h-[80px] w-fit min-w-[200px]"
             autoFocus={true}
+            nodeId={id}
           />
         </div>
       )}

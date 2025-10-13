@@ -37,13 +37,17 @@ interface TextMentionItem extends BaseMentionItem {
 // 视频类型
 interface VideoMentionItem extends BaseMentionItem {
   type: 'video';
+  label?: string;
   imageUrl?: string; // 视频缩略图
+  videoUrl?: string; // 视频URL
   duration?: number; // 视频时长（秒）
 }
 
 // 音频类型
 interface AudioMentionItem extends BaseMentionItem {
   type: 'audio';
+  label?: string;
+  audioUrl?: string; // 音频URL
   duration?: number; // 音频时长（秒）
 }
 
@@ -176,7 +180,7 @@ const VideoPreview: React.FC<{ item: VideoMentionItem }> = ({ item }) => (
       )}
     </div>
     <div className="min-w-0 flex-1">
-      <div className="text-foreground truncate text-sm font-medium">{item.id}</div>
+      <div className="text-foreground truncate text-sm font-medium">{item.label || item.id}</div>
       {item.description && <div className="text-muted-foreground truncate text-xs">{item.description}</div>}
     </div>
   </div>
@@ -195,7 +199,7 @@ const AudioPreview: React.FC<{ item: AudioMentionItem }> = ({ item }) => (
       </svg>
     </div>
     <div className="min-w-0 flex-1">
-      <div className="text-foreground truncate text-sm font-medium">{item.id}</div>
+      <div className="text-foreground truncate text-sm font-medium">{item.label || item.id}</div>
       <div className="text-muted-foreground text-xs">
         {item.description && <span className="truncate">{item.description}</span>}
         {item.duration && (
