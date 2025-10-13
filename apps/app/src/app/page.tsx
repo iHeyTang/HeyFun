@@ -197,7 +197,7 @@ export default async function HomePage() {
         {/* Video Background */}
         <div className="absolute inset-0 -z-10">
           <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover">
-            <source src="https://cdn.heyfun.ai/hero-bar/walkingman.mp4" type="video/mp4" />
+            <source src="https://cdn.heyfun.ai/hero-bar/alice.mp4" type="video/mp4" />
           </video>
         </div>
       </section>
