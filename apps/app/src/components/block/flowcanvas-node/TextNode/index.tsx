@@ -15,13 +15,13 @@ export { TextNodeProcessor } from './processor';
 export default function TextNode({ data, id }: TextNodeProps) {
   const flowGraph = useFlowGraph();
   const [isEditing, setIsEditing] = useState(false);
-  const [text, setText] = useState(data.output?.texts?.[0] || '');
+  const [text, setText] = useState(data.output?.texts?.list?.[0] || '');
   const editorRef = useRef<FlowCanvasTextEditorRef>(null);
   const status = useNodeStatusById(id);
 
   // 监听data.output变化，强制更新组件状态
   useEffect(() => {
-    const newText = data.output?.texts?.[0] || '';
+    const newText = data.output?.texts?.list?.[0] || '';
     if (!isEditing) {
       setText(newText);
     }
@@ -43,7 +43,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
   // 更新节点输出数据的函数
   const updateNodeOutput = useCallback(
     (newText: string) => {
-      const newOutput = { texts: [newText] };
+      const newOutput = { texts: { list: [newText], selected: newText } };
       // 通知画布API节点数据已更新
       flowGraph.updateNodeData(id, { output: newOutput });
       // 同时更新本地数据引用

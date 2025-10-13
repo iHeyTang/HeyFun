@@ -8,11 +8,11 @@ export type NodeType = 'image' | 'video' | 'audio' | 'music' | 'text' | 'default
  * 节点输出接口
  */
 export interface NodeOutput {
-  images?: string[];
-  videos?: string[];
-  audios?: string[];
-  musics?: string[];
-  texts?: string[];
+  images?: { list: string[]; selected: string };
+  videos?: { list: string[]; selected: string };
+  audios?: { list: string[]; selected: string };
+  musics?: { list: string[]; selected: string };
+  texts?: { list: string[]; selected: string };
 }
 
 /**
@@ -68,16 +68,22 @@ export interface NodeExecutorExecuteResult {
   timestamp: Date;
   executionTime?: number;
   error?: string;
-  data?: NodeOutput;
+  data?: {
+    images?: NonNullable<NodeOutput['images']>['list'];
+    videos?: NonNullable<NodeOutput['videos']>['list'];
+    audios?: NonNullable<NodeOutput['audios']>['list'];
+    musics?: NonNullable<NodeOutput['musics']>['list'];
+    texts?: NonNullable<NodeOutput['texts']>['list'];
+  };
 }
 
 export type BaseNodeActionData<T extends Record<string, any> = Record<string, any>> = {
   input: {
-    texts: { nodeId: string; texts?: string[] }[];
-    images: { nodeId: string; images?: string[] }[];
-    videos: { nodeId: string; videos?: string[] }[];
-    audios: { nodeId: string; audios?: string[] }[];
-    musics: { nodeId: string; musics?: string[] }[];
+    texts: { nodeId: string; texts?: NodeOutput['texts'] }[];
+    images: { nodeId: string; images?: NodeOutput['images'] }[];
+    videos: { nodeId: string; videos?: NodeOutput['videos'] }[];
+    audios: { nodeId: string; audios?: NodeOutput['audios'] }[];
+    musics: { nodeId: string; musics?: NodeOutput['musics'] }[];
   };
   actionData?: T;
 };

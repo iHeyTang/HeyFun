@@ -59,29 +59,26 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     updateStatus(NodeStatus.PROCESSING);
     try {
       const node = flowGraph.getNodeById(nodeId)!;
-      const input = flowGraph.getNodeInputsById(nodeId);
+      const inputs = flowGraph.getNodeInputsById(nodeId);
 
-      const inputTexts = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
-      const inputImages = Array.from(input.entries()).map(([key, value]) => ({
-        nodeId: key,
-        images: value.images || [],
-      }));
-      const inputVideos = Array.from(input.entries()).map(([key, value]) => ({
-        nodeId: key,
-        videos: value.videos || [],
-      }));
-      const inputAudios = Array.from(input.entries()).map(([key, value]) => ({
-        nodeId: key,
-        audios: value.audios || [],
-      }));
+      const inputImages = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, images: value.images }));
+      const inputTexts = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
+      const inputVideos = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, videos: value.videos }));
+      const inputAudios = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, audios: value.audios }));
+      const inputMusics = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, musics: value.musics }));
 
       const result = await processor.execute({
-        input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: [] },
+        input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: inputMusics },
         actionData: { ...node.data.actionData, prompt: editorRef.current?.getText() },
       });
       if (result.success) {
         updateStatus(NodeStatus.COMPLETED);
-        onSubmitSuccess?.({ images: [...(node.data.output?.images || []), ...(result.data?.images || [])] });
+        onSubmitSuccess?.({
+          images: {
+            list: [...(node.data.output?.images?.list || []), ...(result.data?.images || [])],
+            selected: result.data?.images?.[0] || node.data.output?.images?.list?.[0] || '',
+          },
+        });
         onValueChange?.({ ...actionData });
       } else {
         updateStatus(NodeStatus.FAILED);

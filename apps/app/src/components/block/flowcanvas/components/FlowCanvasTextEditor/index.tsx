@@ -103,8 +103,8 @@ export const FlowCanvasTextEditor = forwardRef<FlowCanvasTextEditorRef, FlowCanv
       const list: MentionItem[] = [];
       nodeInputs.forEach(input => {
         // 处理图片输出
-        if (input.data.output?.images) {
-          input.data.output.images.forEach((imageKey: string, index: number) => {
+        if (input.data.output?.images?.list) {
+          input.data.output.images.list.forEach((imageKey: string, index: number) => {
             list.push({
               type: 'image' as const,
               id: `image:${input.id}:${imageKey}`,
@@ -115,8 +115,8 @@ export const FlowCanvasTextEditor = forwardRef<FlowCanvasTextEditorRef, FlowCanv
           });
         }
         // 处理文本输出
-        if (input.data.output?.texts) {
-          input.data.output.texts.forEach((text: string) => {
+        if (input.data.output?.texts?.list) {
+          input.data.output.texts.list.forEach((text: string) => {
             list.push({
               type: 'text' as const,
               id: `text:${input.id}`,
@@ -126,8 +126,8 @@ export const FlowCanvasTextEditor = forwardRef<FlowCanvasTextEditorRef, FlowCanv
           });
         }
         // 处理视频输出
-        if (input.data.output?.videos) {
-          input.data.output.videos.forEach((videoKey: string, index: number) => {
+        if (input.data.output?.videos?.list) {
+          input.data.output.videos.list.forEach((videoKey: string, index: number) => {
             list.push({
               type: 'video' as const,
               id: `video:${videoKey}`,
@@ -137,8 +137,8 @@ export const FlowCanvasTextEditor = forwardRef<FlowCanvasTextEditorRef, FlowCanv
           });
         }
         // 处理音频输出
-        if (input.data.output?.audios) {
-          input.data.output.audios.forEach((audioKey: string, index: number) => {
+        if (input.data.output?.audios?.list) {
+          input.data.output.audios.list.forEach((audioKey: string, index: number) => {
             list.push({
               type: 'audio' as const,
               id: `audio:${audioKey}`,

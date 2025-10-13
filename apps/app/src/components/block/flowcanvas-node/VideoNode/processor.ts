@@ -40,11 +40,11 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
     // 使用工具函数处理 prompt 中的所有提及
     const { processedPrompt, mentionedImages } = processMentions(prompt, {
       textNodes: data.input.texts,
-      availableImages: images,
+      availableImages: data.input.images,
     });
 
     // 如果 prompt 中有提及图片，使用提及的图片；否则使用输入的所有图片
-    const referenceImages = mentionedImages.length > 0 ? mentionedImages : images[0] ? [images[0]] : [];
+    const referenceImages = mentionedImages.length > 0 ? mentionedImages : images[0] ? [images[0].selected] : [];
 
     const result = await submitGenerationTask({
       model: selectedModel,

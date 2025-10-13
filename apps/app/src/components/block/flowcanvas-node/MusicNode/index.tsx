@@ -1,7 +1,7 @@
 import { AudioPlayer } from '@/components/block/audio-player';
 import { BaseNode, NodeData, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
 import { Loader2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { MusicNodeActionData } from './processor';
 import { MusicNodeTooltip, MusicNodeTooltipProps } from './tooltip';
 
@@ -14,22 +14,7 @@ export { MusicNodeProcessor } from './processor';
 
 export default function MusicNode({ data, id }: MusicNodeProps) {
   const flowGraph = useFlowGraph();
-  const [musicKey, setMusicKey] = useState<string | undefined>(data.output?.musics?.[0]);
   const status = useNodeStatusById(id);
-
-  // 监听data.output变化，强制更新组件状态
-  useEffect(() => {
-    const newMusicKey = data.output?.musics?.[0];
-    if (newMusicKey !== musicKey) {
-      console.log(`MusicNode ${id} - 检测到输出数据变化:`, {
-        oldKey: musicKey,
-        newKey: newMusicKey,
-        fullOutput: data.output,
-        timestamp: new Date().toISOString(),
-      });
-      setMusicKey(newMusicKey);
-    }
-  }, [data.output, data.output?.musics, id, musicKey, data]);
 
   // 处理actionData变化
   const handleActionDataChange = useCallback<NonNullable<MusicNodeTooltipProps['onValueChange']>>((newActionData: any) => {
@@ -60,9 +45,9 @@ export default function MusicNode({ data, id }: MusicNodeProps) {
           </div>
         )}
 
-        {musicKey ? (
+        {data.output?.musics?.selected ? (
           <div className="bg-muted flex w-full items-center justify-center rounded p-4">
-            <AudioPlayer src={`/api/oss/${musicKey}`} className="w-full max-w-[300px]" />
+            <AudioPlayer src={`/api/oss/${data.output?.musics?.selected}`} className="w-full max-w-[300px]" />
           </div>
         ) : (
           <div className="bg-muted flex items-center justify-center rounded p-2 text-center transition-colors">

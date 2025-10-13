@@ -17,22 +17,7 @@ export default function LipsyncNode({ data, id }: LipsyncNodeProps) {
   const t = useTranslations('flowcanvas.nodes');
 
   const flowGraph = useFlowGraph();
-  const [videoKey, setVideoKey] = useState<string | undefined>(data.output?.videos?.[0]);
   const status = useNodeStatusById(id);
-
-  // 监听data.output变化，强制更新组件状态
-  useEffect(() => {
-    const newVideoKey = data.output?.videos?.[0];
-    if (newVideoKey !== videoKey) {
-      console.log(`LipsyncNode ${id} - 检测到输出数据变化:`, {
-        oldKey: videoKey,
-        newKey: newVideoKey,
-        fullOutput: data.output,
-        timestamp: new Date().toISOString(),
-      });
-      setVideoKey(newVideoKey);
-    }
-  }, [data.output, data.output?.videos, id, videoKey, data]);
 
   // 处理actionData变化
   const handleActionDataChange = useCallback<NonNullable<LipsyncNodeTooltipProps['onValueChange']>>(newActionData => {
@@ -47,8 +32,8 @@ export default function LipsyncNode({ data, id }: LipsyncNodeProps) {
   // 获取输入的视频和音频信息用于显示
   const inputInfo = useCallback(() => {
     const inputs = flowGraph.getNodeInputsById(id);
-    const videoCount = Array.from(inputs.values()).reduce((sum, node) => sum + (node.videos?.length || 0), 0);
-    const audioCount = Array.from(inputs.values()).reduce((sum, node) => sum + (node.audios?.length || 0), 0);
+    const videoCount = Array.from(inputs.values()).reduce((sum, node) => sum + (node.videos?.list?.length || 0), 0);
+    const audioCount = Array.from(inputs.values()).reduce((sum, node) => sum + (node.audios?.list?.length || 0), 0);
     return { videoCount, audioCount };
   }, [flowGraph, id]);
 
@@ -75,9 +60,9 @@ export default function LipsyncNode({ data, id }: LipsyncNodeProps) {
             </div>
           )}
 
-          {videoKey ? (
+          {data.output?.videos?.selected ? (
             <VideoPreview
-              src={`/api/oss/${videoKey}`}
+              src={`/api/oss/${data.output?.videos?.selected}`}
               autoPlayOnHover={true}
               className="bg-muted max-h-[200px] w-full rounded"
               loop

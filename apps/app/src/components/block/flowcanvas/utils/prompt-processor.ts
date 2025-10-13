@@ -1,18 +1,4 @@
-/**
- * Prompt 提及处理工具
- * 用于处理节点 Prompt 中的 @text 和 @image 等提及
- *
- * 遵循最小依赖原则，仅依赖基础类型
- */
-
-/**
- * 文本节点输入类型（灵活类型，兼容各种输入格式）
- */
-export type TextNodeInput = {
-  nodeId: string;
-  texts?: string[];
-};
-
+import { BaseNodeActionData } from '../types/nodes';
 /**
  * 处理 Prompt 中的 @text:nodeId 提及
  * 将提及替换为对应节点的文本内容
@@ -27,7 +13,7 @@ export type TextNodeInput = {
  * const result = processTextMentions(prompt, textNodes);
  * // result: "生成图片：水墨画 的风格"
  */
-function processTextMentions(prompt: string, textNodes: readonly TextNodeInput[]): string {
+function processTextMentions(prompt: string, textNodes: BaseNodeActionData['input']['texts']): string {
   if (!prompt || textNodes.length === 0) {
     return prompt;
   }
@@ -42,7 +28,7 @@ function processTextMentions(prompt: string, textNodes: readonly TextNodeInput[]
     if (!nodeId) continue;
 
     const textNode = textNodes.find(node => node.nodeId === nodeId);
-    const text = textNode?.texts?.[0];
+    const text = textNode?.texts?.list?.[0];
 
     if (text) {
       processedPrompt = processedPrompt.replace(match[0], text);
@@ -67,12 +53,12 @@ export interface ImageMentionResult {
  * 将提及替换为"图1"、"图2"等，并返回提及的图片列表
  *
  * @param prompt - 原始 Prompt
- * @param availableImages - 可用的图片 key 数组
- * @returns 处理结果，包含处理后的 Prompt 和提及的图片列表
+ * @param availableImages - 可用的图片 id 数组（格式：image:nodeId:imageKey）
+ * @returns 处理结果，包含处理后的 Prompt 和提及的真实图片 key 列表
  *
  * @example
- * const prompt = "参考@image:img1 和 @image:img2 生成新图";
- * const images = ["img1", "img2", "img3"];
+ * const prompt = "参考@image:image:node-123:img1 和 @image:image:node-456:img2 生成新图";
+ * const images = ["image:node-123:img1", "image:node-456:img2"];
  * const result = processImageMentions(prompt, images);
  * // result: {
  * //   processedPrompt: "参考图1 和 图2 生成新图",
@@ -97,13 +83,17 @@ function processImageMentions(prompt: string, availableImages: string[]): ImageM
     const match = matches[i];
     if (!match) continue;
 
-    const imageKey = match[1];
-    if (!imageKey) continue;
+    const fullImageId = match[1];
+    if (!fullImageId) continue;
 
-    const imageExists = availableImages.includes(imageKey);
+    const imageExists = availableImages.includes(fullImageId);
 
     if (imageExists) {
-      mentionedImages.push(imageKey);
+      // 从 image:nodeId:imageKey 格式中提取真实的 imageKey
+      const parts = fullImageId.split(':');
+      const actualImageKey = parts.length >= 3 ? (parts[parts.length - 1] ?? fullImageId) : fullImageId;
+
+      mentionedImages.push(actualImageKey);
       processedPrompt = processedPrompt.replace(match[0], `图${i + 1}`);
     }
   }
@@ -138,8 +128,8 @@ function processImageMentions(prompt: string, availableImages: string[]): ImageM
 export function processMentions(
   prompt: string,
   options: {
-    textNodes?: readonly TextNodeInput[];
-    availableImages?: string[];
+    textNodes?: BaseNodeActionData['input']['texts'];
+    availableImages?: BaseNodeActionData['input']['images'];
   },
 ): ImageMentionResult {
   let processedPrompt = prompt;
@@ -152,7 +142,10 @@ export function processMentions(
 
   // 再处理图片提及
   if (options.availableImages && options.availableImages.length > 0) {
-    const result = processImageMentions(processedPrompt, options.availableImages);
+    const result = processImageMentions(
+      processedPrompt,
+      options.availableImages.flatMap(i => i.images?.list || []),
+    );
     processedPrompt = result.processedPrompt;
     mentionedImages = result.mentionedImages;
   }

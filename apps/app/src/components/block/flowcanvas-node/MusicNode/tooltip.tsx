@@ -61,20 +61,16 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     updateStatus(NodeStatus.PROCESSING);
     try {
       const node = flowGraph.getNodeById(nodeId)!;
-      const input = flowGraph.getNodeInputsById(nodeId);
+      const inputs = flowGraph.getNodeInputsById(nodeId);
 
-      const inputTexts = Array.from(input.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
-      const inputImages = Array.from(input.entries()).map(([key, value]) => ({
-        nodeId: key,
-        images: value.images || [],
-      }));
-      const inputVideos = Array.from(input.entries()).map(([key, value]) => ({
-        nodeId: key,
-        videos: value.videos || [],
-      }));
+      const inputImages = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, images: value.images }));
+      const inputTexts = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, texts: value.texts }));
+      const inputVideos = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, videos: value.videos }));
+      const inputAudios = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, audios: value.audios }));
+      const inputMusics = Array.from(inputs.entries()).map(([key, value]) => ({ nodeId: key, musics: value.musics }));
 
       const result = await processor.execute({
-        input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: [], musics: [] },
+        input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: inputMusics },
         actionData: {
           ...node.data.actionData,
           lyrics: lyricsEditorRef.current?.getText(),
@@ -83,7 +79,7 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       });
       if (result.success) {
         updateStatus(NodeStatus.COMPLETED);
-        onSubmitSuccess?.({ musics: result.data?.musics });
+        onSubmitSuccess?.({ musics: { list: result.data?.musics || [], selected: result.data?.musics?.[0] || '' } });
       } else {
         updateStatus(NodeStatus.FAILED, { error: result.error });
       }

@@ -19,7 +19,6 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
 
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
-  const [imageKey, setImageKey] = useState<string | undefined>(data.output?.images?.[0]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const status = useNodeStatusById(id);
 
@@ -27,19 +26,6 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
     const res = await uploadFile(file, 'flowcanvas');
     return res;
   }, []);
-
-  // 监听data.output变化，强制更新组件状态
-  useEffect(() => {
-    const newImageKey =
-      data.actionData?.selectedKey && data.output?.images?.includes(data.actionData?.selectedKey)
-        ? data.actionData?.selectedKey
-        : data.output?.images?.[0];
-
-    // 只有当新key与当前key不同时才更新
-    if (newImageKey && newImageKey !== imageKey) {
-      setImageKey(newImageKey);
-    }
-  }, [data.output?.images, data.actionData?.selectedKey, imageKey]);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -77,10 +63,9 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
   // 处理设置封面
   const handleSetCover = useCallback(
     (key: string) => {
-      setImageKey(key);
-      flowGraph.updateNodeData(id, { actionData: { ...data.actionData, selectedKey: key } });
+      flowGraph.updateNodeData(id, { output: { ...data.output, images: { ...data.output?.images, selected: key } } });
     },
-    [flowGraph, id, data.actionData],
+    [flowGraph, id, data.output],
   );
 
   return (
@@ -109,9 +94,8 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
             </div>
           )}
 
-          {data.output?.images?.length ? (
+          {data.output?.images?.list?.length ? (
             <ImagePreview
-              coverKey={imageKey}
               images={data.output.images}
               className="mx-auto block max-h-[200px] min-h-[100px] max-w-[200px] min-w-[100px] rounded object-contain"
               onSetCover={handleSetCover}

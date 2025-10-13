@@ -19,7 +19,6 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
 
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
-  const [audioKey, setAudioKey] = useState<string | undefined>(data.output?.audios?.[0]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const status = useNodeStatusById(id);
 
@@ -27,20 +26,6 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
     const res = await uploadFile(file, 'flowcanvas');
     return res;
   }, []);
-
-  // 监听data.output变化，强制更新组件状态
-  useEffect(() => {
-    const newAudioKey = data.output?.audios?.[0];
-    if (newAudioKey !== audioKey) {
-      console.log(`AudioNode ${id} - 检测到输出数据变化:`, {
-        oldKey: audioKey,
-        newKey: newAudioKey,
-        fullOutput: data.output,
-        timestamp: new Date().toISOString(),
-      });
-      setAudioKey(newAudioKey);
-    }
-  }, [data.output, data.output?.audios, id, audioKey, data]);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -100,9 +85,9 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
             </div>
           )}
 
-          {audioKey ? (
+          {data.output?.audios?.selected ? (
             <div className="bg-muted flex w-full items-center justify-center rounded p-4">
-              <AudioPlayer src={`/api/oss/${audioKey}`} className="w-full max-w-[300px]" />
+              <AudioPlayer src={`/api/oss/${data.output?.audios?.selected}`} className="w-full max-w-[300px]" />
             </div>
           ) : (
             <div className="bg-muted flex items-center justify-center rounded p-2 text-center transition-colors">

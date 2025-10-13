@@ -7,7 +7,6 @@ export type ImageNodeActionData = {
   prompt?: string;
   selectedModel?: string;
   aspectRatio?: string;
-  selectedKey?: string;
 };
 
 // 图片节点处理器
@@ -15,7 +14,7 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
   async execute(data: BaseNodeActionData<ImageNodeActionData>): Promise<NodeExecutorExecuteResult> {
     const startTime = Date.now();
     const { actionData } = data;
-    const { prompt, selectedModel, aspectRatio, selectedKey } = actionData || {};
+    const { prompt, selectedModel, aspectRatio } = actionData || {};
 
     const images = data.input.images.map(image => image.images || []).flat();
 
@@ -39,16 +38,14 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
     // 使用工具函数处理 prompt 中的所有提及
     const { processedPrompt, mentionedImages } = processMentions(prompt, {
       textNodes: data.input.texts,
-      availableImages: images,
+      availableImages: data.input.images,
     });
 
     // 将提及的图片 key 转换为完整 URL
     const mentionedImageUrls = mentionedImages.map(key => `/api/oss/${key}`);
 
-    const selectedImage = images.find(key => key === selectedKey);
-
     // 如果 prompt 中有提及图片，使用提及的图片；否则使用选中的或第一张图片
-    const referenceImages = mentionedImageUrls.length > 0 ? mentionedImageUrls : selectedImage ? [selectedImage] : images[0] ? [images[0]] : [];
+    const referenceImages = mentionedImageUrls.length > 0 ? mentionedImageUrls : images ? images.map(i => `/api/oss/${i.selected}`) : [];
 
     const result = await submitGenerationTask({
       model: selectedModel,

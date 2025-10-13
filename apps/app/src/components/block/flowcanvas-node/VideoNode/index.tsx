@@ -16,7 +16,6 @@ export { VideoNodeProcessor } from './processor';
 export default function VideoNode({ data, id }: VideoNodeProps) {
   const flowGraph = useFlowGraph();
   const [isUploading, setIsUploading] = useState(false);
-  const [videoKey, setVideoKey] = useState<string | undefined>(data.output?.videos?.[0]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const status = useNodeStatusById(id);
 
@@ -24,20 +23,6 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
     const res = await uploadFile(file, 'flowcanvas');
     return res;
   }, []);
-
-  // 监听data.output变化，强制更新组件状态
-  useEffect(() => {
-    const newVideoKey = data.output?.videos?.[0];
-    if (newVideoKey !== videoKey) {
-      console.log(`VideoNode ${id} - 检测到输出数据变化:`, {
-        oldKey: videoKey,
-        newKey: newVideoKey,
-        fullOutput: data.output,
-        timestamp: new Date().toISOString(),
-      });
-      setVideoKey(newVideoKey);
-    }
-  }, [data.output, data.output?.videos, id, videoKey, data]);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -96,9 +81,9 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
             </div>
           )}
 
-          {videoKey ? (
+          {data.output?.videos?.selected ? (
             <VideoPreview
-              src={`/api/oss/${videoKey}`}
+              src={`/api/oss/${data.output?.videos?.selected}`}
               autoPlayOnHover={true}
               className="bg-muted max-h-[200px] w-full rounded"
               loop
