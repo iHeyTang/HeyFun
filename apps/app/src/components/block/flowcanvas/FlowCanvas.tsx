@@ -154,6 +154,8 @@ function FlowCanvasCore({
         fitView
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
+        maxZoom={2}
+        minZoom={0.1}
       >
         {showBackground && <Background />}
         {showControls && <Controls />}
