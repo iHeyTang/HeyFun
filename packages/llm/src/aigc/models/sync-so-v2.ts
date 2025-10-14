@@ -9,20 +9,20 @@ const paramsSchema = z.object({
   audio: z.string(),
   advanced: z
     .object({
-      sync_mode: z.enum(['loop', 'bounce', 'cut_off', 'silence', 'remap']),
-      model: z.enum(['lipsync-2', 'lipsync-2-pro']).default('lipsync-2'),
+      sync_mode: z.enum(['loop', 'bounce', 'cut_off', 'silence', 'remap']).describe('[title:Sync Mode]'),
+      model: z.enum(['lipsync-2', 'lipsync-2-pro']).default('lipsync-2').describe('[title:Model]'),
     })
     .optional(),
 });
 
 /**
- * Sync So V2
+ * Sync So V2 Lipsync
  * https://doc.302.ai/api-322183267
  */
 export class SyncSoV2 extends BaseAigcModel {
   name = 'sync-so-v2';
-  displayName = 'Sync So V2';
-  description = 'Sync So V2';
+  displayName = 'Sync So V2 Lipsync';
+  description = 'Sync So V2 Lipsync';
   costDescription = 'Normal: 0.96 Credits/s; Pro: 1.44 Credits/s';
   generationTypes = ['lip-sync'] as GenerationType[];
 

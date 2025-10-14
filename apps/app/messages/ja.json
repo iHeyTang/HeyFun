@@ -430,12 +430,6 @@
           "description": "音楽の生成用",
           "defaultLabel": "音楽ノード",
           "defaultDescription": "クリックして音楽をアップロード"
-        },
-        "lipsync": {
-          "label": "リップシンクノード",
-          "description": "リップシンク用",
-          "defaultLabel": "リップシンクノード",
-          "defaultDescription": "クリックして動画と音声をアップロード"
         }
       }
     },
@@ -482,7 +476,8 @@
         "resolution": "解像度",
         "selectVoice": "音声を選択",
         "lyrics": "歌詞",
-        "prompt": "プロンプト"
+        "prompt": "プロンプト",
+        "advanced": "詳細オプション"
       },
       "text": {
         "placeholder": "AIとチャット、@を入力してメンション",

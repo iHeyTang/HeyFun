@@ -72,17 +72,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
         description: tNodes('music.defaultDescription'),
       },
     },
-    {
-      type: 'lipsync',
-      label: tNodes('lipsync.label'),
-      description: tNodes('lipsync.description'),
-      defaultData: {
-        label: tNodes('lipsync.defaultLabel'),
-        description: tNodes('lipsync.defaultDescription'),
-        videos: [],
-        audios: [],
-      },
-    },
   ];
 
   // 过滤节点类型

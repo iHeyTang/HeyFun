@@ -21,7 +21,7 @@ export class DoubaoSeedream30T2i250415 extends BaseAigcModel {
     aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']),
     referenceImage: z.undefined().optional(),
     advanced: z.object({
-      guidance_scale: z.number().min(1).max(10).default(2.5).optional().describe('[title:提示词引导强度]'),
+      guidance_scale: z.number().min(1).max(10).default(2.5).optional().describe('[title:Guidance Scale]'),
     }),
   });
 

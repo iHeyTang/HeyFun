@@ -430,12 +430,6 @@
           "description": "음악 생성용",
           "defaultLabel": "음악 노드",
           "defaultDescription": "클릭하여 음악 업로드"
-        },
-        "lipsync": {
-          "label": "립싱크 노드",
-          "description": "립싱크용",
-          "defaultLabel": "립싱크 노드",
-          "defaultDescription": "클릭하여 비디오 및 오디오 업로드"
         }
       }
     },
@@ -482,7 +476,8 @@
         "resolution": "해상도",
         "selectVoice": "음성 선택",
         "lyrics": "가사",
-        "prompt": "프롬프트"
+        "prompt": "프롬프트",
+        "advanced": "고급 옵션"
       },
       "text": {
         "placeholder": "AI와 채팅, @를 입력하여 멘션",

@@ -7,6 +7,7 @@ export type AudioNodeActionData = {
   prompt?: string;
   selectedModel?: string;
   voiceId?: string;
+  advancedParams?: Record<string, any>;
 };
 
 // 音频节点处理器

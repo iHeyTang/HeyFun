@@ -9,6 +9,7 @@ import { RatioIcon } from '../../ratio-icon';
 import { VideoNodeActionData, VideoNodeProcessor } from './processor';
 import { VideoJsonSchema } from '@repo/llm/aigc';
 import { useTranslations } from 'next-intl';
+import { AdvancedOptionsForm } from '../AdvancedOptionsForm';
 
 export interface VideoNodeTooltipProps {
   nodeId: string;
@@ -31,6 +32,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const [selectedAspectRatio, setSelectedAspectRatio] = useState(actionData?.aspectRatio);
   const [selectedDuration, setSelectedDuration] = useState(actionData?.duration);
   const [selectedResolution, setSelectedResolution] = useState(actionData?.resolution);
+  const [advancedParams, setAdvancedParams] = useState<Record<string, any>>(actionData?.advancedParams || {});
   const editorRef = useRef<FlowCanvasTextEditorRef>(null);
 
   const selectedModel = useMemo(() => {
@@ -67,6 +69,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       aspectRatio: selectedAspectRatio,
       duration: selectedDuration,
       resolution: selectedResolution,
+      advancedParams,
     });
     updateStatus(NodeStatus.PROCESSING);
     try {
@@ -81,7 +84,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
 
       const result = await processor.execute({
         input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: inputMusics },
-        actionData: { ...node.data.actionData, prompt: editorRef.current?.getText() },
+        actionData: { ...node.data.actionData, prompt: editorRef.current?.getText(), advancedParams },
       });
       if (result.success) {
         updateStatus(NodeStatus.COMPLETED);
@@ -104,6 +107,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       aspectRatio: selectedAspectRatio,
       duration: selectedDuration,
       resolution: selectedResolution,
+      advancedParams,
     });
   };
 
@@ -123,23 +127,25 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
 
       {/* 下半部分：Footer - 模型选择和提交按钮 */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center justify-start gap-2">
+        <div className="flex items-center justify-start">
           {/* 左侧：模型选择 */}
           <Select
             value={selectedModelName}
             onValueChange={(v: string) => {
               setSelectedModelName(v);
+              setAdvancedParams({});
               onValueChange?.({
                 prompt: localPrompt,
                 selectedModel: v,
                 aspectRatio: '',
                 duration: '',
                 resolution: '',
+                advancedParams: {},
               });
             }}
           >
-            <SelectTrigger size="sm" className="text-xs">
-              <SelectValue placeholder={tCommon('selectModel')} />
+            <SelectTrigger size="sm" className="hover:bg-muted cursor-pointer border-none p-2 text-xs shadow-none" hideIcon>
+              <SelectValue placeholder={tCommon('selectModel')}>{selectedModel?.displayName || ''}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {availableModels
@@ -147,11 +153,16 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                   model =>
                     model.generationTypes.includes('text-to-video') ||
                     model.generationTypes.includes('image-to-video') ||
-                    model.generationTypes.includes('video-to-video'),
+                    model.generationTypes.includes('keyframe-to-video') ||
+                    model.generationTypes.includes('video-to-video') ||
+                    model.generationTypes.includes('lip-sync'),
                 )
                 .map(model => (
                   <SelectItem key={model.name} value={model.name}>
-                    {model.displayName}
+                    <div className="flex flex-col items-start justify-between gap-2">
+                      <div>{model.displayName}</div>
+                      <div className="text-muted-foreground text-xs">{model.description}</div>
+                    </div>
                   </SelectItem>
                 ))}
             </SelectContent>
@@ -170,7 +181,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                 });
               }}
             >
-              <SelectTrigger size="sm" className="text-xs" hideIcon>
+              <SelectTrigger size="sm" className="hover:bg-muted cursor-pointer border-none p-2 text-xs shadow-none" hideIcon>
                 <SelectValue placeholder="Aspect" />
               </SelectTrigger>
               <SelectContent>
@@ -200,7 +211,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                 });
               }}
             >
-              <SelectTrigger size="sm" className="text-xs" hideIcon>
+              <SelectTrigger size="sm" className="hover:bg-muted cursor-pointer border-none p-2 text-xs shadow-none" hideIcon>
                 <SelectValue placeholder="Duration" />
               </SelectTrigger>
               <SelectContent>
@@ -229,7 +240,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
                 });
               }}
             >
-              <SelectTrigger size="sm" className="text-xs" hideIcon>
+              <SelectTrigger size="sm" className="hover:bg-muted cursor-pointer border-none p-2 text-xs shadow-none" hideIcon>
                 <SelectValue placeholder="Resolution" />
               </SelectTrigger>
               <SelectContent>
@@ -250,6 +261,26 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           <WandSparkles />
         </Button>
       </div>
+
+      {/* 高级选项 */}
+      {selectedModelParamsSchema?.advanced && (
+        <AdvancedOptionsForm
+          schema={selectedModelParamsSchema.advanced}
+          values={advancedParams}
+          title={tCommon('advanced')}
+          onChange={params => {
+            setAdvancedParams(params);
+            onValueChange?.({
+              prompt: localPrompt,
+              selectedModel: selectedModelName,
+              aspectRatio: selectedAspectRatio,
+              duration: selectedDuration,
+              resolution: selectedResolution,
+              advancedParams: params,
+            });
+          }}
+        />
+      )}
     </div>
   );
 };

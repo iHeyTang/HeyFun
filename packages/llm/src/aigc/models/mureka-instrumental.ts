@@ -8,10 +8,10 @@ const paramsSchema = z.object({
   prompt: z.string().optional(),
   advanced: z
     .object({
-      referenceId: z.string().optional(),
-      vocal_id: z.string().optional(),
-      melody_id: z.string().optional(),
-      model: z.enum(['auto', 'mureka-6', 'mureka-7.5', 'mureka-o1']).optional(),
+      // referenceId: z.string().optional(),
+      // vocal_id: z.string().optional(),
+      // melody_id: z.string().optional(),
+      model: z.enum(['auto', 'mureka-6', 'mureka-7.5', 'mureka-o1']).optional().describe('[title:Model]'),
     })
     .optional(),
 });
@@ -63,9 +63,9 @@ export class MurekaInstrumental extends BaseAigcModel {
         model: params.advanced?.model || 'auto',
         n: 1,
         prompt: params.prompt,
-        reference_id: params.advanced?.referenceId,
-        vocal_id: params.advanced?.vocal_id,
-        melody_id: params.advanced?.melody_id,
+        // reference_id: params.advanced?.referenceId,
+        // vocal_id: params.advanced?.vocal_id,
+        // melody_id: params.advanced?.melody_id,
       },
     });
     if (!data.id) {

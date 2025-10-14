@@ -19,8 +19,8 @@ export class Jimeng40 extends BaseAigcModel {
     referenceImage: z.array(z.string()).min(0).max(10).optional(),
     aspectRatio: z.enum(['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1', '21:9']),
     advanced: z.object({
-      guidance_scale: z.number().min(0).max(1).step(0.1).default(0.5).optional().describe('[title:提示词引导强度]'),
-      force_single: z.boolean().default(false).optional().describe('[title:强制单图生成]'),
+      guidance_scale: z.number().min(0).max(1).step(0.1).default(0.5).optional().describe('[title:Guidance Scale]'),
+      force_single: z.boolean().default(false).optional().describe('[title:Force Single]'),
     }),
   });
 

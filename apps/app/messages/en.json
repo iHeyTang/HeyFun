@@ -430,12 +430,6 @@
           "description": "For generating music",
           "defaultLabel": "Music Node",
           "defaultDescription": "Click to upload music"
-        },
-        "lipsync": {
-          "label": "Lipsync Node",
-          "description": "For lip synchronization",
-          "defaultLabel": "Lipsync Node",
-          "defaultDescription": "Click to upload video and audio"
         }
       }
     },
@@ -482,7 +476,8 @@
         "resolution": "Resolution",
         "selectVoice": "Select Voice",
         "lyrics": "Lyrics",
-        "prompt": "Prompt"
+        "prompt": "Prompt",
+        "advanced": "Advanced Options"
       },
       "text": {
         "placeholder": "chat with AI, input @ to mention",

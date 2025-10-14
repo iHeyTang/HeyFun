@@ -9,6 +9,7 @@ export type VideoNodeActionData = {
   aspectRatio?: string;
   duration?: string;
   resolution?: string;
+  advancedParams?: Record<string, any>;
 };
 
 // 视频节点处理器
@@ -20,9 +21,10 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
 
     const images = data.input.images.map(image => image.images || []).flat();
     const videos = data.input.videos.map(video => video.videos || []).flat();
+    const audios = data.input.audios.map(audio => audio.audios || []).flat();
 
     // 如果输入全部为空，则直接返回
-    if (images.length === 0 && videos.length === 0 && !actionData?.prompt) {
+    if (images.length === 0 && videos.length === 0 && audios.length === 0 && !actionData?.prompt) {
       return {
         success: true,
         timestamp: new Date(),
@@ -49,7 +51,15 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
 
     const result = await submitGenerationTask({
       model: selectedModel,
-      params: { prompt: processedPrompt, aspectRatio, duration, firstFrame: referenceImages?.[0], video: videos?.[0]?.selected, resolution },
+      params: {
+        prompt: processedPrompt,
+        aspectRatio,
+        duration,
+        firstFrame: referenceImages?.[0],
+        video: videos?.[0]?.selected,
+        audio: audios?.[0]?.selected,
+        resolution,
+      },
     });
 
     if (result.error || !result.data?.id) {

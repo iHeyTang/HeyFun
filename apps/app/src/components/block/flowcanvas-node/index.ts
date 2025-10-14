@@ -4,9 +4,8 @@ import VideoNode from './VideoNode';
 import AudioNode from './AudioNode';
 import MusicNode from './MusicNode';
 import TextNode from './TextNode';
-import LipsyncNode from './LipsyncNode';
 
-export { ImageNode, VideoNode, AudioNode, MusicNode, TextNode, LipsyncNode };
+export { ImageNode, VideoNode, AudioNode, MusicNode, TextNode };
 
 export const nodeTypes: NodeTypes = {
   image: ImageNode,
@@ -14,5 +13,4 @@ export const nodeTypes: NodeTypes = {
   audio: AudioNode,
   music: MusicNode,
   text: TextNode,
-  lipsync: LipsyncNode,
 };

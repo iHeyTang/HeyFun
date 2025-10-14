@@ -9,14 +9,14 @@ const paramsSchema = z.object({
 });
 
 /**
- * Topzlabs Video
+ * Topzlabs Video Upscale
  * https://doc.302.ai/355746634e0
  * https://developer.topazlabs.com/video-api/available-models#advanced-models-enhancement
  */
 export class TopzlabsVideo extends BaseAigcModel {
   name = 'topzlabs-video';
-  displayName = 'Topzlabs Video';
-  description = 'Topzlabs Video';
+  displayName = 'Topzlabs Video Upscale';
+  description = 'Topzlabs Video Upscale';
   costDescription = 'Normal: 1 Credits/s';
   generationTypes = ['video-to-video'] as GenerationType[];
 

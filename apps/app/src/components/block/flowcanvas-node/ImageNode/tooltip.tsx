@@ -10,6 +10,7 @@ import { ImageNodeActionData, ImageNodeProcessor } from './processor';
 import { FullscreenModal, fullscreenModalRef } from '@/components/block/preview/fullscreen';
 import { ImageJsonSchema } from '@repo/llm/aigc';
 import { useTranslations } from 'next-intl';
+import { AdvancedOptionsForm } from '../AdvancedOptionsForm';
 
 export interface ImageNodeTooltipProps {
   nodeId: string;
@@ -31,6 +32,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const [localPrompt, setLocalPrompt] = useState(actionData?.prompt || '');
   const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
   const [selectedAspectRatio, setSelectedAspectRatio] = useState(actionData?.aspectRatio);
+  const [advancedParams, setAdvancedParams] = useState<Record<string, any>>(actionData?.advancedParams || {});
   const fullscreenModalRef = useRef<fullscreenModalRef | null>(null);
 
   const selectedModel = useMemo(() => {
@@ -55,7 +57,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   }, [actionData?.prompt, actionData?.selectedModel, actionData?.aspectRatio]);
 
   const handleSubmit = async () => {
-    onValueChange?.({ ...actionData, prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio });
+    onValueChange?.({ ...actionData, prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio, advancedParams });
     updateStatus(NodeStatus.PROCESSING);
     try {
       const node = flowGraph.getNodeById(nodeId)!;
@@ -69,7 +71,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
 
       const result = await processor.execute({
         input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: inputMusics },
-        actionData: { ...node.data.actionData, prompt: editorRef.current?.getText() },
+        actionData: { ...node.data.actionData, prompt: editorRef.current?.getText(), advancedParams },
       });
       if (result.success) {
         updateStatus(NodeStatus.COMPLETED);
@@ -91,7 +93,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const handlePromptChange = (newPrompt: string) => {
     // 始终更新本地状态以显示用户输入
     setLocalPrompt(newPrompt);
-    onValueChange?.({ ...actionData, prompt: newPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio });
+    onValueChange?.({ ...actionData, prompt: newPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio, advancedParams });
   };
 
   const handleMentionClick = useCallback(async (mentionId: string) => {
@@ -132,18 +134,22 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             value={selectedModelName}
             onValueChange={(v: string) => {
               setSelectedModelName(v);
-              onValueChange?.({ ...actionData, prompt: localPrompt, selectedModel: v, aspectRatio: '' });
+              setAdvancedParams({});
+              onValueChange?.({ ...actionData, prompt: localPrompt, selectedModel: v, aspectRatio: '', advancedParams: {} });
             }}
           >
-            <SelectTrigger size="sm" className="text-xs" hideIcon>
-              <SelectValue placeholder={tCommon('selectModel')} />
+            <SelectTrigger size="sm" className="hover:bg-muted cursor-pointer border-none p-2 text-xs shadow-none" hideIcon>
+              <SelectValue placeholder={tCommon('selectModel')}>{selectedModel?.displayName || ''}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {availableModels
                 ?.filter(model => model.generationTypes.includes('text-to-image') || model.generationTypes.includes('image-to-image'))
                 .map(model => (
                   <SelectItem key={model.name} value={model.name}>
-                    {model.displayName}
+                    <div className="flex flex-col items-start justify-between gap-2">
+                      <div>{model.displayName}</div>
+                      <div className="text-muted-foreground text-xs">{model.description}</div>
+                    </div>
                   </SelectItem>
                 ))}
             </SelectContent>
@@ -153,10 +159,10 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
               value={selectedAspectRatio}
               onValueChange={(v: string) => {
                 setSelectedAspectRatio(v);
-                onValueChange?.({ ...actionData, prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: v });
+                onValueChange?.({ ...actionData, prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: v, advancedParams });
               }}
             >
-              <SelectTrigger size="sm" className="text-xs" hideIcon>
+              <SelectTrigger size="sm" className="hover:bg-muted cursor-pointer border-none p-2 text-xs shadow-none" hideIcon>
                 <SelectValue placeholder={tCommon('aspect')} />
               </SelectTrigger>
               <SelectContent>
@@ -178,6 +184,26 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           <WandSparkles />
         </Button>
       </div>
+
+      {/* 高级选项 */}
+      {selectedModelParamsSchema?.advanced && (
+        <AdvancedOptionsForm
+          schema={selectedModelParamsSchema.advanced}
+          values={advancedParams}
+          title={tCommon('advanced')}
+          onChange={params => {
+            setAdvancedParams(params);
+            onValueChange?.({
+              ...actionData,
+              prompt: localPrompt,
+              selectedModel: selectedModelName,
+              aspectRatio: selectedAspectRatio,
+              advancedParams: params,
+            });
+          }}
+        />
+      )}
+
       <FullscreenModal ref={fullscreenModalRef} />
     </div>
   );

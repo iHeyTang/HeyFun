@@ -21,7 +21,7 @@ export class DoubaoSeededit30I2i250628 extends BaseAigcModel {
     referenceImage: z.array(z.string()),
     aspectRatio: z.undefined(),
     advanced: z.object({
-      guidance_scale: z.number().min(1).max(10).step(0.1).default(5.5).optional().describe('[title:提示词引导强度]'),
+      guidance_scale: z.number().min(1).max(10).step(0.1).default(5.5).optional().describe('[title:Guidance Scale]'),
     }),
   });
 

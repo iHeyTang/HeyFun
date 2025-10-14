@@ -38,7 +38,7 @@ interface DynamicFormProps {
   hideLabel?: boolean;
   provider?: string;
   modelName?: string;
-  generationType?: string;
+  generationType: string;
 }
 
 /**
@@ -65,6 +65,8 @@ const buildRenderMapByGenerationType = (generationType: string, provider?: strin
     case 'text-to-video':
     case 'image-to-video':
     case 'keyframe-to-video':
+    case 'video-to-video':
+    case 'lip-sync':
       // 视频生成相关字段
       map.set('prompt', (renderProps: CustomFieldRendererProps) => {
         return <TextareaRenderer {...renderProps} label={t?.('prompt') || 'prompt'} />;
@@ -80,6 +82,13 @@ const buildRenderMapByGenerationType = (generationType: string, provider?: strin
       });
       map.set('aspectRatio', (renderProps: CustomFieldRendererProps) => {
         return <RatioRenderer {...renderProps} label={t?.('aspectRatio') || 'aspectRatio'} />;
+      });
+      // 唇形同步相关字段
+      map.set('video', (renderProps: CustomFieldRendererProps) => {
+        return <VideoRenderer {...renderProps} label={t?.('video') || 'video'} />;
+      });
+      map.set('audio', (renderProps: CustomFieldRendererProps) => {
+        return <AudioRenderer {...renderProps} label={t?.('audio') || 'audio'} />;
       });
       break;
 
@@ -99,16 +108,6 @@ const buildRenderMapByGenerationType = (generationType: string, provider?: strin
       });
       map.set('pitch', (renderProps: CustomFieldRendererProps) => {
         return <SliderRenderer {...renderProps} label={t?.('pitch') || 'pitch'} />;
-      });
-      break;
-
-    case 'lip-sync':
-      // 唇形同步相关字段
-      map.set('video', (renderProps: CustomFieldRendererProps) => {
-        return <VideoRenderer {...renderProps} label={t?.('video') || 'video'} />;
-      });
-      map.set('audio', (renderProps: CustomFieldRendererProps) => {
-        return <AudioRenderer {...renderProps} label={t?.('audio') || 'audio'} />;
       });
       break;
 
@@ -197,20 +196,10 @@ export const DynamicForm = (props: DynamicFormProps) => {
   const { schema, form, fieldPath = '', hideLabel = false, provider, modelName, generationType } = props;
   const t = useTranslations('paintboard.form.fields');
 
-  // 确定实际使用的生成类型
-  const actualGenerationType = useMemo(() => {
-    // 优先使用传入的 generationType
-    if (generationType) {
-      return generationType;
-    }
-    // 否则从 schema 推断
-    return inferGenerationType(schema);
-  }, [schema, generationType]);
-
   // 构建自定义渲染映射表
   const renderMap = useMemo<RenderMap>(() => {
-    return buildRenderMapByGenerationType(actualGenerationType, provider, modelName, t);
-  }, [actualGenerationType, provider, modelName]);
+    return buildRenderMapByGenerationType(generationType, provider, modelName, t);
+  }, [generationType, provider, modelName]);
 
   // 渲染上下文
   const renderContext = useMemo(

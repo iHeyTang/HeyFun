@@ -13,11 +13,11 @@ const minimax25SpeechParamsSchema = z.object({
   voice_id: z.string(),
   advanced: z
     .object({
-      mode: z.enum(['hd', 'turbo']),
-      speed: z.number().min(0.5).max(2).step(0.1).default(1).optional(),
-      vol: z.number().min(0).max(10).step(0.1).default(1.0).optional(),
-      pitch: z.number().int().min(-12).max(12).default(0).optional(),
-      emotion: z.enum(['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'calm']).optional(),
+      mode: z.enum(['hd', 'turbo']).describe('[title:Mode]'),
+      emotion: z.enum(['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'calm']).optional().describe('[title:Emotion]'),
+      speed: z.number().min(0.5).max(2).step(0.1).default(1).optional().describe('[title:Speed]'),
+      vol: z.number().min(0).max(10).step(0.1).default(1.0).optional().describe('[title:Volume]'),
+      pitch: z.number().int().min(-12).max(12).default(0).optional().describe('[title:Pitch]'),
     })
     .optional(),
 });

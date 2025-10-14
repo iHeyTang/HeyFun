@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAigc } from '@/hooks/use-llm';
 import { T2aJsonSchema, Voice } from '@repo/llm/aigc';
-import { WandSparkles } from 'lucide-react';
+import { Loader2, WandSparkles } from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { AudioNodeActionData, AudioNodeProcessor } from './processor';
 import { getAigcVoiceList } from '@/actions/llm';
 import { VoiceSelectorDialog, VoiceSelectorRef } from '@/components/features/voice-selector';
 import { useTranslations } from 'next-intl';
+import { AdvancedOptionsForm } from '../AdvancedOptionsForm';
 
 export interface AudioNodeTooltipProps {
   nodeId: string;
@@ -30,6 +31,7 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const [localPrompt, setLocalPrompt] = useState(actionData?.prompt || '');
   const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
   const [selectedVoiceId, setSelectedVoiceId] = useState(actionData?.voiceId);
+  const [advancedParams, setAdvancedParams] = useState<Record<string, any>>(actionData?.advancedParams || {});
   const editorRef = useRef<FlowCanvasTextEditorRef>(null);
   const voiceSelectorRef = useRef<VoiceSelectorRef>(null);
 
@@ -52,7 +54,7 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   }, [selectedModel, selectedModelName]);
 
   const selectedModelParamsSchema = useMemo(() => {
-    return selectedModel?.paramsSchema?.properties as T2aJsonSchema;
+    return selectedModel?.paramsSchema?.properties as T2aJsonSchema | undefined;
   }, [selectedModel]);
 
   // 当外部值改变时同步本地状态
@@ -73,6 +75,7 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       prompt: localPrompt,
       selectedModel: selectedModelName,
       voiceId: selectedVoiceId,
+      advancedParams,
     });
     updateStatus(NodeStatus.PROCESSING);
     try {
@@ -87,7 +90,7 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
 
       const result = await processor.execute({
         input: { images: inputImages, texts: inputTexts, videos: inputVideos, audios: inputAudios, musics: inputMusics },
-        actionData: { ...node.data.actionData, prompt: editorRef.current?.getText() },
+        actionData: { ...node.data.actionData, prompt: editorRef.current?.getText(), advancedParams },
       });
       if (result.success) {
         updateStatus(NodeStatus.COMPLETED);
@@ -125,35 +128,45 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
 
       {/* 下半部分：Footer - 模型选择和提交按钮 */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center justify-start gap-2">
+        <div className="flex items-center justify-start">
           {/* 左侧：模型选择 */}
           <Select
             value={selectedModelName}
             onValueChange={(v: string) => {
               setSelectedModelName(v);
+              setAdvancedParams({});
               onValueChange?.({
                 prompt: localPrompt,
                 selectedModel: v,
                 voiceId: '',
+                advancedParams: {},
               });
             }}
           >
-            <SelectTrigger size="sm" className="text-xs">
-              <SelectValue placeholder={tCommon('selectModel')} />
+            <SelectTrigger size="sm" className="hover:bg-muted cursor-pointer border-none p-2 text-xs shadow-none" hideIcon>
+              <SelectValue placeholder={tCommon('selectModel')}>{selectedModel?.displayName || ''}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {availableModels
                 ?.filter(model => model.generationTypes.includes('text-to-speech'))
                 .map(model => (
                   <SelectItem key={model.name} value={model.name}>
-                    {model.displayName}
+                    <div className="flex flex-col items-start justify-between gap-2">
+                      <div>{model.displayName}</div>
+                      <div className="text-muted-foreground text-xs">{model.description}</div>
+                    </div>
                   </SelectItem>
                 ))}
             </SelectContent>
           </Select>
-          {voiceList.length > 0 && (
-            <Button variant="outline" size="sm" className="justify-start p-4 text-xs font-normal" onClick={() => voiceSelectorRef.current?.open()}>
-              <span>{selectedVoice?.name || tCommon('selectVoice')}</span>
+          {selectedModelParamsSchema?.voice_id?.type === 'string' && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="hover:bg-muted text-muted-foreground cursor-pointer justify-start border-none p-2 text-xs font-normal shadow-none"
+              onClick={() => voiceSelectorRef.current?.open()}
+            >
+              {voiceList.length > 0 ? <span>{selectedVoice?.name || tCommon('selectVoice')}</span> : <Loader2 className="h-4 w-4 animate-spin" />}
             </Button>
           )}
         </div>
@@ -162,6 +175,20 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           <WandSparkles />
         </Button>
       </div>
+
+      {/* 高级选项 */}
+      {selectedModelParamsSchema?.advanced && (
+        <AdvancedOptionsForm
+          schema={selectedModelParamsSchema.advanced}
+          values={advancedParams}
+          title={tCommon('advanced')}
+          onChange={params => {
+            setAdvancedParams(params);
+            onValueChange?.({ prompt: localPrompt, selectedModel: selectedModelName, voiceId: selectedVoiceId, advancedParams: params });
+          }}
+        />
+      )}
+
       <VoiceSelectorDialog
         ref={voiceSelectorRef}
         value={selectedVoiceId}

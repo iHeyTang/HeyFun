@@ -22,7 +22,7 @@ export class DoubaoSeedance10Pro250528 extends BaseAigcModel {
     aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']),
     duration: z.enum(['3', '5', '10', '12']).default('5'),
     advanced: z.object({
-      camerafixed: z.boolean().default(false).describe('[title:固定镜头]'),
+      camerafixed: z.boolean().default(false).describe('[title:Camera Fixed]'),
     }),
   });
 

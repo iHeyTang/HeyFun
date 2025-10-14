@@ -8,6 +8,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { MusicNodeActionData, MusicNodeProcessor } from './processor';
 import { MusicJsonSchema } from '@repo/llm/aigc';
 import { useTranslations } from 'next-intl';
+import { AdvancedOptionsForm } from '../AdvancedOptionsForm';
 
 export interface MusicNodeTooltipProps {
   nodeId: string;
@@ -28,6 +29,7 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const [localLyrics, setLocalLyrics] = useState(actionData?.lyrics || '');
   const [localPrompt, setLocalPrompt] = useState(actionData?.prompt || '');
   const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
+  const [advancedParams, setAdvancedParams] = useState<Record<string, any>>(actionData?.advancedParams || {});
   const lyricsEditorRef = useRef<FlowCanvasTextEditorRef>(null);
   const promptEditorRef = useRef<FlowCanvasTextEditorRef>(null);
 
@@ -57,6 +59,7 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       lyrics: localLyrics,
       prompt: localPrompt,
       selectedModel: selectedModelName,
+      advancedParams,
     });
     updateStatus(NodeStatus.PROCESSING);
     try {
@@ -75,6 +78,7 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           ...node.data.actionData,
           lyrics: lyricsEditorRef.current?.getText(),
           prompt: promptEditorRef.current?.getText(),
+          advancedParams,
         },
       });
       if (result.success) {
@@ -144,22 +148,27 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             value={selectedModelName}
             onValueChange={(v: string) => {
               setSelectedModelName(v);
+              setAdvancedParams({});
               onValueChange?.({
                 lyrics: localLyrics,
                 prompt: localPrompt,
                 selectedModel: v,
+                advancedParams: {},
               });
             }}
           >
-            <SelectTrigger size="sm" className="text-xs">
-              <SelectValue placeholder={tCommon('selectModel')} />
+            <SelectTrigger size="sm" className="hover:bg-muted cursor-pointer border-none p-2 text-xs shadow-none">
+              <SelectValue placeholder={tCommon('selectModel')}>{selectedModel?.displayName || ''}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {availableModels
                 ?.filter(model => model.generationTypes.includes('music'))
                 .map(model => (
                   <SelectItem key={model.name} value={model.name}>
-                    {model.displayName}
+                    <div className="flex flex-col items-start justify-between gap-2">
+                      <div>{model.displayName}</div>
+                      <div className="text-muted-foreground text-xs">{model.description}</div>
+                    </div>
                   </SelectItem>
                 ))}
             </SelectContent>
@@ -170,6 +179,19 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           <WandSparkles />
         </Button>
       </div>
+
+      {/* 高级选项 */}
+      {selectedModelParamsSchema?.advanced && (
+        <AdvancedOptionsForm
+          schema={selectedModelParamsSchema.advanced}
+          values={advancedParams}
+          title={tCommon('advanced')}
+          onChange={params => {
+            setAdvancedParams(params);
+            onValueChange?.({ lyrics: localLyrics, prompt: localPrompt, selectedModel: selectedModelName, advancedParams: params });
+          }}
+        />
+      )}
     </div>
   );
 };

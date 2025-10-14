@@ -24,6 +24,7 @@ export const videoParamsSchema = z.object({
   lastFrame: z.string().optional(),
   referenceImage: z.array(z.string()).optional(),
   video: z.string().optional(),
+  audio: z.string().optional(),
   aspectRatio: z.string().optional(),
   resolution: z.string().optional(),
   duration: z.string().optional(),
@@ -35,6 +36,8 @@ export type VideoJsonSchema = {
   firstFrame: JSONSchema.StringSchema;
   lastFrame: JSONSchema.StringSchema;
   referenceImage: JSONSchema.ArraySchema;
+  video: JSONSchema.StringSchema;
+  audio: JSONSchema.StringSchema;
   aspectRatio: JSONSchema.StringSchema;
   resolution: JSONSchema.StringSchema;
   duration: JSONSchema.StringSchema;
@@ -54,34 +57,23 @@ export type T2aJsonSchema = {
   advanced: JSONSchema.ObjectSchema;
 };
 
-// 唇形同步生成参数
-export const lipSyncParamsSchema = z.object({
-  video: z.string(),
-  audio: z.string(),
-  advanced: z.any().optional(),
-});
-
-export type LipSyncJsonSchema = {
-  video: JSONSchema.StringSchema;
-  audio: JSONSchema.StringSchema;
-  advanced: JSONSchema.ObjectSchema;
-};
-
 // 歌曲生成参数
 export const musicParamsSchema = z.object({
   lyrics: z.string().optional(),
   prompt: z.string().optional(),
+  advanced: z.any().optional(),
 });
 
 export type MusicJsonSchema = {
   lyrics: JSONSchema.StringSchema;
   prompt: JSONSchema.StringSchema;
+  advanced: JSONSchema.ObjectSchema;
 };
 
 // 提交任务参数
-export const submitTaskParamsSchema = z.union([imageParamsSchema, videoParamsSchema, t2aParamsSchema, lipSyncParamsSchema, musicParamsSchema]);
+export const submitTaskParamsSchema = z.union([imageParamsSchema, videoParamsSchema, t2aParamsSchema, musicParamsSchema]);
 export type SubmitTaskParams = z.infer<typeof submitTaskParamsSchema>;
-export type SubmitTaskParamsJsonSchema = ImageJsonSchema | VideoJsonSchema | T2aJsonSchema | LipSyncJsonSchema | MusicJsonSchema;
+export type SubmitTaskParamsJsonSchema = ImageJsonSchema | VideoJsonSchema | T2aJsonSchema | MusicJsonSchema;
 
 export interface Voice {
   id: string;
@@ -123,11 +115,7 @@ export abstract class BaseAigcModel {
 
   // 抽象方法：子类必须实现自己的参数验证规则
   public abstract paramsSchema: z.ZodSchema<
-    | z.infer<typeof videoParamsSchema>
-    | z.infer<typeof imageParamsSchema>
-    | z.infer<typeof t2aParamsSchema>
-    | z.infer<typeof lipSyncParamsSchema>
-    | z.infer<typeof musicParamsSchema>
+    z.infer<typeof videoParamsSchema> | z.infer<typeof imageParamsSchema> | z.infer<typeof t2aParamsSchema> | z.infer<typeof musicParamsSchema>
   >;
 
   abstract submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string>;

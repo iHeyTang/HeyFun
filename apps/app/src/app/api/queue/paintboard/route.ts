@@ -30,6 +30,9 @@ export const POST = async (req: Request) => {
     if ('video' in task.params && task.params.video) {
       task.params.video = await storage.getSignedUrl(task.params.video, { expiresIn: 3600 });
     }
+    if ('audio' in task.params && task.params.audio) {
+      task.params.audio = await storage.getSignedUrl(task.params.audio, { expiresIn: 3600 });
+    }
 
     const [error, externalTaskId] = await to(AIGC.submitGenerationTask(task.model, task.params));
 

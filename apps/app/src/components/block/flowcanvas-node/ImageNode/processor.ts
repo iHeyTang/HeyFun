@@ -7,6 +7,7 @@ export type ImageNodeActionData = {
   prompt?: string;
   selectedModel?: string;
   aspectRatio?: string;
+  advancedParams?: Record<string, any>;
 };
 
 // 图片节点处理器

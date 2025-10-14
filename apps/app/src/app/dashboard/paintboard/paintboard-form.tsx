@@ -12,7 +12,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { DynamicForm, extractDefaultValuesFromSchema } from './dynamic-form';
-import { imageParamsSchema, videoParamsSchema, t2aParamsSchema, lipSyncParamsSchema, musicParamsSchema } from '@repo/llm/aigc';
+import { imageParamsSchema, videoParamsSchema, t2aParamsSchema, musicParamsSchema } from '@repo/llm/aigc';
 import { useTranslations } from 'next-intl';
 
 /**
@@ -32,14 +32,17 @@ const getParamsSchemaByGenerationType = (generationTypes: string[]) => {
   if (generationTypes.includes('text-to-image') || generationTypes.includes('image-to-image')) {
     return imageParamsSchema;
   }
-  if (generationTypes.includes('text-to-video') || generationTypes.includes('image-to-video') || generationTypes.includes('keyframe-to-video')) {
+  if (
+    generationTypes.includes('text-to-video') ||
+    generationTypes.includes('image-to-video') ||
+    generationTypes.includes('keyframe-to-video') ||
+    generationTypes.includes('video-to-video') ||
+    generationTypes.includes('lip-sync')
+  ) {
     return videoParamsSchema;
   }
   if (generationTypes.includes('text-to-speech')) {
     return t2aParamsSchema;
-  }
-  if (generationTypes.includes('lip-sync')) {
-    return lipSyncParamsSchema;
   }
   if (generationTypes.includes('music')) {
     return musicParamsSchema;
@@ -94,14 +97,17 @@ export function PaintBoardForm({ onSubmitSuccess }: PaintBoardFormProps) {
     if (types.includes('text-to-image') || types.includes('image-to-image')) {
       return 'text-to-image';
     }
-    if (types.includes('text-to-video') || types.includes('image-to-video') || types.includes('keyframe-to-video')) {
+    if (
+      types.includes('text-to-video') ||
+      types.includes('image-to-video') ||
+      types.includes('keyframe-to-video') ||
+      types.includes('video-to-video') ||
+      types.includes('lip-sync')
+    ) {
       return 'text-to-video';
     }
     if (types.includes('text-to-speech')) {
       return 'text-to-speech';
-    }
-    if (types.includes('lip-sync')) {
-      return 'lip-sync';
     }
     if (types.includes('music')) {
       return 'music';

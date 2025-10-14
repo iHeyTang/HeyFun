@@ -46,10 +46,12 @@ export class PixverseLipsync extends BaseAigcModel {
 
   async getTaskResult(params: { model: string; taskId: string; params: z.infer<typeof paramsSchema> }): Promise<GenerationTaskResult> {
     const path = '/302/submit/pixverse-lipsync';
-    const data = await this.provider.request<
-      | { request_id: string; detail: string }
-      | { request_id: string; status?: string; video: { url: string; content_type: string; file_size: number } }
-    >({
+    const data = await this.provider.request<{
+      request_id: string;
+      detail?: string;
+      status?: string;
+      video?: { url: string; content_type: string; file_size: number };
+    }>({
       path,
       method: 'GET',
       query: { request_id: params.taskId },
@@ -69,7 +71,7 @@ export class PixverseLipsync extends BaseAigcModel {
       };
     }
 
-    if (!('video' in data)) {
+    if (!('video' in data) || !data.video) {
       console.error('Pixverse Lipsync failed', data);
       return {
         status: 'failed',

@@ -430,12 +430,6 @@
           "description": "用於生成音樂",
           "defaultLabel": "音樂節點",
           "defaultDescription": "點擊上傳音樂"
-        },
-        "lipsync": {
-          "label": "唇形同步節點",
-          "description": "用於唇形同步",
-          "defaultLabel": "唇形同步節點",
-          "defaultDescription": "點擊上傳影片和音訊"
         }
       }
     },
@@ -482,7 +476,8 @@
         "resolution": "解析度",
         "selectVoice": "選擇音色",
         "lyrics": "歌詞",
-        "prompt": "提示詞"
+        "prompt": "提示詞",
+        "advanced": "進階選項"
       },
       "text": {
         "placeholder": "與 AI 聊天，輸入 @ 提及",

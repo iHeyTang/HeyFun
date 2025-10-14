@@ -8,8 +8,8 @@ const paramsSchema = z.object({
   referenceImage: z.array(z.string()).min(0).max(10).optional(),
   aspectRatio: z.enum(['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1']),
   advanced: z.object({
-    image_fidelity: z.number().min(0).max(1).step(0.1).optional(),
-    human_fidelity: z.number().min(0).max(1).step(0.1).optional(),
+    image_fidelity: z.number().min(0).max(1).step(0.1).optional().describe('[title:Image Fidelity]'),
+    human_fidelity: z.number().min(0).max(1).step(0.1).optional().describe('[title:Human Fidelity]'),
   }),
 });
 

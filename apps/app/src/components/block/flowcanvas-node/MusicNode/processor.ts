@@ -7,6 +7,7 @@ export type MusicNodeActionData = {
   lyrics?: string;
   prompt?: string;
   selectedModel?: string;
+  advancedParams?: Record<string, any>;
 };
 
 // 音乐节点处理器
