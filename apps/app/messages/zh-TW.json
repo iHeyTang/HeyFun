@@ -372,6 +372,11 @@
       "updatedAt": "更新於",
       "unnamed": "未命名範本",
       "namePlaceholder": "輸入範本名稱",
+      "autoLayout": "一鍵整理",
+      "run": "執行",
+      "file": "檔案",
+      "import": "匯入",
+      "export": "匯出",
       "errors": {
         "loadFailed": "載入專案失敗",
         "updateFailed": "更新專案失敗",

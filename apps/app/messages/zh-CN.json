@@ -374,6 +374,7 @@
       "namePlaceholder": "输入模板名称",
       "autoLayout": "一键整理",
       "run": "运行",
+      "file": "文件",
       "import": "导入",
       "export": "导出",
       "errors": {

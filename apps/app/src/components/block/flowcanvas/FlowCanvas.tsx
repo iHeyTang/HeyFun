@@ -24,6 +24,7 @@ export interface FlowCanvasProps {
   enableNodeMenu?: boolean;
   ref?: RefObject<FlowCanvasRef | null>;
   titleBox?: React.ReactNode;
+  toolbox?: React.ReactNode;
   nodeTypes: Record<string, { component: NodeTypes[keyof NodeTypes]; processor: NodeExecutor }>; // 节点类型
 }
 
@@ -43,7 +44,8 @@ function FlowCanvasCore({
   showMiniMap = true,
   enableNodeMenu = true,
   ref,
-  titleBox: toolbox,
+  titleBox,
+  toolbox,
   nodeTypes,
 }: FlowCanvasProps) {
   const { theme } = useTheme();
@@ -161,8 +163,10 @@ function FlowCanvasCore({
         {showControls && <Controls />}
         {showMiniMap && <MiniMap zoomable pannable />}
 
+        {/* 标题栏 */}
+        {titleBox && <Toolbox position={{ left: 10, top: 10 }}>{titleBox}</Toolbox>}
         {/* 工具栏 */}
-        {toolbox && <Toolbox>{toolbox}</Toolbox>}
+        {toolbox && <Toolbox position={{ left: 10, top: 'calc(50% - 95px)' }}>{toolbox}</Toolbox>}
         {/* 节点菜单 */}
         {enableNodeMenu && (
           <ContextMenu

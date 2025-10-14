@@ -372,6 +372,11 @@
       "updatedAt": "更新日",
       "unnamed": "無題のテンプレート",
       "namePlaceholder": "テンプレート名を入力",
+      "autoLayout": "自動レイアウト",
+      "run": "実行",
+      "file": "ファイル",
+      "import": "インポート",
+      "export": "エクスポート",
       "errors": {
         "loadFailed": "プロジェクトの読み込みに失敗しました",
         "updateFailed": "プロジェクトの更新に失敗しました",

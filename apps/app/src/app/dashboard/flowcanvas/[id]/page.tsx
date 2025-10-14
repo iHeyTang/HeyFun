@@ -7,12 +7,16 @@ import TextNode, { TextNodeProcessor } from '@/components/block/flowcanvas-node/
 import VideoNode, { VideoNodeProcessor } from '@/components/block/flowcanvas-node/VideoNode';
 import AudioNode, { AudioNodeProcessor } from '@/components/block/flowcanvas-node/AudioNode';
 import MusicNode, { MusicNodeProcessor } from '@/components/block/flowcanvas-node/MusicNode';
+import ToolbarButton from '@/components/block/flowcanvas/components/ToolbarButton';
+import ToolbarMenuButton from '@/components/block/flowcanvas/components/ToolbarMenuButton';
+import ToolbarPanel from '@/components/block/flowcanvas/components/ToolbarPanel';
 import { Button } from '@/components/ui/button';
 import { useAigc, useLLM } from '@/hooks/use-llm';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { DownloadIcon, LayoutGridIcon, PlayIcon, UploadIcon } from 'lucide-react';
+import { FileDown, FileUp, FileIcon, LayoutGridIcon, PlayIcon } from 'lucide-react';
+import { format } from 'date-fns';
 
 const useProjectSchema = (ft: any) => {
   const { id } = useParams<{ id: string }>();
@@ -206,13 +210,14 @@ const FlowCanvasPage = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `canvas-${id}-${new Date().toISOString().split('T')[0]}.json`;
+      const now = new Date();
+      link.download = `canvas-${name}-${format(now, 'yyyyMMdd-HHmmss')}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     }
-  }, [id]);
+  }, [id, name]);
 
   // 导入canvas数据从JSON文件
   const handleImportCanvas = useCallback(() => {
@@ -350,33 +355,20 @@ const FlowCanvasPage = () => {
                 </div>
               )}
             </div>
-
-            {/* 分隔线 */}
-            <div className="h-6 w-px bg-gray-300" />
-
-            {/* 功能按钮组 */}
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={handleAutoLayout} title={ft('autoLayout')}>
-                <LayoutGridIcon className="size-4" />
-                <span className="ml-1">{ft('autoLayout')}</span>
-              </Button>
-
-              <Button size="sm" variant="outline" onClick={handleRun} title={ft('run')}>
-                <PlayIcon className="size-4" />
-                <span className="ml-1">{ft('run')}</span>
-              </Button>
-
-              <Button size="sm" variant="outline" onClick={handleImportCanvas} title={ft('import')}>
-                <DownloadIcon />
-                <span className="ml-1">{ft('import')}</span>
-              </Button>
-
-              <Button size="sm" variant="outline" onClick={handleExportCanvas} title={ft('export')}>
-                <UploadIcon />
-                <span className="ml-1">{ft('export')}</span>
-              </Button>
-            </div>
           </div>
+        }
+        toolbox={
+          <ToolbarPanel>
+            <ToolbarButton icon={LayoutGridIcon} label={ft('autoLayout')} onClick={handleAutoLayout} />
+            <ToolbarMenuButton
+              icon={FileIcon}
+              label={ft('file')}
+              actions={[
+                { icon: FileUp, label: ft('import'), onClick: handleImportCanvas },
+                { icon: FileDown, label: ft('export'), onClick: handleExportCanvas },
+              ]}
+            />
+          </ToolbarPanel>
         }
       />
     </div>

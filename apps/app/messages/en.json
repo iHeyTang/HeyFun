@@ -374,6 +374,7 @@
       "namePlaceholder": "Enter template name",
       "autoLayout": "Auto Layout",
       "run": "Run",
+      "file": "File",
       "import": "Import",
       "export": "Export",
       "errors": {

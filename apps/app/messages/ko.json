@@ -372,6 +372,11 @@
       "updatedAt": "업데이트 날짜",
       "unnamed": "제목 없는 템플릿",
       "namePlaceholder": "템플릿 이름 입력",
+      "autoLayout": "자동 레이아웃",
+      "run": "실행",
+      "file": "파일",
+      "import": "가져오기",
+      "export": "내보내기",
       "errors": {
         "loadFailed": "프로젝트 로드 실패",
         "updateFailed": "프로젝트 업데이트 실패",
