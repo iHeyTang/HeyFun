@@ -14,6 +14,7 @@ const paramsSchema = z.object({
   prompt: z.string(),
   referenceImage: z.array(z.string()).min(0).max(10).optional(),
   aspectRatio: z.enum(['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1']),
+  n: z.enum(['4']).optional(),
   advanced: z.object({
     mode: z.enum(['relax', 'fast', 'turbo']).describe('[title:Mode]'),
   }),

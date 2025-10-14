@@ -69,7 +69,7 @@ export const AdvancedOptionsForm = memo(({ schema, values = {}, onChange, title 
       if (fieldSchema.enum && Array.isArray(fieldSchema.enum)) {
         return (
           <div key={fieldName} className="hover:bg-muted -mx-1 flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors">
-            <Label className="text-muted-foreground w-24 shrink-0 text-xs">{displayTitle}</Label>
+            <Label className="text-muted-foreground w-32 shrink-0 text-xs">{displayTitle}</Label>
             <Select value={fieldValue || fieldSchema.default || ''} onValueChange={value => handleFieldChange(fieldName, value)}>
               <SelectTrigger size="sm" className="min-w-32 flex-1 text-xs">
                 <SelectValue placeholder={`选择${displayTitle}`} />
@@ -90,7 +90,7 @@ export const AdvancedOptionsForm = memo(({ schema, values = {}, onChange, title 
       if (fieldSchema.format === 'textarea') {
         return (
           <div key={fieldName} className="hover:bg-muted -mx-1 flex gap-2 rounded-md px-1.5 py-1 transition-colors">
-            <Label className="text-muted-foreground w-24 shrink-0 pt-1 text-xs">{displayTitle}</Label>
+            <Label className="text-muted-foreground w-32 shrink-0 pt-1 text-xs">{displayTitle}</Label>
             <Textarea
               value={fieldValue || fieldSchema.default || ''}
               onChange={e => handleFieldChange(fieldName, e.target.value)}
@@ -104,7 +104,7 @@ export const AdvancedOptionsForm = memo(({ schema, values = {}, onChange, title 
       // 普通文本输入
       return (
         <div key={fieldName} className="hover:bg-muted -mx-1 flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors">
-          <Label className="text-muted-foreground w-24 shrink-0 text-xs">{displayTitle}</Label>
+          <Label className="text-muted-foreground w-32 shrink-0 text-xs">{displayTitle}</Label>
           <Input
             type="text"
             value={fieldValue || fieldSchema.default || ''}
@@ -128,7 +128,7 @@ export const AdvancedOptionsForm = memo(({ schema, values = {}, onChange, title 
       if (hasRange && min !== max) {
         return (
           <div key={fieldName} className="hover:bg-muted -mx-1 flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors">
-            <Label className="text-muted-foreground w-24 shrink-0 text-xs">{displayTitle}</Label>
+            <Label className="text-muted-foreground w-32 shrink-0 text-xs">{displayTitle}</Label>
             <div className="flex flex-1 items-center space-y-1 text-[11px]">
               <div className="text-muted-foreground w-8 text-center">{min}</div>
               <div className="flex-1">
@@ -150,7 +150,7 @@ export const AdvancedOptionsForm = memo(({ schema, values = {}, onChange, title 
       // 普通数字输入
       return (
         <div key={fieldName} className="hover:bg-muted -mx-1 flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors">
-          <Label className="text-muted-foreground w-24 shrink-0 text-xs">{displayTitle}</Label>
+          <Label className="text-muted-foreground w-32 shrink-0 text-xs">{displayTitle}</Label>
           <Input
             type="number"
             value={currentValue}
@@ -172,7 +172,7 @@ export const AdvancedOptionsForm = memo(({ schema, values = {}, onChange, title 
     if (fieldType === 'boolean') {
       return (
         <div key={fieldName} className="hover:bg-muted -mx-1 flex items-center justify-between gap-2 rounded-md px-1.5 py-1 transition-colors">
-          <Label className="text-muted-foreground w-24 shrink-0 text-xs">{displayTitle}</Label>
+          <Label className="text-muted-foreground w-32 shrink-0 text-xs">{displayTitle}</Label>
           <Switch checked={fieldValue ?? fieldSchema.default ?? false} onCheckedChange={checked => handleFieldChange(fieldName, checked)} />
         </div>
       );
@@ -181,7 +181,7 @@ export const AdvancedOptionsForm = memo(({ schema, values = {}, onChange, title 
     // 不支持的类型
     return (
       <div key={fieldName} className="hover:bg-muted -mx-1 flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors">
-        <Label className="text-muted-foreground w-24 shrink-0 text-xs">{displayTitle}</Label>
+        <Label className="text-muted-foreground w-32 shrink-0 text-xs">{displayTitle}</Label>
         <span className="text-muted-foreground flex-1 text-xs">(不支持的类型: {fieldType})</span>
       </div>
     );

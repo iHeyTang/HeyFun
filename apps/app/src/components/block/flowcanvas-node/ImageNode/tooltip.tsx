@@ -29,9 +29,28 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const flowGraph = useFlowGraph();
   const { availableModels } = useAigc();
   const { updateStatus } = useNodeStatusById(nodeId);
+
+  // 获取默认模型（第一个支持图像生成的模型）
+  const defaultModel = useMemo(() => {
+    const specificModel = availableModels?.find(m => m.name === 'doubao-seedream-4-0-250828');
+    if (specificModel) {
+      return specificModel;
+    }
+    const model = availableModels?.find(m => m.generationTypes.includes('text-to-image') || m.generationTypes.includes('image-to-image'));
+    return model;
+  }, [availableModels]);
+
+  // 获取默认值
+  const defaultModelSchema = useMemo(() => {
+    return defaultModel?.paramsSchema?.properties as ImageJsonSchema;
+  }, [defaultModel]);
+
   const [localPrompt, setLocalPrompt] = useState(actionData?.prompt || '');
-  const [selectedModelName, setSelectedModelName] = useState(actionData?.selectedModel);
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState(actionData?.aspectRatio);
+  const [selectedModelName, setSelectedModelName] = useState<string | undefined>(actionData?.selectedModel || defaultModel?.name);
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<string | undefined>(
+    actionData?.aspectRatio || (defaultModelSchema?.aspectRatio?.enum?.[0] as string),
+  );
+  const [selectedN, setSelectedN] = useState<string | undefined>(actionData?.n || (defaultModelSchema?.n?.enum?.[0] as string));
   const [advancedParams, setAdvancedParams] = useState<Record<string, any>>(actionData?.advancedParams || {});
   const fullscreenModalRef = useRef<fullscreenModalRef | null>(null);
 
@@ -42,6 +61,38 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const selectedModelParamsSchema = useMemo(() => {
     return selectedModel?.paramsSchema?.properties as ImageJsonSchema;
   }, [selectedModel]);
+
+  // 当默认模型加载完成且没有选中模型时，自动设置默认值
+  useEffect(() => {
+    if (defaultModel && !selectedModelName && !actionData?.selectedModel) {
+      const schema = defaultModelSchema;
+      setSelectedModelName(defaultModel.name);
+      setSelectedAspectRatio((schema?.aspectRatio?.enum?.[0] as string) || '');
+      setSelectedN((schema?.n?.enum?.[0] as string) || '');
+      onValueChange?.({
+        ...actionData,
+        prompt: localPrompt,
+        selectedModel: defaultModel.name,
+        aspectRatio: (schema?.aspectRatio?.enum?.[0] as string) || '',
+        n: (schema?.n?.enum?.[0] as string) || '',
+        advancedParams: {},
+      });
+    }
+  }, [defaultModel, defaultModelSchema, selectedModelName, actionData?.selectedModel]);
+
+  const handleSelectModel = (v: string) => {
+    setSelectedModelName(v);
+    setAdvancedParams({});
+    const schema = (availableModels?.find(model => model.name === v)?.paramsSchema?.properties as ImageJsonSchema) || {};
+    onValueChange?.({
+      ...actionData,
+      prompt: localPrompt,
+      selectedModel: v,
+      aspectRatio: (schema.aspectRatio?.enum?.[0] as string) || '',
+      n: (schema.n?.enum?.[0] as string) || '',
+      advancedParams: {},
+    });
+  };
 
   // 当外部值改变时同步本地状态
   useEffect(() => {
@@ -54,10 +105,20 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
     if (actionData?.aspectRatio !== undefined) {
       setSelectedAspectRatio(actionData.aspectRatio);
     }
-  }, [actionData?.prompt, actionData?.selectedModel, actionData?.aspectRatio]);
+    if (actionData?.n !== undefined) {
+      setSelectedN(actionData.n);
+    }
+  }, [actionData?.prompt, actionData?.selectedModel, actionData?.aspectRatio, actionData?.n]);
 
   const handleSubmit = async () => {
-    onValueChange?.({ ...actionData, prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio, advancedParams });
+    onValueChange?.({
+      ...actionData,
+      prompt: localPrompt,
+      selectedModel: selectedModelName,
+      aspectRatio: selectedAspectRatio,
+      n: selectedN,
+      advancedParams,
+    });
     updateStatus(NodeStatus.PROCESSING);
     try {
       const node = flowGraph.getNodeById(nodeId)!;
@@ -93,7 +154,14 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const handlePromptChange = (newPrompt: string) => {
     // 始终更新本地状态以显示用户输入
     setLocalPrompt(newPrompt);
-    onValueChange?.({ ...actionData, prompt: newPrompt, selectedModel: selectedModelName, aspectRatio: selectedAspectRatio, advancedParams });
+    onValueChange?.({
+      ...actionData,
+      prompt: newPrompt,
+      selectedModel: selectedModelName,
+      aspectRatio: selectedAspectRatio,
+      n: selectedN,
+      advancedParams,
+    });
   };
 
   const handleMentionClick = useCallback(async (mentionId: string) => {
@@ -130,14 +198,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center justify-start gap-2">
           {/* 左侧：模型选择 */}
-          <Select
-            value={selectedModelName}
-            onValueChange={(v: string) => {
-              setSelectedModelName(v);
-              setAdvancedParams({});
-              onValueChange?.({ ...actionData, prompt: localPrompt, selectedModel: v, aspectRatio: '', advancedParams: {} });
-            }}
-          >
+          <Select value={selectedModelName} onValueChange={handleSelectModel}>
             <SelectTrigger size="sm" className="hover:bg-muted cursor-pointer border-none p-2 text-xs shadow-none" hideIcon>
               <SelectValue placeholder={tCommon('selectModel')}>{selectedModel?.displayName || ''}</SelectValue>
             </SelectTrigger>
@@ -159,7 +220,14 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
               value={selectedAspectRatio}
               onValueChange={(v: string) => {
                 setSelectedAspectRatio(v);
-                onValueChange?.({ ...actionData, prompt: localPrompt, selectedModel: selectedModelName, aspectRatio: v, advancedParams });
+                onValueChange?.({
+                  ...actionData,
+                  prompt: localPrompt,
+                  selectedModel: selectedModelName,
+                  aspectRatio: v,
+                  n: selectedN,
+                  advancedParams,
+                });
               }}
             >
               <SelectTrigger size="sm" className="hover:bg-muted cursor-pointer border-none p-2 text-xs shadow-none" hideIcon>
@@ -180,9 +248,36 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           )}
         </div>
         {/* 右侧：提交按钮 */}
-        <Button onClick={handleSubmit} onMouseDown={(e: React.MouseEvent) => e.stopPropagation()} className="ml-8 cursor-pointer" size="icon">
-          <WandSparkles />
-        </Button>
+        <div className="flex items-center justify-start gap-2">
+          {selectedModelParamsSchema?.n?.enum?.length && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="hover:bg-muted cursor-pointer border-none p-2 font-mono text-xs"
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                const enumValues = selectedModelParamsSchema.n.enum as string[];
+                const currentIndex = selectedN ? enumValues.indexOf(selectedN) : -1;
+                const nextIndex = (currentIndex + 1) % enumValues.length;
+                const nextValue = enumValues[nextIndex];
+                setSelectedN(nextValue);
+                onValueChange?.({
+                  ...actionData,
+                  prompt: localPrompt,
+                  selectedModel: selectedModelName,
+                  aspectRatio: selectedAspectRatio,
+                  n: nextValue,
+                  advancedParams,
+                });
+              }}
+            >
+              {selectedN || selectedModelParamsSchema.n.enum[0]}x
+            </Button>
+          )}
+          <Button onClick={handleSubmit} onMouseDown={(e: React.MouseEvent) => e.stopPropagation()} className="cursor-pointer" size="icon">
+            <WandSparkles />
+          </Button>
+        </div>
       </div>
 
       {/* 高级选项 */}
@@ -198,6 +293,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
               prompt: localPrompt,
               selectedModel: selectedModelName,
               aspectRatio: selectedAspectRatio,
+              n: selectedN,
               advancedParams: params,
             });
           }}
@@ -216,6 +312,7 @@ export const ImageNodeTooltip = memo(ImageNodeTooltipComponent, (prevProps, next
     prevProps.value?.prompt === nextProps.value?.prompt &&
     prevProps.value?.selectedModel === nextProps.value?.selectedModel &&
     prevProps.value?.aspectRatio === nextProps.value?.aspectRatio &&
+    prevProps.value?.n === nextProps.value?.n &&
     prevProps.onValueChange === nextProps.onValueChange &&
     prevProps.onSubmitSuccess === nextProps.onSubmitSuccess
   );

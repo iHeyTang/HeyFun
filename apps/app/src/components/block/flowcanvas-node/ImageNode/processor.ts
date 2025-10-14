@@ -7,6 +7,7 @@ export type ImageNodeActionData = {
   prompt?: string;
   selectedModel?: string;
   aspectRatio?: string;
+  n?: string;
   advancedParams?: Record<string, any>;
 };
 
@@ -15,7 +16,7 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
   async execute(data: BaseNodeActionData<ImageNodeActionData>): Promise<NodeExecutorExecuteResult> {
     const startTime = Date.now();
     const { actionData } = data;
-    const { prompt, selectedModel, aspectRatio } = actionData || {};
+    const { prompt, selectedModel, aspectRatio, n } = actionData || {};
 
     const images = data.input.images.map(image => image.images || []).flat();
 
@@ -54,6 +55,7 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
         prompt: processedPrompt,
         aspectRatio,
         referenceImage: referenceImages,
+        n,
       },
     });
 

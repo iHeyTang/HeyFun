@@ -7,6 +7,7 @@ const paramsSchema = z.object({
   prompt: z.string(),
   referenceImage: z.array(z.string()).min(0).max(10).optional(),
   aspectRatio: z.enum(['16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '1:1']),
+  n: z.enum(['1', '2', '4']).optional(),
   advanced: z.object({
     image_fidelity: z.number().min(0).max(1).step(0.1).optional().describe('[title:Image Fidelity]'),
     human_fidelity: z.number().min(0).max(1).step(0.1).optional().describe('[title:Human Fidelity]'),
@@ -45,7 +46,7 @@ export class Kling21 extends BaseAigcModel {
         image: params.referenceImage?.[0],
         image_fidelity: params.advanced?.image_fidelity || 0.5,
         human_fidelity: params.advanced?.human_fidelity || 0.5,
-        n: 1,
+        n: parseInt(params.n || '1'),
         aspect_ratio: params.aspectRatio,
       },
     });
@@ -111,6 +112,6 @@ export class Kling21 extends BaseAigcModel {
   }
 
   calculateCost(params: z.infer<typeof this.paramsSchema>): number {
-    return 350;
+    return 350 * parseInt(params.n || '1');
   }
 }

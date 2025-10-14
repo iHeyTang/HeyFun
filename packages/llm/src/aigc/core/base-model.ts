@@ -7,6 +7,7 @@ export const imageParamsSchema = z.object({
   prompt: z.string(),
   referenceImage: z.array(z.string()).optional(),
   aspectRatio: z.string().optional(),
+  n: z.string().optional(),
   advanced: z.any().optional(),
 });
 
@@ -14,6 +15,7 @@ export type ImageJsonSchema = {
   prompt: JSONSchema.StringSchema;
   referenceImage: JSONSchema.ArraySchema;
   aspectRatio: JSONSchema.StringSchema;
+  n: JSONSchema.StringSchema;
   advanced: JSONSchema.ObjectSchema;
 };
 
