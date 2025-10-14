@@ -43,6 +43,7 @@ import { DashscopeWanProvider, dashscopeWanServiceConfigSchema } from './provide
 import { MinimaxProvider, minimaxServiceConfigSchema } from './providers/minimax';
 import { VolcengineArkProvider, volcengineArkServiceConfigSchema } from './providers/volcengine-ark';
 import { VolcengineJimengProvider, volcengineJimengServiceConfigSchema } from './providers/volcengine-jimeng';
+import { MurekaProvider, murekaServiceConfigSchema } from './providers/mureka';
 
 // 豆包模型
 import { DoubaoSeedance10LiteVideo } from './models/doubao-seedance-1-0-lite-video';
@@ -63,7 +64,7 @@ import { SoraVideo2 } from './models/sora-video-2';
 import { SyncSoV2 } from './models/sync-so-v2';
 import { MurekaSong } from './models/mureka-song';
 import { MurekaInstrumental } from './models/mureka-instrumental';
-import { MurekaProvider, murekaServiceConfigSchema } from './providers/mureka';
+import { TopzlabsVideo } from './models/topzlabs-video';
 
 const aigcProviderConfigSchema = z.object({
   doubao: volcengineArkServiceConfigSchema.optional(),
@@ -209,5 +210,8 @@ AIGC.registerModel(providers => (providers['302ai'] ? new PixverseLipsync(provid
 // Mureka模型注册
 AIGC.registerModel(providers => (providers['mureka'] ? new MurekaSong(providers['mureka']) : null));
 AIGC.registerModel(providers => (providers['mureka'] ? new MurekaInstrumental(providers['mureka']) : null));
+
+// Topzlabs Video模型注册
+AIGC.registerModel(providers => (providers['302ai'] ? new TopzlabsVideo(providers['302ai']) : null));
 
 export default AIGC;

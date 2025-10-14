@@ -4,6 +4,7 @@ export type GenerationType =
   | 'image-to-image'
   | 'text-to-video'
   | 'image-to-video'
+  | 'video-to-video'
   | 'keyframe-to-video'
   | 'text-to-speech'
   | 'lip-sync'

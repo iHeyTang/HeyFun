@@ -105,7 +105,7 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
           <span>{selectedModel?.name || t('selectModel')}</span>
         </Button>
         {/* 右侧：提交按钮 */}
-        <Button onClick={handleSubmit} onMouseDown={(e: React.MouseEvent) => e.stopPropagation()} className="cursor-pointer" size="icon">
+        <Button onClick={handleSubmit} onMouseDown={(e: React.MouseEvent) => e.stopPropagation()} className="ml-8 cursor-pointer" size="icon">
           <WandSparkles />
         </Button>
       </div>

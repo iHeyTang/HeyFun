@@ -19,16 +19,17 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
     const { prompt, selectedModel, aspectRatio, duration, resolution } = actionData || {};
 
     const images = data.input.images.map(image => image.images || []).flat();
+    const videos = data.input.videos.map(video => video.videos || []).flat();
 
     // 如果输入全部为空，则直接返回
-    if (images.length === 0 && !actionData?.prompt) {
+    if (images.length === 0 && videos.length === 0 && !actionData?.prompt) {
       return {
         success: true,
         timestamp: new Date(),
       };
     }
 
-    if (!prompt || !selectedModel) {
+    if (!selectedModel) {
       return {
         success: false,
         timestamp: new Date(),
@@ -38,7 +39,7 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
     }
 
     // 使用工具函数处理 prompt 中的所有提及
-    const { processedPrompt, mentionedImages } = processMentions(prompt, {
+    const { processedPrompt, mentionedImages } = processMentions(prompt || '', {
       textNodes: data.input.texts,
       availableImages: data.input.images,
     });
@@ -48,7 +49,7 @@ export class VideoNodeProcessor extends BaseNodeProcessor<VideoNodeActionData> {
 
     const result = await submitGenerationTask({
       model: selectedModel,
-      params: { prompt: processedPrompt, aspectRatio, duration, firstFrame: referenceImages?.[0], resolution },
+      params: { prompt: processedPrompt, aspectRatio, duration, firstFrame: referenceImages?.[0], video: videos?.[0]?.selected, resolution },
     });
 
     if (result.error || !result.data?.id) {

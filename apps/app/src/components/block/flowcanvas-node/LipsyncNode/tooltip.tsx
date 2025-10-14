@@ -148,7 +148,7 @@ const LipsyncNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange,
         <Button
           onClick={handleSubmit}
           onMouseDown={(e: React.MouseEvent) => e.stopPropagation()}
-          className="cursor-pointer"
+          className="ml-8 cursor-pointer"
           size="icon"
           disabled={!inputInfo.hasVideo || !inputInfo.hasAudio || !selectedModelName}
         >

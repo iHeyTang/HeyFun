@@ -110,14 +110,16 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   return (
     <div className="nodrag flex flex-col gap-2 overflow-hidden rounded-lg p-4">
       {/* 上半部分：多行文本输入框 */}
-      <FlowCanvasTextEditor
-        value={localPrompt}
-        onChange={handlePromptChange}
-        placeholder={t('video.placeholder')}
-        className="h-24 w-full resize-none border-none! outline-none!"
-        nodeId={nodeId}
-        ref={editorRef}
-      />
+      {selectedModelParamsSchema?.prompt?.type === 'string' && (
+        <FlowCanvasTextEditor
+          value={localPrompt}
+          onChange={handlePromptChange}
+          placeholder={t('video.placeholder')}
+          className="h-24 w-full resize-none border-none! outline-none!"
+          nodeId={nodeId}
+          ref={editorRef}
+        />
+      )}
 
       {/* 下半部分：Footer - 模型选择和提交按钮 */}
       <div className="flex items-center justify-between gap-2">
@@ -141,7 +143,12 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             </SelectTrigger>
             <SelectContent>
               {availableModels
-                ?.filter(model => model.generationTypes.includes('text-to-video') || model.generationTypes.includes('image-to-video'))
+                ?.filter(
+                  model =>
+                    model.generationTypes.includes('text-to-video') ||
+                    model.generationTypes.includes('image-to-video') ||
+                    model.generationTypes.includes('video-to-video'),
+                )
                 .map(model => (
                   <SelectItem key={model.name} value={model.name}>
                     {model.displayName}
@@ -239,7 +246,7 @@ const VideoNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           )}
         </div>
         {/* 右侧：提交按钮 */}
-        <Button onClick={handleSubmit} onMouseDown={(e: React.MouseEvent) => e.stopPropagation()} className="cursor-pointer" size="icon">
+        <Button onClick={handleSubmit} onMouseDown={(e: React.MouseEvent) => e.stopPropagation()} className="ml-8 cursor-pointer" size="icon">
           <WandSparkles />
         </Button>
       </div>

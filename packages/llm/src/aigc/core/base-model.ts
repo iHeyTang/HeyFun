@@ -19,10 +19,11 @@ export type ImageJsonSchema = {
 
 // 视频生成参数
 export const videoParamsSchema = z.object({
-  prompt: z.string(),
+  prompt: z.string().optional(),
   firstFrame: z.string().optional(),
   lastFrame: z.string().optional(),
   referenceImage: z.array(z.string()).optional(),
+  video: z.string().optional(),
   aspectRatio: z.string().optional(),
   resolution: z.string().optional(),
   duration: z.string().optional(),

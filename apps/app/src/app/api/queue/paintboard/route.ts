@@ -27,6 +27,9 @@ export const POST = async (req: Request) => {
     if ('referenceImage' in task.params && task.params.referenceImage) {
       task.params.referenceImage = await Promise.all(task.params.referenceImage.map(item => storage.getSignedUrl(item, { expiresIn: 3600 })));
     }
+    if ('video' in task.params && task.params.video) {
+      task.params.video = await storage.getSignedUrl(task.params.video, { expiresIn: 3600 });
+    }
 
     const [error, externalTaskId] = await to(AIGC.submitGenerationTask(task.model, task.params));
 
