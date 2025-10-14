@@ -1,3 +1,4 @@
+export { useAutoLayout } from './useAutoLayout';
 export { useCopyPaste } from './useCopyPaste';
 export { useFlowGraph } from './useFlowGraph';
 export { useImportExport } from './useImportExport';

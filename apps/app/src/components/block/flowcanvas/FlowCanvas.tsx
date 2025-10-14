@@ -7,7 +7,7 @@ import { ContextMenu, useContextMenu } from './components/ContextMenu';
 import { MultiSelectToolbar, useMultiSelectToolbar } from './components/MultiSelectToolbar';
 import Toolbox from './components/Toolbox';
 import { FlowGraphProvider, useFlowGraphContext } from './FlowCanvasProvider';
-import { useCopyPaste, useImportExport, useSchemaSync, useSelection, useWorkflowRunner } from './hooks';
+import { useAutoLayout, useCopyPaste, useImportExport, useSchemaSync, useSelection, useWorkflowRunner } from './hooks';
 import { useFlowGraph } from './hooks/useFlowGraph';
 import { ExecutionResult } from './scheduler/core';
 import { CanvasSchema } from './types/canvas';
@@ -23,7 +23,7 @@ export interface FlowCanvasProps {
   showMiniMap?: boolean;
   enableNodeMenu?: boolean;
   ref?: RefObject<FlowCanvasRef | null>;
-  toolbox?: React.ReactNode;
+  titleBox?: React.ReactNode;
   nodeTypes: Record<string, { component: NodeTypes[keyof NodeTypes]; processor: NodeExecutor }>; // 节点类型
 }
 
@@ -31,6 +31,7 @@ export interface FlowCanvasRef {
   importCanvas: (canvas: string) => void;
   exportCanvas: () => string;
   run: () => Promise<ExecutionResult>;
+  autoLayout: (direction?: 'TB' | 'LR') => void;
 }
 
 function FlowCanvasCore({
@@ -42,7 +43,7 @@ function FlowCanvasCore({
   showMiniMap = true,
   enableNodeMenu = true,
   ref,
-  toolbox,
+  titleBox: toolbox,
   nodeTypes,
 }: FlowCanvasProps) {
   const { theme } = useTheme();
@@ -50,6 +51,7 @@ function FlowCanvasCore({
   const flowGraph = useFlowGraph();
   const { exportCanvasToJson } = useImportExport();
   const selection = useSelection();
+  const { autoLayout } = useAutoLayout();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialSchema?.nodes || []);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialSchema?.edges || []);
@@ -81,6 +83,9 @@ function FlowCanvasCore({
     },
     run: async () => {
       return await workflowRunner.runWorkflow({ nodes, edges }, undefined, nodeMap.executors);
+    },
+    autoLayout: (direction?: 'TB' | 'LR') => {
+      autoLayout(direction);
     },
   }));
 

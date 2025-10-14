@@ -12,6 +12,7 @@ import { useAigc, useLLM } from '@/hooks/use-llm';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { DownloadIcon, LayoutGridIcon, PlayIcon, UploadIcon } from 'lucide-react';
 
 const useProjectSchema = (ft: any) => {
   const { id } = useParams<{ id: string }>();
@@ -240,6 +241,21 @@ const FlowCanvasPage = () => {
     input.click();
   }, []);
 
+  // 一键整理布局
+  const handleAutoLayout = useCallback(() => {
+    canvasRef.current?.autoLayout('LR');
+  }, []);
+
+  // 运行工作流
+  const handleRun = useCallback(async () => {
+    try {
+      const result = await canvasRef.current?.run();
+      console.log('Workflow execution result:', result);
+    } catch (error) {
+      console.error('Workflow execution failed:', error);
+    }
+  }, []);
+
   // 名称编辑相关处理函数
   const handleStartEditName = useCallback(() => {
     setEditingName(name);
@@ -294,8 +310,8 @@ const FlowCanvasPage = () => {
         onSchemaChange={handleSchemaChange}
         ref={canvasRef}
         nodeTypes={nodeTypes}
-        toolbox={
-          <div className="flex gap-2">
+        titleBox={
+          <div className="flex items-center gap-3">
             {/* 名称展示和编辑组件 */}
             <div className="flex items-center gap-2">
               {isEditingName ? (
@@ -333,6 +349,32 @@ const FlowCanvasPage = () => {
                   ) : null}
                 </div>
               )}
+            </div>
+
+            {/* 分隔线 */}
+            <div className="h-6 w-px bg-gray-300" />
+
+            {/* 功能按钮组 */}
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={handleAutoLayout} title={ft('autoLayout')}>
+                <LayoutGridIcon className="size-4" />
+                <span className="ml-1">{ft('autoLayout')}</span>
+              </Button>
+
+              <Button size="sm" variant="outline" onClick={handleRun} title={ft('run')}>
+                <PlayIcon className="size-4" />
+                <span className="ml-1">{ft('run')}</span>
+              </Button>
+
+              <Button size="sm" variant="outline" onClick={handleImportCanvas} title={ft('import')}>
+                <DownloadIcon />
+                <span className="ml-1">{ft('import')}</span>
+              </Button>
+
+              <Button size="sm" variant="outline" onClick={handleExportCanvas} title={ft('export')}>
+                <UploadIcon />
+                <span className="ml-1">{ft('export')}</span>
+              </Button>
             </div>
           </div>
         }

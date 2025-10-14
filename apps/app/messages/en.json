@@ -372,6 +372,10 @@
       "updatedAt": "Updated on",
       "unnamed": "Untitled Template",
       "namePlaceholder": "Enter template name",
+      "autoLayout": "Auto Layout",
+      "run": "Run",
+      "import": "Import",
+      "export": "Export",
       "errors": {
         "loadFailed": "Failed to load project",
         "updateFailed": "Failed to update project",

@@ -2,12 +2,11 @@ import { NodeOutput, NodeStatus, useFlowGraph, useNodeStatusById } from '@/compo
 import { FlowCanvasTextEditor, FlowCanvasTextEditorRef } from '@/components/block/flowcanvas/components/FlowCanvasTextEditor';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAigc } from '@/hooks/use-llm';
+import { useAigc, useAigcVoiceList } from '@/hooks/use-llm';
 import { T2aJsonSchema, Voice } from '@repo/llm/aigc';
 import { Loader2, WandSparkles } from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { AudioNodeActionData, AudioNodeProcessor } from './processor';
-import { getAigcVoiceList } from '@/actions/llm';
 import { VoiceSelectorDialog, VoiceSelectorRef } from '@/components/features/voice-selector';
 import { useTranslations } from 'next-intl';
 import { AdvancedOptionsForm } from '../AdvancedOptionsForm';
@@ -35,11 +34,11 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   const editorRef = useRef<FlowCanvasTextEditorRef>(null);
   const voiceSelectorRef = useRef<VoiceSelectorRef>(null);
 
-  const [voiceList, setVoiceList] = useState<Voice[]>([]);
-
   const selectedModel = useMemo(() => {
     return availableModels?.find(model => model.name === selectedModelName);
   }, [availableModels, selectedModelName]);
+
+  const { voiceList, initiate: initiateVoiceList } = useAigcVoiceList(selectedModel?.provider || '', selectedModelName || '');
 
   const selectedVoice = useMemo(() => {
     return voiceList.find(voice => voice.id === selectedVoiceId);
@@ -47,11 +46,9 @@ const AudioNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
 
   useEffect(() => {
     if (selectedModel && selectedModelName) {
-      getAigcVoiceList({ provider: selectedModel.provider, modelName: selectedModelName }).then(res => {
-        setVoiceList(res.data || []);
-      });
+      initiateVoiceList();
     }
-  }, [selectedModel, selectedModelName]);
+  }, [selectedModel, selectedModelName, initiateVoiceList]);
 
   const selectedModelParamsSchema = useMemo(() => {
     return selectedModel?.paramsSchema?.properties as T2aJsonSchema | undefined;

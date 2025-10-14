@@ -372,6 +372,10 @@
       "updatedAt": "更新于",
       "unnamed": "未命名模板",
       "namePlaceholder": "输入模板名称",
+      "autoLayout": "一键整理",
+      "run": "运行",
+      "import": "导入",
+      "export": "导出",
       "errors": {
         "loadFailed": "加载项目失败",
         "updateFailed": "更新项目失败",
