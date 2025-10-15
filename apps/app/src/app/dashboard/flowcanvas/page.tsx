@@ -22,7 +22,6 @@ interface FlowCanvasProject {
 export default function FlowCanvasListPage() {
   const t = useTranslations('flowcanvas');
   const tCommon = useTranslations('common');
-  const router = useRouter();
   const [projects, setProjects] = useState<FlowCanvasProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -62,8 +61,8 @@ export default function FlowCanvasListPage() {
         toast.success(t('toast.createSuccess'));
         loadProjects();
 
-        // 跳转到新创建的项目
-        router.push(`/dashboard/flowcanvas/${result.data.id}`);
+        // 在新标签页中打开新创建的项目
+        window.open(`/dashboard/flowcanvas/${result.data.id}`, '_blank');
       } else {
         throw new Error(result.error || t('toast.createError'));
       }

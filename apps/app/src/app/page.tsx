@@ -11,33 +11,58 @@ import './page.css';
 import Image from 'next/image';
 
 export const metadata: Metadata = {
-  title: 'HeyFun - Universal AI Studio | Intelligent Workflow Orchestration Platform',
+  title: 'HeyFun - AI Creative Content Generation Platform',
   description:
-    'HeyFun is a universal AI studio connecting all AI services. Build intelligent agents, automate workflows, and create with AI-powered tools. Open-source, customizable, and fully connected platform empowering solopreneurs and one-person companies.',
+    'HeyFun is a professional AI creative content generation platform. Create stunning images, videos, art, and designs with AI-powered tools. Your all-in-one AI creative studio for limitless inspiration.',
   keywords: [
     'HeyFun',
-    'AI Studio',
-    'Universal AI Platform',
-    'Intelligent Workflow',
-    'AI Agent',
-    'Creative Platform',
-    'Workflow Automation',
-    'FlowCanvas',
-    'Visual Workflow Builder',
-    'Paintboard',
-    'AI Canvas',
+    'AI Creative Content',
+    'AI Image Generation',
+    'AI Video Creation',
+    'AI Art Design',
+    'AI Painting',
+    'AI Creative Tools',
+    'AI Design Platform',
+    'Creative Studio',
+    'AI Content Generation',
+    'Text to Image',
+    'Image to Video',
+    'Generative AI',
+    'AI Art Generator',
+    'Digital Art Creation',
+    'Tapnow Alternative',
+    'Lovart Alternative',
+    'Jaaz Alternative',
     'Open Source AI',
-    'No-Code AI Platform',
+    'AI Studio',
   ],
   openGraph: {
-    title: 'HeyFun - Universal AI Studio | Intelligent Workflow Orchestration Platform',
+    title: 'HeyFun - AI Creative Content Generation Platform',
     description:
-      'Build intelligent AI agents, automate workflows, and create with AI-powered tools. Open-source platform connecting all AI services.',
+      'Create stunning images, videos, art, and designs with AI-powered creative tools. Your all-in-one AI creative studio for limitless inspiration.',
     url: 'https://heyfun.ai',
     type: 'website',
+    images: [
+      {
+        url: 'https://heyfun.ai/logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'HeyFun - AI Creative Content Generation Platform',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'HeyFun - AI Creative Content Generation Platform',
+    description: 'Create stunning AI-powered images, videos, art, and designs. Your all-in-one creative studio.',
+    images: ['https://heyfun.ai/logo.png'],
   },
   alternates: {
     canonical: 'https://heyfun.ai',
+    languages: {
+      'en-US': 'https://heyfun.ai/en-US',
+      'zh-CN': 'https://heyfun.ai/zh-CN',
+    },
   },
 };
 
@@ -114,10 +139,10 @@ export default async function HomePage() {
             '@context': 'https://schema.org',
             '@type': 'WebSite',
             name: 'HeyFun',
-            alternateName: 'HeyFun AI Studio',
+            alternateName: 'HeyFun AI Creative Content Generation Platform',
             url: 'https://heyfun.ai',
             description:
-              'HeyFun is a universal AI studio that connects all AI services. Build intelligent agents, automate workflows, and unleash creativity with our AI-powered platform.',
+              'HeyFun is a professional AI creative content generation platform. Create stunning images, videos, art, and designs with AI-powered tools.',
             potentialAction: {
               '@type': 'SearchAction',
               target: {
@@ -139,20 +164,22 @@ export default async function HomePage() {
             mainEntity: {
               '@type': 'SoftwareApplication',
               name: 'HeyFun',
-              applicationCategory: 'BusinessApplication',
+              applicationCategory: 'MultimediaApplication',
+              applicationSubCategory: 'Creative Tools',
               operatingSystem: 'Web',
               offers: {
                 '@type': 'Offer',
                 price: '0',
                 priceCurrency: 'USD',
               },
+              featureList: ['AI Image Generation', 'AI Video Creation', 'AI Art Design', 'AI Painting Tools', 'Creative Content Generation'],
               aggregateRating: {
                 '@type': 'AggregateRating',
                 ratingValue: '4.8',
                 ratingCount: '100',
               },
             },
-            inLanguage: ['zh-CN', 'en-US'],
+            inLanguage: ['en-US', 'zh-CN'],
           }),
         }}
       />

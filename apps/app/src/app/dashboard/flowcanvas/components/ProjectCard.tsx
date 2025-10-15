@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, Clock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 
 interface FlowCanvasProject {
   id: string;
@@ -21,7 +20,6 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ project, onDelete }: ProjectCardProps) {
   const t = useTranslations('flowcanvas.project');
-  const router = useRouter();
 
   // 格式化时间
   const formatTime = (date: Date) => {
@@ -34,7 +32,7 @@ export default function ProjectCard({ project, onDelete }: ProjectCardProps) {
   return (
     <Card
       className="group bg-card relative cursor-pointer overflow-hidden border-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-      onClick={() => router.push(`/dashboard/flowcanvas/${project.id}`)}
+      onClick={() => window.open(`/dashboard/flowcanvas/${project.id}`, '_blank')}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">

@@ -16,11 +16,7 @@ import { LanguageToggle } from '@/components/features/language-toggle';
 import { ThemeLogo } from '@/components/features/theme-logo';
 
 export const metadata: Metadata = {
-  title: 'HeyFun',
-  description: "Hey! Let's bring a little fun to this world together.",
-  icons: {
-    icon: '/favicon.png',
-  },
+  title: 'FlowCanvas',
 };
 
 const Header = ({ className }: { className?: string }) => {

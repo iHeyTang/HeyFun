@@ -113,6 +113,12 @@ const FlowCanvasPage = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const lastUpdateTimeRef = useRef<number>(0);
 
+  useEffect(() => {
+    if (name) {
+      document.title = `HeyFun | ${name}`;
+    }
+  }, [name]);
+
   // 名称编辑相关状态
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingName, setEditingName] = useState('');
