@@ -62,6 +62,7 @@ import { SyncSoV2 } from './models/sync-so-v2';
 import { MurekaSong } from './models/mureka-song';
 import { MurekaInstrumental } from './models/mureka-instrumental';
 import { TopzlabsVideo } from './models/topzlabs-video';
+import { JimengOmnihuman } from './models/jimeng-omnihuman';
 
 const aigcProviderConfigSchema = z.object({
   doubao: volcengineArkServiceConfigSchema.optional(),
@@ -182,6 +183,7 @@ AIGC.registerModel(providers => (providers['volcengine-ark'] ? new DoubaoSeedrea
 // TODO: 即梦模型暂时不可用，存在 bug，待修复后重新启用
 // AIGC.registerModel(providers => (providers['volcengine-jimeng'] ? new Jimeng40(providers['volcengine-jimeng']) : null));
 // AIGC.registerModel(providers => (providers['volcengine-jimeng'] ? new Jimeng30ProVideo(providers['volcengine-jimeng']) : null));
+AIGC.registerModel(providers => (providers['302ai'] ? new JimengOmnihuman(providers['302ai']) : null));
 
 // Minimax模型注册
 AIGC.registerModel(providers => (providers['minimax'] ? new Minimax25Speech(providers['minimax']) : null));
