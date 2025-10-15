@@ -71,7 +71,8 @@
     "voiceSelector": {
       "searchPlaceholder": "搜尋音色...",
       "noVoicesFound": "未找到音色",
-      "custom": "自定義"
+      "custom": "自定義",
+      "clickAgainToSelect": "再次點擊選中"
     },
     "confirm": {
       "cancel": "取消",

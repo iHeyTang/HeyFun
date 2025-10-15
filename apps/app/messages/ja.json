@@ -71,7 +71,8 @@
     "voiceSelector": {
       "searchPlaceholder": "音声を検索...",
       "noVoicesFound": "音声が見つかりません",
-      "custom": "カスタム"
+      "custom": "カスタム",
+      "clickAgainToSelect": "もう一度クリックして選択"
     },
     "confirm": {
       "cancel": "キャンセル",

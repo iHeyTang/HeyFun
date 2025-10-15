@@ -30,7 +30,7 @@ export class PixverseLipsync extends BaseAigcModel {
   }
 
   async submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string> {
-    const data = await this.provider.request<{ request_id: string; status: string }>({
+    const data = await this.provider.request<{ request_id: string; status: string; message: string }>({
       path: '/302/submit/pixverse-lipsync',
       method: 'POST',
       body: {
@@ -39,7 +39,7 @@ export class PixverseLipsync extends BaseAigcModel {
       },
     });
     if (!data.request_id) {
-      throw new Error(data.status || 'Unknown error');
+      throw new Error(data.message || 'Unknown error');
     }
     return data.request_id;
   }

@@ -44,7 +44,7 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
 
     try {
       const key = await handleUploadFIle(file);
-      flowGraph.updateNodeData(id, { output: { images: [key] } });
+      flowGraph.updateNodeData(id, { output: { images: { list: [key, ...(data.output?.images?.list || [])], selected: key } } });
     } finally {
       setIsUploading(false);
     }

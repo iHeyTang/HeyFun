@@ -23,6 +23,7 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
   const [search, setSearch] = useState('');
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const [lastClickedId, setLastClickedId] = useState<string | null>(null);
   const t = useTranslations('common.voiceSelector');
 
   const stopCurrentAudio = () => {
@@ -55,20 +56,24 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
   const handleVoiceSelect = (id: string) => {
     onChange(id);
     setOpen(false);
+    setLastClickedId(null);
+    stopCurrentAudio();
   };
 
-  const handleVoicePreview = async (e: React.MouseEvent<HTMLElement>, voice: Voice) => {
-    e.stopPropagation();
-
-    // 如果点击的是当前正在播放的音色，则停止播放
-    if (currentPlayingId === voice.id) {
-      stopCurrentAudio();
+  const handleVoiceClick = async (voice: Voice) => {
+    // 如果点击的是上次点击的音色（第二次点击），则选中它
+    if (lastClickedId === voice.id) {
+      handleVoiceSelect(voice.id);
       return;
     }
 
     // 停止当前播放的音频
     stopCurrentAudio();
 
+    // 记录本次点击的音色
+    setLastClickedId(voice.id);
+
+    // 播放新的音频
     if (voice.audio) {
       const url = `/api/oss/${voice.audio}`;
 
@@ -97,8 +102,17 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
     }
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      // 关闭对话框时重置状态
+      setLastClickedId(null);
+      stopCurrentAudio();
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTitle />
       <DialogContent className="max-w-lg p-0 pb-4" showCloseButton={false}>
         <div className="border-border/30 relative border-b">
@@ -124,10 +138,10 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
             filteredVoices.map((voice, index) => (
               <button
                 key={voice.id}
-                className={`hover:bg-muted/50 flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left transition-colors ${
-                  value === voice.id ? 'bg-muted' : ''
+                className={`hover:bg-muted/50 flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left transition-all ${
+                  lastClickedId === voice.id ? 'bg-primary/5' : value === voice.id ? 'bg-muted' : ''
                 } ${index === filteredVoices.length - 1 ? '' : 'border-border/50 border-b'}`}
-                onClick={e => handleVoicePreview(e, voice)}
+                onClick={() => handleVoiceClick(voice)}
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <div className="hover:bg-primary/10 flex-shrink-0 rounded-full p-2">
@@ -137,23 +151,20 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
                     <div className="flex items-center gap-2 truncate font-normal">
                       <div>{voice.name}</div>
                       {voice.custom && <Badge variant="outline">{t('custom')}</Badge>}
+                      {lastClickedId === voice.id && (
+                        <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
+                          {t('clickAgainToSelect')}
+                        </Badge>
+                      )}
                     </div>
                     {voice.description && <div className="text-muted-foreground truncate text-xs">{voice.description}</div>}
                   </div>
                 </div>
-                <div
-                  className={`ml-2 flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors ${
-                    value === voice.id
-                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                      : 'text-muted-foreground hover:text-primary hover:bg-primary/10'
-                  }`}
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleVoiceSelect(voice.id);
-                  }}
-                >
-                  <Check className="h-4 w-4" />
-                </div>
+                {value === voice.id && (
+                  <div className="bg-primary text-primary-foreground ml-2 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full">
+                    <Check className="h-4 w-4" />
+                  </div>
+                )}
               </button>
             ))}
         </div>

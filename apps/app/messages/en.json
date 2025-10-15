@@ -71,7 +71,8 @@
     "voiceSelector": {
       "searchPlaceholder": "Search voice...",
       "noVoicesFound": "No voices found",
-      "custom": "Custom"
+      "custom": "Custom",
+      "clickAgainToSelect": "Click again to select"
     },
     "confirm": {
       "cancel": "Cancel",

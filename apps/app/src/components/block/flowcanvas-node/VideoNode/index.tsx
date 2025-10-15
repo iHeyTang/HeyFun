@@ -41,7 +41,7 @@ export default function VideoNode({ data, id }: VideoNodeProps) {
 
     try {
       const key = await handleUploadFIle(file);
-      flowGraph.updateNodeData(id, { output: { videos: [key] } });
+      flowGraph.updateNodeData(id, { output: { videos: { list: [key, ...(data.output?.videos?.list || [])], selected: key } } });
     } catch (error) {
       console.error('Video upload failed:', error);
       alert('Video upload failed. Please try again.');

@@ -44,7 +44,7 @@ export default function AudioNode({ data, id }: AudioNodeProps) {
 
     try {
       const key = await handleUploadFile(file);
-      flowGraph.updateNodeData(id, { output: { audios: [key] } });
+      flowGraph.updateNodeData(id, { output: { audios: { list: [key, ...(data.output?.audios?.list || [])], selected: key } } });
     } catch (error) {
       console.error('Audio upload failed:', error);
       alert(t('audioUploadFailed'));
