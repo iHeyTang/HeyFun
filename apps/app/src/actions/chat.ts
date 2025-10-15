@@ -1,33 +1,30 @@
 'use server';
 
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
-import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
 import { prisma } from '@/lib/server/prisma';
-import { LLMClient } from '@repo/llm/chat';
+import CHAT from '@repo/llm/chat';
 
 // 创建聊天会话
-export const createChatSession = withUserAuth(
-  async ({ orgId, args }: AuthWrapperContext<{ modelProvider: string; modelId: string; title?: string }>) => {
-    const { modelProvider, modelId, title } = args;
+export const createChatSession = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ modelId: string; title?: string }>) => {
+  const { modelId, title } = args;
 
-    try {
-      const session = await prisma.chatSessions.create({
-        data: {
-          organizationId: orgId,
-          modelProvider,
-          modelId,
-          title: title || null,
-          status: 'active',
-        },
-      });
+  try {
+    const session = await prisma.chatSessions.create({
+      data: {
+        organizationId: orgId,
+        modelProvider: '',
+        modelId,
+        title: title || null,
+        status: 'active',
+      },
+    });
 
-      return session;
-    } catch (error) {
-      console.error('Error creating chat session:', error);
-      throw error;
-    }
-  },
-);
+    return session;
+  } catch (error) {
+    console.error('Error creating chat session:', error);
+    throw error;
+  }
+});
 
 // 获取用户的聊天会话列表
 export const getChatSessions = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ page?: number; pageSize?: number }>) => {
@@ -211,16 +208,9 @@ export const deleteMessage = withUserAuth(async ({ orgId, args }: AuthWrapperCon
 });
 
 // 一次性聊天
-export const chatOnce = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ modelProvider: string; modelId: string; content: string }>) => {
-  const { modelProvider, modelId, content } = args;
-
-  const providerConfig = await prisma.modelProviderConfigs.findFirst({
-    where: { provider: modelProvider, organizationId: orgId },
-  });
-  const config = providerConfig ? JSON.parse(decryptTextWithPrivateKey(providerConfig.config)) : {};
-
-  const llmClient = new LLMClient({ ...config, providerId: modelProvider, modelId });
-
+export const chatOnce = withUserAuth(async ({ args }: AuthWrapperContext<{ modelId: string; content: string }>) => {
+  const { modelId, content } = args;
+  const llmClient = CHAT.createClient(modelId);
   const result = await llmClient.chat({
     messages: [{ role: 'user', content }],
   });

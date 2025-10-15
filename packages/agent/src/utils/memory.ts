@@ -1,14 +1,14 @@
-import type { Chat, LLMClient } from '@repo/llm/chat';
+import type { UnifiedChat, ChatClient } from '@repo/llm/chat';
 
 export interface MemoryConfig {
   maxMessages?: number;
-  llm: LLMClient;
+  llm: ChatClient;
 }
 
 export class Memory {
-  public messages: Chat.ChatCompletionMessageParam[] = [];
+  public messages: UnifiedChat.Message[] = [];
   private maxMessages: number;
-  public llm: LLMClient;
+  public llm: ChatClient;
 
   constructor(config: MemoryConfig) {
     this.maxMessages = config.maxMessages || 100;
@@ -18,7 +18,7 @@ export class Memory {
   /**
    * Add a message to memory
    */
-  async addMessage(message: Chat.ChatCompletionMessageParam): Promise<void> {
+  async addMessage(message: UnifiedChat.Message): Promise<void> {
     this.messages.push(message);
     // Implement message limit
     if (this.messages.length > this.maxMessages) {
@@ -29,7 +29,7 @@ export class Memory {
   /**
    * Add multiple messages to memory
    */
-  async addMessages(messages: Chat.ChatCompletionMessageParam[]): Promise<void> {
+  async addMessages(messages: UnifiedChat.Message[]): Promise<void> {
     this.messages.push(...messages);
     // Implement message limit
     if (this.messages.length > this.maxMessages) {
@@ -47,14 +47,14 @@ export class Memory {
   /**
    * Get n most recent messages
    */
-  getRecentMessages(n: number): Chat.ChatCompletionMessageParam[] {
+  getRecentMessages(n: number): UnifiedChat.Message[] {
     return this.messages.slice(-n);
   }
 
   /**
    * Get all messages
    */
-  getMessages(): Chat.ChatCompletionMessageParam[] {
+  getMessages(): UnifiedChat.Message[] {
     return [...this.messages];
   }
 
@@ -68,7 +68,7 @@ export class Memory {
   /**
    * Get messages formatted for LLM API
    */
-  getMessagesForLLM(): Chat.ChatCompletionMessageParam[] {
+  getMessagesForLLM(): UnifiedChat.Message[] {
     return this.messages;
   }
 }

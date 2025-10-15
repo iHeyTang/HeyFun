@@ -1,4 +1,4 @@
-import { LLMClient } from '@repo/llm/chat';
+import { ChatClient } from '@repo/llm/chat';
 import { BaseToolParameters, ToolResult } from '../types';
 import { AbstractBaseTool } from './base';
 
@@ -16,7 +16,7 @@ export class CreateChatCompletionTool extends AbstractBaseTool<ToolParameters> {
   public name = 'create_chat_completion';
   public description = 'Create a chat completion using the LLM for specific tasks or questions';
 
-  constructor(private llm?: LLMClient) {
+  constructor(private llm?: ChatClient) {
     super();
   }
 

@@ -25,27 +25,13 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
   const [search, setSearch] = useState('');
   const t = useTranslations('common.modelSelector');
 
-  const { availableModels, providerInfos } = useLLM();
+  const { availableModels } = useLLM();
 
   useImperativeHandle(ref, () => ({
     open: () => {
       setOpen(true);
     },
   }));
-
-  const grouped = useMemo(() => {
-    const filtered = availableModels.filter(
-      m => m.name.toLowerCase().includes(search.toLowerCase()) || m.provider.toLowerCase().includes(search.toLowerCase()),
-    );
-    const group: Record<string, ModelInfo[]> = {};
-    filtered.forEach(m => {
-      const providerInfo = providerInfos?.find(p => p.provider === m.provider);
-      const groupKey = providerInfo?.displayName || m.provider;
-      if (!group[groupKey]) group[groupKey] = [];
-      group[groupKey].push(m);
-    });
-    return group;
-  }, [availableModels, search, providerInfos]);
 
   const handleModelSelect = (model: ModelInfo) => {
     onModelSelect(model);
@@ -69,38 +55,20 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
         </div>
 
         <div className="max-h-96 overflow-y-auto">
-          {Object.keys(grouped).length === 0 && (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-muted-foreground text-sm">{t('noModelsFound')}</div>
-            </div>
-          )}
-
-          {Object.entries(grouped).map(([provider, items]) => (
-            <div key={provider} className="border-border/50 border-b last:border-b-0">
-              <div className="flex items-center justify-between px-4 py-2.5">
-                <Badge variant="secondary" className="text-xs font-medium">
-                  {provider}
-                </Badge>
+          {availableModels.map((model, index) => (
+            <button
+              key={model?.id}
+              className={`hover:bg-muted/50 flex w-full cursor-pointer items-center justify-between px-4 py-2 text-left transition-colors ${
+                selectedModel?.id === model?.id ? 'bg-muted' : ''
+              } ${index === availableModels.length - 1 ? 'border-b-0' : ''}`}
+              onClick={() => handleModelSelect(model)}
+            >
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <Bot className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+                <div className="truncate font-normal">{model?.name}</div>
               </div>
-
-              {items.map((model, index) => (
-                <button
-                  key={`${model?.provider}/${model?.id}`}
-                  className={`hover:bg-muted/50 flex w-full cursor-pointer items-center justify-between px-4 py-2 text-left transition-colors ${
-                    selectedModel?.id === model?.id && selectedModel?.provider === model?.provider ? 'bg-muted' : ''
-                  } ${index === items.length - 1 ? 'border-b-0' : ''}`}
-                  onClick={() => handleModelSelect(model)}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <Bot className="text-muted-foreground h-4 w-4 flex-shrink-0" />
-                    <div className="truncate font-normal">{model?.name}</div>
-                  </div>
-                  {selectedModel?.id === model?.id && selectedModel?.provider === model?.provider && (
-                    <Check className="text-primary ml-2 h-4 w-4 flex-shrink-0" />
-                  )}
-                </button>
-              ))}
-            </div>
+              {selectedModel?.id === model?.id && <Check className="text-primary ml-2 h-4 w-4 flex-shrink-0" />}
+            </button>
           ))}
         </div>
       </DialogContent>

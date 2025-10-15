@@ -1,258 +1,138 @@
-import { BaseProvider, ProviderModelInfo } from './providers/base';
-import { BaseModel } from './models/base';
-import { getProvider, Provider, getAllProviders } from './providers';
-import { getModel } from './models';
-import type { Chat } from './models/types';
-export type { Provider } from './providers';
-export type { ProviderModelInfo } from './providers/base';
-
-export * from './models/types';
-export * from './schema';
-
 /**
- * LLM Client Configuration
+ * Chat - 三层解耦架构
+ * Provider（提供商）/ Adapter（协议适配）/ Model（模型配置）
  */
-export interface LLMClientConfig {
-  providerId: string;
-  modelId: string;
-  apiKey?: string;
-  baseUrl?: string;
-  [key: string]: any;
+
+import { ChatClient, createChatClient } from './client';
+import { defaultModelRegistry, ModelRegistry } from './models';
+import type { ModelDefinition, ModelFilter } from './models';
+import type { ProviderConfig } from './providers';
+
+// ============ 导出类型 ============
+export type { UnifiedChat } from './types';
+export type { ProviderConfig } from './providers';
+export type { ModelDefinition, ModelPricing, ModelCapabilities, ModelFilter } from './models';
+export type { ChatClientConfig } from './client';
+
+// ============ 导出类和函数 ============
+export {
+  BaseProvider,
+  OpenAIProvider,
+  AnthropicProvider,
+  OpenRouterProvider,
+  DeepSeekProvider,
+  createProvider,
+  getAvailableProviders,
+} from './providers';
+
+export { ModelRegistry, defaultModelRegistry, modelDefinitions } from './models';
+
+export { ChatClient, createChatClient } from './client';
+
+// ============ ChatHost 主机类 ============
+
+export interface ChatHostConfig {
+  openai?: ProviderConfig;
+  anthropic?: ProviderConfig;
+  openrouter?: ProviderConfig;
+  deepseek?: ProviderConfig;
+  google?: ProviderConfig;
+  vercel?: ProviderConfig;
 }
 
-/**
- * LLM Client - 对外的主要接口类
- * 提供简洁优雅的API，隐藏内部provider和model的复杂性
- */
-export class LLMClient {
-  private provider!: BaseProvider;
-  private model!: BaseModel<any>;
-  private config: LLMClientConfig;
+export class ChatHost {
+  private providerConfigs: Map<string, ProviderConfig> = new Map();
+  public registry: ModelRegistry;
 
-  // Token计数器
-  public totalInputTokens: number = 0;
-  public totalCompletionTokens: number = 0;
+  constructor(config: ChatHostConfig, registry?: ModelRegistry) {
+    this.registry = registry || defaultModelRegistry;
 
-  constructor(config: LLMClientConfig) {
-    this.config = config;
-    this.initializeProviderAndModel();
+    if (config.openai) this.providerConfigs.set('openai', config.openai);
+    if (config.anthropic) this.providerConfigs.set('anthropic', config.anthropic);
+    if (config.openrouter) this.providerConfigs.set('openrouter', config.openrouter);
+    if (config.deepseek) this.providerConfigs.set('deepseek', config.deepseek);
+    if (config.google) this.providerConfigs.set('google', config.google);
+    if (config.vercel) this.providerConfigs.set('vercel', config.vercel);
   }
 
-  /**
-   * 初始化provider和model
-   * 使用桥接模式：provider提供配置给model
-   */
-  private async initializeProviderAndModel() {
-    // 1. 获取provider实例
-    const provider = getProvider(this.config.providerId);
-    if (!provider) {
-      throw new Error(`Provider not found: ${this.config.providerId}`);
-    }
-    this.provider = provider;
+  createClient(modelId: string, overrideConfig?: Partial<ProviderConfig>): ChatClient {
+    const modelDef = this.registry.getModel(modelId);
+    if (!modelDef) throw new Error(`Model not found: ${modelId}`);
 
-    // 2. 设置provider配置（包括从数据库获取的apiKey）
-    const providerConfig = {
-      apiKey: this.config.apiKey,
-      baseUrl: this.config.baseUrl,
-      ...this.config,
-    };
-    this.provider.setConfig(providerConfig);
-
-    // 3. 获取model的instruct type
-    const models = await this.provider.getModels();
-    const targetModel = models.find((m: ProviderModelInfo) => m.id === this.config.modelId);
-    if (!targetModel) {
-      throw new Error(`Model not found: ${this.config.modelId}`);
+    const providerConfig = this.providerConfigs.get(modelDef.providerId);
+    if (!providerConfig) {
+      throw new Error(`Provider ${modelDef.providerId} not configured. Please set API key in ChatHost config or environment variables.`);
     }
 
-    // 4. 特殊处理builtin provider
-    if (this.config.providerId === 'builtin' && 'createModelAdapter' in this.provider) {
-      const builtinProvider = this.provider as any; // BuiltinProvider
-      const runtimeConfig = builtinProvider.getModelRuntimeConfig(this.config.modelId);
-
-      if (!runtimeConfig) {
-        throw new Error(`No runtime config available for model: ${this.config.modelId}`);
-      }
-
-      // 创建universal model
-      const model = getModel('universal', {
-        model: this.config.modelId,
-        apiKey: runtimeConfig.apiKey,
-        baseUrl: runtimeConfig.baseUrl,
-        adapterType: runtimeConfig.adapterType,
-        ...this.config,
-      });
-
-      if (!model || !('setAdapter' in model)) {
-        throw new Error(`Universal model not supported`);
-      }
-
-      // 设置适配器
-      const adapter = builtinProvider.createModelAdapter(this.config.modelId);
-      if (adapter) {
-        (model as any).setAdapter(adapter);
-      }
-
-      this.model = model;
-    } else {
-      // 4. 创建model实例，传入provider的配置（原有逻辑）
-      const model = getModel(targetModel.architecture.instructType || 'openai', {
-        model: this.config.modelId,
-        apiKey: this.config.apiKey,
-        baseUrl: this.config.baseUrl,
-        ...this.config,
-      });
-
-      if (!model) {
-        throw new Error(`Model not supported: ${targetModel.architecture.instructType}`);
-      }
-      this.model = model;
-    }
+    return createChatClient({
+      modelId,
+      registry: this.registry,
+      ...providerConfig,
+      ...overrideConfig,
+    });
   }
 
-  /**
-   * 发送聊天完成请求
-   */
-  async chat(params: Chat.ChatCompletionCreateParams): Promise<Chat.ChatCompletion> {
-    await this.ensureInitialized();
-    const response = await this.model.sendChatCompletion(params);
-
-    // 更新token计数器
-    if (response.usage) {
-      this.totalInputTokens += response.usage.prompt_tokens || 0;
-      this.totalCompletionTokens += response.usage.completion_tokens || 0;
-    }
-
-    return response;
+  getModels(filter?: ModelFilter): ModelDefinition[] {
+    if (filter) return this.registry.filterModels(filter);
+    return this.registry.getAllModels();
   }
 
-  /**
-   * 发送流式聊天完成请求
-   * 自动处理token计数
-   */
-  async chatStream(params: Chat.ChatCompletionCreateParams): Promise<AsyncIterableIterator<Chat.ChatCompletionChunk>> {
-    await this.ensureInitialized();
-    const stream = await this.model.sendStreamingChatCompletion(params);
-
-    // 包装流以自动处理token计数
-    return this.wrapStreamWithTokenCount(stream);
+  getModelInfo(modelId: string): ModelDefinition | null {
+    return this.registry.getModel(modelId);
   }
 
-  /**
-   * 包装流以自动处理token计数
-   */
-  private async *wrapStreamWithTokenCount(stream: AsyncIterableIterator<Chat.ChatCompletionChunk>): AsyncIterableIterator<Chat.ChatCompletionChunk> {
-    for await (const chunk of stream) {
-      // 检查chunk中是否包含usage信息（通常在最后一个chunk中）
-      if (chunk.usage) {
-        this.totalInputTokens += chunk.usage.prompt_tokens || 0;
-        this.totalCompletionTokens += chunk.usage.completion_tokens || 0;
-      }
-      yield chunk;
-    }
+  searchModels(query: string): ModelDefinition[] {
+    return this.registry.searchModels(query);
   }
 
-  /**
-   * 确保已初始化
-   */
-  private async ensureInitialized() {
-    if (!this.model) {
-      await this.initializeProviderAndModel();
-    }
+  getFreeModels(): ModelDefinition[] {
+    return this.registry.getFreeModels();
   }
 
-  /**
-   * 获取当前配置
-   */
-  getConfig(): LLMClientConfig {
-    return { ...this.config };
+  getModelsByFamily(): Map<string, ModelDefinition[]> {
+    return this.registry.groupByFamily();
   }
 
-  /**
-   * 更新配置
-   */
-  async updateConfig(newConfig: Partial<LLMClientConfig>): Promise<void> {
-    this.config = { ...this.config, ...newConfig };
-    await this.initializeProviderAndModel();
+  getModelsByProvider(): Map<string, ModelDefinition[]> {
+    return this.registry.groupByProvider();
   }
 
-  /**
-   * 测试连接
-   */
-  async testConnection(): Promise<{ success: boolean; error?: string }> {
-    await this.ensureInitialized();
-    return this.provider.testConnection();
+  hasProvider(providerId: string): boolean {
+    return this.providerConfigs.has(providerId);
   }
 
-  /**
-   * 获取支持的模型列表
-   */
-  async getAvailableModels(): Promise<ProviderModelInfo[]> {
-    await this.ensureInitialized();
-    return this.provider.getModels();
-  }
-
-  /**
-   * 重置token计数器
-   */
-  resetTokenCounters(): void {
-    this.totalInputTokens = 0;
-    this.totalCompletionTokens = 0;
-  }
-
-  /**
-   * 获取token使用统计
-   */
-  getTokenUsage(): { inputTokens: number; completionTokens: number; totalTokens: number } {
-    return {
-      inputTokens: this.totalInputTokens,
-      completionTokens: this.totalCompletionTokens,
-      totalTokens: this.totalInputTokens + this.totalCompletionTokens,
-    };
-  }
-
-  /**
-   * 手动添加token计数（用于流式响应或其他特殊情况）
-   */
-  addTokenUsage(inputTokens: number, completionTokens: number): void {
-    this.totalInputTokens += inputTokens;
-    this.totalCompletionTokens += completionTokens;
+  getConfiguredProviders(): string[] {
+    return Array.from(this.providerConfigs.keys());
   }
 }
 
-/**
- * LLM Factory - 工厂类，提供便捷的创建方法
- */
-export class LLMFactory {
-  /**
-   * 创建LLM客户端
-   */
-  static async create(config: LLMClientConfig): Promise<LLMClient> {
-    const client = new LLMClient(config);
-    // 确保初始化完成
-    await client.testConnection();
-    return client;
-  }
+// ============ 默认实例（从环境变量读取配置）============
 
-  /**
-   * 获取所有可用的provider
-   */
-  static getAvailableProviders(): Record<string, Provider> {
-    return getAllProviders();
-  }
+const CHAT = new ChatHost({
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY || '',
+    baseURL: process.env.OPENAI_BASE_URL,
+  },
+  anthropic: {
+    apiKey: process.env.ANTHROPIC_API_KEY || '',
+    baseURL: process.env.ANTHROPIC_BASE_URL,
+  },
+  openrouter: {
+    apiKey: process.env.OPENROUTER_API_KEY || '',
+    baseURL: process.env.OPENROUTER_BASE_URL,
+  },
+  deepseek: {
+    apiKey: process.env.DEEPSEEK_API_KEY || '',
+    baseURL: process.env.DEEPSEEK_BASE_URL,
+  },
+  google: {
+    apiKey: process.env.GOOGLE_API_KEY || '',
+    baseURL: process.env.GOOGLE_BASE_URL,
+  },
+  vercel: {
+    apiKey: process.env.VERCEL_AI_GATEWAY_API_KEY || '',
+    baseURL: process.env.VERCEL_AI_GATEWAY_BASE_URL,
+  },
+});
 
-  static getProvider(providerId: string): Provider | null {
-    return getProvider(providerId);
-  }
-
-  /**
-   * 获取指定provider支持的模型
-   */
-  static async getProviderModels(providerId: string): Promise<ProviderModelInfo[]> {
-    const provider = getProvider(providerId);
-    if (!provider) {
-      throw new Error(`Provider not found: ${providerId}`);
-    }
-    return provider.getModels();
-  }
-}
+export default CHAT;

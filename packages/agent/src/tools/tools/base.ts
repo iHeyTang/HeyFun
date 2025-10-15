@@ -1,4 +1,4 @@
-import type { Chat } from '@repo/llm/chat';
+import type { UnifiedChat } from '@repo/llm/chat';
 import type { BaseTool, BaseToolParameters, ToolResult } from '../types';
 
 /**
@@ -13,7 +13,7 @@ export abstract class AbstractBaseTool<P extends BaseToolParameters> implements 
   /**
    * 转换为OpenAI工具格式
    */
-  toOpenAITool(): Chat.ChatCompletionTool {
+  toOpenAITool(): UnifiedChat.Tool {
     return {
       type: 'function',
       function: {

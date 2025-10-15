@@ -1,102 +1,164 @@
-import { ModelInstructType } from '../types';
+/**
+ * Provider 基础接口
+ * Provider 只关心：鉴权、API 配置、HTTP 请求构建
+ * 不关心：请求/响应的具体格式（由 Adapter 处理）
+ */
+
+export interface ProviderConfig {
+  apiKey?: string;
+  baseURL?: string;
+  timeout?: number;
+  maxRetries?: number;
+  [key: string]: any;
+}
+
+export interface HTTPRequest {
+  url: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  headers: Record<string, string>;
+  body?: any;
+}
+
+export interface HTTPResponse {
+  status: number;
+  headers: Record<string, string>;
+  body: any;
+}
 
 /**
- * Provider Base Class - Defines common interfaces and methods for all LLM providers
+ * Provider 抽象类
  */
-export abstract class BaseProvider<TConfig = any> {
-  /**
-   * Provider identifier, each provider has a unique identifier, each provider has its own config schema.
-   */
-  abstract readonly provider: string;
+export abstract class BaseProvider {
+  abstract readonly id: string;
+  abstract readonly name: string;
+  abstract readonly baseURL: string;
+
+  constructor(protected config: ProviderConfig = {}) {}
 
   /**
-   * Provider display name
+   * 构建认证 headers
    */
-  abstract readonly displayName: string;
-  /**
-   * Provider base URL, it is used to test connection and format request.
-   */
-  abstract readonly baseUrl: string;
-  /**
-   * API key placeholder, it is used to display in the UI.
-   */
-  abstract readonly apiKeyPlaceholder?: string;
-  /**
-   * Homepage URL
-   */
-  abstract readonly homepage: string;
+  abstract buildAuthHeaders(apiKey?: string): Record<string, string>;
 
   /**
-   * Abstract member: Current configuration
+   * 构建完整的 HTTP 请求
    */
-  protected abstract config: TConfig;
+  buildRequest(endpoint: string, body: any, apiKey?: string): HTTPRequest {
+    const url = `${this.config.baseURL || this.baseURL}${endpoint}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      ...this.buildAuthHeaders(apiKey || this.config.apiKey),
+      ...this.getExtraHeaders(),
+    };
+
+    return {
+      url,
+      method: 'POST',
+      headers,
+      body,
+    };
+  }
 
   /**
-   * Set configuration, for adjusting the configuration temporarily.
+   * 获取额外的 headers（子类可以覆盖）
    */
-  setConfig(config: TConfig): void {
+  protected getExtraHeaders(): Record<string, string> {
+    return {};
+  }
+
+  /**
+   * 发送 HTTP 请求
+   */
+  async sendRequest(request: HTTPRequest): Promise<HTTPResponse> {
+    try {
+      const response = await fetch(request.url, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body ? JSON.stringify(request.body) : undefined,
+        signal: this.config.timeout ? AbortSignal.timeout(this.config.timeout) : undefined,
+      });
+
+      const body = await response.json().catch(() => null);
+
+      const headers: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+
+      return {
+        status: response.status,
+        headers,
+        body,
+      };
+    } catch (error) {
+      console.error('sendRequest error', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 发送流式请求
+   */
+  async *sendStreamRequest(request: HTTPRequest): AsyncIterableIterator<any> {
+    const response = await fetch(request.url, {
+      method: request.method,
+      headers: request.headers,
+      body: request.body ? JSON.stringify(request.body) : undefined,
+      signal: this.config.timeout ? AbortSignal.timeout(this.config.timeout) : undefined,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`HTTP ${response.status}: ${error}`);
+    }
+
+    if (!response.body) {
+      throw new Error('Response body is null');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed === 'data: [DONE]') continue;
+
+          if (trimmed.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(trimmed.slice(6));
+              yield data;
+            } catch (e) {
+              console.warn('Failed to parse SSE data:', trimmed);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  /**
+   * 更新配置
+   */
+  updateConfig(config: Partial<ProviderConfig>): void {
     this.config = { ...this.config, ...config };
   }
 
   /**
-   * Get current configuration
+   * 获取配置
    */
-  getConfig(): TConfig {
-    return this.config;
+  getConfig(): ProviderConfig {
+    return { ...this.config };
   }
-
-  /**
-   * Get supported model list
-   */
-  abstract getModels(): Promise<ProviderModelInfo[]>;
-
-
-  /**
-   * Test connection (can be overridden)
-   */
-  async testConnection(): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Default implementation: send a simple test request
-      const configObj = this.config as any;
-      const response = await fetch(`${configObj.baseUrl}/models`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        method: 'GET'
-      });
-
-      if (response.ok) {
-        return { success: true };
-      } else {
-        return {
-          success: false,
-          error: `HTTP ${response.status}: ${response.statusText}`
-        };
-      }
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Connection failed'
-      };
-    }
-  }
-}
-
-
-// Add BaseModel type definition and export at the end of the file
-export interface ProviderModelInfo {
-  id: string;
-  provider: string;
-  name: string;
-  createdAt: Date;
-  description: string;
-  architecture: {
-    inputModalities: string[];
-    outputModalities: string[];
-    tokenizer: string;
-    instructType: ModelInstructType;
-  }
-  pricingDescription: string;
-  contextLength: number;
-  supportedParameters: string[];
 }

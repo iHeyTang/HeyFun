@@ -40,7 +40,7 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
   }, [actionData?.prompt, actionData?.modelId]);
 
   const handleSubmit = async () => {
-    onValueChange?.({ prompt: localPrompt, modelId: selectedModel?.id, modelProvider: selectedModel?.provider });
+    onValueChange?.({ prompt: localPrompt, modelId: selectedModel?.id });
     updateStatus(NodeStatus.PROCESSING);
     try {
       const node = flowGraph.getNodeById(nodeId)!;
@@ -83,7 +83,7 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
   const handlePromptChange = (newPrompt: string) => {
     // 始终更新本地状态以显示用户输入
     setLocalPrompt(newPrompt);
-    onValueChange?.({ prompt: newPrompt, modelId: selectedModel?.id, modelProvider: selectedModel?.provider });
+    onValueChange?.({ prompt: newPrompt, modelId: selectedModel?.id });
   };
 
   return (

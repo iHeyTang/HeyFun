@@ -1,4 +1,4 @@
-import { Chat } from '@repo/llm/chat';
+import { UnifiedChat } from '@repo/llm/chat';
 import NEXT_STEP_PROMPT from '../prompts/next';
 import SYSTEM_PROMPT from '../prompts/system';
 import { ToolCallContextHelper, ToolExecutionProgress, ToolSelectionProgress } from '../tools/toolcall';
@@ -12,7 +12,7 @@ export interface FunMaxConfig extends ReActAgentConfig {
   task_request: string;
   language?: string;
   tools?: AddMcpConfig[];
-  history?: Chat.ChatCompletionMessageParam[];
+  history?: UnifiedChat.Message[];
   systemPromptTemplate?: string;
 }
 
@@ -28,7 +28,7 @@ export class FunMax extends ReActAgent {
   public readonly language: string;
   public readonly tools: AddMcpConfig[];
   public readonly task_request: string;
-  public readonly history: Chat.ChatCompletionMessageParam[];
+  public readonly history: UnifiedChat.Message[];
   public readonly system_prompt_template: string;
 
   // 上下文助手（暂时设为可选，实际使用时需要初始化）
@@ -109,7 +109,8 @@ export class FunMax extends ReActAgent {
         ],
       });
 
-      return response.choices[0]?.message?.content || 'Task summary not available';
+      const content = response.choices[0]?.message?.content;
+      return typeof content === 'string' ? content : 'Task summary not available';
     } catch (error: any) {
       console.error('Error generating task summary:', error?.message || error);
       return 'Unable to generate task summary';

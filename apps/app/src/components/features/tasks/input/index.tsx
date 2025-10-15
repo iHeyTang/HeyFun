@@ -39,7 +39,7 @@ export const useAgentModelSelector = () => {
   useEffect(() => {
     if (preferences?.defaultAgentModel && !selectedModel) {
       setSelectedModel(
-        availableModels.find(m => m.id === preferences.defaultAgentModel?.id && m.provider === preferences.defaultAgentModel?.provider) || null,
+        availableModels.find(m => m.id === preferences.defaultAgentModel?.id) || null,
       );
     }
   }, [availableModels, preferences?.defaultAgentModel, selectedModel, setSelectedModel]);

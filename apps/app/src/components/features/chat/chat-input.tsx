@@ -34,10 +34,7 @@ export const useChatbotModelSelector = () => {
 
   useEffect(() => {
     if (preferences?.defaultChatbotModel && !selectedModel) {
-      const model =
-        availableModels.find(m => {
-          return m.id === preferences.defaultChatbotModel?.id && m.provider === preferences.defaultChatbotModel?.provider;
-        }) || null;
+      const model = availableModels.find(m => m.id === preferences.defaultChatbotModel?.id) || null;
       setSelectedModel(model);
     }
   }, [availableModels, preferences?.defaultChatbotModel, selectedModel, setSelectedModel]);

@@ -53,7 +53,6 @@ export default function ChatPage() {
       const res = await createTask({
         taskId: undefined,
         agentId: selectedAgent?.id,
-        modelProvider: selectedModel?.provider || '',
         modelId: selectedModel?.id || '',
         prompt: value.prompt,
         toolIds: enabledTools,

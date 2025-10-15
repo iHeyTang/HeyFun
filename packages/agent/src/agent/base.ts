@@ -1,4 +1,4 @@
-import { Chat, LLMClient, LLMClientConfig } from '@repo/llm/chat';
+import CHAT, { ChatClient, ChatClientConfig, UnifiedChat } from '@repo/llm/chat';
 import type { EventHandler, EventItem } from '../event';
 import { AgentEvent, createEventItem } from '../event';
 import { BaseAgentEvents, ReActAgentEvents, ToolCallAgentEvents } from '../event/constants';
@@ -38,7 +38,7 @@ export interface StepResult {
 // BaseAgent配置接口
 export interface BaseAgentConfig {
   name: string;
-  llm: LLMClient | LLMClientConfig;
+  llm?: ChatClient | { modelId: string };  // 支持传入客户端或配置
   description?: string;
   should_plan?: boolean;
   task_id: string;
@@ -62,7 +62,7 @@ export abstract class BaseAgent {
   public readonly should_plan: boolean;
 
   // Dependencies - 直接使用原生类型
-  public llm: LLMClient;
+  public llm: ChatClient;
   public memory: Memory;
   public state: AgentState;
   public sandboxId: string;
@@ -89,8 +89,19 @@ export abstract class BaseAgent {
     this.enable_event_queue = config.enable_event_queue ?? true;
     this.sandboxId = config.sandboxId;
 
-    // Initialize LLM - 直接使用LLMClient
-    this.llm = config.llm instanceof LLMClient ? config.llm : new LLMClient(config.llm);
+    // Initialize LLM - 直接使用ChatClient或根据modelId创建
+    if (!config.llm) {
+      throw new Error('LLM configuration is required');
+    }
+    
+    if (config.llm instanceof ChatClient) {
+      this.llm = config.llm;
+    } else if ('modelId' in config.llm) {
+      // 根据 modelId 创建客户端
+      this.llm = CHAT.createClient(config.llm.modelId);
+    } else {
+      throw new Error('Invalid LLM configuration');
+    }
 
     // Initialize memory
     this.memory = config.memory ?? new Memory({ llm: this.llm });
@@ -110,7 +121,7 @@ export abstract class BaseAgent {
   /**
    * Add a message to the agent's memory - 直接使用OpenAI类型
    */
-  public async updateMemory(message: Chat.ChatCompletionMessageParam): Promise<void> {
+  public async updateMemory(message: UnifiedChat.Message): Promise<void> {
     await this.memory.addMessage(message);
     this.emit(BaseAgentEvents.MEMORY_ADDED, {
       role: message.role,
@@ -142,7 +153,7 @@ export abstract class BaseAgent {
   /**
    * 使用LLM进行聊天 - 直接使用LLMClient
    */
-  public async chat(params?: Partial<Chat.ChatCompletionCreateParams>): Promise<Chat.ChatCompletion> {
+  public async chat(params?: Partial<UnifiedChat.ChatCompletionParams>): Promise<UnifiedChat.ChatCompletion> {
     const messages = this.memory.getMessagesForLLM();
     return this.llm.chat({ messages, ...params });
   }
@@ -239,13 +250,4 @@ export abstract class BaseAgent {
 // 简单的工厂函数
 export function createAgent(config: BaseAgentConfig): BaseAgent {
   throw new Error('BaseAgent is abstract. Use a concrete implementation.');
-}
-
-export function createLLMConfig(providerId: string, modelId: string, apiKey: string, additionalConfig?: Partial<LLMClientConfig>): LLMClientConfig {
-  return {
-    providerId,
-    modelId,
-    apiKey,
-    ...additionalConfig,
-  };
 }

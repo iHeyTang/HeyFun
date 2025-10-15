@@ -1,4 +1,4 @@
-import type { Chat } from '@repo/llm/chat';
+import type { UnifiedChat } from '@repo/llm/chat';
 import type { BaseTool, ToolResult } from './types';
 import { AddMcpConfig } from './types';
 import type { SandboxRunner } from '../sandbox';
@@ -141,7 +141,7 @@ export class ToolCollection {
   /**
    * 转换为OpenAI工具参数格式
    */
-  toOpenAITools(): Chat.ChatCompletionTool[] {
+  toOpenAITools(): UnifiedChat.Tool[] {
     return this.tools.map(tool => tool.toOpenAITool());
   }
 

@@ -7,7 +7,6 @@ declare global {
     type StringList = string[];
 
     type ModelInfo = {
-      provider: string;
       id: string;
       name: string;
     };

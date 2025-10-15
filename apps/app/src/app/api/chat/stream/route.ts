@@ -1,8 +1,7 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/server/prisma';
-import { decryptTextWithPrivateKey } from '@/lib/server/crypto';
-import { LLMClient } from '@repo/llm/chat';
 import { withUserAuthApi } from '@/lib/server/auth-wrapper';
+import { prisma } from '@/lib/server/prisma';
+import CHAT from '@repo/llm/chat';
+import { NextResponse } from 'next/server';
 
 // 获取AI流式响应
 async function getAIResponse({ organizationId, sessionId, messageId }: { organizationId: string; sessionId: string; messageId: string }) {
@@ -27,22 +26,8 @@ async function getAIResponse({ organizationId, sessionId, messageId }: { organiz
       throw new Error('Session not found');
     }
 
-    // 获取模型提供商配置
-    const providerConfig = await prisma.modelProviderConfigs.findFirst({
-      where: {
-        provider: session.modelProvider,
-        organizationId,
-      },
-    });
-
-    const config = providerConfig ? JSON.parse(decryptTextWithPrivateKey(providerConfig.config)) : {};
-
     // 创建LLM客户端
-    const llmClient = new LLMClient({
-      providerId: session.modelProvider,
-      modelId: session.modelId,
-      ...config,
-    });
+    const llmClient = CHAT.createClient(session.modelId);
 
     // 构建消息历史
     const messages = session.messages.map(msg => ({
@@ -58,7 +43,7 @@ async function getAIResponse({ organizationId, sessionId, messageId }: { organiz
         try {
           let fullContent = '';
 
-          const stream = await llmClient.chatStream({
+          const stream = llmClient.chatStream({
             messages,
           });
 

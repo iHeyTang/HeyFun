@@ -3,7 +3,6 @@ import { BaseNodeActionData, BaseNodeProcessor, FlowGraphNode, NodeExecutorExecu
 
 export type TextNodeActionData = {
   prompt?: string;
-  modelProvider?: string;
   modelId?: string;
 };
 
@@ -24,9 +23,17 @@ export class TextNodeProcessor extends BaseNodeProcessor<TextNodeActionData> {
 
     const prompt = (actionData?.prompt || '').concat(texts.join('\n'));
 
+    if (!actionData?.modelId) {
+      return {
+        success: false,
+        timestamp: new Date(),
+        executionTime: Date.now() - startTime,
+        error: 'Invalid model',
+      };
+    }
+
     const result = await chatOnce({
-      modelProvider: actionData?.modelProvider || '',
-      modelId: actionData?.modelId || '',
+      modelId: actionData.modelId,
       content: prompt,
     });
 
@@ -34,7 +41,7 @@ export class TextNodeProcessor extends BaseNodeProcessor<TextNodeActionData> {
       success: true,
       timestamp: new Date(),
       executionTime: Date.now() - startTime,
-      data: { texts: [result.data?.choices[0]?.message?.content || ''] },
+      data: { texts: [(result.data?.choices[0]?.message?.content as string) || ''] },
     };
   }
 }

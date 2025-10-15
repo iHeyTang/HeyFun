@@ -96,6 +96,8 @@ model TaskProgresses {
   @@index([createdAt])
 }
 
+// @deprecated - 已废弃，新架构中不再使用
+// Provider 配置已通过环境变量管理，模型配置在代码中统一维护
 model LlmConfigs {
   id             String   @id @default(cuid())
   type           String
@@ -117,6 +119,8 @@ model LlmConfigs {
   @@index([isActive])
 }
 
+// @deprecated - 已废弃，新架构中不再使用
+// Provider 配置（API Keys）通过环境变量管理，不需要数据库存储
 model ModelProviderConfigs {
   id             String   @id @default(cuid())
   createdAt      DateTime @default(now())

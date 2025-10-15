@@ -1,6 +1,6 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
-import type { Chat } from '@repo/llm/chat';
+import type { UnifiedChat } from '@repo/llm/chat';
 
 export type BaseMcpConfig = {
   id: string;
@@ -36,7 +36,7 @@ export interface BaseTool<P extends BaseToolParameters = BaseToolParameters> {
   execute(params: P): Promise<ToolResult>;
 
   // 转换为OpenAI工具格式
-  toOpenAITool(): Chat.ChatCompletionTool;
+  toOpenAITool(): UnifiedChat.Tool;
 
   // 清理资源（可选）
   cleanup?(): Promise<void>;

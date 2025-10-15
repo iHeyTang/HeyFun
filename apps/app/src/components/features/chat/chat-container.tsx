@@ -86,7 +86,6 @@ export const ChatContainer = ({ sessionId, existingSession, loading }: ChatConta
 
     try {
       const result = await createChatSession({
-        modelProvider: selectedModel.provider,
         modelId: selectedModel.id,
       });
 

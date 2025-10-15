@@ -1,4 +1,4 @@
-import type { Chat } from '@repo/llm/chat';
+import type { UnifiedChat } from '@repo/llm/chat';
 import { AgentState, type BaseAgent } from '../agent/base';
 import { ToolCallAgentEvents } from '../event/constants';
 import { createMessage } from '../utils/message';
@@ -10,13 +10,13 @@ import type { AddMcpConfig, BaseTool } from './types';
 
 export type ToolSelectionProgress = {
   phase: typeof ToolCallAgentEvents.TOOL_SELECTED;
-  data: { thoughts: string; tool_calls: Chat.ChatCompletionMessageToolCall[] };
+  data: { thoughts: string; tool_calls: UnifiedChat.ToolCall[] };
 };
 
 export type ToolExecutionProgress =
   | {
       phase: typeof ToolCallAgentEvents.TOOL_START;
-      data: { tool_calls: Chat.ChatCompletionMessageToolCall[] };
+      data: { tool_calls: UnifiedChat.ToolCall[] };
     }
   | {
       phase: typeof ToolCallAgentEvents.TOOL_EXECUTE_START;
@@ -38,13 +38,13 @@ export class ToolCallContextHelper {
   public availableTools: ToolCollection;
 
   // 工具选择模式
-  private toolChoice: Chat.ChatCompletionToolChoiceOption = 'auto';
+  private toolChoice: UnifiedChat.ToolChoice = 'auto';
 
   // 特殊工具名称列表
   private specialToolNames: string[] = ['terminate'];
 
   // 当前工具调用列表
-  private toolCalls: Chat.ChatCompletionMessageToolCall[] = [];
+  private toolCalls: UnifiedChat.ToolCall[] = [];
 
   // 最大观察长度
   private maxObserve: number = 10000;
@@ -96,7 +96,8 @@ export class ToolCallContextHelper {
 
     // 提取工具调用和内容
     this.toolCalls = this.extractToolCalls(response);
-    const content = response.choices[0]?.message?.content || '';
+    const messageContent = response.choices[0]?.message?.content;
+    const content = typeof messageContent === 'string' ? messageContent : '';
 
     // 流式输出工具选择进度
     yield {
@@ -209,7 +210,7 @@ export class ToolCallContextHelper {
   /**
    * 执行单个工具命令
    */
-  private async *executeToolCommand(toolCall: Chat.ChatCompletionMessageToolCall): AsyncGenerator<ToolExecutionProgress, string, unknown> {
+  private async *executeToolCommand(toolCall: UnifiedChat.ToolCall): AsyncGenerator<ToolExecutionProgress, string, unknown> {
     if (!toolCall?.function?.name) {
       return 'Error: Invalid command format';
     }
@@ -345,11 +346,11 @@ export class ToolCallContextHelper {
   /**
    * 从响应中提取工具调用
    */
-  private extractToolCalls(response: Chat.ChatCompletion): Chat.ChatCompletionMessageToolCall[] {
+  private extractToolCalls(response: UnifiedChat.ChatCompletion): UnifiedChat.ToolCall[] {
     const toolCalls = response.choices[0]?.message?.tool_calls;
     if (!toolCalls) return [];
 
-    return toolCalls.map(tc => ({
+    return toolCalls.map((tc: UnifiedChat.ToolCall) => ({
       id: tc.id,
       type: 'function' as const,
       function: {
@@ -395,7 +396,7 @@ export class ToolCallContextHelper {
   /**
    * 设置工具选择模式
    */
-  setToolChoice(choice: Chat.ChatCompletionToolChoiceOption): void {
+  setToolChoice(choice: UnifiedChat.ToolChoice): void {
     this.toolChoice = choice;
   }
 

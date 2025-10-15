@@ -7,7 +7,7 @@ import { workflow } from '@/lib/server/workflow';
 import { mcpServerSchema } from '@/lib/shared/tools';
 import type { AddMcpConfig } from '@repo/agent';
 import { FunMaxConfig } from '@repo/agent';
-import { Chat } from '@repo/llm/chat';
+import { UnifiedChat } from '@repo/llm/chat';
 import { union } from 'lodash';
 
 export const getTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ taskId: string }>) => {
@@ -34,7 +34,6 @@ export const pageTasks = withUserAuth(async ({ orgId, args }: AuthWrapperContext
 type CreateTaskArgs = {
   taskId?: string;
   agentId?: string;
-  modelProvider: string;
   modelId: string;
   prompt: string;
   toolIds: string[];
@@ -108,9 +107,7 @@ const getTools = async (orgId: string, toolIds: string[]) => {
 };
 
 export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<CreateTaskArgs>) => {
-  const { taskId, agentId, modelProvider, modelId, prompt, toolIds, files } = args;
-  const crpytedProviderConfig = await prisma.modelProviderConfigs.findFirst({ where: { provider: modelProvider, organizationId: orgId } });
-  const providerConfig = crpytedProviderConfig?.config ? JSON.parse(decryptTextWithPrivateKey(crpytedProviderConfig.config)) : {};
+  const { taskId, agentId, modelId, prompt, toolIds, files } = args;
   const preferences = await prisma.preferences.findUnique({
     where: { organizationId: orgId },
   });
@@ -133,14 +130,10 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
     task_request: prompt,
     language: preferences?.language || 'en',
     llm: {
-      model: modelId,
-      baseUrl: providerConfig?.baseUrl,
-      apiKey: providerConfig?.apiKey,
-      providerId: modelProvider,
       modelId: modelId,
     },
     tools: processedTools.filter(tool => tool !== undefined) as AddMcpConfig[],
-    history: history as Chat.ChatCompletionMessageParam[],
+    history: history as UnifiedChat.Message[],
     systemPromptTemplate: agent.systemPromptTemplate,
     sandboxId: orgId,
   };
@@ -205,25 +198,22 @@ async function createOrFetchTask(organizationId: string, config: { taskId: strin
     orderBy: { createdAt: 'asc' },
   });
 
-  const history = progresses.reduce(
-    (acc, progress) => {
-      if (progress.type === 'agent:lifecycle:start') {
-        acc.push({ role: 'user', message: (progress.content as { request: string }).request });
-      } else if (progress.type === 'agent:lifecycle:complete') {
-        const latestUserProgress = acc.reverse().find(item => item.role === 'user');
-        if (latestUserProgress) {
-          acc.push({ role: 'assistant', message: (progress.content as { results: string[] }).results.join('\n') });
-        }
-      } else if (progress.type === 'agent:lifecycle:error') {
-        const latestUserProgress = acc.reverse().find(item => item.role === 'user');
-        if (latestUserProgress) {
-          acc.push({ role: 'assistant', message: (progress.content as { error: string }).error });
-        }
+  const history = progresses.reduce((acc, progress) => {
+    if (progress.type === 'agent:lifecycle:start') {
+      acc.push({ role: 'user', content: (progress.content as { request: string }).request });
+    } else if (progress.type === 'agent:lifecycle:complete') {
+      const latestUserProgress = acc.reverse().find(item => item.role === 'user');
+      if (latestUserProgress) {
+        acc.push({ role: 'assistant', content: (progress.content as { results: string[] }).results.join('\n') });
       }
-      return acc;
-    },
-    [] as { role: string; message: string }[],
-  );
+    } else if (progress.type === 'agent:lifecycle:error') {
+      const latestUserProgress = acc.reverse().find(item => item.role === 'user');
+      if (latestUserProgress) {
+        acc.push({ role: 'assistant', content: (progress.content as { error: string }).error });
+      }
+    }
+    return acc;
+  }, [] as UnifiedChat.Message[]);
 
   return { task, history };
 }

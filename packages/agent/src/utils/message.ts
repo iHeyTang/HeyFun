@@ -1,21 +1,21 @@
-import type { Chat } from '@repo/llm/chat';
+import type { UnifiedChat } from '@repo/llm/chat';
 
 // 简单的工具函数来创建消息，避免重复代码
 export const createMessage = {
-  user: (content: string): Chat.ChatCompletionMessageParam => ({
+  user: (content: string): UnifiedChat.Message => ({
     role: 'user',
     content,
   }),
 
-  system: (content: string): Chat.ChatCompletionMessageParam => ({
+  system: (content: string): UnifiedChat.Message => ({
     role: 'system',
     content,
   }),
 
-  assistant: (content?: string | null, tool_calls?: Chat.ChatCompletionMessageToolCall[]): Chat.ChatCompletionMessageParam => {
-    const message: Chat.ChatCompletionMessageParam = {
+  assistant: (content?: UnifiedChat.MessageContent | null, tool_calls?: UnifiedChat.ToolCall[]): UnifiedChat.Message => {
+    const message: UnifiedChat.Message = {
       role: 'assistant',
-      content: content || null,
+      content: content || '',
     };
     if (tool_calls && tool_calls.length > 0) {
       message.tool_calls = tool_calls;
@@ -23,7 +23,7 @@ export const createMessage = {
     return message;
   },
 
-  tool: (content: string, tool_call_id: string): Chat.ChatCompletionMessageParam => ({
+  tool: (content: string, tool_call_id: string): UnifiedChat.Message => ({
     role: 'tool',
     content,
     tool_call_id,

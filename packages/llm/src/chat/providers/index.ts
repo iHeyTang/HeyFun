@@ -1,45 +1,32 @@
-import { ProviderModelInfo } from './base';
-import { BuiltinProvider } from './builtin';
-import { DeepseekProvider } from './deepseek';
+import { BaseProvider, ProviderConfig } from './base';
+import { OpenAIProvider } from './openai';
+import { AnthropicProvider } from './anthropic';
 import { OpenRouterProvider } from './openrouter';
+import { DeepSeekProvider } from './deepseek';
+import { VercelProvider } from './vercel';
 
-export type Provider = BuiltinProvider | OpenRouterProvider | DeepseekProvider;
-export type { ProviderModelInfo as ProviderModel };
+export { BaseProvider } from './base';
+export type { ProviderConfig } from './base';
+export { OpenAIProvider } from './openai';
+export { AnthropicProvider } from './anthropic';
+export { OpenRouterProvider } from './openrouter';
+export { DeepSeekProvider } from './deepseek';
+export { VercelProvider } from './vercel';
 
-/**
- * Provider Registry - Register all available providers here
- */
-const providerClasses = {
-  builtin: BuiltinProvider,
+const providerClasses: Record<string, new (config?: ProviderConfig) => BaseProvider> = {
+  openai: OpenAIProvider,
+  anthropic: AnthropicProvider,
   openrouter: OpenRouterProvider,
-  deepseek: DeepseekProvider
-} as const;
+  deepseek: DeepSeekProvider,
+  vercel: VercelProvider,
+};
 
-/**
- * Get all registered provider instances
- */
-export function getAllProviders(): Record<string, Provider> {
-  const providers: Record<string, Provider> = {};
-
-  Object.keys(providerClasses).forEach(providerId => {
-    const provider = getProvider(providerId);
-    if (provider) {
-      providers[providerId] = provider;
-    }
-  });
-
-  return providers;
+export function createProvider(providerId: string, config?: ProviderConfig): BaseProvider {
+  const ProviderClass = providerClasses[providerId];
+  if (!ProviderClass) throw new Error(`Unknown provider: ${providerId}`);
+  return new ProviderClass(config);
 }
 
-/**
- * Get provider instance
- */
-export function getProvider(providerId: string): Provider | null {
-  const ProviderClass = providerClasses[providerId as keyof typeof providerClasses];
-  if (!ProviderClass) {
-    console.warn(`Unknown provider: ${providerId}`);
-    return null;
-  }
-  return new ProviderClass();
+export function getAvailableProviders(): string[] {
+  return Object.keys(providerClasses);
 }
-
