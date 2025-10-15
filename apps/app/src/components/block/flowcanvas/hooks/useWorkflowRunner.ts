@@ -23,24 +23,24 @@ export function useWorkflowRunner({ onSchemaChange }: { onSchemaChange?: (schema
       if (node) {
         node.data.output = {
           images: {
-            list: [...(output?.images?.list || []), ...(output?.images?.selected ? [output?.images?.selected] : [])],
-            selected: output?.images?.selected || '',
+            list: [...(output?.images?.list || []), ...(node.data.output?.images?.list || [])],
+            selected: output?.images?.selected || node.data.output?.images?.selected || '',
           },
           videos: {
-            list: [...(output?.videos?.list || []), ...(output?.videos?.selected ? [output?.videos?.selected] : [])],
-            selected: output?.videos?.selected || '',
+            list: [...(output?.videos?.list || []), ...(node.data.output?.videos?.list || [])],
+            selected: output?.videos?.selected || node.data.output?.videos?.selected || '',
           },
           audios: {
-            list: [...(output?.audios?.list || []), ...(output?.audios?.selected ? [output?.audios?.selected] : [])],
-            selected: output?.audios?.selected || '',
+            list: [...(output?.audios?.list || []), ...(node.data.output?.audios?.list || [])],
+            selected: output?.audios?.selected || node.data.output?.audios?.selected || '',
           },
           musics: {
-            list: [...(output?.musics?.list || []), ...(output?.musics?.selected ? [output?.musics?.selected] : [])],
-            selected: output?.musics?.selected || '',
+            list: [...(output?.musics?.list || []), ...(node.data.output?.musics?.list || [])],
+            selected: output?.musics?.selected || node.data.output?.musics?.selected || '',
           },
           texts: {
-            list: [...(output?.texts?.list || []), ...(output?.texts?.selected ? [output?.texts?.selected] : [])],
-            selected: output?.texts?.selected || '',
+            list: [...(output?.texts?.list || []), ...(node.data.output?.texts?.list || [])],
+            selected: output?.texts?.selected || node.data.output?.texts?.selected || '',
           },
         };
       }
