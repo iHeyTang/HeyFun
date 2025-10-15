@@ -182,6 +182,8 @@ export class UnifiedScheduler {
    */
   registerNodeExecutor(nodeType: string, executor: NodeExecutor): void {
     this.executorRegistry.registerExecutor(nodeType, executor);
+    // 注册完成后，重新设置节点执行器
+    this.setupAutoExecutors();
   }
 
   /**
@@ -189,6 +191,8 @@ export class UnifiedScheduler {
    */
   registerNodeExecutors(executors: Map<string, NodeExecutor>): void {
     this.executorRegistry.registerExecutors(executors);
+    // 注册完成后，重新设置节点执行器
+    this.setupAutoExecutors();
   }
 
   /**
@@ -241,6 +245,7 @@ export class UnifiedScheduler {
    */
   private async executeNode(nodeId: string): Promise<void> {
     console.log('UnifiedScheduler executeNode', nodeId);
+    console.log('UnifiedScheduler executeNode nodeExecutors', this.nodeExecutors);
     const executor = this.nodeExecutors.get(nodeId);
     if (!executor) {
       throw new Error(`No executor found for node ${nodeId}`);
@@ -299,8 +304,6 @@ export class UnifiedScheduler {
               },
             };
 
-            console.log(`UnifiedScheduler executeNode - 已更新节点 ${nodeId} 的输出数据到schema:`, result.data);
-
             // 立即触发schema变化回调，确保UI能够及时更新
             this.onNodeOutputChange?.(nodeId, {
               images: { list: result.data.images || [], selected: result.data.images?.[0] || '' },
@@ -325,14 +328,8 @@ export class UnifiedScheduler {
           outputData: result.data,
         },
       });
-
-      console.log(`UnifiedScheduler executeNode - 已更新节点 ${nodeId} 的状态为COMPLETED，执行结果:`, {
-        executionTime,
-        resultData: result.data,
-        success: result.success,
-      });
-
-      console.log(`节点 ${nodeId} 在 ${executionTime}ms 内完成执行`);
+      console.log(`UnifiedScheduler executeNode - 已更新节点 ${nodeId} 的输出数据到schema:`, result.data);
+      console.log(`UnifiedScheduler executeNode - 耗时:`, executionTime);
 
       // 等待React状态更新完成
       //   await new Promise(resolve => setTimeout(resolve, 0));
@@ -345,7 +342,8 @@ export class UnifiedScheduler {
         executionTime,
       });
 
-      console.error(`节点 ${nodeId} 执行失败:`, error);
+      console.error(`UnifiedScheduler executeNode - 节点 ${nodeId} 执行失败:`, error);
+      console.log(`UnifiedScheduler executeNode - 耗时:`, executionTime);
       throw error;
     }
   }
@@ -367,13 +365,6 @@ export class UnifiedScheduler {
       // 优先使用schema中的output数据，其次使用metadata中的outputData或result.data
       const resultData = outputData || outputDataFromMetadata || resultFromMetadata?.data;
 
-      console.log(`UnifiedScheduler createWorkflowContext - 节点 ${nodeId} 数据来源:`, {
-        outputData,
-        outputDataFromMetadata,
-        resultFromMetadata: resultFromMetadata?.data,
-        finalResultData: resultData,
-      });
-
       nodes.set(nodeId, {
         id: nodeId,
         status: statusData.status,
@@ -391,7 +382,6 @@ export class UnifiedScheduler {
       });
     });
 
-    console.log('UnifiedScheduler createWorkflowContext - 创建的上下文节点状态:', nodes);
     return {
       nodes,
       schema: this.schema,

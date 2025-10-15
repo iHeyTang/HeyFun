@@ -27,20 +27,8 @@ export const updatePreferences = withUserAuth(async ({ orgId, args }: AuthWrappe
       data: {
         organizationId: orgId,
         language: args.language,
-        defaultChatbotModel: args.defaultChatbotModel
-          ? {
-              provider: args.defaultChatbotModel.provider,
-              id: args.defaultChatbotModel.id,
-              name: args.defaultChatbotModel.name,
-            }
-          : undefined,
-        defaultAgentModel: args.defaultAgentModel
-          ? {
-              provider: args.defaultAgentModel.provider,
-              id: args.defaultAgentModel.id,
-              name: args.defaultAgentModel.name,
-            }
-          : undefined,
+        defaultChatbotModel: args.defaultChatbotModel ? { id: args.defaultChatbotModel.id, name: args.defaultChatbotModel.name } : undefined,
+        defaultAgentModel: args.defaultAgentModel ? { id: args.defaultAgentModel.id, name: args.defaultAgentModel.name } : undefined,
       },
     });
   } else {
@@ -48,20 +36,8 @@ export const updatePreferences = withUserAuth(async ({ orgId, args }: AuthWrappe
       where: { organizationId: orgId },
       data: {
         language: args.language,
-        defaultChatbotModel: args.defaultChatbotModel
-          ? {
-              provider: args.defaultChatbotModel.provider,
-              id: args.defaultChatbotModel.id,
-              name: args.defaultChatbotModel.name,
-            }
-          : undefined,
-        defaultAgentModel: args.defaultAgentModel
-          ? {
-              provider: args.defaultAgentModel.provider,
-              id: args.defaultAgentModel.id,
-              name: args.defaultAgentModel.name,
-            }
-          : undefined,
+        defaultChatbotModel: args.defaultChatbotModel ? { id: args.defaultChatbotModel.id, name: args.defaultChatbotModel.name } : undefined,
+        defaultAgentModel: args.defaultAgentModel ? { id: args.defaultAgentModel.id, name: args.defaultAgentModel.name } : undefined,
       },
     });
   }

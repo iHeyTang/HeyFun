@@ -1,5 +1,6 @@
 import { Edge } from '@xyflow/react';
 import { useCallback } from 'react';
+import { useWorkflowRunner } from '../../../hooks';
 import { FlowGraphNode, NodeExecutor } from '../../../types/nodes';
 
 /**
@@ -14,7 +15,7 @@ export interface MultiSelectToolbarExtensionContext {
   selectedNodes: string[];
 
   // 工作流执行器
-  workflowRunner: any;
+  workflowRunner: ReturnType<typeof useWorkflowRunner>;
   nodeExecutors: Map<string, NodeExecutor>;
 }
 
@@ -34,10 +35,8 @@ export function useMultiSelectToolbar(context: MultiSelectToolbarExtensionContex
   const { nodes, edges, selectedNodes, workflowRunner, nodeExecutors } = context;
 
   // 执行选中的节点
-  const handleExecuteSelectedNodes = useCallback(
+  const onExecuteSelectedNodes = useCallback(
     async (selectedNodeIds: string[]) => {
-      console.log('FlowCanvas: 使用工作流执行器执行选中的节点', selectedNodeIds);
-
       if (!nodes || !edges) {
         console.error('没有可用的工作流 schema');
         return;
@@ -101,6 +100,6 @@ export function useMultiSelectToolbar(context: MultiSelectToolbarExtensionContex
   );
 
   return {
-    onExecuteSelectedNodes: handleExecuteSelectedNodes,
+    onExecuteSelectedNodes,
   };
 }

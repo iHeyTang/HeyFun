@@ -146,7 +146,6 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
   }
 
   const currentImageKey = images[currentIndex];
-  const currentImageUrl = currentImageKey ? `/api/oss/${currentImageKey}` : undefined;
   const hasMultipleImages = images.length > 1;
   const isCurrentImageCover = coverKey && currentImageKey && currentImageKey === coverKey;
 
@@ -199,7 +198,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
 
         {/* 主图片 */}
         <img
-          src={currentImageUrl}
+          src={currentImageKey ? `/api/oss/${currentImageKey}` : undefined}
           className="h-auto max-h-full w-auto max-w-full rounded object-contain shadow-2xl"
           alt={`Image ${currentIndex + 1}/${images.length}`}
           onClick={e => e.stopPropagation()}

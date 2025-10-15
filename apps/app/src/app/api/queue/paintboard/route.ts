@@ -117,8 +117,6 @@ const processPaintboardTaskResult = async (args: {
         const elapsedTime = Date.now() - startTime;
         const remainingTime = timeoutMs - elapsedTime;
         console.log(`Polling task ${taskId}, elapsed: ${Math.round(elapsedTime / 1000)}s, remaining: ${Math.round(remainingTime / 1000)}s`);
-
-        // 使用统一接口获取任务结果
         const result = await AIGC.getTaskResult({ modelName: model, taskId: externalTaskId, params: args.params });
         // 检查任务是否完成
         if (result.status === 'completed') {

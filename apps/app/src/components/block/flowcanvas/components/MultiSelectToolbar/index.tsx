@@ -5,6 +5,7 @@ import { PlayIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import type { FlowGraphNode } from '../../types/nodes';
+import { Button } from '@/components/ui/button';
 
 export { useMultiSelectToolbar } from './hooks/useMultiSelectToolbar';
 export type { MultiSelectToolbarExtensionContext, MultiSelectToolbarExtensionResult } from './hooks/useMultiSelectToolbar';
@@ -63,7 +64,6 @@ export const MultiSelectToolbar = ({ selecting, selectedNodes, className, onExec
   const handleExecuteSelectedNodes = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     console.log('handleExecuteSelectedNodes 被调用', { event, selectedNodes });
     event.stopPropagation();
-    event.preventDefault();
 
     if (selectedNodes.length === 0) {
       console.log('没有选中的节点，跳过执行');
@@ -101,7 +101,7 @@ export const MultiSelectToolbar = ({ selecting, selectedNodes, className, onExec
       >
         {selectedNodes.length > 1 && !selecting && (
           <div
-            className={cn('border-chart-1 bg-card shadow-luxury flex items-center gap-2 rounded-lg border-2 p-2', className)}
+            className={cn('', className)}
             style={{ pointerEvents: 'auto' }}
             onClick={e => {
               console.log('工具栏容器被点击', e);
@@ -109,24 +109,10 @@ export const MultiSelectToolbar = ({ selecting, selectedNodes, className, onExec
             }}
           >
             {/* 执行按钮 */}
-            <button
-              onClick={handleExecuteSelectedNodes}
-              onMouseDown={e => {
-                console.log('按钮 mousedown 事件', e);
-                e.stopPropagation();
-              }}
-              onMouseUp={e => {
-                console.log('按钮 mouseup 事件', e);
-                e.stopPropagation();
-              }}
-              className="bg-primary text-primary-foreground hover:bg-button-primary-hover flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-200"
-              style={{ pointerEvents: 'auto' }}
-              title={t('executeSelected')}
-              type="button"
-            >
+            <Button onClick={handleExecuteSelectedNodes} style={{ pointerEvents: 'auto' }} title={t('executeSelected')} type="button">
               <PlayIcon className="h-4 w-4" />
               {t('execute')}
-            </button>
+            </Button>
           </div>
         )}
       </div>

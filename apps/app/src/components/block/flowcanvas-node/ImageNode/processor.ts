@@ -44,10 +44,10 @@ export class ImageNodeProcessor extends BaseNodeProcessor<ImageNodeActionData> {
     });
 
     // 将提及的图片 key 转换为完整 URL
-    const mentionedImageUrls = mentionedImages.map(key => `/api/oss/${key}`);
+    const mentionedImageUrls = mentionedImages;
 
     // 如果 prompt 中有提及图片，使用提及的图片；否则使用选中的或第一张图片
-    const referenceImages = mentionedImageUrls.length > 0 ? mentionedImageUrls : images ? images.map(i => `/api/oss/${i.selected}`) : [];
+    const referenceImages = mentionedImageUrls.length > 0 ? mentionedImageUrls : images ? images.map(i => i.selected) : [];
 
     const result = await submitGenerationTask({
       model: selectedModel,
