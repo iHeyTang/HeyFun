@@ -2,6 +2,8 @@ import { Edge } from '@xyflow/react';
 import { useCallback, useEffect, useState } from 'react';
 import { FlowGraphNode } from '../types/nodes';
 import { useFlowGraph } from './useFlowGraph';
+import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 /**
  * 复制粘贴扩展上下文
@@ -34,51 +36,105 @@ export interface CopyPasteExtensionResult {
 }
 
 /**
+ * 剪贴板数据格式
+ */
+interface ClipboardData {
+  type: 'flowcanvas-nodes'; // 标识符，用于识别我们的数据格式
+  version: '1.0';
+  nodes: FlowGraphNode[];
+  edges: Edge[];
+  timestamp: number;
+}
+
+/**
  * 复制粘贴扩展
  * 提供节点的复制粘贴功能，支持单个和多个节点
+ * 使用系统剪贴板 API，支持跨画布和跨标签页复制粘贴
  */
 export function useCopyPaste(context: CopyPasteExtensionContext): CopyPasteExtensionResult {
   const { nodes, edges, setNodes, setEdges, selectedNodes, canvasRef, flowGraph } = context;
-
-  // 复制粘贴状态
-  const [clipboard, setClipboard] = useState<{
-    nodes: FlowGraphNode[];
-    edges: Edge[];
-  } | null>(null);
+  const t = useTranslations('flowcanvas.copyPaste');
 
   // 跟踪鼠标在画布上的位置
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
+  /**
+   * 将节点和边数据写入系统剪贴板
+   */
+  const writeToClipboard = useCallback(
+    async (nodesToCopy: FlowGraphNode[], edgesToCopy: Edge[]) => {
+      const clipboardData: ClipboardData = {
+        type: 'flowcanvas-nodes',
+        version: '1.0',
+        nodes: nodesToCopy,
+        edges: edgesToCopy,
+        timestamp: Date.now(),
+      };
+
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(clipboardData));
+        toast.success(t('copySuccess'));
+      } catch (error) {
+        toast.error(t('copyFailed'));
+      }
+    },
+    [t],
+  );
+
+  /**
+   * 从系统剪贴板读取节点和边数据
+   */
+  const readFromClipboard = useCallback(async (): Promise<{ nodes: FlowGraphNode[]; edges: Edge[] } | null> => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) return null;
+
+      const data = JSON.parse(text) as ClipboardData;
+
+      // 验证数据格式
+      if (data.type !== 'flowcanvas-nodes' || !data.nodes || !data.edges) {
+        toast.error(t('invalidFormat'));
+        return null;
+      }
+
+      return { nodes: data.nodes, edges: data.edges };
+    } catch (error) {
+      toast.error(t('readFailed'));
+      return null;
+    }
+  }, [t]);
+
   // 复制选中的节点
-  const handleCopy = useCallback(() => {
+  const handleCopy = useCallback(async () => {
     if (selectedNodes.length === 0) return;
 
     const nodesToCopy = nodes.filter(node => selectedNodes.includes(node.id));
     const edgesToCopy = edges.filter(edge => selectedNodes.includes(edge.source) && selectedNodes.includes(edge.target));
 
-    setClipboard({ nodes: nodesToCopy, edges: edgesToCopy });
-    console.log('已复制节点:', nodesToCopy.length, '条边:', edgesToCopy.length);
-  }, [selectedNodes, nodes, edges]);
+    await writeToClipboard(nodesToCopy, edgesToCopy);
+  }, [selectedNodes, nodes, edges, writeToClipboard]);
 
   // 剪切选中的节点
-  const handleCut = useCallback(() => {
+  const handleCut = useCallback(async () => {
     if (selectedNodes.length === 0) return;
 
     const nodesToCut = nodes.filter(node => selectedNodes.includes(node.id));
     const edgesToCut = edges.filter(edge => selectedNodes.includes(edge.source) && selectedNodes.includes(edge.target));
 
     // 复制到剪贴板
-    setClipboard({ nodes: nodesToCut, edges: edgesToCut });
+    await writeToClipboard(nodesToCut, edgesToCut);
 
     // 删除原始节点和相关的边
     setNodes(prevNodes => prevNodes.filter(node => !selectedNodes.includes(node.id)));
     setEdges(prevEdges => prevEdges.filter(edge => !selectedNodes.includes(edge.source) && !selectedNodes.includes(edge.target)));
 
-    console.log('已剪切节点:', nodesToCut.length, '条边:', edgesToCut.length);
-  }, [selectedNodes, nodes, edges, setNodes, setEdges]);
+    toast.success(t('cutSuccess'));
+  }, [selectedNodes, nodes, edges, writeToClipboard, setNodes, setEdges, t]);
 
   // 粘贴节点
-  const handlePaste = useCallback(() => {
+  const handlePaste = useCallback(async () => {
+    // 从系统剪贴板读取数据
+    const clipboard = await readFromClipboard();
     if (!clipboard || clipboard.nodes.length === 0) return;
 
     // 找到所有节点的最小x和y坐标（左上角）
@@ -123,8 +179,8 @@ export function useCopyPaste(context: CopyPasteExtensionContext): CopyPasteExten
     setNodes(prevNodes => [...prevNodes, ...newNodes]);
     setEdges(prevEdges => [...prevEdges, ...newEdges]);
 
-    console.log('已粘贴节点:', newNodes.length, '条边:', newEdges.length, '左上角位置:', pastePosition);
-  }, [clipboard, mousePosition, flowGraph, setNodes, setEdges]);
+    toast.success(t('pasteSuccess'));
+  }, [readFromClipboard, mousePosition, flowGraph, setNodes, setEdges, t]);
 
   // 键盘事件处理
   const handleKeyDown = useCallback(
@@ -138,19 +194,19 @@ export function useCopyPaste(context: CopyPasteExtensionContext): CopyPasteExten
       // 复制 Cmd/Ctrl + C
       if (event.key === 'c' || event.key === 'C') {
         event.preventDefault();
-        handleCopy();
+        void handleCopy();
       }
 
       // 剪切 Cmd/Ctrl + X
       if (event.key === 'x' || event.key === 'X') {
         event.preventDefault();
-        handleCut();
+        void handleCut();
       }
 
       // 粘贴 Cmd/Ctrl + V
       if (event.key === 'v' || event.key === 'V') {
         event.preventDefault();
-        handlePaste();
+        void handlePaste();
       }
     },
     [handleCopy, handleCut, handlePaste],

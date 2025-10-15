@@ -473,6 +473,14 @@
       "currentCover": "当前封面",
       "setAsCover": "设为封面"
     },
+    "copyPaste": {
+      "copySuccess": "已复制到系统剪贴板",
+      "copyFailed": "复制到系统剪贴板失败",
+      "invalidFormat": "剪贴板数据格式不正确",
+      "readFailed": "读取剪贴板失败",
+      "cutSuccess": "已剪切节点",
+      "pasteSuccess": "已粘贴节点"
+    },
     "nodeTooltips": {
       "common": {
         "selectModel": "选择模型",

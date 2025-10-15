@@ -115,7 +115,7 @@ const FlowCanvasPage = () => {
 
   useEffect(() => {
     if (name) {
-      document.title = `HeyFun | ${name}`;
+      document.title = `${name} | HeyFun`;
     }
   }, [name]);
 

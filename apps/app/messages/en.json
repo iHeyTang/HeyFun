@@ -473,6 +473,14 @@
       "currentCover": "Current cover",
       "setAsCover": "Set as cover"
     },
+    "copyPaste": {
+      "copySuccess": "Copied to system clipboard",
+      "copyFailed": "Failed to copy to system clipboard",
+      "invalidFormat": "Invalid clipboard data format",
+      "readFailed": "Failed to read clipboard",
+      "cutSuccess": "Nodes cut successfully",
+      "pasteSuccess": "Nodes pasted successfully"
+    },
     "nodeTooltips": {
       "common": {
         "selectModel": "Select a model",

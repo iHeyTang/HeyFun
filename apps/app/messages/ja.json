@@ -473,6 +473,14 @@
       "currentCover": "現在のカバー",
       "setAsCover": "カバーに設定"
     },
+    "copyPaste": {
+      "copySuccess": "システムクリップボードにコピーしました",
+      "copyFailed": "システムクリップボードへのコピーに失敗しました",
+      "invalidFormat": "クリップボードデータの形式が正しくありません",
+      "readFailed": "クリップボードの読み取りに失敗しました",
+      "cutSuccess": "ノードを切り取りました",
+      "pasteSuccess": "ノードを貼り付けました"
+    },
     "nodeTooltips": {
       "common": {
         "selectModel": "モデルを選択",

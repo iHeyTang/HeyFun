@@ -473,6 +473,14 @@
       "currentCover": "目前封面",
       "setAsCover": "設為封面"
     },
+    "copyPaste": {
+      "copySuccess": "已複製到系統剪貼簿",
+      "copyFailed": "複製到系統剪貼簿失敗",
+      "invalidFormat": "剪貼簿資料格式不正確",
+      "readFailed": "讀取剪貼簿失敗",
+      "cutSuccess": "已剪下節點",
+      "pasteSuccess": "已貼上節點"
+    },
     "nodeTooltips": {
       "common": {
         "selectModel": "選擇模型",

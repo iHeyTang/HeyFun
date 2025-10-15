@@ -473,6 +473,14 @@
       "currentCover": "현재 커버",
       "setAsCover": "커버로 설정"
     },
+    "copyPaste": {
+      "copySuccess": "시스템 클립보드에 복사되었습니다",
+      "copyFailed": "시스템 클립보드에 복사하는 데 실패했습니다",
+      "invalidFormat": "클립보드 데이터 형식이 올바르지 않습니다",
+      "readFailed": "클립보드 읽기에 실패했습니다",
+      "cutSuccess": "노드를 잘라냈습니다",
+      "pasteSuccess": "노드를 붙여넣었습니다"
+    },
     "nodeTooltips": {
       "common": {
         "selectModel": "모델 선택",
