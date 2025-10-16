@@ -1,12 +1,11 @@
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useStore, ViewportPortal } from '@xyflow/react';
-import { useFlowGraph } from '../../hooks/useFlowGraph';
-import { PlayIcon } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { PlayIcon, ExpandIcon, GroupIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useFlowGraph } from '../../hooks/useFlowGraph';
 import type { FlowGraphNode } from '../../types/nodes';
-import { Button } from '@/components/ui/button';
-
 export { useMultiSelectToolbar } from './hooks/useMultiSelectToolbar';
 export type { MultiSelectToolbarExtensionContext, MultiSelectToolbarExtensionResult } from './hooks/useMultiSelectToolbar';
 
@@ -19,13 +18,38 @@ export interface MultiSelectToolbarProps {
   className?: string;
   /** 执行选中节点的回调 */
   onExecuteSelectedNodes?: (selectedNodes: string[]) => Promise<void>;
+  /** 打组选中节点的回调 */
+  onGroupSelectedNodes?: (selectedNodes: string[]) => void;
+  /** 拆组选中节点的回调 */
+  onUngroupSelectedNode?: (groupNodeId: string) => void;
 }
 
-export const MultiSelectToolbar = ({ selecting, selectedNodes, className, onExecuteSelectedNodes }: MultiSelectToolbarProps) => {
+export const MultiSelectToolbar = ({
+  selecting,
+  selectedNodes,
+  className,
+  onExecuteSelectedNodes,
+  onGroupSelectedNodes,
+  onUngroupSelectedNode,
+}: MultiSelectToolbarProps) => {
   const flowGraph = useFlowGraph();
   const t = useTranslations('flowcanvas.toolbar');
 
   const toolbarRef = useRef<HTMLDivElement>(null);
+
+  // 检查选中的节点是否是单个组节点
+  const selectedGroupNode = useMemo(() => {
+    if (selectedNodes.length === 1) {
+      const nodeId = selectedNodes[0];
+      if (nodeId) {
+        const node = flowGraph.reactFlowInstance.getNode(nodeId) as FlowGraphNode | undefined;
+        if (node?.type === 'group') {
+          return nodeId;
+        }
+      }
+    }
+    return null;
+  }, [selectedNodes, flowGraph.reactFlowInstance]);
 
   // 监听节点位置变化，用于实时更新工具栏位置
   const nodePositions = useStore(
@@ -46,7 +70,7 @@ export const MultiSelectToolbar = ({ selecting, selectedNodes, className, onExec
 
   // 计算选中节点的边界
   const bounds = useMemo(() => {
-    if (selectedNodes.length > 1) {
+    if (selectedNodes.length >= 1) {
       return flowGraph.reactFlowInstance.getNodesBounds(selectedNodes);
     }
     return { x: 0, y: 0, width: 0, height: 0 };
@@ -54,7 +78,7 @@ export const MultiSelectToolbar = ({ selecting, selectedNodes, className, onExec
 
   // 更新工具栏位置
   const updatePosition = useCallback(() => {
-    if (selectedNodes.length > 1 && toolbarRef.current) {
+    if (selectedNodes.length >= 1 && toolbarRef.current) {
       const newBounds = flowGraph.reactFlowInstance.getNodesBounds(selectedNodes);
       toolbarRef.current.style.transform = `translate(${newBounds.x}px, ${newBounds.y - 60}px)`;
     }
@@ -83,6 +107,50 @@ export const MultiSelectToolbar = ({ selecting, selectedNodes, className, onExec
     }
   };
 
+  // 打组选中的节点
+  const handleGroupSelectedNodes = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    console.log('handleGroupSelectedNodes 被调用', { event, selectedNodes });
+    event.stopPropagation();
+
+    if (selectedNodes.length < 2) {
+      console.log('至少需要选择2个节点才能打组');
+      return;
+    }
+
+    console.log('开始打组选中的节点:', selectedNodes);
+
+    try {
+      if (onGroupSelectedNodes) {
+        onGroupSelectedNodes(selectedNodes);
+      }
+      console.log('节点打组完成');
+    } catch (error) {
+      console.error('打组选中节点时出错:', error);
+    }
+  };
+
+  // 拆组选中的节点
+  const handleUngroupSelectedNode = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    console.log('handleUngroupSelectedNode 被调用', { event, selectedGroupNode });
+    event.stopPropagation();
+
+    if (!selectedGroupNode) {
+      console.log('没有选中组节点');
+      return;
+    }
+
+    console.log('开始拆组选中的节点:', selectedGroupNode);
+
+    try {
+      if (onUngroupSelectedNode) {
+        onUngroupSelectedNode(selectedGroupNode);
+      }
+      console.log('节点拆组完成');
+    } catch (error) {
+      console.error('拆组选中节点时出错:', error);
+    }
+  };
+
   // 当选中节点或节点位置变化时更新工具栏位置
   useEffect(() => {
     updatePosition();
@@ -90,29 +158,53 @@ export const MultiSelectToolbar = ({ selecting, selectedNodes, className, onExec
 
   return (
     <ViewportPortal>
-      <div
-        ref={toolbarRef}
-        className="absolute flex justify-center"
-        style={{
-          width: bounds.width,
-          zIndex: 9999,
-          pointerEvents: 'auto',
-        }}
-      >
-        {selectedNodes.length > 1 && !selecting && (
+      <div ref={toolbarRef} className="absolute flex justify-center" style={{ width: bounds.width, zIndex: 9999, pointerEvents: 'auto', top: -40 }}>
+        {selectedNodes.length >= 1 && !selecting && (
           <div
-            className={cn('', className)}
+            className={cn('flex gap-2', className)}
             style={{ pointerEvents: 'auto' }}
             onClick={e => {
               console.log('工具栏容器被点击', e);
               e.stopPropagation();
             }}
           >
-            {/* 执行按钮 */}
-            <Button onClick={handleExecuteSelectedNodes} style={{ pointerEvents: 'auto' }} title={t('executeSelected')} type="button">
-              <PlayIcon className="h-4 w-4" />
-              {t('execute')}
-            </Button>
+            {/* 执行按钮 - 多选或选中组节点时显示 */}
+            {selectedNodes.length > 1 || selectedGroupNode ? (
+              <Button onClick={handleExecuteSelectedNodes} style={{ pointerEvents: 'auto' }} title={t('executeSelected')} type="button">
+                <PlayIcon className="h-4 w-4" />
+                {t('execute')}
+              </Button>
+            ) : null}
+
+            {/* 如果选中单个组节点，显示拆组按钮 */}
+            {selectedGroupNode ? (
+              <Button
+                onClick={handleUngroupSelectedNode}
+                style={{ pointerEvents: 'auto' }}
+                title={t('ungroupSelected')}
+                type="button"
+                variant="outline"
+              >
+                <ExpandIcon className="h-4 w-4" />
+                {t('ungroup')}
+              </Button>
+            ) : (
+              <>
+                {/* 打组按钮（只有多选时显示） */}
+                {selectedNodes.length > 1 && (
+                  <Button
+                    onClick={handleGroupSelectedNodes}
+                    style={{ pointerEvents: 'auto' }}
+                    title={t('groupSelected')}
+                    type="button"
+                    variant="outline"
+                  >
+                    <GroupIcon className="h-4 w-4" />
+                    {t('group')}
+                  </Button>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>

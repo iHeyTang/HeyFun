@@ -8,6 +8,7 @@ type TooltipContextType = {
   isVisible: boolean;
   showTooltip: () => void;
   hideTooltip: () => void;
+  setLocked: (locked: boolean) => void;
 };
 
 const TooltipContext = createContext<TooltipContextType | null>(null);
@@ -16,12 +17,19 @@ const TooltipContext = createContext<TooltipContextType | null>(null);
 
 export const NodeTooltip = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(({ children }, ref) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
 
   const showTooltip = useCallback(() => setIsVisible(true), []);
-  const hideTooltip = useCallback(() => setIsVisible(false), []);
+  const hideTooltip = useCallback(() => {
+    // 只有在未锁定时才隐藏
+    if (!isLocked) {
+      setIsVisible(false);
+    }
+  }, [isLocked]);
+  const setLocked = useCallback((locked: boolean) => setIsLocked(locked), []);
 
   return (
-    <TooltipContext.Provider value={{ isVisible, showTooltip, hideTooltip }}>
+    <TooltipContext.Provider value={{ isVisible, showTooltip, hideTooltip, setLocked }}>
       <div ref={ref}>{children}</div>
     </TooltipContext.Provider>
   );
@@ -35,7 +43,7 @@ export const NodeTooltipTrigger = forwardRef<HTMLDivElement, HTMLAttributes<HTML
   if (!tooltipContext) {
     throw new Error('NodeTooltipTrigger must be used within NodeTooltip');
   }
-  const { showTooltip, hideTooltip } = tooltipContext;
+  const { showTooltip, hideTooltip, setLocked } = tooltipContext;
 
   const onMouseEnter = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -53,7 +61,25 @@ export const NodeTooltipTrigger = forwardRef<HTMLDivElement, HTMLAttributes<HTML
     [props, hideTooltip],
   );
 
-  return <div ref={ref} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} {...props} />;
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      props.onMouseDown?.(e);
+      // 点击或拖动时锁定 tooltip，防止消失
+      setLocked(true);
+    },
+    [props, setLocked],
+  );
+
+  const onMouseUp = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      props.onMouseUp?.(e);
+      // 释放后解锁 tooltip
+      setLocked(false);
+    },
+    [props, setLocked],
+  );
+
+  return <div ref={ref} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onMouseDown={onMouseDown} onMouseUp={onMouseUp} {...props} />;
 });
 NodeTooltipTrigger.displayName = 'NodeTooltipTrigger';
 
@@ -63,25 +89,30 @@ NodeTooltipTrigger.displayName = 'NodeTooltipTrigger';
 //  * A component that displays the tooltip content based on visibility context.
 //  */
 
-export const NodeTooltipContent = forwardRef<HTMLDivElement, NodeToolbarProps>(({ children, position, className, ...props }, ref) => {
-  const tooltipContext = useContext(TooltipContext);
-  if (!tooltipContext) {
-    throw new Error('NodeTooltipContent must be used within NodeTooltip');
-  }
-  const { isVisible } = tooltipContext;
+export const NodeTooltipContent = forwardRef<HTMLDivElement, NodeToolbarProps>(
+  ({ children, position, className, isVisible: externalIsVisible, ...props }, ref) => {
+    const tooltipContext = useContext(TooltipContext);
+    if (!tooltipContext) {
+      throw new Error('NodeTooltipContent must be used within NodeTooltip');
+    }
+    const { isVisible: contextIsVisible } = tooltipContext;
 
-  return (
-    <div ref={ref}>
-      <NodeToolbar
-        isVisible={isVisible}
-        className={cn('bg-popover border-border-secondary shadow-luxury max-w-125 rounded-sm border', className)}
-        tabIndex={1}
-        position={position}
-        {...props}
-      >
-        {children}
-      </NodeToolbar>
-    </div>
-  );
-});
+    // 如果外部传入了 isVisible，使用外部的；否则使用 context 的
+    const finalIsVisible = externalIsVisible !== undefined ? externalIsVisible : contextIsVisible;
+
+    return (
+      <div ref={ref}>
+        <NodeToolbar
+          isVisible={finalIsVisible}
+          className={cn('bg-popover shadow-luxury max-w-125 rounded-sm', className)}
+          tabIndex={1}
+          position={position}
+          {...props}
+        >
+          {children}
+        </NodeToolbar>
+      </div>
+    );
+  },
+);
 NodeTooltipContent.displayName = 'NodeTooltipContent';

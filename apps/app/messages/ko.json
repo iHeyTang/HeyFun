@@ -400,7 +400,11 @@
     "confirmDelete": "프로젝트 \"{name}\"을(를) 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
     "toolbar": {
       "execute": "실행",
-      "executeSelected": "선택한 노드 실행"
+      "executeSelected": "선택한 노드 실행",
+      "group": "그룹화",
+      "groupSelected": "선택한 노드 그룹화",
+      "ungroup": "그룹 해제",
+      "ungroupSelected": "그룹 해제"
     },
     "contextMenu": {
       "searchPlaceholder": "노드 검색...",

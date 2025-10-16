@@ -400,7 +400,11 @@
     "confirmDelete": "确定要删除项目 \"{name}\" 吗？此操作不可撤销。",
     "toolbar": {
       "execute": "执行",
-      "executeSelected": "执行选中节点"
+      "executeSelected": "执行选中节点",
+      "group": "打组",
+      "groupSelected": "将选中节点打组",
+      "ungroup": "拆组",
+      "ungroupSelected": "拆解分组"
     },
     "contextMenu": {
       "searchPlaceholder": "搜索节点...",

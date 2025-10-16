@@ -12,6 +12,7 @@ import { useFlowGraph } from './hooks/useFlowGraph';
 import { ExecutionResult } from './scheduler/core';
 import { CanvasSchema } from './types/canvas';
 import { FlowGraphNode, NodeData, NodeExecutor, NodeStatus, WorkflowNodeState } from './types/nodes';
+import { GroupNode } from './components/LabeledGroup';
 
 export interface FlowCanvasProps {
   initialSchema?: CanvasSchema;
@@ -57,7 +58,13 @@ function FlowCanvasCore({
   const canvasRef = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialSchema?.nodes || []);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialSchema?.edges || []);
-  const workflowRunner = useWorkflowRunner({ onSchemaChange });
+  const workflowRunner = useWorkflowRunner({
+    onSchemaChange: schema => {
+      onSchemaChange?.(schema);
+      setNodes(schema.nodes);
+      setEdges(schema.edges);
+    },
+  });
 
   // 节点类型和执行器映射
   const nodeMap = useMemo(() => {
@@ -67,6 +74,7 @@ function FlowCanvasCore({
       executors.set(key, value.processor);
       types[key] = value.component;
     });
+    types.group = GroupNode;
     return { executors, types };
   }, [nodeTypes]);
 
@@ -118,6 +126,8 @@ function FlowCanvasCore({
     selectedNodes: selection.selectedNodes,
     workflowRunner,
     nodeExecutors: nodeMap.executors,
+    setNodes,
+    setEdges,
   });
 
   const handleNodeClick = useCallback((event: React.MouseEvent<Element, MouseEvent>, node: FlowGraphNode) => {
@@ -183,6 +193,8 @@ function FlowCanvasCore({
           selecting={selection.selecting}
           selectedNodes={selection.selectedNodes}
           onExecuteSelectedNodes={multiSelectExtension.onExecuteSelectedNodes}
+          onGroupSelectedNodes={multiSelectExtension.onGroupSelectedNodes}
+          onUngroupSelectedNode={multiSelectExtension.onUngroupSelectedNode}
         />
       </ReactFlow>
     </div>

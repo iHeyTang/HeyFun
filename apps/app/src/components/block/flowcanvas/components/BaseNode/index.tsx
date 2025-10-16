@@ -13,11 +13,13 @@ interface BaseNodeProps {
   children?: React.ReactNode;
   className?: string;
   showHandles?: boolean;
+  toolbar?: React.ReactNode;
   tooltip?: React.ReactNode;
   onBlur?: () => void;
+  ref?: React.ForwardedRef<HTMLDivElement>;
 }
 
-export default function BaseNode({ data, id, children, className = '', showHandles = true, tooltip, onBlur }: BaseNodeProps) {
+export default function BaseNode({ data, id, children, className = '', showHandles = true, toolbar, tooltip, onBlur, ref }: BaseNodeProps) {
   const flowGraph = useFlowGraph();
   const { focusedNodeId } = useFlowGraphContext();
   const { zoom } = useViewport(); // 获取当前画布缩放比例
@@ -33,7 +35,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
   }, [data.label]);
 
   const handleLabelSave = useCallback(() => {
-    if (editLabelValue.trim() && editLabelValue !== data.label) {
+    if (editLabelValue?.trim() && editLabelValue !== data.label) {
       flowGraph.updateNodeData(id, { label: editLabelValue.trim() });
     }
     setIsEditingLabel(false);
@@ -102,13 +104,18 @@ export default function BaseNode({ data, id, children, className = '', showHandl
   const handleHoverSize = hoverHandleSize / zoom;
   return (
     <NodeTooltip>
+      {toolbar && (
+        <NodeTooltipContent position={Position.Top} isVisible={focusedNodeId === id} className="w-fit max-w-130">
+          {toolbar}
+        </NodeTooltipContent>
+      )}
       {tooltip && (
-        <NodeTooltipContent position={Position.Bottom} isVisible={focusedNodeId === id} className="w-fit max-w-130 min-w-100">
+        <NodeTooltipContent position={Position.Bottom} isVisible={focusedNodeId === id} className="w-fit max-w-130 min-w-100 shadow">
           {tooltip}
         </NodeTooltipContent>
       )}
       <NodeTooltipTrigger>
-        <div className={cn('relative')} onBlur={onBlur}>
+        <div className={cn('relative')} onBlur={onBlur} ref={ref}>
           {/* 标题和状态在卡片外部左上角 */}
           <div className="mb-1 flex items-center justify-between text-xs">
             <div className="flex items-center gap-1">
@@ -121,7 +128,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
                   onBlur={handleLabelSave}
                   onKeyDown={handleLabelKeyDown}
                   className="min-w-0 flex-1 rounded border-none bg-transparent px-1 py-0.5 text-xs outline-none"
-                  style={{ width: `${Math.max(editLabelValue.length * 8, 60)}px` }}
+                  style={{ width: `${Math.max((editLabelValue?.length || 0) * 8, 60)}px` }}
                   autoFocus
                 />
               ) : (
@@ -152,16 +159,18 @@ export default function BaseNode({ data, id, children, className = '', showHandl
                 isConnectable={true}
               />
             )}
-            <div
-              className={cn(
-                'bg-card max-w-120 rounded-sm p-1 shadow-sm',
-                getStatusStyle(status),
-                focusedNodeId === id ? 'border-primary' : selected ? 'border-chart-1' : '',
-                className,
-              )}
-            >
-              {children}
-            </div>
+            {children && (
+              <div
+                className={cn(
+                  'bg-card max-w-120 rounded-sm p-1 shadow-sm',
+                  getStatusStyle(status),
+                  focusedNodeId === id ? 'border-primary' : selected ? 'border-chart-1' : '',
+                  className,
+                )}
+              >
+                {children}
+              </div>
+            )}
 
             {/* 渲染输出端口 */}
             {showHandles && (

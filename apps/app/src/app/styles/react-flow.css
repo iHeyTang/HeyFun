@@ -38,3 +38,10 @@
   border-color: #87ceeb !important;
   box-shadow: 0 0 0 3px rgba(168, 216, 234, 0.35) !important;
 }
+
+.react-flow__node-group {
+  border: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}

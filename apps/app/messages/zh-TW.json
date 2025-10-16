@@ -400,7 +400,11 @@
     "confirmDelete": "確定要刪除專案「{name}」嗎？此操作無法復原。",
     "toolbar": {
       "execute": "執行",
-      "executeSelected": "執行選中節點"
+      "executeSelected": "執行選中節點",
+      "group": "打組",
+      "groupSelected": "將選中節點打組",
+      "ungroup": "拆組",
+      "ungroupSelected": "拆解分組"
     },
     "contextMenu": {
       "searchPlaceholder": "搜尋節點...",

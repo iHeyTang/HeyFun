@@ -400,7 +400,11 @@
     "confirmDelete": "プロジェクト「{name}」を削除してもよろしいですか？この操作は元に戻せません。",
     "toolbar": {
       "execute": "実行",
-      "executeSelected": "選択したノードを実行"
+      "executeSelected": "選択したノードを実行",
+      "group": "グループ化",
+      "groupSelected": "選択したノードをグループ化",
+      "ungroup": "グループ解除",
+      "ungroupSelected": "グループを解除"
     },
     "contextMenu": {
       "searchPlaceholder": "ノードを検索...",

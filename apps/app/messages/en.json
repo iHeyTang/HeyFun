@@ -400,7 +400,11 @@
     "confirmDelete": "Are you sure you want to delete project \"{name}\"? This action cannot be undone.",
     "toolbar": {
       "execute": "Execute",
-      "executeSelected": "Execute selected nodes"
+      "executeSelected": "Execute selected nodes",
+      "group": "Group",
+      "groupSelected": "Group selected nodes",
+      "ungroup": "Ungroup",
+      "ungroupSelected": "Ungroup nodes"
     },
     "contextMenu": {
       "searchPlaceholder": "Search nodes...",

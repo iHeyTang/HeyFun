@@ -25,7 +25,7 @@ export type NodeInput = Map<string, NodeOutput>;
  * 注意：status现在由Context管理，不再存储在节点数据中
  */
 export interface NodeData<TActionData extends Record<string, any> = Record<string, any>> extends Record<string, any> {
-  label: string;
+  label?: string;
   description?: string;
   // 节点执行相关
   auto?: boolean; // 是否自动执行
