@@ -404,7 +404,9 @@
       "group": "Group",
       "groupSelected": "Group selected nodes",
       "ungroup": "Ungroup",
-      "ungroupSelected": "Ungroup nodes"
+      "ungroupSelected": "Ungroup nodes",
+      "horizontal": "Horizontal",
+      "vertical": "Vertical"
     },
     "contextMenu": {
       "searchPlaceholder": "Search nodes...",
@@ -447,8 +449,10 @@
       "uploading": "Uploading...",
       "uploadAudio": "Upload local audio (up to 10MB)",
       "uploadImage": "Upload local image (up to 10MB)",
+      "uploadVideo": "Upload local video (up to 100MB)",
       "generateAudio": "Enter prompt to generate audio",
       "generateImage": "Enter prompt to generate an image",
+      "generateVideo": "Enter prompt to generate a video",
       "selectAudioFile": "Please select an audio file",
       "selectImageFile": "Please select an image file",
       "audioUploadFailed": "Audio upload failed. Please try again.",

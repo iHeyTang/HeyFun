@@ -195,6 +195,7 @@ function FlowCanvasCore({
           onExecuteSelectedNodes={multiSelectExtension.onExecuteSelectedNodes}
           onGroupSelectedNodes={multiSelectExtension.onGroupSelectedNodes}
           onUngroupSelectedNode={multiSelectExtension.onUngroupSelectedNode}
+          onLayoutGroup={multiSelectExtension.onLayoutGroup}
         />
       </ReactFlow>
     </div>

@@ -28,11 +28,7 @@ export const NodeTooltip = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElem
   }, [isLocked]);
   const setLocked = useCallback((locked: boolean) => setIsLocked(locked), []);
 
-  return (
-    <TooltipContext.Provider value={{ isVisible, showTooltip, hideTooltip, setLocked }}>
-      <div ref={ref}>{children}</div>
-    </TooltipContext.Provider>
-  );
+  return <TooltipContext.Provider value={{ isVisible, showTooltip, hideTooltip, setLocked }}>{children}</TooltipContext.Provider>;
 });
 NodeTooltip.displayName = 'NodeTooltip';
 

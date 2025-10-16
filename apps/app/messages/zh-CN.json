@@ -404,7 +404,9 @@
       "group": "打组",
       "groupSelected": "将选中节点打组",
       "ungroup": "拆组",
-      "ungroupSelected": "拆解分组"
+      "ungroupSelected": "拆解分组",
+      "horizontal": "水平",
+      "vertical": "垂直"
     },
     "contextMenu": {
       "searchPlaceholder": "搜索节点...",
@@ -447,8 +449,10 @@
       "uploading": "上传中...",
       "uploadAudio": "上传本地音频（最大 10MB）",
       "uploadImage": "上传本地图片（最大 10MB）",
+      "uploadVideo": "上传本地视频（最大 100MB）",
       "generateAudio": "输入提示词生成音频",
       "generateImage": "输入提示词生成图片",
+      "generateVideo": "输入提示词生成视频",
       "selectAudioFile": "请选择音频文件",
       "selectImageFile": "请选择图片文件",
       "audioUploadFailed": "音频上传失败，请重试",

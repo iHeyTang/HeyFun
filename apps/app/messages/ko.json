@@ -404,7 +404,9 @@
       "group": "그룹화",
       "groupSelected": "선택한 노드 그룹화",
       "ungroup": "그룹 해제",
-      "ungroupSelected": "그룹 해제"
+      "ungroupSelected": "그룹 해제",
+      "horizontal": "수평",
+      "vertical": "수직"
     },
     "contextMenu": {
       "searchPlaceholder": "노드 검색...",
@@ -447,8 +449,10 @@
       "uploading": "업로드 중...",
       "uploadAudio": "로컬 오디오 업로드 (최대 10MB)",
       "uploadImage": "로컬 이미지 업로드 (최대 10MB)",
+      "uploadVideo": "로컬 비디오 업로드 (최대 100MB)",
       "generateAudio": "프롬프트를 입력하여 오디오 생성",
       "generateImage": "프롬프트를 입력하여 이미지 생성",
+      "generateVideo": "프롬프트를 입력하여 비디오 생성",
       "selectAudioFile": "오디오 파일을 선택하세요",
       "selectImageFile": "이미지 파일을 선택하세요",
       "audioUploadFailed": "오디오 업로드 실패. 다시 시도하세요.",

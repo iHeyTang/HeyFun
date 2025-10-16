@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Handle, Position, useViewport } from '@xyflow/react';
+import { Handle, NodeResizer, Position, useViewport } from '@xyflow/react';
 import { useCallback, useRef, useState } from 'react';
 import { useFlowGraphContext, useNodeStatusById } from '../../FlowCanvasProvider';
 import { useFlowGraph } from '../../hooks';
@@ -103,91 +103,89 @@ export default function BaseNode({ data, id, children, className = '', showHandl
   const hoverHandleSize = 60; // hover时的基准大小（px）
   const handleHoverSize = hoverHandleSize / zoom;
   return (
-    <NodeTooltip>
-      {toolbar && (
+    <NodeTooltip className="h-full w-full">
+      {toolbar ? (
         <NodeTooltipContent position={Position.Top} isVisible={focusedNodeId === id} className="w-fit max-w-130">
           {toolbar}
         </NodeTooltipContent>
-      )}
-      {tooltip && (
+      ) : null}
+      {tooltip ? (
         <NodeTooltipContent position={Position.Bottom} isVisible={focusedNodeId === id} className="w-fit max-w-130 min-w-100 shadow">
           {tooltip}
         </NodeTooltipContent>
-      )}
-      <NodeTooltipTrigger>
-        <div className={cn('relative')} onBlur={onBlur} ref={ref}>
-          {/* 标题和状态在卡片外部左上角 */}
-          <div className="mb-1 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-1">
-              <StatusIndicator status={status} error={statusData?.error} />
-              {isEditingLabel ? (
-                <input
-                  type="text"
-                  value={editLabelValue}
-                  onChange={e => setEditLabelValue(e.target.value)}
-                  onBlur={handleLabelSave}
-                  onKeyDown={handleLabelKeyDown}
-                  className="min-w-0 flex-1 rounded border-none bg-transparent px-1 py-0.5 text-xs outline-none"
-                  style={{ width: `${Math.max((editLabelValue?.length || 0) * 8, 60)}px` }}
-                  autoFocus
-                />
-              ) : (
-                <span
-                  className="hover:bg-accent hover:text-accent-foreground text-foreground cursor-pointer rounded px-1 py-0.5 transition-colors"
-                  onClick={handleLabelClick}
-                >
-                  {data.label}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* 卡片主体 */}
-          <div className={cn('group relative transition-all duration-200')}>
-            {/* 渲染输入端口 */}
-            {showHandles && (
-              <Handle
-                type="target"
-                position={getPosition(Position.Left)}
-                id="input"
-                className={cn('z-100 origin-top-left transition-all duration-200', '-left-[12px]!')}
-                style={{
-                  // @ts-expect-error: React Flow Handle 样式
-                  '--handle-hover-size': `${handleHoverSize}px`,
-                }}
-                onConnect={params => console.log('handle onConnect', params)}
-                isConnectable={true}
+      ) : null}
+      <NodeTooltipTrigger className="relative h-full w-full" onBlur={onBlur} ref={ref}>
+        {/* 标题和状态在卡片外部左上角 */}
+        <div className="absolute -top-6 left-0 mb-1 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1">
+            <StatusIndicator status={status} error={statusData?.error} />
+            {isEditingLabel ? (
+              <input
+                type="text"
+                value={editLabelValue}
+                onChange={e => setEditLabelValue(e.target.value)}
+                onBlur={handleLabelSave}
+                onKeyDown={handleLabelKeyDown}
+                className="min-w-0 flex-1 rounded border-none bg-transparent px-1 py-0.5 text-xs outline-none"
+                style={{ width: `${Math.max((editLabelValue?.length || 0) * 8, 60)}px` }}
+                autoFocus
               />
-            )}
-            {children && (
-              <div
-                className={cn(
-                  'bg-card max-w-120 rounded-sm p-1 shadow-sm',
-                  getStatusStyle(status),
-                  focusedNodeId === id ? 'border-primary' : selected ? 'border-chart-1' : '',
-                  className,
-                )}
+            ) : (
+              <span
+                className="hover:bg-accent hover:text-accent-foreground text-foreground cursor-pointer rounded px-1 py-0.5 transition-colors"
+                onClick={handleLabelClick}
               >
-                {children}
-              </div>
-            )}
-
-            {/* 渲染输出端口 */}
-            {showHandles && (
-              <Handle
-                type="source"
-                position={getPosition(Position.Right)}
-                id="output"
-                className={cn('z-100 origin-top-right transition-all duration-200', '-right-[12px]!')}
-                style={{
-                  // @ts-expect-error: React Flow Handle 样式
-                  '--handle-hover-size': `${handleHoverSize}px`,
-                }}
-                onConnect={params => console.log('handle onConnect', params)}
-                isConnectable={true}
-              />
+                {data.label}
+              </span>
             )}
           </div>
+        </div>
+
+        {/* 卡片主体 */}
+        <div className="group relative h-full w-full max-w-100 transition-all duration-200">
+          {/* 渲染输入端口 */}
+          {showHandles && (
+            <Handle
+              type="target"
+              position={getPosition(Position.Left)}
+              id="input"
+              className={cn('z-100 origin-top-left transition-all duration-200', '-left-[12px]!')}
+              style={{
+                // @ts-expect-error: React Flow Handle 样式
+                '--handle-hover-size': `${handleHoverSize}px`,
+              }}
+              onConnect={params => console.log('handle onConnect', params)}
+              isConnectable={true}
+            />
+          )}
+          {children && (
+            <div
+              className={cn(
+                'bg-card h-fit w-full rounded-sm p-1 shadow-sm',
+                getStatusStyle(status),
+                focusedNodeId === id ? 'border-primary' : selected ? 'border-chart-1' : '',
+                className,
+              )}
+            >
+              {children}
+            </div>
+          )}
+
+          {/* 渲染输出端口 */}
+          {showHandles && (
+            <Handle
+              type="source"
+              position={getPosition(Position.Right)}
+              id="output"
+              className={cn('z-100 origin-top-right transition-all duration-200', '-right-[12px]!')}
+              style={{
+                // @ts-expect-error: React Flow Handle 样式
+                '--handle-hover-size': `${handleHoverSize}px`,
+              }}
+              onConnect={params => console.log('handle onConnect', params)}
+              isConnectable={true}
+            />
+          )}
         </div>
       </NodeTooltipTrigger>
     </NodeTooltip>

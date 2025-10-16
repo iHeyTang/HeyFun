@@ -404,7 +404,9 @@
       "group": "グループ化",
       "groupSelected": "選択したノードをグループ化",
       "ungroup": "グループ解除",
-      "ungroupSelected": "グループを解除"
+      "ungroupSelected": "グループを解除",
+      "horizontal": "水平",
+      "vertical": "垂直"
     },
     "contextMenu": {
       "searchPlaceholder": "ノードを検索...",
@@ -447,8 +449,10 @@
       "uploading": "アップロード中...",
       "uploadAudio": "ローカル音声をアップロード（最大10MB）",
       "uploadImage": "ローカル画像をアップロード（最大10MB）",
+      "uploadVideo": "ローカル動画をアップロード（最大100MB）",
       "generateAudio": "プロンプトを入力して音声を生成",
       "generateImage": "プロンプトを入力して画像を生成",
+      "generateVideo": "プロンプトを入力して動画を生成",
       "selectAudioFile": "音声ファイルを選択してください",
       "selectImageFile": "画像ファイルを選択してください",
       "audioUploadFailed": "音声のアップロードに失敗しました。もう一度お試しください。",

@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useStore, ViewportPortal } from '@xyflow/react';
-import { PlayIcon, ExpandIcon, GroupIcon } from 'lucide-react';
+import { PlayIcon, ExpandIcon, GroupIcon, LayoutIcon, LayoutGridIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFlowGraph } from '../../hooks/useFlowGraph';
 import type { FlowGraphNode } from '../../types/nodes';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 export { useMultiSelectToolbar } from './hooks/useMultiSelectToolbar';
 export type { MultiSelectToolbarExtensionContext, MultiSelectToolbarExtensionResult } from './hooks/useMultiSelectToolbar';
 
@@ -22,6 +23,8 @@ export interface MultiSelectToolbarProps {
   onGroupSelectedNodes?: (selectedNodes: string[]) => void;
   /** 拆组选中节点的回调 */
   onUngroupSelectedNode?: (groupNodeId: string) => void;
+  /** 布局 group 的回调 */
+  onLayoutGroup?: (groupNodeId: string, direction: 'TB' | 'LR') => void;
 }
 
 export const MultiSelectToolbar = ({
@@ -31,11 +34,15 @@ export const MultiSelectToolbar = ({
   onExecuteSelectedNodes,
   onGroupSelectedNodes,
   onUngroupSelectedNode,
+  onLayoutGroup,
 }: MultiSelectToolbarProps) => {
   const flowGraph = useFlowGraph();
-  const t = useTranslations('flowcanvas.toolbar');
+  const t = useTranslations();
 
   const toolbarRef = useRef<HTMLDivElement>(null);
+
+  // 布局方向状态：每次点击切换 LR -> TB -> LR ...
+  const [layoutDirection, setLayoutDirection] = useState<'TB' | 'LR'>('LR');
 
   // 检查选中的节点是否是单个组节点
   const selectedGroupNode = useMemo(() => {
@@ -151,6 +158,32 @@ export const MultiSelectToolbar = ({
     }
   };
 
+  // 布局选中的 group（每次点击切换方向）
+  const handleLayoutGroup = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    console.log('handleLayoutGroup 被调用', { event, selectedGroupNode, currentDirection: layoutDirection });
+    event.stopPropagation();
+
+    if (!selectedGroupNode) {
+      console.log('没有选中组节点');
+      return;
+    }
+
+    console.log('开始布局组节点:', selectedGroupNode, '方向:', layoutDirection);
+
+    try {
+      if (onLayoutGroup) {
+        onLayoutGroup(selectedGroupNode, layoutDirection);
+      }
+
+      // 切换方向：LR -> TB -> LR ...
+      setLayoutDirection(prev => (prev === 'LR' ? 'TB' : 'LR'));
+
+      console.log('组节点布局完成，下次方向:', layoutDirection === 'LR' ? 'TB' : 'LR');
+    } catch (error) {
+      console.error('布局组节点时出错:', error);
+    }
+  };
+
   // 当选中节点或节点位置变化时更新工具栏位置
   useEffect(() => {
     updatePosition();
@@ -168,26 +201,47 @@ export const MultiSelectToolbar = ({
               e.stopPropagation();
             }}
           >
+            {selectedGroupNode ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={handleLayoutGroup} style={{ pointerEvents: 'auto' }} type="button" variant="outline">
+                    <LayoutGridIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {t('flowcanvas.project.autoLayout')} (
+                  {layoutDirection === 'LR' ? t('flowcanvas.toolbar.horizontal') : t('flowcanvas.toolbar.vertical')})
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+
             {/* 执行按钮 - 多选或选中组节点时显示 */}
             {selectedNodes.length > 1 || selectedGroupNode ? (
-              <Button onClick={handleExecuteSelectedNodes} style={{ pointerEvents: 'auto' }} title={t('executeSelected')} type="button">
+              <Button
+                onClick={handleExecuteSelectedNodes}
+                style={{ pointerEvents: 'auto' }}
+                title={t('flowcanvas.toolbar.executeSelected')}
+                type="button"
+              >
                 <PlayIcon className="h-4 w-4" />
-                {t('execute')}
+                {t('flowcanvas.toolbar.execute')}
               </Button>
             ) : null}
 
-            {/* 如果选中单个组节点，显示拆组按钮 */}
+            {/* 如果选中单个组节点，显示布局和拆组按钮 */}
             {selectedGroupNode ? (
-              <Button
-                onClick={handleUngroupSelectedNode}
-                style={{ pointerEvents: 'auto' }}
-                title={t('ungroupSelected')}
-                type="button"
-                variant="outline"
-              >
-                <ExpandIcon className="h-4 w-4" />
-                {t('ungroup')}
-              </Button>
+              <>
+                <Button
+                  onClick={handleUngroupSelectedNode}
+                  style={{ pointerEvents: 'auto' }}
+                  title={t('flowcanvas.toolbar.ungroupSelected')}
+                  type="button"
+                  variant="outline"
+                >
+                  <ExpandIcon className="h-4 w-4" />
+                  {t('flowcanvas.toolbar.ungroup')}
+                </Button>
+              </>
             ) : (
               <>
                 {/* 打组按钮（只有多选时显示） */}
@@ -195,12 +249,12 @@ export const MultiSelectToolbar = ({
                   <Button
                     onClick={handleGroupSelectedNodes}
                     style={{ pointerEvents: 'auto' }}
-                    title={t('groupSelected')}
+                    title={t('flowcanvas.toolbar.groupSelected')}
                     type="button"
                     variant="outline"
                   >
                     <GroupIcon className="h-4 w-4" />
-                    {t('group')}
+                    {t('flowcanvas.toolbar.group')}
                   </Button>
                 )}
               </>

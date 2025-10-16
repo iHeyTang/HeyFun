@@ -2,6 +2,7 @@ import { Edge, Node, OnNodesChange, useReactFlow } from '@xyflow/react';
 import { useCallback } from 'react';
 import { useWorkflowRunner } from '../../../hooks';
 import { FlowGraphNode, NodeExecutor } from '../../../types/nodes';
+import { layoutGroup } from '../../../utils/layout';
 
 /**
  * 多选工具栏扩展上下文
@@ -33,6 +34,8 @@ export interface MultiSelectToolbarExtensionResult {
   onGroupSelectedNodes: (selectedNodeIds: string[]) => void;
   // 拆组方法
   onUngroupSelectedNode: (groupNodeId: string) => void;
+  // 布局 group 方法
+  onLayoutGroup: (groupNodeId: string, direction: 'TB' | 'LR') => void;
 }
 
 /**
@@ -295,9 +298,29 @@ export function useMultiSelectToolbar(context: MultiSelectToolbarExtensionContex
     [reactFlowInstance],
   );
 
+  // 布局 group
+  const onLayoutGroup = useCallback(
+    (groupNodeId: string, direction: 'TB' | 'LR' = 'TB') => {
+      try {
+        const currentNodes = reactFlowInstance.getNodes() as FlowGraphNode[];
+        const currentEdges = reactFlowInstance.getEdges();
+
+        // 使用布局工具函数，传入指定的方向
+        const updatedNodes = layoutGroup(groupNodeId, currentNodes, currentEdges, direction);
+
+        // 更新节点
+        reactFlowInstance.setNodes(updatedNodes);
+      } catch (error) {
+        console.error('布局 group 时出错:', error);
+      }
+    },
+    [reactFlowInstance],
+  );
+
   return {
     onExecuteSelectedNodes,
     onGroupSelectedNodes,
     onUngroupSelectedNode,
+    onLayoutGroup,
   };
 }
