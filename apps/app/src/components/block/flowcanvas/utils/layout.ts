@@ -343,17 +343,19 @@ export const getLayoutElements = (nodes: FlowGraphNode[], edges: Edge[], directi
   });
 
   // 现在布局顶层节点和顶层 group 节点
-  // 只对顶层节点（包括顶层 group）进行连通分量检测
+  // 将组节点单独处理，不和其他节点混在一起
   const topLevelGroups = updatedGroupNodes.filter(g => !g.parentId);
-  const topLevelNodesWithGroups = [...topLevelNodes, ...topLevelGroups];
-  const components = findConnectedComponents(topLevelNodesWithGroups, edges);
+
+  // 只对顶层普通节点进行连通分量检测（不包括组节点）
+  const components = findConnectedComponents(topLevelNodes, edges);
 
   // 分离孤立节点（单节点组）和连通组
   const isolatedNodes = components.filter(comp => comp.length === 1).flat();
   const connectedGroups = components.filter(comp => comp.length > 1);
 
   // 为每个连通组分别布局
-  const groupSpacing = 150;
+  const groupSpacing = 30;
+  const groupNodeSpacing = 200; // 组节点和其他节点之间的间隙
   let currentYOffset = 0;
   let maxWidth = 0;
 
@@ -433,6 +435,28 @@ export const getLayoutElements = (nodes: FlowGraphNode[], edges: Edge[], directi
     };
   });
 
+  // 布局顶层组节点（单独排列，在其他节点之后）
+  let groupYOffset = Math.max(currentYOffset, currentOffset);
+  if (layoutConnectedNodes.length > 0 || layoutIsolatedNodes.length > 0) {
+    groupYOffset += groupNodeSpacing; // 添加组节点和其他节点之间的间隙
+  }
+
+  const layoutGroupNodes = topLevelGroups.map(groupNode => {
+    const dimensions = getNodeDimensions(groupNode);
+
+    const position = {
+      x: 140,
+      y: groupYOffset,
+    };
+
+    groupYOffset += dimensions.height + groupSpacing;
+
+    return {
+      ...groupNode,
+      position,
+    };
+  });
+
   // 合并所有布局后的节点
   // 需要注意：确保所有更新的 group 节点都被包含
   const nodeMap = new Map<string, FlowGraphNode>();
@@ -451,6 +475,9 @@ export const getLayoutElements = (nodes: FlowGraphNode[], edges: Edge[], directi
   // 3. 添加顶层节点（非 group 的顶层节点）
   layoutConnectedNodes.forEach(n => nodeMap.set(n.id, n));
   layoutIsolatedNodes.forEach(n => nodeMap.set(n.id, n));
+
+  // 4. 添加顶层组节点的位置
+  layoutGroupNodes.forEach(n => nodeMap.set(n.id, n));
 
   const allLayoutNodes = Array.from(nodeMap.values());
 

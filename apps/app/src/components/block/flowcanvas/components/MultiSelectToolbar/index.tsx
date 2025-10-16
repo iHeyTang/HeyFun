@@ -205,6 +205,23 @@ export const MultiSelectToolbar = ({
               e.stopPropagation();
             }}
           >
+            {/* 执行按钮 - 多选或选中组节点时显示 */}
+            {selectedNodes.length > 1 || selectedGroupNode ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handleExecuteSelectedNodes}
+                    style={{ pointerEvents: 'auto', marginRight: 40 }}
+                    title={t('flowcanvas.toolbar.executeSelected')}
+                    type="button"
+                  >
+                    <PlayIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('flowcanvas.toolbar.execute')}</TooltipContent>
+              </Tooltip>
+            ) : null}
+
             {selectedGroupNode ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -217,19 +234,6 @@ export const MultiSelectToolbar = ({
                   {layoutDirection === 'LR' ? t('flowcanvas.toolbar.horizontal') : t('flowcanvas.toolbar.vertical')})
                 </TooltipContent>
               </Tooltip>
-            ) : null}
-
-            {/* 执行按钮 - 多选或选中组节点时显示 */}
-            {selectedNodes.length > 1 || selectedGroupNode ? (
-              <Button
-                onClick={handleExecuteSelectedNodes}
-                style={{ pointerEvents: 'auto' }}
-                title={t('flowcanvas.toolbar.executeSelected')}
-                type="button"
-              >
-                <PlayIcon className="h-4 w-4" />
-                {t('flowcanvas.toolbar.execute')}
-              </Button>
             ) : null}
 
             {/* 如果选中单个组节点，显示布局和拆组按钮 */}
