@@ -191,7 +191,11 @@ export const MultiSelectToolbar = ({
 
   return (
     <ViewportPortal>
-      <div ref={toolbarRef} className="absolute flex justify-center" style={{ width: bounds.width, zIndex: 9999, pointerEvents: 'auto', top: -40 }}>
+      <div
+        ref={toolbarRef}
+        className="absolute flex justify-center"
+        style={{ width: bounds.width, zIndex: 9999, pointerEvents: 'auto', top: selectedGroupNode ? -40 : 0 }}
+      >
         {selectedNodes.length >= 1 && !selecting && (
           <div
             className={cn('flex gap-2', className)}
