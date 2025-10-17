@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFlowGraph } from '../../hooks/useFlowGraph';
 import type { FlowGraphNode } from '../../types/nodes';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import ToolbarButton from '../ToolbarButton';
 export { useMultiSelectToolbar } from './hooks/useMultiSelectToolbar';
 export type { MultiSelectToolbarExtensionContext, MultiSelectToolbarExtensionResult } from './hooks/useMultiSelectToolbar';
 
@@ -168,8 +169,6 @@ export const MultiSelectToolbar = ({
       return;
     }
 
-    console.log('开始布局组节点:', selectedGroupNode, '方向:', layoutDirection);
-
     try {
       if (onLayoutGroup) {
         onLayoutGroup(selectedGroupNode, layoutDirection);
@@ -189,6 +188,47 @@ export const MultiSelectToolbar = ({
     updatePosition();
   }, [updatePosition, nodePositions]);
 
+  const actionList = [
+    {
+      icon: PlayIcon,
+      label: t('flowcanvas.toolbar.executeSelected'),
+      onClick: handleExecuteSelectedNodes,
+      side: 'top',
+      show: selectedNodes.length > 1 || selectedGroupNode,
+    },
+    {
+      icon: LayoutGridIcon,
+      label: t('flowcanvas.project.autoLayout'),
+      onClick: handleLayoutGroup,
+      side: 'top',
+      show: selectedGroupNode,
+    },
+    {
+      icon: ExpandIcon,
+      label: t('flowcanvas.toolbar.ungroupSelected'),
+      onClick: handleUngroupSelectedNode,
+      side: 'top',
+      show: selectedGroupNode,
+    },
+    {
+      icon: GroupIcon,
+      label: t('flowcanvas.toolbar.groupSelected'),
+      onClick: handleGroupSelectedNodes,
+      side: 'top',
+      show: selectedNodes.length > 1,
+    },
+  ];
+
+  const showActionList = actionList.filter(action => action.show);
+
+  if (selecting) {
+    return null;
+  }
+
+  if (showActionList.length === 0) {
+    return null;
+  }
+
   return (
     <ViewportPortal>
       <div
@@ -196,77 +236,18 @@ export const MultiSelectToolbar = ({
         className="absolute flex justify-center"
         style={{ width: bounds.width, zIndex: 9999, pointerEvents: 'auto', top: selectedGroupNode ? -40 : 0 }}
       >
-        {selectedNodes.length >= 1 && !selecting && (
+        {selectedNodes.length >= 1 && (
           <div
-            className={cn('flex gap-2', className)}
+            className={cn('bg-background flex gap-2 rounded-full px-4 py-1 shadow', className)}
             style={{ pointerEvents: 'auto' }}
             onClick={e => {
               console.log('工具栏容器被点击', e);
               e.stopPropagation();
             }}
           >
-            {/* 执行按钮 - 多选或选中组节点时显示 */}
-            {selectedNodes.length > 1 || selectedGroupNode ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleExecuteSelectedNodes}
-                    style={{ pointerEvents: 'auto', marginRight: 40 }}
-                    title={t('flowcanvas.toolbar.executeSelected')}
-                    type="button"
-                  >
-                    <PlayIcon className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t('flowcanvas.toolbar.execute')}</TooltipContent>
-              </Tooltip>
-            ) : null}
-
-            {selectedGroupNode ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button onClick={handleLayoutGroup} style={{ pointerEvents: 'auto' }} type="button" variant="outline">
-                    <LayoutGridIcon className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {t('flowcanvas.project.autoLayout')} (
-                  {layoutDirection === 'LR' ? t('flowcanvas.toolbar.horizontal') : t('flowcanvas.toolbar.vertical')})
-                </TooltipContent>
-              </Tooltip>
-            ) : null}
-
-            {/* 如果选中单个组节点，显示布局和拆组按钮 */}
-            {selectedGroupNode ? (
-              <>
-                <Button
-                  onClick={handleUngroupSelectedNode}
-                  style={{ pointerEvents: 'auto' }}
-                  title={t('flowcanvas.toolbar.ungroupSelected')}
-                  type="button"
-                  variant="outline"
-                >
-                  <ExpandIcon className="h-4 w-4" />
-                  {t('flowcanvas.toolbar.ungroup')}
-                </Button>
-              </>
-            ) : (
-              <>
-                {/* 打组按钮（只有多选时显示） */}
-                {selectedNodes.length > 1 && (
-                  <Button
-                    onClick={handleGroupSelectedNodes}
-                    style={{ pointerEvents: 'auto' }}
-                    title={t('flowcanvas.toolbar.groupSelected')}
-                    type="button"
-                    variant="outline"
-                  >
-                    <GroupIcon className="h-4 w-4" />
-                    {t('flowcanvas.toolbar.group')}
-                  </Button>
-                )}
-              </>
-            )}
+            {showActionList.map(action => (
+              <ToolbarButton key={action.label} icon={action.icon} label={action.label} onClick={action.onClick} side="top" />
+            ))}
           </div>
         )}
       </div>

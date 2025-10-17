@@ -11,7 +11,7 @@ dagreGraph.setDefaultEdgeLabel(() => ({}));
 const getNodeDimensions = (node: FlowGraphNode): { width: number; height: number } => {
   // 如果节点有明确的尺寸（如 group 或已渲染的节点），直接使用
   if (node.width && node.height) {
-    return { width: node.width + (node.type === 'group' ? 100 : 0), height: node.height + (node.type === 'group' ? 100 : 0) };
+    return { width: node.width, height: node.height };
   }
 
   // 根据节点类型使用默认尺寸
@@ -90,9 +90,10 @@ const getNodeDepth = (nodeId: string, nodes: FlowGraphNode[]): number => {
  * 为 group 内的子节点进行布局
  *
  * 关键点：
- * 1. 使用 dagre 对子节点进行布局
- * 2. 规范化子节点位置，确保从 (padding, padding) 开始
- * 3. 根据子节点实际位置计算 group 的精确边界
+ * 1. 检测连通分量，分别布局连通节点和孤立节点
+ * 2. 使用 dagre 对子节点进行布局
+ * 3. 规范化子节点位置，确保从 (padding, padding) 开始
+ * 4. 根据子节点实际位置计算 group 的精确边界
  */
 const layoutGroupChildren = (
   groupNode: FlowGraphNode,
@@ -104,86 +105,131 @@ const layoutGroupChildren = (
     return { children: [], bounds: { width: 300, height: 200 } };
   }
 
-  // 创建 dagre 图用于布局子节点
-  const childGraph = new dagre.graphlib.Graph();
-  childGraph.setDefaultEdgeLabel(() => ({}));
-  childGraph.setGraph({
-    rankdir: direction,
-    nodesep: direction === 'LR' ? 80 : 60, // 增加节点间距，避免 label 重叠
-    ranksep: direction === 'LR' ? 120 : 100, // 增加层级间距
-    marginx: 30,
-    marginy: 30,
-    align: undefined,
-    edgesep: 20,
-  });
-
-  // 添加子节点（包括嵌套的 group 节点）
-  childNodes.forEach(node => {
-    const dimensions = getNodeDimensions(node);
-
-    childGraph.setNode(node.id, {
-      width: dimensions.width,
-      height: dimensions.height,
-    });
-  });
-
-  // 添加子节点之间的边
-  const childNodeIds = new Set(childNodes.map(n => n.id));
-  edges.forEach(edge => {
-    if (childNodeIds.has(edge.source) && childNodeIds.has(edge.target)) {
-      childGraph.setEdge(edge.source, edge.target);
-    }
-  });
-
-  // 计算布局
-  dagre.layout(childGraph);
-
   const padding = 60; // group 的内边距
+  const nodeSpacing = 120; // 节点之间的间距
+  const componentSpacing = 150; // 连通组之间的间距
 
-  // 第一步：获取所有节点的 dagre 布局位置，找到边界
-  const dagrePositions = childNodes.map(node => {
-    const nodeWithPosition = childGraph.node(node.id);
-    const dimensions = getNodeDimensions(node);
+  // 检测子节点的连通分量
+  const components = findConnectedComponents(childNodes, edges);
 
-    return {
-      node,
-      dimensions,
-      x: nodeWithPosition.x - dimensions.width / 2,
-      y: nodeWithPosition.y - dimensions.height / 2,
-    };
-  });
+  // 分离孤立节点（单节点组）和连通组
+  const isolatedNodes = components.filter(comp => comp.length === 1).flat();
+  const connectedGroups = components.filter(comp => comp.length > 1);
 
-  // 找到 dagre 布局的最小坐标
-  const minDagreX = Math.min(...dagrePositions.map(p => p.x));
-  const minDagreY = Math.min(...dagrePositions.map(p => p.y));
+  let allLayoutChildren: FlowGraphNode[] = [];
+  let currentX = padding;
+  let currentY = padding;
+  let maxWidth = 0;
 
-  // 第二步：规范化位置，使子节点从 (padding, padding) 开始
-  const layoutChildren = dagrePositions.map(({ node, x, y }) => {
-    return {
-      ...node,
-      position: {
-        x: x - minDagreX + padding,
-        y: y - minDagreY + padding,
-      },
-      // 保持 parentId，保持所有其他属性（包括 style）
-      parentId: groupNode.id,
-    };
-  });
+  // 布局连通组
+  if (connectedGroups.length > 0) {
+    connectedGroups.forEach((groupNodes, groupIndex) => {
+      // 创建 dagre 图用于布局这个连通组
+      const childGraph = new dagre.graphlib.Graph();
+      childGraph.setDefaultEdgeLabel(() => ({}));
+      childGraph.setGraph({
+        rankdir: direction,
+        nodesep: direction === 'LR' ? 120 : 100, // 增加节点间距
+        ranksep: direction === 'LR' ? 180 : 150, // 增加层级间距
+        marginx: 0,
+        marginy: 0,
+        align: undefined,
+        edgesep: 40,
+      });
 
-  // 第三步：计算子节点的实际边界
-  // 追踪左上角（最小值）和右下角（最大值）
+      // 添加节点
+      groupNodes.forEach(node => {
+        const dimensions = getNodeDimensions(node);
+        childGraph.setNode(node.id, {
+          width: dimensions.width,
+          height: dimensions.height,
+        });
+      });
+
+      // 添加这个连通组内的边
+      const groupNodeIds = new Set(groupNodes.map(n => n.id));
+      edges.forEach(edge => {
+        if (groupNodeIds.has(edge.source) && groupNodeIds.has(edge.target)) {
+          childGraph.setEdge(edge.source, edge.target);
+        }
+      });
+
+      // 计算布局
+      dagre.layout(childGraph);
+
+      // 获取布局后的尺寸
+      const graph = childGraph.graph();
+      const groupWidth = graph.width || 0;
+      const groupHeight = graph.height || 0;
+
+      // 获取所有节点的 dagre 布局位置
+      const dagrePositions = groupNodes.map(node => {
+        const nodeWithPosition = childGraph.node(node.id);
+        const dimensions = getNodeDimensions(node);
+
+        return {
+          node,
+          dimensions,
+          x: nodeWithPosition.x - dimensions.width / 2,
+          y: nodeWithPosition.y - dimensions.height / 2,
+        };
+      });
+
+      // 找到 dagre 布局的最小坐标
+      const minDagreX = Math.min(...dagrePositions.map(p => p.x));
+      const minDagreY = Math.min(...dagrePositions.map(p => p.y));
+
+      // 规范化位置并应用偏移
+      const layoutChildren = dagrePositions.map(({ node, x, y }) => {
+        return {
+          ...node,
+          position: {
+            x: x - minDagreX + currentX,
+            y: y - minDagreY + currentY,
+          },
+          parentId: groupNode.id,
+        };
+      });
+
+      allLayoutChildren.push(...layoutChildren);
+
+      // 对于TB布局，所有内容都竖着排列
+      currentY += groupHeight + componentSpacing;
+      maxWidth = Math.max(maxWidth, groupWidth);
+    });
+  }
+
+  // 布局孤立节点（包括孤立的 group 节点）- 继续竖着排列
+  if (isolatedNodes.length > 0) {
+    isolatedNodes.forEach(node => {
+      const dimensions = getNodeDimensions(node);
+
+      allLayoutChildren.push({
+        ...node,
+        position: {
+          x: currentX,
+          y: currentY,
+        },
+        parentId: groupNode.id,
+      });
+
+      // 继续竖着排列
+      currentY += dimensions.height + nodeSpacing;
+      maxWidth = Math.max(maxWidth, dimensions.width);
+    });
+  }
+
+  // 计算子节点的实际边界
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
 
-  layoutChildren.forEach(child => {
+  allLayoutChildren.forEach(child => {
     const dimensions = getNodeDimensions(child);
 
-    // 左上角
     const childMinX = child.position.x;
     const childMinY = child.position.y;
-    // 右下角（需要考虑节点本身的大小）
     const childMaxX = child.position.x + dimensions.width;
     const childMaxY = child.position.y + dimensions.height;
 
@@ -193,14 +239,12 @@ const layoutGroupChildren = (
     maxY = Math.max(maxY, childMaxY);
   });
 
-  // Group 的最终尺寸 = 左边距(minX) + 内容宽度 + 右边距(padding)
-  // 理论上 minX 应该等于 padding（因为我们规范化了位置）
-  // 但为了保险，我们基于实际边界计算
+  // Group 的最终尺寸
   const finalWidth = Math.max(maxX + padding, 300);
   const finalHeight = Math.max(maxY + padding, 200);
 
   return {
-    children: layoutChildren,
+    children: allLayoutChildren,
     bounds: {
       width: finalWidth,
       height: finalHeight,
@@ -314,18 +358,40 @@ export const getLayoutElements = (nodes: FlowGraphNode[], edges: Edge[], directi
   groupsWithDepth.forEach(({ node: groupNode }) => {
     const children = childNodesMap.get(groupNode.id) || [];
 
-    // 对于嵌套的 group，使用已经更新过尺寸的版本
+    // 对于嵌套的 group，使用已经更新过尺寸和位置的版本
     const updatedChildren = children.map(child => {
       if (child.type === 'group') {
         const updated = updatedGroupNodes.find(g => g.id === child.id);
         return updated || child;
       }
-      return child;
+      // 对于普通子节点，也尝试从已布局的节点中获取
+      const layouted = layoutChildNodes.find(n => n.id === child.id);
+      return layouted || child;
     });
 
     const { children: layoutChildren, bounds } = layoutGroupChildren(groupNode, updatedChildren, edges, direction);
 
-    layoutChildNodes.push(...layoutChildren);
+    // 更新或添加布局后的子节点
+    layoutChildren.forEach(child => {
+      // 移除旧的同ID节点
+      const existingIndex = layoutChildNodes.findIndex(n => n.id === child.id);
+      if (existingIndex >= 0) {
+        layoutChildNodes.splice(existingIndex, 1);
+      }
+      layoutChildNodes.push(child);
+
+      // 如果子节点是 group，也更新 updatedGroupNodes 中的位置
+      if (child.type === 'group') {
+        const groupIndex = updatedGroupNodes.findIndex(g => g.id === child.id);
+        if (groupIndex >= 0) {
+          const existingGroup = updatedGroupNodes[groupIndex];
+          updatedGroupNodes[groupIndex] = {
+            ...existingGroup,
+            position: child.position,
+          } as FlowGraphNode;
+        }
+      }
+    });
 
     // 更新 group 节点的尺寸（同时更新 style 和顶级属性）
     const updatedGroup = {
@@ -464,10 +530,22 @@ export const getLayoutElements = (nodes: FlowGraphNode[], edges: Edge[], directi
   // 1. 先添加所有更新后的 group 节点（包括嵌套的）
   updatedGroupNodes.forEach(n => nodeMap.set(n.id, n));
 
-  // 2. 添加所有子节点（非 group 的子节点）
+  // 2. 添加所有子节点（包括 group 的子节点，需要合并位置信息）
   layoutChildNodes.forEach(n => {
-    // 只添加非 group 的子节点，group 已经在 updatedGroupNodes 中了
-    if (n.type !== 'group') {
+    if (n.type === 'group') {
+      // 对于 group 子节点，合并 updatedGroupNodes 中的尺寸信息和 layoutChildNodes 中的位置信息
+      const updatedGroup = updatedGroupNodes.find(g => g.id === n.id);
+      if (updatedGroup) {
+        nodeMap.set(n.id, {
+          ...updatedGroup,
+          position: n.position,
+          parentId: n.parentId,
+        });
+      } else {
+        nodeMap.set(n.id, n);
+      }
+    } else {
+      // 普通子节点直接添加
       nodeMap.set(n.id, n);
     }
   });

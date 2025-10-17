@@ -5,11 +5,13 @@ import { LucideIcon } from 'lucide-react';
 export interface ToolbarButtonProps {
   icon: LucideIcon;
   label: string;
-  onClick: () => void;
+  onClick: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   disabled?: boolean;
+  side?: 'top' | 'bottom' | 'left' | 'right';
+  sideOffset?: number;
 }
 
-export const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false }: ToolbarButtonProps) => {
+export const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false, side = 'right', sideOffset }: ToolbarButtonProps) => {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -17,7 +19,7 @@ export const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false }: 
           <Icon className="size-4" />
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="right" sideOffset={8}>
+      <TooltipContent side={side} sideOffset={sideOffset}>
         <p>{label}</p>
       </TooltipContent>
     </Tooltip>

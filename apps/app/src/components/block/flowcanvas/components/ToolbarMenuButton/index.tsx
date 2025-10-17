@@ -1,10 +1,5 @@
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { LucideIcon } from 'lucide-react';
 
@@ -19,9 +14,11 @@ export interface ToolbarMenuButtonProps {
   label: string;
   actions: MenuAction[];
   disabled?: boolean;
+  side?: 'top' | 'bottom' | 'left' | 'right';
+  sideOffset?: number;
 }
 
-export const ToolbarMenuButton = ({ icon: Icon, label, actions, disabled = false }: ToolbarMenuButtonProps) => {
+export const ToolbarMenuButton = ({ icon: Icon, label, actions, disabled = false, side, sideOffset }: ToolbarMenuButtonProps) => {
   return (
     <DropdownMenu>
       <Tooltip>
@@ -32,11 +29,11 @@ export const ToolbarMenuButton = ({ icon: Icon, label, actions, disabled = false
             </Button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent side="right" sideOffset={8}>
+        <TooltipContent side={side} sideOffset={sideOffset}>
           <p>{label}</p>
         </TooltipContent>
       </Tooltip>
-      <DropdownMenuContent align="start" side="right" sideOffset={8}>
+      <DropdownMenuContent align="start" side={side} sideOffset={sideOffset}>
         {actions.map((action, index) => {
           const ActionIcon = action.icon;
           return (
@@ -52,4 +49,3 @@ export const ToolbarMenuButton = ({ icon: Icon, label, actions, disabled = false
 };
 
 export default ToolbarMenuButton;
-

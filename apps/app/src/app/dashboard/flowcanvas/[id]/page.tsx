@@ -365,7 +365,7 @@ const FlowCanvasPage = () => {
         }
         toolbox={
           <ToolbarPanel>
-            <ToolbarButton icon={LayoutGridIcon} label={ft('autoLayout')} onClick={handleAutoLayout} />
+            <ToolbarButton icon={LayoutGridIcon} label={ft('autoLayout')} onClick={handleAutoLayout} side="right" sideOffset={8} />
             <ToolbarMenuButton
               icon={FileIcon}
               label={ft('file')}
@@ -373,6 +373,8 @@ const FlowCanvasPage = () => {
                 { icon: FileUp, label: ft('import'), onClick: handleImportCanvas },
                 { icon: FileDown, label: ft('export'), onClick: handleExportCanvas },
               ]}
+              side="right"
+              sideOffset={8}
             />
           </ToolbarPanel>
         }
