@@ -296,6 +296,7 @@ model ChatSessions {
   title         String? // 会话标题，可由第一条消息自动生成
   modelProvider String // 模型提供商
   modelId       String // 模型ID
+  agentId       String? // 关联的Agent ID，不传则使用默认对话
 
   // 会话状态
   status String @default("active") // 会话状态：active, archived
@@ -306,6 +307,7 @@ model ChatSessions {
   @@index([organizationId])
   @@index([organizationId, status])
   @@index([createdAt])
+  @@index([agentId])
 }
 
 model ChatMessages {
@@ -316,7 +318,7 @@ model ChatMessages {
   organizationId String
 
   // 消息信息
-  role    String // 角色：user, assistant, system
+  role    String // 角色：user, assistant, system, tool
   content String @db.Text // 消息内容
 
   // 流式输出相关
@@ -327,6 +329,11 @@ model ChatMessages {
   tokenCount   Int? // token数量
   finishReason String? // 完成原因
 
+  // 工具调用相关
+  /// [JSONSchema] ToolCall[]
+  toolCalls  Json? // AI返回的工具调用
+  toolCallId String? // 工具结果消息关联的toolCallId
+
   // 关联的会话
   session ChatSessions @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
@@ -334,6 +341,7 @@ model ChatMessages {
   @@index([organizationId])
   @@index([createdAt])
   @@index([role])
+  @@index([toolCallId])
 }
 
 model FlowCanvasProjects {
@@ -344,10 +352,79 @@ model FlowCanvasProjects {
   name           String
   schema         Json
 
+  // 关联的 Agent 会话
+  agentSessions FlowCanvasProjectAgentSessions[]
+
   @@index([organizationId])
   @@index([createdAt])
   @@index([name])
   @@index([organizationId, name])
+}
+
+// FlowCanvas 项目的 Agent 会话
+// 每个 FlowCanvas 项目可以有多个独立的 Agent 会话
+model FlowCanvasProjectAgentSessions {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+
+  // 关联的 FlowCanvas 项目
+  projectId String
+  project   FlowCanvasProjects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // 会话信息
+  title   String? // 会话标题，可由第一条消息自动生成
+  modelId String // 模型ID
+  agentId String? // 关联的Agent ID，不传则使用默认 Coordinator
+
+  // 会话状态
+  status String @default("active") // 会话状态：active, archived
+
+  // 关联的消息
+  messages FlowCanvasProjectAgentMessages[]
+
+  @@index([organizationId])
+  @@index([projectId])
+  @@index([organizationId, projectId])
+  @@index([organizationId, status])
+  @@index([createdAt])
+  @@index([agentId])
+}
+
+// FlowCanvas Agent 会话的消息
+model FlowCanvasProjectAgentMessages {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  sessionId      String
+  organizationId String
+
+  // 消息信息
+  role    String // 角色：user, assistant, system, tool
+  content String @db.Text // 消息内容
+
+  // 流式输出相关
+  isStreaming Boolean @default(false) // 是否正在流式输出
+  isComplete  Boolean @default(false) // 是否完成输出
+
+  // 元数据
+  tokenCount   Int? // token数量
+  finishReason String? // 完成原因
+
+  // 工具调用相关
+  /// [JSONSchema] ToolCall[]
+  toolCalls  Json? // AI返回的工具调用
+  toolCallId String? // 工具结果消息关联的toolCallId
+
+  // 关联的会话
+  session FlowCanvasProjectAgentSessions @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([organizationId])
+  @@index([createdAt])
+  @@index([role])
+  @@index([toolCallId])
 }
 
 // 音色管理

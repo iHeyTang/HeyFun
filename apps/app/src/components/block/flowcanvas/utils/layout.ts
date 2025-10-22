@@ -116,8 +116,8 @@ const layoutGroupChildren = (
   const isolatedNodes = components.filter(comp => comp.length === 1).flat();
   const connectedGroups = components.filter(comp => comp.length > 1);
 
-  let allLayoutChildren: FlowGraphNode[] = [];
-  let currentX = padding;
+  const allLayoutChildren: FlowGraphNode[] = [];
+  const currentX = padding;
   let currentY = padding;
   let maxWidth = 0;
 

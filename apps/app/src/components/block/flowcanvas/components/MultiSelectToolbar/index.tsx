@@ -1,13 +1,11 @@
-import { Button } from '@/components/ui/button';
+import TooltipButton from '@/components/block/tooltip-button';
 import { cn } from '@/lib/utils';
 import { useStore, ViewportPortal } from '@xyflow/react';
-import { PlayIcon, ExpandIcon, GroupIcon, LayoutIcon, LayoutGridIcon } from 'lucide-react';
+import { ExpandIcon, GroupIcon, LayoutGridIcon, PlayIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFlowGraph } from '../../hooks/useFlowGraph';
 import type { FlowGraphNode } from '../../types/nodes';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import ToolbarButton from '../ToolbarButton';
 export { useMultiSelectToolbar } from './hooks/useMultiSelectToolbar';
 export type { MultiSelectToolbarExtensionContext, MultiSelectToolbarExtensionResult } from './hooks/useMultiSelectToolbar';
 
@@ -190,28 +188,28 @@ export const MultiSelectToolbar = ({
 
   const actionList = [
     {
-      icon: PlayIcon,
+      icon: <PlayIcon className="size-4" />,
       label: t('flowcanvas.toolbar.executeSelected'),
       onClick: handleExecuteSelectedNodes,
       side: 'top',
       show: selectedNodes.length > 1 || selectedGroupNode,
     },
     {
-      icon: LayoutGridIcon,
+      icon: <LayoutGridIcon className="size-4" />,
       label: t('flowcanvas.project.autoLayout'),
       onClick: handleLayoutGroup,
       side: 'top',
       show: selectedGroupNode,
     },
     {
-      icon: ExpandIcon,
+      icon: <ExpandIcon className="size-4" />,
       label: t('flowcanvas.toolbar.ungroupSelected'),
       onClick: handleUngroupSelectedNode,
       side: 'top',
       show: selectedGroupNode,
     },
     {
-      icon: GroupIcon,
+      icon: <GroupIcon className="size-4" />,
       label: t('flowcanvas.toolbar.groupSelected'),
       onClick: handleGroupSelectedNodes,
       side: 'top',
@@ -246,7 +244,7 @@ export const MultiSelectToolbar = ({
             }}
           >
             {showActionList.map(action => (
-              <ToolbarButton key={action.label} icon={action.icon} label={action.label} onClick={action.onClick} side="top" />
+              <TooltipButton key={action.label} icon={action.icon} label={action.label} onClick={action.onClick} side="top" />
             ))}
           </div>
         )}

@@ -26,6 +26,7 @@ export interface FlowCanvasProps {
   ref?: RefObject<FlowCanvasRef | null>;
   titleBox?: React.ReactNode;
   toolbox?: React.ReactNode;
+  agentPanel?: React.ReactNode;
   nodeTypes: Record<string, { component: NodeTypes[keyof NodeTypes]; processor: NodeExecutor }>; // 节点类型
 }
 
@@ -47,6 +48,7 @@ function FlowCanvasCore({
   ref,
   titleBox,
   toolbox,
+  agentPanel,
   nodeTypes,
 }: FlowCanvasProps) {
   const { theme } = useTheme();
@@ -197,6 +199,9 @@ function FlowCanvasCore({
           onUngroupSelectedNode={multiSelectExtension.onUngroupSelectedNode}
           onLayoutGroup={multiSelectExtension.onLayoutGroup}
         />
+
+        {/* Agent 面板 */}
+        {agentPanel}
       </ReactFlow>
     </div>
   );

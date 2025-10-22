@@ -2,21 +2,22 @@
 
 import { getFlowCanvasProject, updateFlowCanvasProject } from '@/actions/flowcanvas';
 import { CanvasSchema, FlowCanvas, FlowCanvasRef } from '@/components/block/flowcanvas';
+import AudioNode, { AudioNodeProcessor } from '@/components/block/flowcanvas-node/AudioNode';
 import ImageNode, { ImageNodeProcessor } from '@/components/block/flowcanvas-node/ImageNode';
+import MusicNode, { MusicNodeProcessor } from '@/components/block/flowcanvas-node/MusicNode';
 import TextNode, { TextNodeProcessor } from '@/components/block/flowcanvas-node/TextNode';
 import VideoNode, { VideoNodeProcessor } from '@/components/block/flowcanvas-node/VideoNode';
-import AudioNode, { AudioNodeProcessor } from '@/components/block/flowcanvas-node/AudioNode';
-import MusicNode, { MusicNodeProcessor } from '@/components/block/flowcanvas-node/MusicNode';
-import ToolbarButton from '@/components/block/flowcanvas/components/ToolbarButton';
+import AgentPanel from '@/components/block/flowcanvas/components/AgentPanel';
 import ToolbarMenuButton from '@/components/block/flowcanvas/components/ToolbarMenuButton';
 import ToolbarPanel from '@/components/block/flowcanvas/components/ToolbarPanel';
+import TooltipButton from '@/components/block/tooltip-button';
 import { Button } from '@/components/ui/button';
 import { useAigc, useLLM } from '@/hooks/use-llm';
+import { format } from 'date-fns';
+import { FileDown, FileIcon, FileUp, LayoutGridIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { FileDown, FileUp, FileIcon, LayoutGridIcon, PlayIcon } from 'lucide-react';
-import { format } from 'date-fns';
 
 const useProjectSchema = (ft: any) => {
   const { id } = useParams<{ id: string }>();
@@ -365,7 +366,13 @@ const FlowCanvasPage = () => {
         }
         toolbox={
           <ToolbarPanel>
-            <ToolbarButton icon={LayoutGridIcon} label={ft('autoLayout')} onClick={handleAutoLayout} side="right" sideOffset={8} />
+            <TooltipButton
+              icon={<LayoutGridIcon className="size-4" />}
+              label={ft('autoLayout')}
+              onClick={handleAutoLayout}
+              side="right"
+              sideOffset={8}
+            />
             <ToolbarMenuButton
               icon={FileIcon}
               label={ft('file')}
@@ -378,6 +385,7 @@ const FlowCanvasPage = () => {
             />
           </ToolbarPanel>
         }
+        agentPanel={<AgentPanel canvasId={id} canvasRef={canvasRef} />}
       />
     </div>
   );

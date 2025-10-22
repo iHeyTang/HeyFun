@@ -5,16 +5,16 @@ import { prisma } from '@/lib/server/prisma';
 import CHAT from '@repo/llm/chat';
 
 // 创建聊天会话
-export const createChatSession = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ modelId: string; title?: string }>) => {
-  const { modelId, title } = args;
+export const createChatSession = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ modelId: string; title?: string; agentId?: string }>) => {
+  const { modelId, title, agentId } = args;
 
   try {
     const session = await prisma.chatSessions.create({
       data: {
         organizationId: orgId,
-        modelProvider: '',
         modelId,
         title: title || null,
+        agentId: agentId || null,
         status: 'active',
       },
     });
@@ -85,76 +85,6 @@ export const getChatSession = withUserAuth(async ({ orgId, args }: AuthWrapperCo
     return session;
   } catch (error) {
     console.error('Error getting chat session:', error);
-    throw error;
-  }
-});
-
-// 发送消息并获取AI回复
-export const sendMessage = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ sessionId: string; content: string }>) => {
-  const { sessionId, content } = args;
-
-  try {
-    // 验证会话存在
-    const session = await prisma.chatSessions.findUnique({
-      where: {
-        id: sessionId,
-        organizationId: orgId,
-      },
-      include: {
-        messages: {
-          orderBy: { createdAt: 'asc' },
-        },
-      },
-    });
-
-    if (!session) {
-      throw new Error('Session not found');
-    }
-
-    // 创建用户消息记录
-    const userMessage = await prisma.chatMessages.create({
-      data: {
-        sessionId,
-        organizationId: orgId,
-        role: 'user',
-        content,
-        isComplete: true,
-      },
-    });
-
-    // 创建AI消息记录（初始为空，用于流式更新）
-    const aiMessage = await prisma.chatMessages.create({
-      data: {
-        sessionId,
-        organizationId: orgId,
-        role: 'assistant',
-        content: '',
-        isStreaming: true,
-        isComplete: false,
-      },
-    });
-
-    // 更新会话的最后更新时间
-    await prisma.chatSessions.update({
-      where: { id: sessionId },
-      data: { updatedAt: new Date() },
-    });
-
-    // 如果是第一条消息，自动生成会话标题
-    if (session.messages.length === 0 && !session.title) {
-      const title = content.length > 50 ? content.substring(0, 50) + '...' : content;
-      await prisma.chatSessions.update({
-        where: { id: sessionId },
-        data: { title },
-      });
-    }
-
-    return {
-      userMessage,
-      aiMessage,
-    };
-  } catch (error) {
-    console.error('Error sending message:', error);
     throw error;
   }
 });

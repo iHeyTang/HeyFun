@@ -1,3 +1,8 @@
+/**
+ * FlowCanvas Agent 流式聊天 API
+ * 专门用于 FlowCanvas 项目的 Agent 会话
+ */
+
 import { withUserAuthApi } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
 import CHAT, { UnifiedChat } from '@repo/llm/chat';
@@ -33,21 +38,21 @@ async function generateSessionTitle(sessionId: string, userMessage: string, orga
     const title = (typeof messageContent === 'string' ? messageContent.trim() : '') || userMessage.substring(0, 30);
 
     // 更新会话标题
-    await prisma.chatSessions.update({
+    await prisma.flowCanvasProjectAgentSessions.update({
       where: { id: sessionId, organizationId },
       data: { title },
     });
 
-    console.log(`[Chat] Generated title for session ${sessionId}: ${title}`);
+    console.log(`[FlowCanvas Agent] Generated title for session ${sessionId}: ${title}`);
     return title;
   } catch (error) {
-    console.error('[Chat] Failed to generate title:', error);
+    console.error('[FlowCanvas Agent] Failed to generate title:', error);
     // 如果失败，使用简单截取
     const fallbackTitle = userMessage.length > 30 ? userMessage.substring(0, 30) + '...' : userMessage;
-    await prisma.chatSessions.update({
+    await prisma.flowCanvasProjectAgentSessions.update({
       where: { id: sessionId, organizationId },
       data: { title: fallbackTitle },
-    }).catch(err => console.error('[Chat] Failed to set fallback title:', err));
+    }).catch(err => console.error('[FlowCanvas Agent] Failed to set fallback title:', err));
     return fallbackTitle;
   }
 }
@@ -56,16 +61,13 @@ async function generateSessionTitle(sessionId: string, userMessage: string, orga
 async function getAIResponse({ organizationId, sessionId, content }: { organizationId: string; sessionId: string; content: string }) {
   try {
     // 获取会话和消息历史
-    const session = await prisma.chatSessions.findUnique({
+    const session = await prisma.flowCanvasProjectAgentSessions.findUnique({
       where: {
         id: sessionId,
         organizationId,
       },
       include: {
         messages: {
-          where: {
-            isComplete: true,
-          },
           orderBy: { createdAt: 'asc' },
         },
       },
@@ -78,7 +80,7 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
     // 检查是否需要生成标题（在创建新消息之前判断）
     // 如果是第一条消息，且标题为空或者是默认标题 "New Chat"，则生成新标题
     const shouldGenerateTitle = session.messages.length === 0 && (!session.title || session.title === 'New Chat');
-    console.log(`[Stream] Session has ${session.messages.length} messages, title: ${session.title}, shouldGenerateTitle: ${shouldGenerateTitle}`);
+    console.log(`[FlowCanvas Stream] Session has ${session.messages.length} messages, title: ${session.title}, shouldGenerateTitle: ${shouldGenerateTitle}`);
 
     // 加载Agent配置（系统提示词和工具）
     // 优先使用session关联的agentId，如果没有则使用默认的 Coordinator
@@ -91,7 +93,7 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
     }
 
     // 创建用户消息记录
-    const userMessage = await prisma.chatMessages.create({
+    const userMessage = await prisma.flowCanvasProjectAgentMessages.create({
       data: {
         sessionId,
         organizationId,
@@ -102,7 +104,7 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
     });
 
     // 创建AI消息记录（初始为空，用于流式更新）
-    const aiMessage = await prisma.chatMessages.create({
+    const aiMessage = await prisma.flowCanvasProjectAgentMessages.create({
       data: {
         sessionId,
         organizationId,
@@ -114,7 +116,7 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
     });
 
     // 更新会话的最后更新时间
-    await prisma.chatSessions.update({
+    await prisma.flowCanvasProjectAgentSessions.update({
       where: { id: sessionId },
       data: { updatedAt: new Date() },
     });
@@ -125,33 +127,44 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
     // 构建消息历史（包括新的用户消息）
     const messages: UnifiedChat.Message[] = [
       { role: 'system' as const, content: agentConfig.systemPrompt },
-      ...session.messages.map(msg => {
-        const baseMsg: any = {
-          role: msg.role as UnifiedChat.Message['role'],
-          content: msg.content,
-        };
-        
-        // 如果是 assistant 消息且有 toolCalls，包含 toolCalls
-        if (msg.role === 'assistant' && msg.toolCalls) {
-          baseMsg.tool_calls = msg.toolCalls;
-        }
-        
-        // 如果是 tool 消息，包含 tool_call_id
-        if (msg.role === 'tool' && msg.toolCallId) {
-          baseMsg.tool_call_id = msg.toolCallId;
-        }
-        
-        return baseMsg;
-      }),
+      ...session.messages
+        .filter(msg => {
+          // 如果是 assistant 消息且有 toolCalls，即使 isComplete=false 也要保留
+          if (msg.role === 'assistant' && msg.toolCalls) return true;
+          // 如果是 tool 消息，检查是否完成
+          if (msg.role === 'tool') return msg.isComplete;
+          // 其他消息只保留完成的
+          return msg.isComplete && !msg.isStreaming;
+        })
+        .map(msg => {
+          const baseMsg: any = {
+            role: msg.role as UnifiedChat.Message['role'],
+            content: msg.content,
+          };
+
+          // 如果是 assistant 消息且有 toolCalls，包含 toolCalls
+          if (msg.role === 'assistant' && msg.toolCalls) {
+            baseMsg.tool_calls = msg.toolCalls;
+          }
+
+          // 如果是 tool 消息，包含 tool_call_id
+          if (msg.role === 'tool' && msg.toolCallId) {
+            baseMsg.tool_call_id = msg.toolCallId;
+          }
+
+          return baseMsg;
+        }),
       { role: 'user', content },
     ];
 
     // 调试：打印消息结构
-    console.log('[Stream] Messages structure:');
+    console.log('[FlowCanvas Stream] Messages structure:');
     messages.forEach((msg, idx) => {
       if (msg.role === 'assistant' && msg.tool_calls) {
-        console.log(`  [${idx}] assistant with ${msg.tool_calls.length} tool_calls:`, 
-          msg.tool_calls.map((tc: any) => ({ id: tc.id, name: tc.function.name })));
+        console.log(
+          `  [${idx}] assistant with ${msg.tool_calls.length} tool_calls:`,
+          msg.tool_calls.map((tc: any) => ({ id: tc.id, name: tc.function.name })),
+        );
       } else if (msg.role === 'tool') {
         console.log(`  [${idx}] tool result for tool_call_id: ${msg.tool_call_id}`);
       } else {
@@ -178,15 +191,7 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
             }),
           };
 
-          // 调试：打印工具配置
-          console.log(`[Stream] Agent: ${agentConfig.id}, Tools count: ${agentConfig.tools.length}`);
-          if (agentConfig.tools.length > 0) {
-            console.log(`[Stream] Tools:`, JSON.stringify(agentConfig.tools.map(t => ({
-              type: t.type,
-              name: t.function.name,
-              hasParams: !!t.function.parameters,
-            })), null, 2));
-          }
+          console.log(`[FlowCanvas Stream] Agent: ${agentConfig.id}, Tools count: ${agentConfig.tools.length}`);
 
           const stream = llmClient.chatStream(chatParams);
 
@@ -202,7 +207,7 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
               fullContent += contentDelta;
 
               // 更新数据库中的消息内容
-              await prisma.chatMessages.update({
+              await prisma.flowCanvasProjectAgentMessages.update({
                 where: { id: aiMessage.id },
                 data: {
                   content: fullContent,
@@ -255,14 +260,13 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
                     try {
                       JSON.parse(tc.function.arguments);
                     } catch (error) {
-                      console.error(`[Stream] Warning: Tool ${tc.function.name} has invalid JSON arguments:`, tc.function.arguments);
-                      console.error(`[Stream] Error:`, (error as Error).message);
+                      console.error(`[FlowCanvas Stream] Warning: Tool ${tc.function.name} has invalid JSON arguments:`, tc.function.arguments);
                     }
                   }
                   return tc;
                 });
 
-                await prisma.chatMessages.update({
+                await prisma.flowCanvasProjectAgentMessages.update({
                   where: { id: aiMessage.id },
                   data: {
                     content: fullContent,
@@ -280,7 +284,7 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
                 };
               } else {
                 // 正常结束
-                await prisma.chatMessages.update({
+                await prisma.flowCanvasProjectAgentMessages.update({
                   where: { id: aiMessage.id },
                   data: {
                     content: fullContent,
@@ -301,7 +305,7 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
           }
         } catch (error) {
           // 发生错误时更新消息状态
-          await prisma.chatMessages.update({
+          await prisma.flowCanvasProjectAgentMessages.update({
             where: { id: aiMessage.id },
             data: {
               isStreaming: false,
@@ -384,18 +388,18 @@ export const POST = withUserAuthApi<{}, {}, { sessionId: string; content: string
 
           // 如果需要生成标题，等待标题生成完成后再关闭流
           if (result.shouldGenerateTitle) {
-            console.log(`[Stream] Generating title for new session ${sessionId}...`);
+            console.log(`[FlowCanvas Stream] Generating title for new session ${sessionId}...`);
             try {
               const title = await generateSessionTitle(sessionId, content, ctx.orgId);
-              console.log(`[Stream] Title generated: ${title}`);
+              console.log(`[FlowCanvas Stream] Title generated: ${title}`);
               const titleData = `data: ${JSON.stringify({ type: 'title_updated', title })}\n\n`;
               controller.enqueue(encoder.encode(titleData));
-              console.log(`[Stream] Title update sent to client`);
+              console.log(`[FlowCanvas Stream] Title update sent to client`);
             } catch (err) {
-              console.error('[Stream] Failed to generate title:', err);
+              console.error('[FlowCanvas Stream] Failed to generate title:', err);
             }
           } else {
-            console.log(`[Stream] Skip title generation (shouldGenerateTitle: ${result.shouldGenerateTitle})`);
+            console.log(`[FlowCanvas Stream] Skip title generation (shouldGenerateTitle: ${result.shouldGenerateTitle})`);
           }
 
           stopHeartbeat();
@@ -445,3 +449,4 @@ export async function OPTIONS() {
     },
   });
 }
+

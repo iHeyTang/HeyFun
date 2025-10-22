@@ -48,7 +48,7 @@ export const Markdown: React.FC<{ src?: string; children?: string | null; classN
   }
 
   return (
-    <div className={cn('markdown-body mt-2 rounded-md bg-transparent p-4', className)}>
+    <div className={cn('markdown-body rounded-md bg-transparent p-4', className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}

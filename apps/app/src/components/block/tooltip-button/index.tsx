@@ -1,22 +1,23 @@
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export interface ToolbarButtonProps {
-  icon: LucideIcon;
+export interface TooltipButtonProps {
+  icon: React.ReactNode;
   label: string;
   onClick: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   disabled?: boolean;
   side?: 'top' | 'bottom' | 'left' | 'right';
   sideOffset?: number;
+  className?: string;
 }
 
-export const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false, side = 'right', sideOffset }: ToolbarButtonProps) => {
+export const TooltipButton = ({ icon, label, onClick, disabled = false, side, sideOffset, className }: TooltipButtonProps) => {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button size="icon" variant="ghost" onClick={onClick} disabled={disabled} className="hover:bg-muted/50 size-9">
-          <Icon className="size-4" />
+        <Button size="icon" variant="ghost" onClick={onClick} disabled={disabled} className={cn('hover:bg-muted/50 size-9', className)}>
+          {icon}
         </Button>
       </TooltipTrigger>
       <TooltipContent side={side} sideOffset={sideOffset}>
@@ -26,4 +27,4 @@ export const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false, si
   );
 };
 
-export default ToolbarButton;
+export default TooltipButton;

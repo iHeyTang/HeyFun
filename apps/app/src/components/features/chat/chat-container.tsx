@@ -1,282 +1,312 @@
+/**
+ * ChatContainer 组件
+ * 自包含的聊天应用，内置 session 管理和 tabs 切换
+ */
+
 'use client';
 
-import { createChatSession, getChatSessions, sendMessage } from '@/actions/chat';
-import { ThemeLogo } from '@/components/features/theme-logo';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { ChatInput, useChatbotModelSelector } from './chat-input';
-import { ChatMessage } from './chat-message';
-import { create } from 'zustand';
-import { ChatSessions } from '@prisma/client';
+import { Clock, History, Plus, X } from 'lucide-react';
+import { createSessionManager, type SessionManager, type ChatMessage, type ChatSession as SessionData } from '@/lib/browser/session-manager';
+import { useChatbotModelSelector } from './chat-input';
+import { ChatSession } from './chat-session';
+import TooltipButton from '@/components/block/tooltip-button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
-interface Message {
+export interface ChatAction {
   id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  isStreaming?: boolean;
-  isComplete: boolean;
-  createdAt: Date;
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
 }
 
 interface ChatContainerProps {
+  /** Session 管理器类型（当 sessionManager 未提供时使用） */
+  sessionManagerType?: 'remote' | 'local';
+  /** 自定义 Session 管理器实例（可选，优先于 sessionManagerType） */
+  sessionManager?: SessionManager;
+  /** 初始 sessionId（可选） */
+  initialSessionId?: string;
+  /** 外部控制的 sessionId（可选，用于路由控制） */
   sessionId?: string;
-  existingSession?: any; // Will be typed properly with Prisma types
-  loading?: boolean;
+  /** 工具执行上下文（包含 canvasRef 等） */
+  toolExecutionContext?: any;
+  /** 外部操作按钮 */
+  actions?: ChatAction[];
+  /** API 端点前缀（可选，默认 '/api/chat'，FlowCanvas 使用 '/api/flowcanvas/agent'） */
+  apiPrefix?: string;
 }
 
-export const useRecentChatSessions = create<{
-  loading: boolean;
-  sessions: ChatSessions[];
-  refreshSessions: () => Promise<void>;
-}>(set => ({
-  loading: false,
-  sessions: [],
-  refreshSessions: async () => {
-    set({ loading: true });
-    try {
-      const res = await getChatSessions({ page: 1, pageSize: 30 });
-      set({ sessions: res.data?.sessions || [], loading: false });
-    } catch (error) {
-      console.error('Error refreshing sessions:', error);
-      set({ loading: false });
-    }
-  },
-}));
+/**
+ * ChatContainer 组件
+ * 内置 session 管理，通过 tabs 切换
+ */
+export const ChatContainer = ({
+  sessionManagerType = 'local',
+  sessionManager: externalSessionManager,
+  initialSessionId,
+  sessionId: externalSessionId,
+  toolExecutionContext,
+  actions = [],
+  apiPrefix = '/api/chat',
+}: ChatContainerProps) => {
+  const [sessionManager] = useState(() => externalSessionManager || createSessionManager(sessionManagerType));
+  const [sessions, setSessions] = useState<SessionData[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(initialSessionId || externalSessionId || null);
+  const [sessionMessages, setSessionMessages] = useState<Record<string, ChatMessage[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
 
-export const ChatContainer = ({ sessionId, existingSession, loading }: ChatContainerProps) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(sessionId || null);
   const { selectedModel } = useChatbotModelSelector();
 
-  const { refreshSessions } = useRecentChatSessions();
-  const router = useRouter();
-
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // 同步外部控制的 sessionId
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (externalSessionId !== undefined) {
+      setActiveSessionId(externalSessionId);
+    }
+  }, [externalSessionId]);
 
-  // Load existing messages if there's an existing session
+  // 加载 session 列表
   useEffect(() => {
-    if (existingSession && existingSession.messages) {
-      const loadedMessages: Message[] = existingSession.messages.map((msg: any) => ({
-        id: msg.id,
-        role: msg.role,
-        content: msg.content,
-        isStreaming: msg.isStreaming,
-        isComplete: msg.isComplete,
-        createdAt: new Date(msg.createdAt),
-      }));
-      setMessages(loadedMessages);
-    }
-  }, [existingSession]);
+    loadSessions();
+  }, []);
 
-  const createNewSession = async () => {
-    if (!selectedModel) {
-      toast.error('Please select a model first');
-      return null;
-    }
-
+  // 加载 sessions
+  const loadSessions = async () => {
+    setLoading(true);
     try {
-      const result = await createChatSession({
-        modelId: selectedModel.id,
-      });
+      const result = await sessionManager.listSessions({ page: 1, pageSize: 10 });
+      setSessions(result.sessions);
 
-      const newSessionId = result.data?.id ?? null;
-
-      if (newSessionId) {
-        // Refresh the sidebar to show the new session
-        await refreshSessions();
+      // 如果有初始 sessionId，加载其消息
+      if (initialSessionId || externalSessionId) {
+        const sessionId = initialSessionId || externalSessionId;
+        const messages = await sessionManager.getMessages(sessionId!);
+        setSessionMessages(prev => ({ ...prev, [sessionId!]: messages }));
       }
-
-      return newSessionId;
     } catch (error) {
-      toast.error('Failed to create chat session');
-      console.error('Create session error:', error);
-      return null;
+      console.error('Error loading sessions:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSendMessage = async (content: string) => {
+  // 创建新 session
+  const handleCreateSession = async () => {
     if (!selectedModel) {
       toast.error('Please select a model first');
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      let sessionId = currentSessionId;
-
-      // Create new session if none exists
-      if (!sessionId) {
-        sessionId = await createNewSession();
-        if (!sessionId) {
-          setIsLoading(false);
-          return;
-        }
-        setCurrentSessionId(sessionId);
-      }
-
-      // Add user message to UI
-      const userMessage: Message = {
-        id: `user_${Date.now()}`,
-        role: 'user',
-        content,
-        isComplete: true,
-        createdAt: new Date(),
-      };
-      setMessages(prev => [...prev, userMessage]);
-
-      // Send message and get AI response
-      const result = await sendMessage({
-        sessionId,
-        content,
+      const newSession = await sessionManager.createSession({
+        modelId: selectedModel.id,
+        title: 'New Chat',
       });
 
-      const { aiMessage } = result.data!;
+      setSessions(prev => [newSession, ...prev]);
+      setActiveSessionId(newSession.id);
+      setSessionMessages(prev => ({ ...prev, [newSession.id]: [] }));
 
-      // Add AI message placeholder
-      const aiMessagePlaceholder: Message = {
-        id: aiMessage.id,
-        role: 'assistant',
-        content: '',
-        isStreaming: true,
-        isComplete: false,
-        createdAt: new Date(aiMessage.createdAt),
-      };
-      setMessages(prev => [...prev, aiMessagePlaceholder]);
-
-      // Start streaming response
-      const response = await fetch('/api/chat/stream', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          sessionId,
-          messageId: aiMessage.id,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get streaming response');
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      if (reader) {
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-
-              if (data === '[DONE]') {
-                setMessages(prev => prev.map(msg => (msg.id === aiMessage.id ? { ...msg, isStreaming: false, isComplete: true } : msg)));
-                break;
-              }
-
-              try {
-                const parsed = JSON.parse(data);
-
-                if (parsed.type === 'content') {
-                  setMessages(prev => prev.map(msg => (msg.id === aiMessage.id ? { ...msg, content: parsed.fullContent } : msg)));
-                } else if (parsed.type === 'finished') {
-                  setMessages(prev =>
-                    prev.map(msg => (msg.id === aiMessage.id ? { ...msg, content: parsed.fullContent, isStreaming: false, isComplete: true } : msg)),
-                  );
-                } else if (parsed.type === 'error') {
-                  setMessages(prev =>
-                    prev.map(msg =>
-                      msg.id === aiMessage.id ? { ...msg, content: `Error: ${parsed.error}`, isStreaming: false, isComplete: true } : msg,
-                    ),
-                  );
-                  toast.error('AI response error: ' + parsed.error);
-                }
-              } catch (e) {
-                console.error('Failed to parse SSE data:', e);
-              }
-            }
-          }
-        }
-      }
-
-      // Update URL after message is sent successfully (only if we're not already in this session URL)
-      if (!currentSessionId && sessionId) {
-        window.history.replaceState(null, '', `/chat/${sessionId}`);
-      }
+      toast.success('New chat created');
     } catch (error) {
-      console.error('Send message error:', error);
-      toast.error('Failed to send message');
-
-      // Remove the AI message placeholder on error
-      setMessages(prev => prev.filter(msg => msg.id !== `ai_${Date.now()}`));
-    } finally {
-      setIsLoading(false);
+      toast.error('Failed to create chat');
+      console.error('Create session error:', error);
     }
   };
 
-  const clearChat = () => {
-    setMessages([]);
-    setCurrentSessionId(null);
-    // Navigate to new chat
-    router.push('/chat');
+  // 删除 session
+  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    try {
+      await sessionManager.deleteSession(sessionId);
+
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      setSessionMessages(prev => {
+        const newMessages = { ...prev };
+        delete newMessages[sessionId];
+        return newMessages;
+      });
+
+      // 如果删除的是当前 session，切换到第一个
+      if (activeSessionId === sessionId) {
+        const remaining = sessions.filter(s => s.id !== sessionId);
+        setActiveSessionId(remaining[0]?.id || null);
+      }
+
+      toast.success('Chat deleted');
+    } catch (error) {
+      toast.error('Failed to delete chat');
+      console.error('Delete session error:', error);
+    }
   };
+
+  // 切换 session
+  const handleSwitchSession = async (sessionId: string) => {
+    setActiveSessionId(sessionId);
+
+    // 如果该 session 的消息还没加载，加载之
+    if (!sessionMessages[sessionId]) {
+      try {
+        const messages = await sessionManager.getMessages(sessionId);
+        setSessionMessages(prev => ({ ...prev, [sessionId]: messages }));
+      } catch (error) {
+        console.error('Error loading messages:', error);
+      }
+    }
+  };
+
+  // 清空当前对话
+  const handleClearChat = () => {
+    if (activeSessionId) {
+      setSessionMessages(prev => ({ ...prev, [activeSessionId]: [] }));
+    }
+  };
+
+  // 标题更新回调
+  const handleTitleUpdated = useCallback(
+    (title: string) => {
+      if (activeSessionId) {
+        setSessions(prev => prev.map(s => (s.id === activeSessionId ? { ...s, title } : s)));
+      }
+    },
+    [activeSessionId],
+  );
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
-        {loading ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <p className="text-muted-foreground">Loading...</p>
-            </div>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center gap-4 opacity-50">
-            <ThemeLogo width={64} height={64} alt="HeyFun" />
-            <div className="flex flex-col">
-              <div className="text-2xl font-bold">HeyFun</div>
-              <div className="text-muted-foreground text-sm">Hey! Let&apos;s bring a little fun to this world together.</div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-0">
-            {messages.map(message => (
-              <ChatMessage
-                key={message.id}
-                role={message.role}
-                content={message.content}
-                isStreaming={message.isStreaming}
-                timestamp={message.createdAt}
-              />
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+      {/* Session Tabs */}
+      <div className="flex items-center gap-2 px-1 py-1">
+        <div className="flex flex-1 gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {sessions.map(session => (
+            <Badge
+              key={session.id}
+              className="group cursor-pointer rounded-full transition-all duration-200"
+              variant={activeSessionId === session.id ? 'default' : 'secondary'}
+              onClick={() => handleSwitchSession(session.id)}
+            >
+              <span className="max-w-[120px] truncate">{session.title || 'New Chat'}</span>
+              <span onClick={e => handleDeleteSession(session.id, e)} className="cursor-pointer">
+                <X className="size-3 w-0 opacity-0 transition-all duration-200 ease-in-out group-hover:w-3 group-hover:opacity-100" />
+              </span>
+            </Badge>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-0.5">
+          {/* 添加新 session */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-foreground size-7 hover:bg-transparent"
+            onClick={handleCreateSession}
+            disabled={!selectedModel}
+          >
+            <Plus className="size-4" />
+          </Button>
+
+          {/* 历史记录按钮 - 使用 Popover */}
+          <Popover open={showHistory} onOpenChange={setShowHistory}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-foreground size-7 hover:bg-transparent"
+                disabled={!selectedModel}
+              >
+                <History className="size-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="border-border/50 bg-background/95 w-[340px] p-0 shadow-lg backdrop-blur-sm" align="end">
+              <ScrollArea className="h-[380px]">
+                {sessions.length === 0 ? (
+                  <div className="text-muted-foreground px-3 py-6 text-center text-xs">No chat history yet</div>
+                ) : (
+                  <div className="space-y-0.5 p-1.5">
+                    {sessions.map(session => (
+                      <div
+                        key={session.id}
+                        className={`group flex cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-xs transition-all ${
+                          activeSessionId === session.id
+                            ? 'bg-primary/5 text-foreground'
+                            : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+                        }`}
+                        onClick={() => {
+                          handleSwitchSession(session.id);
+                          setShowHistory(false);
+                        }}
+                      >
+                        <div className="flex-1 truncate font-medium">{session.title || 'Untitled Chat'}</div>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <span className="text-muted-foreground/60 text-[10px]">
+                            {new Date(session.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive size-5 opacity-0 transition-all group-hover:opacity-100 hover:bg-transparent"
+                            onClick={e => handleDeleteSession(session.id, e)}
+                          >
+                            <X className="size-2.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
+
+          {/* 外部操作按钮 */}
+          {actions.map((action: ChatAction) => (
+            <Button
+              key={action.id}
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-foreground size-7 hover:bg-transparent"
+              onClick={action.onClick}
+              disabled={action.disabled}
+            >
+              {action.icon}
+            </Button>
+          ))}
+        </div>
       </div>
 
-      {/* Input */}
-      <ChatInput onSend={handleSendMessage} disabled={isLoading || !selectedModel} onClearChat={clearChat} showClearChat={messages.length > 0} />
+      {/* Chat Content */}
+      <div className="flex-1 overflow-hidden">
+        {activeSessionId ? (
+          <ChatSession
+            key={activeSessionId}
+            sessionId={activeSessionId}
+            initialMessages={sessionMessages[activeSessionId] || []}
+            onClearChat={handleClearChat}
+            disabled={!selectedModel}
+            toolExecutionContext={toolExecutionContext}
+            apiPrefix={apiPrefix}
+            onTitleUpdated={handleTitleUpdated}
+          />
+        ) : (
+          <div className="text-muted-foreground flex h-full items-center justify-center">Click "New" to start a chat</div>
+        )}
+      </div>
     </div>
   );
 };
