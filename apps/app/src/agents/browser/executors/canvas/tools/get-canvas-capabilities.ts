@@ -52,7 +52,7 @@ async function getCapabilitiesFromContext(context: ToolExecutionContext): Promis
     try {
       const canvasJson = context.canvasRef.current.exportCanvas();
       const canvasState = JSON.parse(canvasJson);
-      
+
       // 从画布状态推断支持的节点类型
       const nodeTypes = new Set<string>();
       if (canvasState.nodes) {
@@ -62,10 +62,10 @@ async function getCapabilitiesFromContext(context: ToolExecutionContext): Promis
           }
         });
       }
-      
+
       // 添加常见节点类型
       ['text', 'image', 'video', 'audio', 'music', 'group'].forEach(type => nodeTypes.add(type));
-      
+
       capabilities.supportedNodeTypes = Array.from(nodeTypes);
     } catch (e) {
       // 如果无法获取，使用默认值
@@ -113,7 +113,7 @@ function formatCapabilities(capabilities: any): string {
   // 可用模型（从 AIGC 模型列表）
   if (capabilities.aigcModels && capabilities.aigcModels.length > 0) {
     lines.push('\n🤖 可用 AIGC 模型:');
-    
+
     // 按类型分组（注意：generationTypes 是数组）
     const groupedModels: Record<string, any[]> = {};
     capabilities.aigcModels.forEach((model: any) => {
@@ -156,4 +156,3 @@ function formatCapabilities(capabilities: any): string {
 
   return lines.join('\n');
 }
-

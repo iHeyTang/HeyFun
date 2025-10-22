@@ -16,6 +16,7 @@ export const createChatSession = withUserAuth(async ({ orgId, args }: AuthWrappe
         title: title || null,
         agentId: agentId || null,
         status: 'active',
+        modelProvider: '',
       },
     });
 

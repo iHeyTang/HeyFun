@@ -36,10 +36,10 @@ interface ChatSessionProps {
  * ChatSession 组件
  * 只负责在一个已存在的 session 中进行对话
  */
-export function ChatSession({ 
-  sessionId, 
-  initialMessages = [], 
-  disabled = false, 
+export function ChatSession({
+  sessionId,
+  initialMessages = [],
+  disabled = false,
   onClearChat,
   onMessagesChange,
   toolExecutionContext,
@@ -92,9 +92,7 @@ export function ChatSession({
       }));
 
       // 将工具执行结果附加到原消息上
-      setMessages(prev =>
-        prev.map(msg => (msg.id === messageId ? { ...msg, toolResults } : msg)),
-      );
+      setMessages(prev => prev.map(msg => (msg.id === messageId ? { ...msg, toolResults } : msg)));
 
       // 提交工具结果到后端，获取 AI 的后续响应
       const response = await fetch(`${apiPrefix}/tool-result`, {
@@ -153,13 +151,9 @@ export function ChatSession({
 
                 if (parsed.type === 'init') {
                   aiMessageId = parsed.aiMessageId;
-                  setMessages(prev =>
-                    prev.map(msg => (msg.id === continueMessage.id ? { ...msg, id: aiMessageId! } : msg)),
-                  );
+                  setMessages(prev => prev.map(msg => (msg.id === continueMessage.id ? { ...msg, id: aiMessageId! } : msg)));
                 } else if (parsed.type === 'content' && aiMessageId) {
-                  setMessages(prev =>
-                    prev.map(msg => (msg.id === aiMessageId ? { ...msg, content: parsed.fullContent } : msg)),
-                  );
+                  setMessages(prev => prev.map(msg => (msg.id === aiMessageId ? { ...msg, content: parsed.fullContent } : msg)));
                 } else if (parsed.type === 'tool_calls' && aiMessageId) {
                   // 接收到工具调用，先更新消息
                   setMessages(prev =>
@@ -174,9 +168,7 @@ export function ChatSession({
                   await executeToolsAndContinue(aiMessageId, parsed.toolCalls);
                 } else if (parsed.type === 'finished' && aiMessageId) {
                   setMessages(prev =>
-                    prev.map(msg =>
-                      msg.id === aiMessageId ? { ...msg, content: parsed.fullContent, isStreaming: false, isComplete: true } : msg,
-                    ),
+                    prev.map(msg => (msg.id === aiMessageId ? { ...msg, content: parsed.fullContent, isStreaming: false, isComplete: true } : msg)),
                   );
                 }
               } catch (e) {
@@ -197,7 +189,7 @@ export function ChatSession({
   const handleSendMessage = async (content: string) => {
     // 检查是否是本地 session（以 local_ 开头）
     const isLocalSession = sessionId.startsWith('local_');
-    
+
     if (isLocalSession) {
       // 本地模式：不调用后端 API，直接添加消息
       const userMessage: Message = {
@@ -207,7 +199,7 @@ export function ChatSession({
         isComplete: true,
         createdAt: new Date(),
       };
-      
+
       const aiMessage: Message = {
         id: `msg_ai_${Date.now()}`,
         role: 'assistant',
@@ -215,7 +207,7 @@ export function ChatSession({
         isComplete: true,
         createdAt: new Date(),
       };
-      
+
       setMessages(prev => [...prev, userMessage, aiMessage]);
       return;
     }
@@ -374,11 +366,11 @@ export function ChatSession({
         ) : (
           <div className="space-y-0">
             {messages.map(message => (
-              <ChatMessageComponent 
-                key={message.id} 
-                role={message.role} 
-                content={message.content} 
-                isStreaming={message.isStreaming} 
+              <ChatMessageComponent
+                key={message.id}
+                role={message.role}
+                content={message.content}
+                isStreaming={message.isStreaming}
                 timestamp={message.createdAt}
                 toolCalls={message.toolCalls}
                 toolResults={message.toolResults}

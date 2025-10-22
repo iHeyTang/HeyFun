@@ -198,7 +198,7 @@ export const POST = withUserAuthApi<{}, {}, ToolResultRequest>(async (_req, ctx)
           controller.enqueue(encoder.encode(initData));
 
           let fullContent = '';
-          let toolCalls: any[] = [];
+          const toolCalls: any[] = [];
 
           // 调用 LLM 继续对话
           const chatStream = llmClient.chatStream({
@@ -339,4 +339,3 @@ export const POST = withUserAuthApi<{}, {}, ToolResultRequest>(async (_req, ctx)
     );
   }
 });
-

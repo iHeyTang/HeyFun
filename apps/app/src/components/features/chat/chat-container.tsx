@@ -5,17 +5,16 @@
 
 'use client';
 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { createSessionManager, type ChatMessage, type ChatSession as SessionData, type SessionManager } from '@/lib/browser/session-manager';
+import { History, Plus, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Clock, History, Plus, X } from 'lucide-react';
-import { createSessionManager, type SessionManager, type ChatMessage, type ChatSession as SessionData } from '@/lib/browser/session-manager';
 import { useChatbotModelSelector } from './chat-input';
 import { ChatSession } from './chat-session';
-import TooltipButton from '@/components/block/tooltip-button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 
 export interface ChatAction {
   id: string;
@@ -304,7 +303,7 @@ export const ChatContainer = ({
             onTitleUpdated={handleTitleUpdated}
           />
         ) : (
-          <div className="text-muted-foreground flex h-full items-center justify-center">Click "New" to start a chat</div>
+          <div className="text-muted-foreground flex h-full items-center justify-center">{`Click "New" to start a chat`}</div>
         )}
       </div>
     </div>

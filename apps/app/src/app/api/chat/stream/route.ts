@@ -13,7 +13,7 @@ async function generateSessionTitle(sessionId: string, userMessage: string, orga
   try {
     // 使用快速模型生成标题
     const llmClient = CHAT.createClient('claude-3-5-sonnet');
-    
+
     const response = await llmClient.chat({
       messages: [
         {
@@ -44,10 +44,12 @@ async function generateSessionTitle(sessionId: string, userMessage: string, orga
     console.error('[Chat] Failed to generate title:', error);
     // 如果失败，使用简单截取
     const fallbackTitle = userMessage.length > 30 ? userMessage.substring(0, 30) + '...' : userMessage;
-    await prisma.chatSessions.update({
-      where: { id: sessionId, organizationId },
-      data: { title: fallbackTitle },
-    }).catch(err => console.error('[Chat] Failed to set fallback title:', err));
+    await prisma.chatSessions
+      .update({
+        where: { id: sessionId, organizationId },
+        data: { title: fallbackTitle },
+      })
+      .catch(err => console.error('[Chat] Failed to set fallback title:', err));
     return fallbackTitle;
   }
 }
@@ -130,17 +132,17 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
           role: msg.role as UnifiedChat.Message['role'],
           content: msg.content,
         };
-        
+
         // 如果是 assistant 消息且有 toolCalls，包含 toolCalls
         if (msg.role === 'assistant' && msg.toolCalls) {
           baseMsg.tool_calls = msg.toolCalls;
         }
-        
+
         // 如果是 tool 消息，包含 tool_call_id
         if (msg.role === 'tool' && msg.toolCallId) {
           baseMsg.tool_call_id = msg.toolCallId;
         }
-        
+
         return baseMsg;
       }),
       { role: 'user', content },
@@ -150,8 +152,10 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
     console.log('[Stream] Messages structure:');
     messages.forEach((msg, idx) => {
       if (msg.role === 'assistant' && msg.tool_calls) {
-        console.log(`  [${idx}] assistant with ${msg.tool_calls.length} tool_calls:`, 
-          msg.tool_calls.map((tc: any) => ({ id: tc.id, name: tc.function.name })));
+        console.log(
+          `  [${idx}] assistant with ${msg.tool_calls.length} tool_calls:`,
+          msg.tool_calls.map((tc: any) => ({ id: tc.id, name: tc.function.name })),
+        );
       } else if (msg.role === 'tool') {
         console.log(`  [${idx}] tool result for tool_call_id: ${msg.tool_call_id}`);
       } else {
@@ -181,16 +185,23 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
           // 调试：打印工具配置
           console.log(`[Stream] Agent: ${agentConfig.id}, Tools count: ${agentConfig.tools.length}`);
           if (agentConfig.tools.length > 0) {
-            console.log(`[Stream] Tools:`, JSON.stringify(agentConfig.tools.map(t => ({
-              type: t.type,
-              name: t.function.name,
-              hasParams: !!t.function.parameters,
-            })), null, 2));
+            console.log(
+              `[Stream] Tools:`,
+              JSON.stringify(
+                agentConfig.tools.map(t => ({
+                  type: t.type,
+                  name: t.function.name,
+                  hasParams: !!t.function.parameters,
+                })),
+                null,
+                2,
+              ),
+            );
           }
 
           const stream = llmClient.chatStream(chatParams);
 
-          let toolCalls: any[] = [];
+          const toolCalls: any[] = [];
 
           for await (const chunk of stream) {
             const choice = chunk.choices?.[0];
@@ -249,18 +260,20 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
               // 如果有工具调用，发送给前端
               if (choice.finish_reason === 'tool_calls' && toolCalls.length > 0) {
                 // 验证 tool calls 的完整性
-                const validToolCalls = toolCalls.filter(tc => tc).map(tc => {
-                  // 验证 JSON 是否完整
-                  if (tc.function?.arguments) {
-                    try {
-                      JSON.parse(tc.function.arguments);
-                    } catch (error) {
-                      console.error(`[Stream] Warning: Tool ${tc.function.name} has invalid JSON arguments:`, tc.function.arguments);
-                      console.error(`[Stream] Error:`, (error as Error).message);
+                const validToolCalls = toolCalls
+                  .filter(tc => tc)
+                  .map(tc => {
+                    // 验证 JSON 是否完整
+                    if (tc.function?.arguments) {
+                      try {
+                        JSON.parse(tc.function.arguments);
+                      } catch (error) {
+                        console.error(`[Stream] Warning: Tool ${tc.function.name} has invalid JSON arguments:`, tc.function.arguments);
+                        console.error(`[Stream] Error:`, (error as Error).message);
+                      }
                     }
-                  }
-                  return tc;
-                });
+                    return tc;
+                  });
 
                 await prisma.chatMessages.update({
                   where: { id: aiMessage.id },

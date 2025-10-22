@@ -133,7 +133,7 @@ export class FlowCanvasSessionManager implements SessionManager {
         while (j < rawMessages.length) {
           const toolMsg = rawMessages[j];
           if (!toolMsg || toolMsg.role !== 'tool') break;
-          
+
           try {
             const result = JSON.parse(toolMsg.content);
             toolResults.push({
@@ -172,4 +172,3 @@ export class FlowCanvasSessionManager implements SessionManager {
     return sessionWithMessages?.messages || [];
   }
 }
-
