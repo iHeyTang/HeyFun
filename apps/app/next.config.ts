@@ -1,9 +1,29 @@
 import createNextIntlPlugin from 'next-intl/plugin';
 import type { NextConfig } from 'next';
+import path from 'path';
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   output: 'standalone',
+  transpilePackages: ['@repo/agent', '@repo/llm', '@repo/ui'],
+  webpack: (config, { isServer }) => {
+    // 添加根目录 node_modules 到解析路径
+    config.resolve.modules = [
+      ...(config.resolve.modules || []),
+      path.resolve(__dirname, '../../node_modules'),
+    ];
+    
+    // 确保正确解析 workspace 包
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@repo/llm/chat': path.resolve(__dirname, '../../packages/llm/src/chat/index.ts'),
+      '@repo/llm/aigc': path.resolve(__dirname, '../../packages/llm/src/aigc/index.ts'),
+      '@repo/llm': path.resolve(__dirname, '../../packages/llm/src'),
+      '@repo/agent': path.resolve(__dirname, '../../packages/agent/src/index.ts'),
+    };
+    
+    return config;
+  },
   images: {
     unoptimized: false,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

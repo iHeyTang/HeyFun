@@ -8,8 +8,10 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@daytonaio/sdk": "^0.25.6",
     "@modelcontextprotocol/sdk": "^1.17.0",
     "handlebars": "^4.7.8",
+    "nanoid": "^5.1.5",
     "zod": "^3.22.4"
   },
   "devDependencies": {
