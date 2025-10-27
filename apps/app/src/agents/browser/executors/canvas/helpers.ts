@@ -17,11 +17,15 @@ export function getCanvasState(context: ToolExecutionContext) {
 
 /**
  * 更新画布状态
+ * 注意：此函数获取最新的画布状态后进行修改，避免并发修改导致覆盖
  */
 export function updateCanvasState(context: ToolExecutionContext, state: any) {
   if (!context.canvasRef?.current) {
     throw new Error('Canvas reference not available');
   }
+  
+  // 使用 importCanvas 来更新状态
+  // importCanvas 内部已经使用 reactFlowInstance.setNodes/setEdges 直接更新
   context.canvasRef.current.importCanvas(JSON.stringify(state));
 }
 

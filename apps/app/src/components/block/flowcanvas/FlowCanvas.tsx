@@ -84,22 +84,27 @@ function FlowCanvasCore({
   // 会自动过滤掉 selected, dragging 等临时 UI 状态
   useSchemaSync({ nodes, edges, onSchemaChange });
 
-  useImperativeHandle(ref, () => ({
-    importCanvas: (canvas: string) => {
-      const schema = JSON.parse(canvas);
-      setNodes(schema?.nodes || []);
-      setEdges(schema?.edges || []);
-    },
-    exportCanvas: () => {
-      return exportCanvasToJson();
-    },
-    run: async () => {
-      return await workflowRunner.runWorkflow({ nodes, edges }, undefined, nodeMap.executors);
-    },
-    autoLayout: (direction?: 'TB' | 'LR') => {
-      autoLayout(direction);
-    },
-  }));
+  useImperativeHandle(
+    ref,
+    () => ({
+      importCanvas: (canvas: string) => {
+        const schema = JSON.parse(canvas);
+        // 使用 React Flow 实例直接更新，确保立即生效
+        flowGraph.reactFlowInstance.setNodes(schema?.nodes || []);
+        flowGraph.reactFlowInstance.setEdges(schema?.edges || []);
+      },
+      exportCanvas: () => {
+        return exportCanvasToJson();
+      },
+      run: async () => {
+        return await workflowRunner.runWorkflow({ nodes, edges }, undefined, nodeMap.executors);
+      },
+      autoLayout: (direction?: 'TB' | 'LR') => {
+        autoLayout(direction);
+      },
+    }),
+    [flowGraph, exportCanvasToJson, workflowRunner, autoLayout],
+  );
 
   // 复制粘贴扩展
   const copyPasteExtension = useCopyPaste({
@@ -142,7 +147,7 @@ function FlowCanvasCore({
   }, []);
 
   return (
-    <div 
+    <div
       className={cn(`relative h-full w-full`, className)}
       tabIndex={0} // 使画布可聚焦
       onFocus={copyPasteExtension.onCanvasFocus}
