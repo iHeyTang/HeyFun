@@ -44,6 +44,10 @@ export interface CopyPasteExtensionContext {
 export interface CopyPasteExtensionResult {
   /** 鼠标移动事件处理器 */
   onMouseMove: (event: React.MouseEvent<Element, MouseEvent>) => void;
+  /** 画布焦点事件处理器 */
+  onCanvasFocus: () => void;
+  /** 画布失焦事件处理器 */
+  onCanvasBlur: () => void;
 }
 
 /**
@@ -299,6 +303,9 @@ export function useCopyPaste(context: CopyPasteExtensionContext): CopyPasteExten
   // 跟踪鼠标在画布上的位置
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
+  // 跟踪画布是否获得焦点
+  const [isCanvasFocused, setIsCanvasFocused] = useState(false);
+
   // ==================== 剪贴板操作 ====================
 
   /**
@@ -443,8 +450,36 @@ export function useCopyPaste(context: CopyPasteExtensionContext): CopyPasteExten
    */
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
+      // 只有在画布获得焦点时才处理快捷键
+      if (!isCanvasFocused) return;
+
+      // 检查是否有模态框打开（通过检查 body 是否有模态框相关的类名或属性）
+      const hasOpenModal =
+        document.body.querySelector('[role="dialog"]') ||
+        document.body.querySelector('.modal-open') ||
+        document.body.querySelector('[data-modal-open="true"]') ||
+        document.querySelector('[data-radix-portal]'); // Radix UI 模态框
+
+      if (hasOpenModal) return;
+
+      // 检查是否是 Cmd/Ctrl 组合键
       const cmdOrCtrl = isMacPlatform() ? event.metaKey : event.ctrlKey;
+
       if (!cmdOrCtrl) return;
+
+      // 检查事件目标，避免在输入框等元素中触发
+      const target = event.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.contentEditable === 'true' ||
+          target.closest('[contenteditable="true"]') ||
+          target.closest('input') ||
+          target.closest('textarea'))
+      ) {
+        return;
+      }
 
       const key = event.key.toLowerCase();
 
@@ -469,7 +504,7 @@ export function useCopyPaste(context: CopyPasteExtensionContext): CopyPasteExten
         return;
       }
     },
-    [handleCopy, handleCut, handlePaste],
+    [handleCopy, handleCut, handlePaste, isCanvasFocused],
   );
 
   /**
@@ -488,6 +523,20 @@ export function useCopyPaste(context: CopyPasteExtensionContext): CopyPasteExten
     [canvasRef],
   );
 
+  /**
+   * 画布焦点事件处理
+   */
+  const handleCanvasFocus = useCallback(() => {
+    setIsCanvasFocused(true);
+  }, []);
+
+  /**
+   * 画布失焦事件处理
+   */
+  const handleCanvasBlur = useCallback(() => {
+    setIsCanvasFocused(false);
+  }, []);
+
   // ==================== 副作用 ====================
 
   /**
@@ -504,5 +553,7 @@ export function useCopyPaste(context: CopyPasteExtensionContext): CopyPasteExten
 
   return {
     onMouseMove: handleMouseMove,
+    onCanvasFocus: handleCanvasFocus,
+    onCanvasBlur: handleCanvasBlur,
   };
 }

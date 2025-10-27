@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.57.0",
+    "@aws-sdk/client-s3": "^3.917.0",
     "@aws-sdk/s3-request-presigner": "^3.884.0",
     "@clerk/nextjs": "^6.31.4",
     "@daytonaio/sdk": "^0.25.6",

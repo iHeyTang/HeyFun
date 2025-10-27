@@ -145,7 +145,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
             'shadow-xl',
             'rounded-xl',
             'overflow-hidden',
-            'transition-all duration-300 ease-in-out',
+            'transition-transform duration-300 ease-in-out',
             // 折叠时：移出屏幕 + 禁用交互
             isCollapsed ? 'pointer-events-none translate-x-full opacity-0' : 'pointer-events-auto translate-x-0 opacity-100',
             className,
@@ -158,7 +158,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
           {!isCollapsed && (
             <div
               className={cn(
-                'absolute top-0 left-0 z-10 h-full w-3 cursor-ew-resize',
+                'absolute left-0 top-0 z-10 h-full w-3 cursor-ew-resize',
                 'group flex items-center justify-center',
                 'transition-all duration-200',
               )}
@@ -202,7 +202,7 @@ const ToggleButton = ({ toggleCollapsed }: { toggleCollapsed: () => void }) => {
       onClick={toggleCollapsed}
       variant="default"
       size="icon"
-      className={cn('pointer-events-auto absolute top-3 right-2 z-20', 'rounded-full', 'animate-in fade-in-0 zoom-in-95', 'duration-300 ease-out')}
+      className={cn('pointer-events-auto absolute right-2 top-3 z-20', 'rounded-full', 'animate-in fade-in-0 zoom-in-95', 'duration-300 ease-out')}
     >
       <Bot className="size-4 transition-transform duration-200" />
     </Button>

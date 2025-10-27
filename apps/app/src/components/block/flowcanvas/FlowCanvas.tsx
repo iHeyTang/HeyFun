@@ -142,7 +142,12 @@ function FlowCanvasCore({
   }, []);
 
   return (
-    <div className={cn(`relative h-full w-full`, className)}>
+    <div 
+      className={cn(`relative h-full w-full`, className)}
+      tabIndex={0} // 使画布可聚焦
+      onFocus={copyPasteExtension.onCanvasFocus}
+      onBlur={copyPasteExtension.onCanvasBlur}
+    >
       <ReactFlow
         ref={canvasRef}
         colorMode={theme === 'dark' ? 'dark' : 'light'}

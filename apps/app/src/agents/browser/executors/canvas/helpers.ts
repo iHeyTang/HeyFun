@@ -51,33 +51,39 @@ export function buildNodeActionData(nodeType: string, data: any = {}) {
       return {
         actionData: {
           prompt: data?.prompt || data?.text || '',
-          model: data?.model, // 不提供默认值，要求用户明确指定
-          size: data?.size || '1024x1024',
-          ...(data?.quality && { quality: data.quality }),
+          selectedModel: data?.selectedModel,
+          aspectRatio: data?.aspectRatio,
+          n: data?.n,
+          ...(data?.advancedParams && { advancedParams: data.advancedParams }),
         },
       };
     case 'audio':
       return {
         actionData: {
-          text: data?.text || data?.prompt || '请输入要转换的文本',
+          prompt: data?.prompt || data?.text || '请输入要转换的文本',
+          selectedModel: data?.selectedModel,
           voiceId: data?.voiceId || 'alloy',
-          model: data?.model,
+          ...(data?.advancedParams && { advancedParams: data.advancedParams }),
         },
       };
     case 'music':
       return {
         actionData: {
+          lyrics: data?.lyrics,
           prompt: data?.prompt || '请输入音乐描述',
-          duration: data?.duration || 30,
-          model: data?.model,
+          selectedModel: data?.selectedModel,
+          ...(data?.advancedParams && { advancedParams: data.advancedParams }),
         },
       };
     case 'video':
       return {
         actionData: {
           prompt: data?.prompt || '请输入视频描述',
-          duration: data?.duration || 10,
-          model: data?.model,
+          selectedModel: data?.selectedModel,
+          aspectRatio: data?.aspectRatio,
+          duration: data?.duration || '10',
+          resolution: data?.resolution,
+          ...(data?.advancedParams && { advancedParams: data.advancedParams }),
         },
       };
     case 'group':
@@ -86,4 +92,3 @@ export function buildNodeActionData(nodeType: string, data: any = {}) {
       return data || {};
   }
 }
-
