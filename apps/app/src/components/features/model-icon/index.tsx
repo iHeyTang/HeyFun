@@ -81,8 +81,11 @@ function ImageIcon({ src, className, size }: { src: string; className?: string; 
 
   // 当 src prop 变化时，重置状态
   useEffect(() => {
-    setImgSrc(src);
-    setHasError(false);
+    // 使用 requestAnimationFrame 避免同步 setState
+    requestAnimationFrame(() => {
+      setImgSrc(src);
+      setHasError(false);
+    });
   }, [src]);
 
   const handleError = () => {

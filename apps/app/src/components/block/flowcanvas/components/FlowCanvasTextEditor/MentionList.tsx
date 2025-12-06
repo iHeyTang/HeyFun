@@ -63,7 +63,6 @@ export interface MentionListProps<T extends MentionItem = MentionItem> {
   items: T[];
   command: (item: T) => void;
   event: React.KeyboardEvent<HTMLButtonElement>;
-  ref: React.RefObject<MentionListRef>;
 }
 
 export interface MentionListRef {
@@ -176,7 +175,7 @@ const VideoPreview: React.FC<{ item: VideoMentionItem }> = ({ item }) => (
         </div>
       </div>
       {item.duration && (
-        <div className="bg-foreground/75 text-background absolute right-1 bottom-1 rounded px-1 py-0.5 text-xs">{formatDuration(item.duration)}</div>
+        <div className="bg-foreground/75 text-background absolute bottom-1 right-1 rounded px-1 py-0.5 text-xs">{formatDuration(item.duration)}</div>
       )}
     </div>
     <div className="min-w-0 flex-1">
@@ -254,7 +253,7 @@ const renderItemPreview = (item: MentionItem) => {
   }
 };
 
-const MentionList = <T extends MentionItem>(props: MentionListProps<T>) => {
+const MentionListInner = <T extends MentionItem>(props: MentionListProps<T>, ref: React.ForwardedRef<MentionListRef>) => {
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -262,13 +261,17 @@ const MentionList = <T extends MentionItem>(props: MentionListProps<T>) => {
   const groupedItems = useMemo(() => {
     const groups: GroupedItems = {};
 
-    props.items.forEach(item => {
+    // 使用 items 数组而不是通过 props.items.forEach 来避免在渲染期间访问 ref
+    const items = props.items;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item) continue;
       const type = item.type || 'other';
       if (!groups[type]) {
         groups[type] = [];
       }
       groups[type].push(item);
-    });
+    }
 
     // 按配置的顺序排序分组
     const sortedGroups = Object.entries(groups).sort(([a], [b]) => {
@@ -320,7 +323,7 @@ const MentionList = <T extends MentionItem>(props: MentionListProps<T>) => {
   // 当切换类型时重置选中索引
   useEffect(() => setSelectedIndex(0), [selectedType]);
 
-  useImperativeHandle(props.ref, () => ({
+  useImperativeHandle(ref, () => ({
     onKeyDown: ({ event }) => {
       if (event.key === 'ArrowUp') {
         upHandler();
@@ -376,7 +379,7 @@ const MentionList = <T extends MentionItem>(props: MentionListProps<T>) => {
                       <div
                         key={`${selectedType}-${index}`}
                         className={cn(
-                          'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground relative flex cursor-pointer items-center rounded-sm px-2 py-2 text-sm outline-hidden transition-colors select-none',
+                          'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground outline-hidden relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm transition-colors',
                           index === selectedIndex && 'bg-accent text-accent-foreground',
                         )}
                         onClick={() => selectItem(index)}
@@ -398,5 +401,9 @@ const MentionList = <T extends MentionItem>(props: MentionListProps<T>) => {
     </Panel>
   );
 };
+
+const MentionList = React.forwardRef(MentionListInner) as <T extends MentionItem>(
+  props: MentionListProps<T> & React.RefAttributes<MentionListRef>,
+) => React.ReactElement;
 
 export default MentionList;

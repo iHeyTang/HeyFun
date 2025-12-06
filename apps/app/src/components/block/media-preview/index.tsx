@@ -38,9 +38,12 @@ export function useMediaPreview(isOpen: boolean) {
   // 重置状态当模态框打开/关闭时
   useEffect(() => {
     if (isOpen) {
-      setScale(1);
-      setRotation(0);
-      setPosition({ x: 0, y: 0 });
+      // 使用 requestAnimationFrame 避免同步 setState
+      requestAnimationFrame(() => {
+        setScale(1);
+        setRotation(0);
+        setPosition({ x: 0, y: 0 });
+      });
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -262,7 +265,7 @@ interface ToolbarProps {
 
 function Toolbar({ scale, onZoomIn, onZoomOut, onReset, onRotate, onDownload, filename }: ToolbarProps) {
   return (
-    <div className="absolute top-4 left-1/2 z-20 flex -translate-x-1/2 gap-2 rounded-lg bg-black/50 px-4 py-2 backdrop-blur-sm">
+    <div className="absolute left-1/2 top-4 z-20 flex -translate-x-1/2 gap-2 rounded-lg bg-black/50 px-4 py-2 backdrop-blur-sm">
       <Button onClick={onZoomOut} size="sm" variant="ghost" className="text-white hover:bg-white/20 hover:text-white" title="缩小 (滚轮向下)">
         <ZoomOut className="h-4 w-4" />
       </Button>
@@ -300,7 +303,7 @@ function CloseButton({ onClose }: CloseButtonProps) {
       onClick={onClose}
       size="sm"
       variant="ghost"
-      className="absolute top-4 right-4 z-20 rounded-full bg-black/50 text-white hover:bg-black/70 hover:text-white"
+      className="absolute right-4 top-4 z-20 rounded-full bg-black/50 text-white hover:bg-black/70 hover:text-white"
       title="关闭 (Esc)"
     >
       <X className="h-4 w-4" />

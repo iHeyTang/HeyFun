@@ -1,12 +1,12 @@
 // 事件常量定义 - 基于Python版本
 
 // 基础事件前缀
-const BASE_AGENT_EVENTS_PREFIX = "agent:lifecycle";
-const REACT_AGENT_EVENTS_PREFIX = "agent:lifecycle:step";
-const REACT_AGENT_EVENTS_THINK_PREFIX = "agent:lifecycle:step:think";
-const REACT_AGENT_EVENTS_ACT_PREFIX = "agent:lifecycle:step:act";
-const TOOL_CALL_THINK_AGENT_EVENTS_PREFIX = "agent:lifecycle:step:think:tool";
-const TOOL_CALL_ACT_AGENT_EVENTS_PREFIX = "agent:lifecycle:step:act:tool";
+const BASE_AGENT_EVENTS_PREFIX = 'agent:lifecycle';
+const REACT_AGENT_EVENTS_PREFIX = 'agent:lifecycle:step';
+const REACT_AGENT_EVENTS_THINK_PREFIX = 'agent:lifecycle:step:think';
+const REACT_AGENT_EVENTS_ACT_PREFIX = 'agent:lifecycle:step:act';
+const TOOL_CALL_THINK_AGENT_EVENTS_PREFIX = 'agent:lifecycle:step:think:tool';
+const TOOL_CALL_ACT_AGENT_EVENTS_PREFIX = 'agent:lifecycle:step:act:tool';
 
 // 基础Agent事件
 export class BaseAgentEvents {

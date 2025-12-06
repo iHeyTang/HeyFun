@@ -83,7 +83,10 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
   // 动态调整菜单位置
   useEffect(() => {
     if (!isOpen || !canvasRef.current) {
-      setAdjustedPosition(position);
+      // 使用 requestAnimationFrame 避免同步 setState
+      requestAnimationFrame(() => {
+        setAdjustedPosition(position);
+      });
       return;
     }
 
@@ -196,7 +199,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
               placeholder={t('searchPlaceholder')}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="bg-input focus:ring-ring focus:bg-input placeholder:text-muted-foreground text-foreground w-full rounded-lg border-0 px-3 py-2.5 text-sm transition-all duration-200 focus:ring-2 focus:outline-none"
+              className="bg-input focus:ring-ring focus:bg-input placeholder:text-muted-foreground text-foreground w-full rounded-lg border-0 px-3 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2"
               autoFocus
             />
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
@@ -215,7 +218,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ isOpen, position, onCl
               <button
                 key={nodeType.type}
                 onClick={() => handleNodeSelect(nodeType)}
-                className="group hover:bg-accent flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-all duration-150"
+                className="hover:bg-accent group flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-all duration-150"
               >
                 {/* 节点信息 */}
                 <div className="min-w-0 flex-1">

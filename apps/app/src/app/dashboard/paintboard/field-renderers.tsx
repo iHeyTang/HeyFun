@@ -200,7 +200,7 @@ export const SliderRenderer = (props: CustomFieldRendererProps & { label: string
                   readOnly={isFixedValue}
                   className={isFixedValue ? 'bg-muted/50 cursor-not-allowed pr-8' : unit ? 'pr-8' : ''}
                 />
-                {unit && <div className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm">{unit}</div>}
+                {unit && <div className="text-muted-foreground pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm">{unit}</div>}
               </div>
             )}
           </FormControl>

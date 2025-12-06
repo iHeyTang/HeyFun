@@ -36,4 +36,3 @@ export class OpenAIAdapter extends BaseAdapter {
     return true;
   }
 }
-

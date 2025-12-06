@@ -11,4 +11,3 @@ export class AnthropicProvider extends BaseProvider {
     return { 'x-api-key': key, 'anthropic-version': '2023-06-01' };
   }
 }
-

@@ -42,4 +42,3 @@ export const getCanvasStateTool = createTool(
     }
   },
 );
-

@@ -152,7 +152,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
   return createPortal(
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ease-out ${
-        isClosing || isOpening ? 'backdrop-blur-0 opacity-0' : 'bg-background/90 opacity-100 backdrop-blur-sm'
+        isClosing || isOpening ? 'opacity-0 backdrop-blur-0' : 'bg-background/90 opacity-100 backdrop-blur-sm'
       }`}
       onClick={handleCloseFullscreen}
     >
@@ -165,7 +165,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
         {hasMultipleImages && (
           <div
             ref={thumbnailContainerRef}
-            className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted/50 hover:scrollbar-thumb-muted/70 absolute top-1/2 left-4 z-10 max-h-[calc(100vh-100px)] -translate-y-1/2 overflow-y-auto pr-2"
+            className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted/50 hover:scrollbar-thumb-muted/70 absolute left-4 top-1/2 z-10 max-h-[calc(100vh-100px)] -translate-y-1/2 overflow-y-auto pr-2"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex flex-col gap-2 p-3">
@@ -185,7 +185,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
                     <img src={`/api/oss/${imageKey}`} alt={`Thumbnail ${idx + 1}`} className="h-full w-full object-cover" />
                     {/* 封面徽标 */}
                     {isCover && (
-                      <div className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-yellow-400 shadow-lg">
+                      <div className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-yellow-400 shadow-lg">
                         <Star className="h-4 w-4 fill-white text-white" />
                       </div>
                     )}
@@ -225,7 +225,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
 
         {/* 右侧上下切换按钮 */}
         {hasMultipleImages && (
-          <div className="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 flex-col gap-2">
+          <div className="absolute right-4 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-2">
             <button
               className="bg-muted/50 text-foreground hover:bg-muted/70 flex h-12 w-12 items-center justify-center rounded-full transition-all duration-150"
               onClick={handlePrevious}
@@ -250,7 +250,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
                 </button>
               </PopoverTrigger>
               <PopoverContent side="left" align="start" className="bg-background/95 w-auto p-4 backdrop-blur-sm" onClick={e => e.stopPropagation()}>
-                <div className="space-y-2 text-sm whitespace-nowrap">
+                <div className="space-y-2 whitespace-nowrap text-sm">
                   <div className="border-muted/20 mb-3 flex items-center gap-2 border-b pb-2">
                     <Keyboard className="text-muted-foreground h-4 w-4" />
                     <span className="text-foreground font-medium">{t('keyboardShortcuts')}</span>
@@ -292,7 +292,7 @@ export function FullscreenModal({ ref, onSetCover }: FullscreenModalProps) {
         )}
 
         {/* 关闭按钮和设置封面按钮 */}
-        <div className="absolute top-4 right-4 z-10 flex gap-2">
+        <div className="absolute right-4 top-4 z-10 flex gap-2">
           {/* 设置封面按钮 */}
           {onSetCover && images && images.length > 0 && (
             <button

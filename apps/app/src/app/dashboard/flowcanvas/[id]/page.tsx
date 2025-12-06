@@ -333,7 +333,7 @@ const FlowCanvasPage = () => {
                     value={editingName}
                     onChange={e => setEditingName(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    className="h-9 rounded-md border border-gray-300 px-3 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="h-9 rounded-md border border-gray-300 px-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                     autoFocus
                     placeholder={ft('namePlaceholder')}
                   />

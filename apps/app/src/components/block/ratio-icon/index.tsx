@@ -31,7 +31,7 @@ export const RatioIcon = ({ ratio, size = 16 }: { ratio: string; size?: number }
   return (
     <div className="flex items-center justify-center" style={{ width: `${maxSize}px`, height: `${maxSize}px` }}>
       <div
-        className="rounded-[2px] border-[1.5px] border-current/80"
+        className="border-current/80 rounded-[2px] border-[1.5px]"
         style={{
           width: `${displayWidth}px`,
           height: `${displayHeight}px`,

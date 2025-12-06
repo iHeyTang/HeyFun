@@ -17,14 +17,20 @@ export default function MusicNode({ data, id }: MusicNodeProps) {
   const status = useNodeStatusById(id);
 
   // 处理actionData变化
-  const handleActionDataChange = useCallback<NonNullable<MusicNodeTooltipProps['onValueChange']>>((newActionData: any) => {
-    flowGraph.updateNodeData(id, { actionData: newActionData });
-  }, []);
+  const handleActionDataChange = useCallback<NonNullable<MusicNodeTooltipProps['onValueChange']>>(
+    (newActionData: any) => {
+      flowGraph.updateNodeData(id, { actionData: newActionData });
+    },
+    [flowGraph, id],
+  );
 
   // 处理tooltip提交
-  const handleTooltipSubmit = useCallback<NonNullable<MusicNodeTooltipProps['onSubmitSuccess']>>((output: any) => {
-    flowGraph.updateNodeData(id, { output });
-  }, []);
+  const handleTooltipSubmit = useCallback<NonNullable<MusicNodeTooltipProps['onSubmitSuccess']>>(
+    (output: any) => {
+      flowGraph.updateNodeData(id, { output });
+    },
+    [flowGraph, id],
+  );
 
   return (
     <BaseNode

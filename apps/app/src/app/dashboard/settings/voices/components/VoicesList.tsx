@@ -152,7 +152,7 @@ export function VoicesList({ onCloneClick, refreshTrigger }: VoicesListProps) {
           return (
             <div
               key={voice.id}
-              className="group bg-card/50 hover:border-border hover:bg-card/80 relative overflow-hidden rounded-lg border backdrop-blur-sm transition-all duration-200"
+              className="bg-card/50 hover:border-border hover:bg-card/80 group relative overflow-hidden rounded-lg border backdrop-blur-sm transition-all duration-200"
             >
               <div className="p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -162,7 +162,7 @@ export function VoicesList({ onCloneClick, refreshTrigger }: VoicesListProps) {
                     </div>
                     <div className="flex-1 space-y-2">
                       <div>
-                        <h3 className="text-foreground text-[14px] leading-tight font-medium">{voice.name}</h3>
+                        <h3 className="text-foreground text-[14px] font-medium leading-tight">{voice.name}</h3>
                         {voice.description && <p className="text-muted-foreground mt-1 text-[12px] leading-relaxed">{voice.description}</p>}
                       </div>
                       <span className="text-muted-foreground inline-block text-[11px] font-medium">{getProviderName(voice.provider)}</span>

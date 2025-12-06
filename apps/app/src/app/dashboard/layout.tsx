@@ -32,7 +32,7 @@ const Header = ({ className }: { className?: string }) => {
         <CreditBadge />
         <Dialog>
           <DialogTrigger asChild>
-            <Badge className="bg-badge text-badge cursor-pointer transition hover:scale-101">EARLY ACCESS</Badge>
+            <Badge className="bg-badge text-badge hover:scale-101 cursor-pointer transition">EARLY ACCESS</Badge>
           </DialogTrigger>
           <DialogContent showCloseButton={false} style={{ maxWidth: '800px' }}>
             <DialogHeader>

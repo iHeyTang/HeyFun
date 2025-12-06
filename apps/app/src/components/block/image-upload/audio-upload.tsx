@@ -232,7 +232,7 @@ export const AudioUpload = React.forwardRef<HTMLDivElement, AudioUploadProps>(
             </audio>
             {!disabled && (
               <div
-                className="bg-background/80 hover:bg-background absolute top-2 right-2 cursor-pointer rounded-full p-1 backdrop-blur-sm transition-colors"
+                className="bg-background/80 hover:bg-background absolute right-2 top-2 cursor-pointer rounded-full p-1 backdrop-blur-sm transition-colors"
                 onClick={handleRemove}
               >
                 <X className="h-4 w-4" />
@@ -243,7 +243,7 @@ export const AudioUpload = React.forwardRef<HTMLDivElement, AudioUploadProps>(
           // 显示上传占位符
           <div
             className={cn(
-              'group focus-visible:ring-ring relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded border border-dashed transition-all duration-300 ease-in-out focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+              'focus-visible:ring-ring group relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded border border-dashed transition-all duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
               uploadVariants({ variant, state: uploadState })
                 .split(' ')
                 .filter(cls => !cls.includes('min-h') && !cls.includes('p-'))
@@ -322,12 +322,12 @@ export const AudioUpload = React.forwardRef<HTMLDivElement, AudioUploadProps>(
 
             {/* 录音按钮 */}
             {enableRecording && !uploading && (
-              <div className="absolute right-3 bottom-3">
+              <div className="absolute bottom-3 right-3">
                 <motion.button
                   onClick={handleRecordingToggle}
                   disabled={disabled}
                   className={cn(
-                    'hover:bg-accent bg-background focus-visible:ring-ring flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
+                    'hover:bg-accent bg-background focus-visible:ring-ring flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50',
                     recording && 'border-red-500 bg-red-50 hover:bg-red-100',
                   )}
                   whileHover={{ scale: 1.05 }}

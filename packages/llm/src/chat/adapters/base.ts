@@ -10,4 +10,3 @@ export abstract class BaseAdapter {
   abstract getChatEndpoint(): string;
   abstract supportsStreaming(): boolean;
 }
-

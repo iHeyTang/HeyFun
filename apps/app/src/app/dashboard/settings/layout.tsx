@@ -13,7 +13,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   return (
     <div className="flex h-full">
       <div className="bg-muted/20 border-muted flex h-full w-[200px] flex-col gap-2 border-r">
-        <div className="text-muted-foreground px-2 py-2 text-xs font-medium whitespace-nowrap">Settings</div>
+        <div className="text-muted-foreground whitespace-nowrap px-2 py-2 text-xs font-medium">Settings</div>
         <div className="flex h-full flex-col pl-0.5">
           {/* <Link
             href="/dashboard/settings/llm"

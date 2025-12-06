@@ -66,19 +66,22 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
   useEffect(() => {
     if (defaultModel && !selectedModelName && !actionData?.selectedModel) {
       const schema = defaultModelSchema;
-      setSelectedModelName(defaultModel.name);
-      setSelectedAspectRatio((schema?.aspectRatio?.enum?.[0] as string) || '');
-      setSelectedN((schema?.n?.enum?.[0] as string) || '');
-      onValueChange?.({
-        ...actionData,
-        prompt: localPrompt,
-        selectedModel: defaultModel.name,
-        aspectRatio: (schema?.aspectRatio?.enum?.[0] as string) || '',
-        n: (schema?.n?.enum?.[0] as string) || '',
-        advancedParams: {},
+      // 使用 requestAnimationFrame 避免同步 setState
+      requestAnimationFrame(() => {
+        setSelectedModelName(defaultModel.name);
+        setSelectedAspectRatio((schema?.aspectRatio?.enum?.[0] as string) || '');
+        setSelectedN((schema?.n?.enum?.[0] as string) || '');
+        onValueChange?.({
+          ...actionData,
+          prompt: localPrompt,
+          selectedModel: defaultModel.name,
+          aspectRatio: (schema?.aspectRatio?.enum?.[0] as string) || '',
+          n: (schema?.n?.enum?.[0] as string) || '',
+          advancedParams: {},
+        });
       });
     }
-  }, [defaultModel, defaultModelSchema, selectedModelName, actionData?.selectedModel]);
+  }, [defaultModel, defaultModelSchema, selectedModelName, actionData?.selectedModel, localPrompt, actionData, onValueChange]);
 
   const handleSelectModel = (v: string) => {
     setSelectedModelName(v);
@@ -96,18 +99,21 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
 
   // 当外部值改变时同步本地状态
   useEffect(() => {
-    if (actionData?.prompt !== undefined) {
-      setLocalPrompt(actionData.prompt);
-    }
-    if (actionData?.selectedModel !== undefined) {
-      setSelectedModelName(actionData.selectedModel);
-    }
-    if (actionData?.aspectRatio !== undefined) {
-      setSelectedAspectRatio(actionData.aspectRatio);
-    }
-    if (actionData?.n !== undefined) {
-      setSelectedN(actionData.n);
-    }
+    // 使用 requestAnimationFrame 避免同步 setState
+    requestAnimationFrame(() => {
+      if (actionData?.prompt !== undefined) {
+        setLocalPrompt(actionData.prompt);
+      }
+      if (actionData?.selectedModel !== undefined) {
+        setSelectedModelName(actionData.selectedModel);
+      }
+      if (actionData?.aspectRatio !== undefined) {
+        setSelectedAspectRatio(actionData.aspectRatio);
+      }
+      if (actionData?.n !== undefined) {
+        setSelectedN(actionData.n);
+      }
+    });
   }, [actionData?.prompt, actionData?.selectedModel, actionData?.aspectRatio, actionData?.n]);
 
   const handleSubmit = async () => {
@@ -188,7 +194,7 @@ const ImageNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
         value={localPrompt}
         onChange={handlePromptChange}
         placeholder={t('image.placeholder')}
-        className="h-24 w-full resize-none border-none! outline-none!"
+        className="border-none! outline-none! h-24 w-full resize-none"
         nodeId={nodeId}
         ref={editorRef}
         onMentionClick={handleMentionClick}

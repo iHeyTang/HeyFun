@@ -31,7 +31,7 @@ export default function ProjectCard({ project, onDelete }: ProjectCardProps) {
 
   return (
     <Card
-      className="group bg-card relative cursor-pointer overflow-hidden border-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+      className="bg-card group relative cursor-pointer overflow-hidden border-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
       onClick={() => window.open(`/dashboard/flowcanvas/${project.id}`, '_blank')}
     >
       <CardHeader className="pb-3">

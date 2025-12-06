@@ -41,7 +41,7 @@ export class AgentEvent {
     }
     this.handlers.push({
       pattern: new RegExp(event_pattern),
-      handler
+      handler,
     });
   }
 
@@ -89,7 +89,6 @@ export class AgentEvent {
         if (this.queue.length === 0) {
           this.eventFlag = false;
         }
-
       } catch (e) {
         console.error('Unexpected error in event processing loop:', e);
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -113,18 +112,13 @@ export class AgentEvent {
 }
 
 // 便捷函数：创建事件项
-export function createEventItem(
-  name: string,
-  step: number,
-  content: any,
-  options?: { id?: string; parent_id?: string }
-): EventItem {
+export function createEventItem(name: string, step: number, content: any, options?: { id?: string; parent_id?: string }): EventItem {
   return {
     id: options?.id || nanoid(),
     parent_id: options?.parent_id,
     name,
     step,
     timestamp: new Date(),
-    content
+    content,
   };
 }

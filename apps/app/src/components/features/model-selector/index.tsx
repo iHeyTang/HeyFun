@@ -50,7 +50,7 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
             placeholder={t('searchPlaceholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="h-12 rounded-none border-0 pr-4 pl-12 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="h-12 rounded-none border-0 pl-12 pr-4 focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
 

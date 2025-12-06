@@ -25,7 +25,10 @@ export const MentionTooltip: React.FC<MentionTooltipProps> = ({ tooltip }) => {
         setMounted(true);
       });
     } else {
-      setMounted(false);
+      // 使用 requestAnimationFrame 避免同步 setState
+      requestAnimationFrame(() => {
+        setMounted(false);
+      });
     }
   }, [tooltip.item, tooltip.visible]);
 

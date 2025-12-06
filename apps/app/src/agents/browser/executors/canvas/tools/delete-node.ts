@@ -50,4 +50,3 @@ export const deleteNodeTool = createTool(
     }
   },
 );
-

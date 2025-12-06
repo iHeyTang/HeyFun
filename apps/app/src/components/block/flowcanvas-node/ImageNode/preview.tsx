@@ -31,7 +31,7 @@ export function ImagePreview({ images, className, onLoad, onSetCover }: ImagePre
     <>
       <div className="relative">
         {images?.list?.length && images?.list?.length > 1 && (
-          <div className="absolute top-2 right-2 z-10 flex items-center justify-center rounded-full border border-white/10 bg-black/20 px-2 py-1 backdrop-blur-md">
+          <div className="absolute right-2 top-2 z-10 flex items-center justify-center rounded-full border border-white/10 bg-black/20 px-2 py-1 backdrop-blur-md">
             <span className="text-xs font-medium text-white">{images?.list?.length}</span>
           </div>
         )}

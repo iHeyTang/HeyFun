@@ -74,7 +74,7 @@ export default async function HomePage() {
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       {/* Header Navigation */}
-      <header className="fixed top-0 right-0 left-0 z-50 text-white backdrop-blur-md">
+      <header className="fixed left-0 right-0 top-0 z-50 text-white backdrop-blur-md">
         <nav className="mx-auto max-w-7xl px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -195,13 +195,13 @@ export default async function HomePage() {
                 {/* Main Title */}
                 <div className="animate-fade-in-title space-y-6 text-white">
                   <div className="px-4 py-8">
-                    <h1 className="text-6xl leading-none font-bold tracking-tight md:text-7xl lg:text-8xl">HeyFun</h1>
+                    <h1 className="text-6xl font-bold leading-none tracking-tight md:text-7xl lg:text-8xl">HeyFun</h1>
                   </div>
                 </div>
 
                 {/* Subtitle */}
                 <div className="animate-fade-in-subtitle">
-                  <p className="mx-auto max-w-2xl text-lg leading-relaxed font-medium text-white">{tHero('subtitle')}</p>
+                  <p className="mx-auto max-w-2xl text-lg font-medium leading-relaxed text-white">{tHero('subtitle')}</p>
                 </div>
 
                 {/* Enhanced CTA Buttons */}

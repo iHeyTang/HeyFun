@@ -137,14 +137,20 @@ function FlowCanvasCore({
     setEdges,
   });
 
-  const handleNodeClick = useCallback((event: React.MouseEvent<Element, MouseEvent>, node: FlowGraphNode) => {
-    event.stopPropagation();
-    context.setFocusedNodeId(node.id);
-  }, []);
+  const handleNodeClick = useCallback(
+    (event: React.MouseEvent<Element, MouseEvent>, node: FlowGraphNode) => {
+      event.stopPropagation();
+      context.setFocusedNodeId(node.id);
+    },
+    [context],
+  );
 
-  const handlePaneClick = useCallback((event: React.MouseEvent<Element, MouseEvent>) => {
-    context.setFocusedNodeId(null);
-  }, []);
+  const handlePaneClick = useCallback(
+    (event: React.MouseEvent<Element, MouseEvent>) => {
+      context.setFocusedNodeId(null);
+    },
+    [context],
+  );
 
   return (
     <div

@@ -156,10 +156,10 @@ function TaskCard({ task }: TaskCardProps) {
                 </Tooltip>
               </TooltipProvider>
               {copied ? (
-                <Check className="absolute top-[calc(50%+1px)] right-2 h-3 w-3 -translate-y-1/2 opacity-100" />
+                <Check className="absolute right-2 top-[calc(50%+1px)] h-3 w-3 -translate-y-1/2 opacity-100" />
               ) : (
                 <Copy
-                  className="absolute top-[calc(50%+1px)] right-2 h-3 w-3 -translate-y-1/2 cursor-pointer opacity-0 transition-opacity group-hover:opacity-60 hover:opacity-100"
+                  className="absolute right-2 top-[calc(50%+1px)] h-3 w-3 -translate-y-1/2 cursor-pointer opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-60"
                   onClick={e => {
                     e.stopPropagation();
                     navigator.clipboard.writeText(prompt);
@@ -295,7 +295,7 @@ function ResultCard({ result }: ResultCardProps) {
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border p-3">
-      <div className="overflow-hidden text-sm text-ellipsis whitespace-nowrap">{result.key.split('/').pop()}</div>
+      <div className="overflow-hidden text-ellipsis whitespace-nowrap text-sm">{result.key.split('/').pop()}</div>
       <a href={url} download={result.key.split('/').pop()}>
         <Button size="sm" variant="outline" className="w-full">
           <Download className="h-3 w-3" />

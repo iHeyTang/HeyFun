@@ -43,15 +43,18 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
 
   // 当外部值改变时同步本地状态
   useEffect(() => {
-    if (actionData?.lyrics !== undefined) {
-      setLocalLyrics(actionData.lyrics);
-    }
-    if (actionData?.prompt !== undefined) {
-      setLocalPrompt(actionData.prompt);
-    }
-    if (actionData?.selectedModel !== undefined) {
-      setSelectedModelName(actionData.selectedModel);
-    }
+    // 使用 requestAnimationFrame 避免同步 setState
+    requestAnimationFrame(() => {
+      if (actionData?.lyrics !== undefined) {
+        setLocalLyrics(actionData.lyrics);
+      }
+      if (actionData?.prompt !== undefined) {
+        setLocalPrompt(actionData.prompt);
+      }
+      if (actionData?.selectedModel !== undefined) {
+        setSelectedModelName(actionData.selectedModel);
+      }
+    });
   }, [actionData?.lyrics, actionData?.prompt, actionData?.selectedModel]);
 
   const handleSubmit = async () => {
@@ -121,7 +124,7 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
             value={localLyrics}
             onChange={handleLyricsChange}
             placeholder={t('lyricsPlaceholder')}
-            className="h-32 w-full resize-none border-none! outline-none!"
+            className="border-none! outline-none! h-32 w-full resize-none"
             nodeId={nodeId}
             ref={lyricsEditorRef}
           />
@@ -134,7 +137,7 @@ const MusicNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, o
           value={localPrompt}
           onChange={handlePromptChange}
           placeholder={t('promptPlaceholder')}
-          className="h-24 w-full resize-none border-none! outline-none!"
+          className="border-none! outline-none! h-24 w-full resize-none"
           nodeId={nodeId}
           ref={promptEditorRef}
         />

@@ -109,7 +109,9 @@ export const AgentSelectorDialog = forwardRef<AgentSelectorRef, AgentSelectorDia
                 <CardContent className="pt-0">
                   <div className="space-y-2">
                     <div>
-                      <p className="text-muted-foreground text-xs font-medium">{t('tools')} ({agent.tools.length})</p>
+                      <p className="text-muted-foreground text-xs font-medium">
+                        {t('tools')} ({agent.tools.length})
+                      </p>
                       <div className="mt-1 flex flex-wrap gap-1">
                         {agent.tools.slice(0, 3).map(tool => (
                           <Badge key={tool} variant="outline" className="text-xs">

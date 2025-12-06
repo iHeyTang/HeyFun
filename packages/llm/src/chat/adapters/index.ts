@@ -23,4 +23,3 @@ export function getAdapter(protocol: string): BaseAdapter {
 export function getAvailableAdapters(): string[] {
   return Object.keys(adapterInstances);
 }
-

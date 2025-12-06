@@ -76,7 +76,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
           {isExpanded && (
             <div className="border-border/20 border-t">
               {/* 输入参数 */}
-              <div className="px-2.5 pt-1.5 pb-2">
+              <div className="px-2.5 pb-2 pt-1.5">
                 <div className="text-muted-foreground mb-1 text-[9px] font-medium uppercase opacity-50">Input</div>
                 <pre className="text-muted-foreground overflow-x-auto text-[10px] leading-relaxed">
                   <code>{typeof args === 'object' ? JSON.stringify(args, null, 2) : args}</code>
@@ -87,7 +87,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
               {result && (
                 <>
                   <div className="border-border/20 border-t" />
-                  <div className="px-2.5 pt-1.5 pb-2">
+                  <div className="px-2.5 pb-2 pt-1.5">
                     <div className="text-muted-foreground mb-1 text-[9px] font-medium uppercase opacity-50">Output</div>
                     <pre className="text-muted-foreground overflow-x-auto text-[10px] leading-relaxed">
                       <code>
@@ -141,7 +141,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
             {isExpanded && (
               <div className="border-border/20 border-t">
                 {/* 输入参数 */}
-                <div className="px-2.5 pt-1.5 pb-2">
+                <div className="px-2.5 pb-2 pt-1.5">
                   <div className="text-muted-foreground mb-1 text-[9px] font-medium uppercase opacity-50">Input</div>
                   <pre className="text-muted-foreground overflow-x-auto text-[10px] leading-relaxed">
                     <code>{typeof args === 'object' ? JSON.stringify(args, null, 2) : args}</code>
@@ -152,7 +152,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
                 {result && (
                   <>
                     <div className="border-border/20 border-t" />
-                    <div className="px-2.5 pt-1.5 pb-2">
+                    <div className="px-2.5 pb-2 pt-1.5">
                       <div className="text-muted-foreground mb-1 text-[9px] font-medium uppercase opacity-50">Output</div>
                       <pre className="text-muted-foreground overflow-x-auto text-[10px] leading-relaxed">
                         <code>

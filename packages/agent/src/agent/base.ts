@@ -38,7 +38,7 @@ export interface StepResult {
 // BaseAgent配置接口
 export interface BaseAgentConfig {
   name: string;
-  llm?: ChatClient | { modelId: string };  // 支持传入客户端或配置
+  llm?: ChatClient | { modelId: string }; // 支持传入客户端或配置
   description?: string;
   should_plan?: boolean;
   task_id: string;
@@ -93,7 +93,7 @@ export abstract class BaseAgent {
     if (!config.llm) {
       throw new Error('LLM configuration is required');
     }
-    
+
     if (config.llm instanceof ChatClient) {
       this.llm = config.llm;
     } else if ('modelId' in config.llm) {

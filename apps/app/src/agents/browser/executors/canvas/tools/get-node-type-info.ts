@@ -119,4 +119,3 @@ function formatNodeTypeInfo(nodeType: string, availableModels: any[]): string {
 
   return lines.join('\n');
 }
-

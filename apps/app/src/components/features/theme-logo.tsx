@@ -18,7 +18,10 @@ export function ThemeLogo({ width = 64, height = 64, alt = 'HeyFun', className, 
 
   // 避免服务端渲染时的hydration不匹配
   useEffect(() => {
-    setMounted(true);
+    // 使用 requestAnimationFrame 避免同步 setState
+    requestAnimationFrame(() => {
+      setMounted(true);
+    });
   }, []);
 
   // 在客户端挂载之前，显示默认logo

@@ -75,4 +75,3 @@ export interface ModelFilter {
   maxPrice?: number;
   minContextLength?: number;
 }
-

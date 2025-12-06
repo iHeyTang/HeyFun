@@ -26,4 +26,3 @@ export function createTool<TArgs = any>(
 ): CanvasTool<TArgs> {
   return { schema, executor };
 }
-

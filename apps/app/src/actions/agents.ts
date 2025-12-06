@@ -24,4 +24,3 @@ export async function getAgentConfig(agentId?: string) {
     };
   }
 }
-

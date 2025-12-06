@@ -116,8 +116,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'HeyFun - AI Creative Content Generation Platform',
-    description:
-      'Create stunning AI-powered images, videos, art, and designs. Your all-in-one creative studio for limitless inspiration.',
+    description: 'Create stunning AI-powered images, videos, art, and designs. Your all-in-one creative studio for limitless inspiration.',
     images: ['/logo.png'],
     creator: '@HeyFunAI',
     site: '@HeyFunAI',

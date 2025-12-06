@@ -7,4 +7,3 @@ export abstract class BaseAgent implements IAgent {
     return this.config;
   }
 }
-

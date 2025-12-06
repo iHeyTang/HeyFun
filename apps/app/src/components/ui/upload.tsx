@@ -335,7 +335,7 @@ const UploadComponent = React.forwardRef<HTMLDivElement, UploadProps>(
                       e.stopPropagation();
                       removeFile(currentFile.id);
                     }}
-                    className="absolute -top-2 -right-2 rounded-full bg-destructive p-1.5 text-destructive-foreground opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:bg-destructive"
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive absolute -right-2 -top-2 rounded-full p-1.5 opacity-0 shadow-lg transition-all duration-200 hover:scale-110 group-hover:opacity-100"
                     disabled={currentFile.status === 'uploading'}
                   >
                     <X className="h-3 w-3" />
@@ -350,7 +350,7 @@ const UploadComponent = React.forwardRef<HTMLDivElement, UploadProps>(
               )}
 
               {currentFile.status === 'uploading' && showProgress && (
-                <div className="bg-muted absolute right-2 bottom-2 left-2 h-1 overflow-hidden rounded-full">
+                <div className="bg-muted absolute bottom-2 left-2 right-2 h-1 overflow-hidden rounded-full">
                   <div
                     className="bg-primary h-1 rounded-full transition-all duration-500 ease-out"
                     style={{ width: `${currentFile.progress || 0}%` }}

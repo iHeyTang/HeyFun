@@ -31,13 +31,16 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
 
   // 当外部值改变时同步本地状态
   useEffect(() => {
-    if (actionData?.prompt !== undefined) {
-      setLocalPrompt(actionData.prompt);
-    }
-    if (actionData?.modelId !== undefined) {
-      setSelectedModel(models.find(model => model.id === actionData.modelId) || null);
-    }
-  }, [actionData?.prompt, actionData?.modelId]);
+    // 使用 requestAnimationFrame 避免同步 setState
+    requestAnimationFrame(() => {
+      if (actionData?.prompt !== undefined) {
+        setLocalPrompt(actionData.prompt);
+      }
+      if (actionData?.modelId !== undefined) {
+        setSelectedModel(models.find(model => model.id === actionData.modelId) || null);
+      }
+    });
+  }, [actionData?.prompt, actionData?.modelId, models]);
 
   const handleSubmit = async () => {
     onValueChange?.({ prompt: localPrompt, modelId: selectedModel?.id });
@@ -93,7 +96,7 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
         value={localPrompt}
         onChange={handlePromptChange}
         placeholder={t('placeholder')}
-        className="h-24 w-full resize-none border-none! outline-none!"
+        className="border-none! outline-none! h-24 w-full resize-none"
         nodeId={nodeId}
         ref={editorRef}
       />

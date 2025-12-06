@@ -159,7 +159,7 @@ export const MultiImageUpload = React.forwardRef<HTMLDivElement, MultiImageUploa
                 {/* 删除按钮 */}
                 <button
                   onClick={() => handleRemove(index)}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive absolute top-1 right-1 cursor-pointer rounded-full p-1 opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110"
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive absolute right-1 top-1 cursor-pointer rounded-full p-1 opacity-0 shadow-lg transition-all duration-200 hover:scale-110 group-hover:opacity-100"
                   disabled={uploading}
                 >
                   <X className="h-2 w-2" />
@@ -184,7 +184,7 @@ export const MultiImageUpload = React.forwardRef<HTMLDivElement, MultiImageUploa
             <div className={cn(defaultItemClassName, itemClassName)}>
               <div
                 className={cn(
-                  'focus-visible:ring-ring relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed transition-all duration-300 ease-in-out focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                  'focus-visible:ring-ring relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed transition-all duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                   dragOver ? 'border-primary bg-primary/10 scale-[1.02] shadow-lg' : 'border-border bg-muted/50 hover:border-border hover:bg-muted',
                   uploading && 'border-primary bg-primary/5',
                 )}

@@ -105,10 +105,11 @@ export class ModelRegistry {
 
   searchModels(query: string): ModelInfo[] {
     const lowerQuery = query.toLowerCase();
-    return this.getAllModels().filter(m =>
-      m.id.toLowerCase().includes(lowerQuery) ||
-      m.name.toLowerCase().includes(lowerQuery) ||
-      (m.description && m.description.toLowerCase().includes(lowerQuery))
+    return this.getAllModels().filter(
+      m =>
+        m.id.toLowerCase().includes(lowerQuery) ||
+        m.name.toLowerCase().includes(lowerQuery) ||
+        (m.description && m.description.toLowerCase().includes(lowerQuery)),
     );
   }
 
@@ -126,4 +127,3 @@ export class ModelRegistry {
 }
 
 export const defaultModelRegistry = new ModelRegistry();
-

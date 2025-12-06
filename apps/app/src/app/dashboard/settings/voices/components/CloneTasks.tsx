@@ -99,12 +99,12 @@ export function CloneTasks({ refreshTrigger }: CloneTasksProps) {
         {cloneTasks.map(task => (
           <div
             key={task.id}
-            className="group bg-card/50 hover:border-border hover:bg-card/80 relative overflow-hidden rounded-lg border backdrop-blur-sm transition-all duration-200"
+            className="bg-card/50 hover:border-border hover:bg-card/80 group relative overflow-hidden rounded-lg border backdrop-blur-sm transition-all duration-200"
           >
             <div className="px-5 py-4">
               {/* 顶部：标题 + provider + 状态 + 时间 */}
               <div className="flex items-center gap-3">
-                <h3 className="text-foreground text-[15px] leading-tight font-medium">{task.name}</h3>
+                <h3 className="text-foreground text-[15px] font-medium leading-tight">{task.name}</h3>
                 <span className="text-muted-foreground flex-shrink-0 text-[11px] font-medium">{getProviderName(task.provider)}</span>
                 <span
                   className={`inline-flex flex-shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${

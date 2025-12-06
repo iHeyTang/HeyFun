@@ -105,12 +105,12 @@ export default function BaseNode({ data, id, children, className = '', showHandl
   return (
     <NodeTooltip className="h-full w-full">
       {toolbar ? (
-        <NodeTooltipContent position={Position.Top} isVisible={focusedNodeId === id} className="w-fit max-w-130">
+        <NodeTooltipContent position={Position.Top} isVisible={focusedNodeId === id} className="max-w-130 w-fit">
           {toolbar}
         </NodeTooltipContent>
       ) : null}
       {tooltip ? (
-        <NodeTooltipContent position={Position.Bottom} isVisible={focusedNodeId === id} className="w-fit max-w-130 min-w-100 shadow">
+        <NodeTooltipContent position={Position.Bottom} isVisible={focusedNodeId === id} className="max-w-130 min-w-100 w-fit shadow">
           {tooltip}
         </NodeTooltipContent>
       ) : null}
@@ -142,7 +142,7 @@ export default function BaseNode({ data, id, children, className = '', showHandl
         </div>
 
         {/* 卡片主体 */}
-        <div className="group relative h-full w-full max-w-100 transition-all duration-200">
+        <div className="max-w-100 group relative h-full w-full transition-all duration-200">
           {/* 渲染输入端口 */}
           {showHandles && (
             <Handle

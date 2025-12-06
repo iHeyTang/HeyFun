@@ -58,7 +58,7 @@ const ConfirmDialog = () => {
       <DialogHeader>
         <DialogTitle></DialogTitle>
       </DialogHeader>
-      <DialogContent className={cn('w-[380px] pt-8 pr-4 pb-5 pl-6', className)}>
+      <DialogContent className={cn('w-[380px] pb-5 pl-6 pr-4 pt-8', className)}>
         <div>{content}</div>
         <DialogFooter>
           {operations ? (

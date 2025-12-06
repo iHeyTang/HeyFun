@@ -11,4 +11,3 @@ export class OpenAIProvider extends BaseProvider {
     return { Authorization: `Bearer ${key}` };
   }
 }
-

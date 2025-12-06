@@ -121,7 +121,7 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
                     e.stopPropagation();
                     handleRemove();
                   }}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive absolute -top-2 -right-2 rounded-full p-1.5 opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100 hover:scale-110"
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive absolute -right-2 -top-2 rounded-full p-1.5 opacity-0 shadow-lg transition-all duration-200 hover:scale-110 group-hover:opacity-100"
                   disabled={uploading}
                 >
                   <X className="h-3 w-3" />
@@ -130,7 +130,7 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
             )}
 
             {uploading && (
-              <div className="bg-muted absolute right-2 bottom-2 left-2 h-1 overflow-hidden rounded-full">
+              <div className="bg-muted absolute bottom-2 left-2 right-2 h-1 overflow-hidden rounded-full">
                 <div className="bg-primary h-1 animate-pulse rounded-full" />
               </div>
             )}
@@ -139,7 +139,7 @@ export const ImageUpload = React.forwardRef<HTMLDivElement, ImageUploadProps>(
           // 显示上传占位符
           <div
             className={cn(
-              'group focus-visible:ring-ring relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded border border-dashed transition-all duration-300 ease-in-out focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+              'focus-visible:ring-ring group relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded border border-dashed transition-all duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
               uploadVariants({ variant, state: uploadState })
                 .split(' ')
                 .filter(cls => !cls.includes('min-h') && !cls.includes('p-'))

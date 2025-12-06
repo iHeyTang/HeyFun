@@ -63,7 +63,7 @@ export function FullscreenModal({ ref }: FullscreenModalProps) {
   return createPortal(
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ease-out ${
-        isClosing || isOpening ? 'backdrop-blur-0 opacity-0' : 'bg-background/90 opacity-100 backdrop-blur-sm'
+        isClosing || isOpening ? 'opacity-0 backdrop-blur-0' : 'bg-background/90 opacity-100 backdrop-blur-sm'
       }`}
       onClick={handleCloseFullscreen}
     >
@@ -96,7 +96,7 @@ export function FullscreenModal({ ref }: FullscreenModalProps) {
           />
         )}
         <button
-          className="bg-muted/50 text-foreground hover:bg-muted/70 absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-xl font-bold transition-all duration-150"
+          className="bg-muted/50 text-foreground hover:bg-muted/70 absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-xl font-bold transition-all duration-150"
           onClick={handleCloseFullscreen}
         >
           ×

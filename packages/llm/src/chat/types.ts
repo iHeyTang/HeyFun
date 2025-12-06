@@ -5,7 +5,7 @@
 
 export namespace UnifiedChat {
   // ============ 消息类型 ============
-  
+
   export interface TextContent {
     type: 'text';
     text: string;
@@ -30,7 +30,7 @@ export namespace UnifiedChat {
   }
 
   // ============ 工具调用 ============
-  
+
   export interface ToolCall {
     id: string;
     type: 'function';
@@ -52,7 +52,7 @@ export namespace UnifiedChat {
   export type ToolChoice = 'none' | 'auto' | 'required' | { type: 'function'; function: { name: string } };
 
   // ============ 请求参数 ============
-  
+
   export interface ChatCompletionParams {
     messages: Message[];
     temperature?: number;
@@ -64,11 +64,11 @@ export namespace UnifiedChat {
     tool_choice?: ToolChoice;
     presence_penalty?: number;
     frequency_penalty?: number;
-    [key: string]: any;  // 允许扩展参数
+    [key: string]: any; // 允许扩展参数
   }
 
   // ============ 响应类型 ============
-  
+
   export interface Usage {
     prompt_tokens: number;
     completion_tokens: number;
@@ -91,7 +91,7 @@ export namespace UnifiedChat {
   }
 
   // ============ 流式响应 ============
-  
+
   export interface ChoiceDelta {
     index: number;
     delta: {

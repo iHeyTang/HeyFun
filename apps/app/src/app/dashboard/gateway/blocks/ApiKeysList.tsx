@@ -194,7 +194,7 @@ export function ApiKeysList({ refreshTrigger, onRefresh }: ApiKeysListProps) {
         {keys.map(key => (
           <div
             key={key.id}
-            className="group relative w-full cursor-default select-none rounded-lg bg-muted/30 px-4 py-3 text-left transition-all hover:bg-muted"
+            className="bg-muted/30 hover:bg-muted group relative w-full cursor-default select-none rounded-lg px-4 py-3 text-left transition-all"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -204,9 +204,7 @@ export function ApiKeysList({ refreshTrigger, onRefresh }: ApiKeysListProps) {
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="items-baseline gap-2">
                     <div className="text-foreground text-[14px] font-medium">{key.name}</div>
-                    {key.description && (
-                      <div className="text-muted-foreground mt-1 text-[13px] leading-relaxed">{key.description}</div>
-                    )}
+                    {key.description && <div className="text-muted-foreground mt-1 text-[13px] leading-relaxed">{key.description}</div>}
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-[11px]">
                     <span className="text-muted-foreground font-mono">{key.keyPrefix}...</span>

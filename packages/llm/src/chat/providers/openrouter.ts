@@ -15,4 +15,3 @@ export class OpenRouterProvider extends BaseProvider {
     return { 'HTTP-Referer': 'https://heyfun.ai', 'X-Title': 'HeyFun AI' };
   }
 }
-

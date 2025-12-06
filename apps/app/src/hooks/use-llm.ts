@@ -1,5 +1,5 @@
 import { getChatModels, getAigcModels, getAigcVoiceList } from '@/actions/llm';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { create } from 'zustand';
 
 type ProviderModelInfo = NonNullable<Awaited<ReturnType<typeof getChatModels>>['data']>[number];
@@ -18,6 +18,7 @@ export const useProvidersStore = create<{
 export const useLLM = () => {
   const store = useProvidersStore();
   const initiated = useRef(false);
+  const [initiatedState, setInitiatedState] = useState(false);
 
   const initiate = useCallback(() => {
     if (initiated.current) {
@@ -25,10 +26,11 @@ export const useLLM = () => {
     }
     Promise.allSettled([store.refreshAvailableModels()]).then(() => {
       initiated.current = true;
+      setInitiatedState(true);
     });
   }, [store.refreshAvailableModels]);
 
-  return { ...store, initiate, initiated: initiated.current };
+  return { ...store, initiate, initiated: initiatedState };
 };
 
 export const useAigcStore = create<{
@@ -45,6 +47,7 @@ export const useAigcStore = create<{
 export const useAigc = () => {
   const store = useAigcStore();
   const initiated = useRef(false);
+  const [initiatedState, setInitiatedState] = useState(false);
 
   const initiate = useCallback(() => {
     console.log('initiate-aigc');
@@ -53,10 +56,11 @@ export const useAigc = () => {
     }
     store.refreshAvailableModels().then(() => {
       initiated.current = true;
+      setInitiatedState(true);
     });
   }, [store.refreshAvailableModels]);
 
-  return { ...store, initiate, initiated: initiated.current };
+  return { ...store, initiate, initiated: initiatedState };
 };
 
 type VoiceListData = Awaited<ReturnType<typeof getAigcVoiceList>>['data'];
@@ -76,6 +80,7 @@ const useAigcVoiceListStore = create<{
 export const useAigcVoiceList = (provider: string, modelName: string) => {
   const store = useAigcVoiceListStore();
   const initiated = useRef(false);
+  const [initiatedState, setInitiatedState] = useState(false);
   const key = `${provider}-${modelName}`;
   const voiceList = store.voiceListMap[key] || [];
 
@@ -85,6 +90,7 @@ export const useAigcVoiceList = (provider: string, modelName: string) => {
     }
     store.refreshVoiceList(provider, modelName).then(() => {
       initiated.current = true;
+      setInitiatedState(true);
     });
   }, [provider, modelName, store.refreshVoiceList]);
 
@@ -92,6 +98,6 @@ export const useAigcVoiceList = (provider: string, modelName: string) => {
     voiceList,
     refreshVoiceList: () => store.refreshVoiceList(provider, modelName),
     initiate,
-    initiated: initiated.current,
+    initiated: initiatedState,
   };
 };

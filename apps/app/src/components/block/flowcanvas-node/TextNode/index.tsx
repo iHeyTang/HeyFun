@@ -46,10 +46,9 @@ export default function TextNode({ data, id }: TextNodeProps) {
       const newOutput = { texts: { list: [newText], selected: newText } };
       // 通知画布API节点数据已更新
       flowGraph.updateNodeData(id, { output: newOutput });
-      // 同时更新本地数据引用
-      data.output = newOutput;
+      // 不要直接修改 props，只通过 flowGraph.updateNodeData 更新
     },
-    [flowGraph, id, data],
+    [flowGraph, id],
   );
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -71,9 +70,10 @@ export default function TextNode({ data, id }: TextNodeProps) {
   // 处理actionData变化 - 使用 useCallback 稳定函数引用
   const handleActionDataChange = useCallback<NonNullable<TextNodeTooltipProps['onValueChange']>>(
     newActionData => {
-      data.actionData = { ...data.actionData, ...newActionData };
+      // 通过 flowGraph 更新数据，而不是直接修改 props
+      flowGraph.updateNodeData(id, { actionData: { ...data.actionData, ...newActionData } });
     },
-    [data],
+    [flowGraph, id, data.actionData],
   );
 
   // 处理tooltip提交 - 使用 useCallback 稳定函数引用
@@ -119,7 +119,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
         />
       ) : (
         <div
-          className={`border-border-primary text-foreground hover:border-border-secondary hover:bg-accent/50 h-fit min-h-[80px] w-fit min-w-[200px] cursor-pointer rounded border-dashed p-2 text-xs break-words whitespace-pre-wrap transition-colors duration-200`}
+          className={`border-border-primary text-foreground hover:border-border-secondary hover:bg-accent/50 h-fit min-h-[80px] w-fit min-w-[200px] cursor-pointer whitespace-pre-wrap break-words rounded border-dashed p-2 text-xs transition-colors duration-200`}
           onDoubleClick={handleTextDoubleClick}
         >
           <FlowCanvasTextEditor

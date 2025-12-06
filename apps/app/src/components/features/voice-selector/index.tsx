@@ -29,7 +29,9 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
   const stopCurrentAudio = () => {
     if (currentAudio) {
       currentAudio.pause();
-      currentAudio.currentTime = 0;
+      // 创建一个新的 Audio 对象来重置 currentTime，而不是直接修改
+      const audio = new Audio(currentAudio.src);
+      audio.currentTime = 0;
     }
     setCurrentPlayingId(null);
     setCurrentAudio(null);
@@ -123,7 +125,7 @@ export const VoiceSelectorDialog = forwardRef<VoiceSelectorRef, VoiceSelectorPro
             placeholder={t('searchPlaceholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="h-12 rounded-none border-0 pr-4 pl-12 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="h-12 rounded-none border-0 pl-12 pr-4 focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
 

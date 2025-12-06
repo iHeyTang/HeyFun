@@ -259,7 +259,7 @@ export const ChatContainer = ({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="text-muted-foreground hover:text-destructive size-5 opacity-0 transition-all group-hover:opacity-100 hover:bg-transparent"
+                            className="text-muted-foreground hover:text-destructive size-5 opacity-0 transition-all hover:bg-transparent group-hover:opacity-100"
                             onClick={e => handleDeleteSession(session.id, e)}
                           >
                             <X className="size-2.5" />

@@ -124,7 +124,7 @@ export const VideoUpload = React.forwardRef<HTMLDivElement, VideoUploadProps>(
             </video>
             {!disabled && (
               <div
-                className="bg-background/80 hover:bg-background absolute top-2 right-2 cursor-pointer rounded-full p-1 backdrop-blur-sm transition-colors"
+                className="bg-background/80 hover:bg-background absolute right-2 top-2 cursor-pointer rounded-full p-1 backdrop-blur-sm transition-colors"
                 onClick={handleRemove}
               >
                 <X className="h-4 w-4" />
@@ -135,7 +135,7 @@ export const VideoUpload = React.forwardRef<HTMLDivElement, VideoUploadProps>(
           // 显示上传占位符
           <div
             className={cn(
-              'group focus-visible:ring-ring relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded border border-dashed transition-all duration-300 ease-in-out focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+              'focus-visible:ring-ring group relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded border border-dashed transition-all duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
               uploadVariants({ variant, state: uploadState })
                 .split(' ')
                 .filter(cls => !cls.includes('min-h') && !cls.includes('p-'))

@@ -16,7 +16,7 @@ export default function GatewayPage() {
   };
 
   return (
-    <div className="flex h-full flex-col gap-4 p-4 max-w-7xl mx-auto">
+    <div className="mx-auto flex h-full max-w-7xl flex-col gap-4 p-4">
       {/* Header */}
       <div className="mb-4">
         <h1 className="text-lg font-bold">{t('title')}</h1>
