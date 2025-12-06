@@ -107,6 +107,7 @@
       "chat": "チャット",
       "tasks": "タスク",
       "paintboard": "ペイントボード",
+      "gateway": "AI ゲートウェイ",
       "workspace": "ワークスペース",
       "tools": "ツール",
       "settings": "設定"
@@ -585,6 +586,93 @@
       "processing": "処理中",
       "completed": "完了",
       "failed": "失敗"
+    }
+  },
+  "gateway": {
+    "title": "AI ゲートウェイ",
+    "description": "AI ゲートウェイの API キーを管理し、使用量を監視し、モデルを設定します",
+    "tabs": {
+      "apiKeys": "API キー",
+      "usage": "使用量",
+      "models": "モデル設定"
+    },
+    "actions": {
+      "createKey": "キーを作成",
+      "edit": "編集",
+      "cancel": "キャンセル",
+      "create": "作成",
+      "save": "保存",
+      "close": "閉じる"
+    },
+    "form": {
+      "name": "名前",
+      "namePlaceholder": "キー名を入力",
+      "description": "説明",
+      "descriptionPlaceholder": "キーの説明を入力（オプション）",
+      "expiresAt": "有効期限",
+      "rateLimit": "レート制限",
+      "rateLimitPlaceholder": "1 分あたりのリクエスト数（オプション）",
+      "maxTokens": "最大トークン数",
+      "maxTokensPlaceholder": "最大トークン数（オプション）",
+      "modelId": "モデル ID"
+    },
+    "dialog": {
+      "createTitle": "API キーを作成",
+      "createDescription": "AI ゲートウェイにアクセスするための新しい API キーを作成します",
+      "editTitle": "API キーを編集",
+      "editDescription": "API キーの設定を更新します",
+      "keyCreatedTitle": "キーが作成されました",
+      "keyCreatedDescription": "このキーを安全に保管してください。一度だけ表示されます",
+      "keyWarning": "警告：このキーは一度だけ表示されます。すぐにコピーして安全な場所に保存してください。"
+    },
+    "toast": {
+      "loadKeysFailed": "キーリストの読み込みに失敗しました",
+      "nameRequired": "キー名は必須です",
+      "keyCreated": "API キーが作成されました",
+      "createKeyFailed": "API キーの作成に失敗しました",
+      "keyUpdated": "API キーが更新されました",
+      "updateKeyFailed": "API キーの更新に失敗しました",
+      "keyDeleted": "API キーが削除されました",
+      "deleteKeyFailed": "API キーの削除に失敗しました",
+      "keyCopied": "キーがクリップボードにコピーされました",
+      "loadStatsFailed": "使用量統計の読み込みに失敗しました",
+      "loadConfigsFailed": "モデル設定の読み込みに失敗しました",
+      "configUpdated": "モデル設定が更新されました",
+      "updateConfigFailed": "モデル設定の更新に失敗しました"
+    },
+    "confirmDelete": "この API キーを削除してもよろしいですか？",
+    "rateLimit": "レート制限",
+    "expiresAt": "有効期限",
+    "lastUsedAt": "最終使用",
+    "enabled": "有効",
+    "visible": "表示",
+    "provider": "プロバイダー",
+    "emptyState": {
+      "keys": "API キーがありません",
+      "usage": "使用記録がありません",
+      "configs": "モデル設定がありません"
+    },
+    "stats": {
+      "totalRequests": "総リクエスト数",
+      "totalTokens": "総トークン数",
+      "inputTokens": "入力トークン数",
+      "outputTokens": "出力トークン数"
+    },
+    "modelStats": {
+      "title": "モデル使用統計",
+      "requests": "リクエスト数",
+      "tokens": "トークン数",
+      "errors": "エラー数"
+    },
+    "timeRange": {
+      "1d": "過去 1 日",
+      "7d": "過去 7 日",
+      "30d": "過去 30 日",
+      "90d": "過去 90 日"
+    },
+    "providers": {
+      "selectPlaceholder": "プロバイダーを選択",
+      "all": "すべて"
     }
   }
 }

@@ -1,7 +1,7 @@
 import { UnifiedChat } from './types';
 import { createProvider, BaseProvider } from './providers';
 import { getAdapter, BaseAdapter } from './adapters';
-import { defaultModelRegistry, ModelRegistry, ModelDefinition } from './models';
+import { defaultModelRegistry, ModelRegistry, ModelInfo } from './models';
 
 export interface ChatClientConfig {
   modelId: string;
@@ -13,7 +13,7 @@ export interface ChatClientConfig {
 }
 
 export class ChatClient {
-  private modelDef: ModelDefinition;
+  private modelDef: ModelInfo;
   private provider: BaseProvider;
   private adapter: BaseAdapter;
 
@@ -26,18 +26,22 @@ export class ChatClient {
     if (!model) throw new Error(`Model not found: ${config.modelId}`);
     this.modelDef = model;
 
-    this.provider = createProvider(model.providerId, {
+    const providerId = (model.metadata?.providerId as string) || model.provider;
+    const adapterType = (model.metadata?.adapterType as string) || 'openai';
+
+    this.provider = createProvider(providerId, {
       apiKey: config.apiKey,
       timeout: config.timeout,
       maxRetries: config.maxRetries,
       ...config,
     });
 
-    this.adapter = getAdapter(model.adapterType);
+    this.adapter = getAdapter(adapterType);
   }
 
   async chat(params: UnifiedChat.ChatCompletionParams): Promise<UnifiedChat.ChatCompletion> {
-    const providerRequest = this.adapter.formatRequest(params, this.modelDef.providerModelId);
+    const providerModelId = (this.modelDef.metadata?.providerModelId as string) || this.modelDef.id;
+    const providerRequest = this.adapter.formatRequest(params, providerModelId);
     const endpoint = this.adapter.getChatEndpoint();
     const httpRequest = this.provider.buildRequest(endpoint, providerRequest, this.config.apiKey);
     const response = await this.provider.sendRequest(httpRequest);
@@ -55,12 +59,13 @@ export class ChatClient {
   }
 
   async *chatStream(params: UnifiedChat.ChatCompletionParams): AsyncIterableIterator<UnifiedChat.ChatCompletionChunk> {
-    if (!this.adapter.supportsStreaming()) {
+    if (!this.modelDef.supportsStreaming || !this.adapter.supportsStreaming()) {
       throw new Error(`Model ${this.modelDef.id} does not support streaming`);
     }
 
+    const providerModelId = (this.modelDef.metadata?.providerModelId as string) || this.modelDef.id;
     const streamParams = { ...params, stream: true };
-    const providerRequest = this.adapter.formatRequest(streamParams, this.modelDef.providerModelId);
+    const providerRequest = this.adapter.formatRequest(streamParams, providerModelId);
     const endpoint = this.adapter.getChatEndpoint();
     const httpRequest = this.provider.buildRequest(endpoint, providerRequest, this.config.apiKey);
     const stream = this.provider.sendStreamRequest(httpRequest);
@@ -77,12 +82,16 @@ export class ChatClient {
     }
   }
 
-  getModelDefinition(): ModelDefinition {
+  getModelDefinition(): ModelInfo {
     return { ...this.modelDef };
   }
 
   getCapabilities() {
-    return { ...this.modelDef.capabilities };
+    return {
+      streaming: this.modelDef.supportsStreaming,
+      tools: this.modelDef.supportsFunctionCalling,
+      vision: this.modelDef.supportsVision,
+    };
   }
 
   getPricing() {

@@ -1,25 +1,25 @@
-import { ModelDefinition, ModelFilter } from './types';
+import { ModelInfo, ModelFilter } from './types';
 import { modelDefinitions } from '../definitions';
 
 export class ModelRegistry {
-  private models: Map<string, ModelDefinition> = new Map();
+  private models: Map<string, ModelInfo> = new Map();
 
-  constructor(definitions: ModelDefinition[] = modelDefinitions) {
+  constructor(definitions: ModelInfo[] = modelDefinitions) {
     definitions.forEach(model => this.registerModel(model));
   }
 
-  registerModel(model: ModelDefinition): void {
+  registerModel(model: ModelInfo): void {
     if (this.models.has(model.id)) {
       console.warn(`Model ${model.id} is already registered, overwriting...`);
     }
     this.models.set(model.id, model);
   }
 
-  registerModels(models: ModelDefinition[]): void {
+  registerModels(models: ModelInfo[]): void {
     models.forEach(model => this.registerModel(model));
   }
 
-  getModel(modelId: string): ModelDefinition | null {
+  getModel(modelId: string): ModelInfo | null {
     return this.models.get(modelId) || null;
   }
 
@@ -27,33 +27,41 @@ export class ModelRegistry {
     return this.models.has(modelId);
   }
 
-  getAllModels(): ModelDefinition[] {
+  getAllModels(): ModelInfo[] {
     return Array.from(this.models.values());
   }
 
-  filterModels(filter: ModelFilter): ModelDefinition[] {
+  filterModels(filter: ModelFilter): ModelInfo[] {
     let models = this.getAllModels();
 
-    if (filter.providerId) models = models.filter(m => m.providerId === filter.providerId);
+    if (filter.provider) models = models.filter(m => m.provider === filter.provider);
     if (filter.family) models = models.filter(m => m.family === filter.family);
-    if (filter.capabilities) {
-      models = models.filter(m => Object.entries(filter.capabilities!).every(([key, value]) => m.capabilities[key] === value));
+    if (filter.type) models = models.filter(m => m.type === filter.type);
+    if (filter.supportsStreaming !== undefined) {
+      models = models.filter(m => m.supportsStreaming === filter.supportsStreaming);
     }
-    if (filter.tags && filter.tags.length > 0) {
-      models = models.filter(m => filter.tags!.every(tag => m.tags?.includes(tag)));
+    if (filter.supportsFunctionCalling !== undefined) {
+      models = models.filter(m => m.supportsFunctionCalling === filter.supportsFunctionCalling);
+    }
+    if (filter.supportsVision !== undefined) {
+      models = models.filter(m => m.supportsVision === filter.supportsVision);
     }
     if (filter.maxPrice !== undefined) {
-      models = models.filter(m => Math.max(m.pricing.input, m.pricing.output) <= filter.maxPrice!);
+      models = models.filter(m => {
+        const inputPrice = m.pricing?.input || 0;
+        const outputPrice = m.pricing?.output || 0;
+        return Math.max(inputPrice, outputPrice) <= filter.maxPrice!;
+      });
     }
     if (filter.minContextLength !== undefined) {
-      models = models.filter(m => m.contextLength >= filter.minContextLength!);
+      models = models.filter(m => (m.contextLength || 0) >= filter.minContextLength!);
     }
 
     return models;
   }
 
-  groupByFamily(): Map<string, ModelDefinition[]> {
-    const groups = new Map<string, ModelDefinition[]>();
+  groupByFamily(): Map<string, ModelInfo[]> {
+    const groups = new Map<string, ModelInfo[]>();
     this.getAllModels().forEach(model => {
       const family = model.family || 'other';
       if (!groups.has(family)) groups.set(family, []);
@@ -62,30 +70,45 @@ export class ModelRegistry {
     return groups;
   }
 
-  groupByProvider(): Map<string, ModelDefinition[]> {
-    const groups = new Map<string, ModelDefinition[]>();
+  groupByProvider(): Map<string, ModelInfo[]> {
+    const groups = new Map<string, ModelInfo[]>();
     this.getAllModels().forEach(model => {
-      if (!groups.has(model.providerId)) groups.set(model.providerId, []);
-      groups.get(model.providerId)!.push(model);
+      if (!groups.has(model.provider)) groups.set(model.provider, []);
+      groups.get(model.provider)!.push(model);
     });
     return groups;
   }
 
-  getFreeModels(): ModelDefinition[] {
-    return this.getAllModels().filter(m => m.pricing.input === 0 && m.pricing.output === 0);
+  getFreeModels(): ModelInfo[] {
+    return this.getAllModels().filter(m => {
+      const inputPrice = m.pricing?.input || 0;
+      const outputPrice = m.pricing?.output || 0;
+      return inputPrice === 0 && outputPrice === 0;
+    });
   }
 
-  getModelsWithCapability(capability: string): ModelDefinition[] {
-    return this.getAllModels().filter(m => m.capabilities[capability] === true);
+  getModelsWithCapability(capability: string): ModelInfo[] {
+    return this.getAllModels().filter(m => {
+      switch (capability) {
+        case 'streaming':
+          return m.supportsStreaming;
+        case 'tools':
+        case 'functionCalling':
+          return m.supportsFunctionCalling;
+        case 'vision':
+          return m.supportsVision;
+        default:
+          return false;
+      }
+    });
   }
 
-  searchModels(query: string): ModelDefinition[] {
+  searchModels(query: string): ModelInfo[] {
     const lowerQuery = query.toLowerCase();
     return this.getAllModels().filter(m =>
       m.id.toLowerCase().includes(lowerQuery) ||
       m.name.toLowerCase().includes(lowerQuery) ||
-      m.description.toLowerCase().includes(lowerQuery) ||
-      m.tags?.some(tag => tag.toLowerCase().includes(lowerQuery))
+      (m.description && m.description.toLowerCase().includes(lowerQuery))
     );
   }
 

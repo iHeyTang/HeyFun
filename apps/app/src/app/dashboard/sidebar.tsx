@@ -4,7 +4,7 @@ import { pageTasks } from '@/actions/tasks';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tasks } from '@prisma/client';
-import { Bot, BoxIcon, Flower, FolderOpen, MessageSquare, Palette, SettingsIcon } from 'lucide-react';
+import { Bot, BoxIcon, Flower, FolderOpen, MessageSquare, Network, Palette, SettingsIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { create } from 'zustand';
@@ -51,6 +51,11 @@ const useBottomNavItems = () => {
     //   label: t('tools'),
     //   path: '/dashboard/tools',
     // },
+    {
+      icon: Network,
+      label: t('gateway'),
+      path: '/dashboard/gateway',
+    },
     {
       icon: SettingsIcon,
       label: t('settings'),

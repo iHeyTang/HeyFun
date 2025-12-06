@@ -525,3 +525,85 @@ model SystemVoices {
   @@index([createdAt])
   @@index([name])
 }
+
+// Gateway API密钥管理
+model GatewayApiKeys {
+  id             String    @id @default(cuid())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  organizationId String
+  // 密钥信息
+  name           String // 密钥名称
+  keyPrefix      String // 密钥前缀（用于显示，如 sk-xxxx）
+  encryptedKey   String    @db.Text // 加密后的完整密钥
+  // 状态和权限
+  isActive       Boolean   @default(true)
+  expiresAt      DateTime? // 过期时间
+  // 使用限制
+  rateLimit      Int? // 每分钟请求数限制
+  // 元数据
+  lastUsedAt     DateTime? // 最后使用时间
+  description    String?   @db.Text
+
+  // 关联的使用记录
+  usageRecords GatewayUsageRecords[]
+
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+  @@index([keyPrefix])
+  @@index([createdAt])
+}
+
+// Gateway使用量统计
+model GatewayUsageRecords {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  organizationId String
+  apiKeyId       String
+  // 请求信息
+  modelId        String // 使用的模型ID
+  endpoint       String // 端点路径
+  method         String // HTTP方法
+  // Token使用量
+  inputTokens    Int      @default(0)
+  outputTokens   Int      @default(0)
+  totalTokens    Int      @default(0)
+  // 请求元数据
+  statusCode     Int? // HTTP状态码
+  responseTime   Int? // 响应时间（毫秒）
+  errorMessage   String?  @db.Text // 错误信息
+  // IP地址（可选，用于安全审计）
+  ipAddress      String?
+
+  apiKey GatewayApiKeys @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([apiKeyId])
+  @@index([organizationId, createdAt])
+  @@index([modelId])
+  @@index([createdAt])
+}
+
+// Gateway模型配置（允许组织自定义模型可见性和配置）
+model GatewayModelConfigs {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+  // 模型信息
+  modelId        String // 模型ID
+  // 配置
+  isEnabled      Boolean  @default(true) // 是否启用
+  isVisible      Boolean  @default(true) // 是否在列表中可见
+  // 自定义配置
+  /// [JSONSchema] 自定义配置（如自定义名称、描述等）
+  customConfig   Json?
+  // 使用限制
+  rateLimit      Int? // 该模型的速率限制
+  maxTokens      Int? // 最大token限制
+
+  @@unique([organizationId, modelId])
+  @@index([organizationId])
+  @@index([organizationId, isEnabled])
+  @@index([modelId])
+}

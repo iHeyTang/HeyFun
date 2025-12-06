@@ -107,6 +107,7 @@
       "chat": "채팅",
       "tasks": "작업",
       "paintboard": "페인트보드",
+      "gateway": "AI 게이트웨이",
       "workspace": "작업 공간",
       "tools": "도구",
       "settings": "설정"
@@ -585,6 +586,93 @@
       "processing": "처리 중",
       "completed": "완료",
       "failed": "실패"
+    }
+  },
+  "gateway": {
+    "title": "AI 게이트웨이",
+    "description": "AI 게이트웨이 API 키를 관리하고 사용량을 모니터링하며 모델을 구성합니다",
+    "tabs": {
+      "apiKeys": "API 키",
+      "usage": "사용량",
+      "models": "모델 구성"
+    },
+    "actions": {
+      "createKey": "키 생성",
+      "edit": "편집",
+      "cancel": "취소",
+      "create": "생성",
+      "save": "저장",
+      "close": "닫기"
+    },
+    "form": {
+      "name": "이름",
+      "namePlaceholder": "키 이름 입력",
+      "description": "설명",
+      "descriptionPlaceholder": "키 설명 입력 (선택사항)",
+      "expiresAt": "만료 시간",
+      "rateLimit": "속도 제한",
+      "rateLimitPlaceholder": "분당 요청 수 (선택사항)",
+      "maxTokens": "최대 토큰 수",
+      "maxTokensPlaceholder": "최대 토큰 수 (선택사항)",
+      "modelId": "모델 ID"
+    },
+    "dialog": {
+      "createTitle": "API 키 생성",
+      "createDescription": "AI 게이트웨이에 액세스하기 위한 새 API 키를 생성합니다",
+      "editTitle": "API 키 편집",
+      "editDescription": "API 키 구성을 업데이트합니다",
+      "keyCreatedTitle": "키가 생성되었습니다",
+      "keyCreatedDescription": "이 키를 안전하게 보관하세요. 한 번만 표시됩니다",
+      "keyWarning": "경고: 이 키는 한 번만 표시됩니다. 즉시 복사하여 안전한 위치에 저장하세요."
+    },
+    "toast": {
+      "loadKeysFailed": "키 목록 로드 실패",
+      "nameRequired": "키 이름은 필수입니다",
+      "keyCreated": "API 키가 생성되었습니다",
+      "createKeyFailed": "API 키 생성 실패",
+      "keyUpdated": "API 키가 업데이트되었습니다",
+      "updateKeyFailed": "API 키 업데이트 실패",
+      "keyDeleted": "API 키가 삭제되었습니다",
+      "deleteKeyFailed": "API 키 삭제 실패",
+      "keyCopied": "키가 클립보드에 복사되었습니다",
+      "loadStatsFailed": "사용량 통계 로드 실패",
+      "loadConfigsFailed": "모델 구성 로드 실패",
+      "configUpdated": "모델 구성이 업데이트되었습니다",
+      "updateConfigFailed": "모델 구성 업데이트 실패"
+    },
+    "confirmDelete": "이 API 키를 삭제하시겠습니까?",
+    "rateLimit": "속도 제한",
+    "expiresAt": "만료 시간",
+    "lastUsedAt": "마지막 사용",
+    "enabled": "활성화",
+    "visible": "표시",
+    "provider": "공급자",
+    "emptyState": {
+      "keys": "API 키가 없습니다",
+      "usage": "사용 기록이 없습니다",
+      "configs": "모델 구성이 없습니다"
+    },
+    "stats": {
+      "totalRequests": "총 요청 수",
+      "totalTokens": "총 토큰 수",
+      "inputTokens": "입력 토큰 수",
+      "outputTokens": "출력 토큰 수"
+    },
+    "modelStats": {
+      "title": "모델 사용 통계",
+      "requests": "요청 수",
+      "tokens": "토큰 수",
+      "errors": "오류 수"
+    },
+    "timeRange": {
+      "1d": "최근 1일",
+      "7d": "최근 7일",
+      "30d": "최근 30일",
+      "90d": "최근 90일"
+    },
+    "providers": {
+      "selectPlaceholder": "공급자 선택",
+      "all": "전체"
     }
   }
 }

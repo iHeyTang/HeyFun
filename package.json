@@ -9,7 +9,8 @@
     "check-types": "turbo run check-types",
     "prisma:generate": "cd apps/app && bunx prisma generate",
     "postinstall": "bun prisma:generate",
-    "generate-keys": "node scripts/gen-certificate.js"
+    "generate-keys": "node scripts/gen-certificate.js",
+    "db:push": "cd apps/app && bunx prisma db push"
   },
   "devDependencies": {
     "prettier": "^3.6.2",

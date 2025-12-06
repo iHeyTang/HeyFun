@@ -5,13 +5,13 @@
 
 import { ChatClient, createChatClient } from './client';
 import { defaultModelRegistry, ModelRegistry } from './models';
-import type { ModelDefinition, ModelFilter } from './models';
+import type { ModelInfo, ModelFilter } from './models';
 import type { ProviderConfig } from './providers';
 
 // ============ 导出类型 ============
 export type { UnifiedChat } from './types';
 export type { ProviderConfig } from './providers';
-export type { ModelDefinition, ModelPricing, ModelCapabilities, ModelFilter } from './models';
+export type { ModelInfo, ModelPricing, ModelFilter } from './models';
 export type { ChatClientConfig } from './client';
 
 // ============ 导出类和函数 ============
@@ -59,9 +59,10 @@ export class ChatHost {
     const modelDef = this.registry.getModel(modelId);
     if (!modelDef) throw new Error(`Model not found: ${modelId}`);
 
-    const providerConfig = this.providerConfigs.get(modelDef.providerId);
+    const providerId = (modelDef.metadata?.providerId as string) || modelDef.provider;
+    const providerConfig = this.providerConfigs.get(providerId);
     if (!providerConfig) {
-      throw new Error(`Provider ${modelDef.providerId} not configured. Please set API key in ChatHost config or environment variables.`);
+      throw new Error(`Provider ${providerId} not configured. Please set API key in ChatHost config or environment variables.`);
     }
 
     return createChatClient({
@@ -72,28 +73,28 @@ export class ChatHost {
     });
   }
 
-  getModels(filter?: ModelFilter): ModelDefinition[] {
+  getModels(filter?: ModelFilter): ModelInfo[] {
     if (filter) return this.registry.filterModels(filter);
     return this.registry.getAllModels();
   }
 
-  getModelInfo(modelId: string): ModelDefinition | null {
+  getModelInfo(modelId: string): ModelInfo | null {
     return this.registry.getModel(modelId);
   }
 
-  searchModels(query: string): ModelDefinition[] {
+  searchModels(query: string): ModelInfo[] {
     return this.registry.searchModels(query);
   }
 
-  getFreeModels(): ModelDefinition[] {
+  getFreeModels(): ModelInfo[] {
     return this.registry.getFreeModels();
   }
 
-  getModelsByFamily(): Map<string, ModelDefinition[]> {
+  getModelsByFamily(): Map<string, ModelInfo[]> {
     return this.registry.groupByFamily();
   }
 
-  getModelsByProvider(): Map<string, ModelDefinition[]> {
+  getModelsByProvider(): Map<string, ModelInfo[]> {
     return this.registry.groupByProvider();
   }
 

@@ -107,6 +107,7 @@
       "chat": "聊天",
       "tasks": "任务",
       "paintboard": "画板",
+      "gateway": "AI 网关",
       "workspace": "工作空间",
       "tools": "工具",
       "settings": "设置"
@@ -327,6 +328,7 @@
       "aigc": "画板",
       "agents": "智能体",
       "voices": "音色",
+      "gateway": "AI 网关",
       "preferences": "偏好设置"
     }
   },
@@ -585,6 +587,93 @@
       "processing": "处理中",
       "completed": "已完成",
       "failed": "失败"
+    }
+  },
+  "gateway": {
+    "title": "AI 网关",
+    "description": "管理你的 AI 网关 API 密钥、监控使用量和配置模型",
+    "tabs": {
+      "apiKeys": "API 密钥",
+      "usage": "使用量",
+      "models": "模型配置"
+    },
+    "actions": {
+      "createKey": "创建密钥",
+      "edit": "编辑",
+      "cancel": "取消",
+      "create": "创建",
+      "save": "保存",
+      "close": "关闭"
+    },
+    "form": {
+      "name": "名称",
+      "namePlaceholder": "输入密钥名称",
+      "description": "描述",
+      "descriptionPlaceholder": "输入密钥描述（可选）",
+      "expiresAt": "过期时间",
+      "rateLimit": "速率限制",
+      "rateLimitPlaceholder": "每分钟请求数（可选）",
+      "maxTokens": "最大令牌数",
+      "maxTokensPlaceholder": "最大令牌数（可选）",
+      "modelId": "模型 ID"
+    },
+    "dialog": {
+      "createTitle": "创建 API 密钥",
+      "createDescription": "创建一个新的 API 密钥用于访问 AI 网关",
+      "editTitle": "编辑 API 密钥",
+      "editDescription": "更新 API 密钥配置",
+      "keyCreatedTitle": "密钥已创建",
+      "keyCreatedDescription": "请妥善保管此密钥，它只会显示一次",
+      "keyWarning": "警告：此密钥将只显示一次，请立即复制并保存到安全的地方。"
+    },
+    "toast": {
+      "loadKeysFailed": "加载密钥列表失败",
+      "nameRequired": "密钥名称是必填项",
+      "keyCreated": "API 密钥已创建",
+      "createKeyFailed": "创建 API 密钥失败",
+      "keyUpdated": "API 密钥已更新",
+      "updateKeyFailed": "更新 API 密钥失败",
+      "keyDeleted": "API 密钥已删除",
+      "deleteKeyFailed": "删除 API 密钥失败",
+      "keyCopied": "密钥已复制到剪贴板",
+      "loadStatsFailed": "加载使用量统计失败",
+      "loadConfigsFailed": "加载模型配置失败",
+      "configUpdated": "模型配置已更新",
+      "updateConfigFailed": "更新模型配置失败"
+    },
+    "confirmDelete": "确定要删除此 API 密钥吗？",
+    "rateLimit": "速率限制",
+    "expiresAt": "过期时间",
+    "lastUsedAt": "最后使用",
+    "enabled": "启用",
+    "visible": "可见",
+    "provider": "提供商",
+    "emptyState": {
+      "keys": "暂无 API 密钥",
+      "usage": "暂无使用记录",
+      "configs": "暂无模型配置"
+    },
+    "stats": {
+      "totalRequests": "总请求数",
+      "totalTokens": "总令牌数",
+      "inputTokens": "输入令牌数",
+      "outputTokens": "输出令牌数"
+    },
+    "modelStats": {
+      "title": "模型使用统计",
+      "requests": "请求数",
+      "tokens": "令牌数",
+      "errors": "错误数"
+    },
+    "timeRange": {
+      "1d": "最近 1 天",
+      "7d": "最近 7 天",
+      "30d": "最近 30 天",
+      "90d": "最近 90 天"
+    },
+    "providers": {
+      "selectPlaceholder": "选择提供商",
+      "all": "全部"
     }
   }
 }
