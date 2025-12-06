@@ -1,8 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { SignJWT } from 'jose';
 import { NextResponse } from 'next/server';
-
-const SECRET = new TextEncoder().encode(process.env.DESKTOP_AUTH_SECRET || process.env.CLERK_SECRET_KEY || 'default-secret-key');
+import { getDesktopAuthSecret } from '@/lib/server/desktop-auth';
 
 export async function POST() {
   const { userId } = await auth();
@@ -13,6 +12,7 @@ export async function POST() {
   }
 
   // 生成自定义的长期 token（7 天有效）
+  const SECRET = getDesktopAuthSecret();
   const token = await new SignJWT({
     sub: userId,
     email: user.primaryEmailAddress?.emailAddress,

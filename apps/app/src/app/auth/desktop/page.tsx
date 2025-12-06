@@ -52,9 +52,9 @@ export default function DesktopAuthPage() {
           // 构建回调 URL
           // 检查是否是自定义协议（如 okey://）
           const isCustomProtocol = redirectUri.match(/^[a-z]+:\/\//i);
-
+          
           let callbackUrl: string;
-
+          
           if (isCustomProtocol) {
             // 对于自定义协议，手动构建 URL
             const separator = redirectUri.includes('?') ? '&' : '?';
@@ -110,38 +110,42 @@ export default function DesktopAuthPage() {
   // 未登录时显示登录组件
   if (!isLoaded) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
       </div>
     );
   }
 
   if (!isSignedIn) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-4">
-        <h1 className="mb-6 text-2xl font-bold">登录到 Okey</h1>
-        <p className="mb-8 text-gray-600">登录后将自动返回桌面应用</p>
-        <SignIn afterSignInUrl={`/auth/desktop?${searchParams.toString()}`} redirectUrl={`/auth/desktop?${searchParams.toString()}`} />
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <h1 className="text-2xl font-bold mb-6">登录到 Okey</h1>
+        <p className="text-gray-600 mb-8">登录后将自动返回桌面应用</p>
+        <SignIn 
+          afterSignInUrl={`/auth/desktop?${searchParams.toString()}`}
+          redirectUrl={`/auth/desktop?${searchParams.toString()}`}
+        />
       </div>
     );
   }
 
   // 已登录，显示状态
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
       {status === 'redirecting' && (
         <>
-          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4" />
           <p className="text-lg">正在返回 Okey 应用...</p>
-          <p className="mt-2 text-sm text-gray-500">如果没有自动跳转，请手动打开 Okey</p>
+          <p className="text-sm text-gray-500 mt-2">如果没有自动跳转，请手动打开 Okey</p>
         </>
       )}
       {status === 'error' && (
         <>
           <p className="text-lg text-red-600">认证失败</p>
-          <p className="mt-2 text-sm text-gray-500">请关闭此页面并重试</p>
+          <p className="text-sm text-gray-500 mt-2">请关闭此页面并重试</p>
         </>
       )}
     </div>
   );
 }
+
