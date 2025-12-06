@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function AuthCallbackPage() {
+export const dynamic = 'force-dynamic';
+
+function CallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -47,5 +49,21 @@ export default function AuthCallbackPage() {
         <p className="text-lg">正在跳转...</p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center">
+          <div className="text-center">
+            <p className="text-lg">正在跳转...</p>
+          </div>
+        </div>
+      }
+    >
+      <CallbackContent />
+    </Suspense>
   );
 }

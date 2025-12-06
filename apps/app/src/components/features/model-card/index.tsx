@@ -1,12 +1,12 @@
 import { formatContextLength } from '@/lib/shared/number';
 import { cn } from '@/lib/utils';
-import { ModelDefinition } from '@repo/llm/chat';
+import { ModelInfo } from '@repo/llm/chat';
 import { ImageIcon, MessageCircle, MessageCircleIcon, Notebook } from 'lucide-react';
 import { ReactNode } from 'react';
 import { ModelIcon } from '../model-icon';
 
 interface ModelCardProps {
-  model: ModelDefinition;
+  model: ModelInfo;
   onClick?: () => void;
   className?: string;
   rightContent?: ReactNode;
