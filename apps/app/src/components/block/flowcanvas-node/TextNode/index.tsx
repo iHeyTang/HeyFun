@@ -23,7 +23,10 @@ export default function TextNode({ data, id }: TextNodeProps) {
   useEffect(() => {
     const newText = data.output?.texts?.list?.[0] || '';
     if (!isEditing) {
-      setText(newText);
+      // 使用 requestAnimationFrame 避免在 effect 中直接调用 setState
+      requestAnimationFrame(() => {
+        setText(newText);
+      });
     }
   }, [data.output?.texts, isEditing]);
 

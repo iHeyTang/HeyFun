@@ -46,7 +46,7 @@ export function useWorkflowRunner({ onSchemaChange }: { onSchemaChange?: (schema
       }
       onSchemaChange?.({ nodes, edges });
     },
-    [flowGraph.reactFlowInstance.getNodes, flowGraph.reactFlowInstance.getEdges, onSchemaChange],
+    [flowGraph.reactFlowInstance, onSchemaChange],
   );
 
   // 运行工作流

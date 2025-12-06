@@ -41,14 +41,17 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
   const tCategories = useTranslations('common.aigcModelSelector.categories');
 
   // 生成类型名称映射
-  const generationTypeNames = {
-    'text-to-image': tTypes('textToImage'),
-    'image-to-image': tTypes('imageToImage'),
-    'text-to-video': tTypes('textToVideo'),
-    'image-to-video': tTypes('imageToVideo'),
-    'keyframe-to-video': tTypes('keyframeToVideo'),
-    'text-to-speech': tTypes('textToSpeech'),
-  };
+  const generationTypeNames = useMemo(
+    () => ({
+      'text-to-image': tTypes('textToImage'),
+      'image-to-image': tTypes('imageToImage'),
+      'text-to-video': tTypes('textToVideo'),
+      'image-to-video': tTypes('imageToVideo'),
+      'keyframe-to-video': tTypes('keyframeToVideo'),
+      'text-to-speech': tTypes('textToSpeech'),
+    }),
+    [tTypes],
+  );
 
   // 分类配置
   const categories = [
@@ -92,7 +95,7 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
     }
 
     return filtered;
-  }, [models, searchQuery, activeCategory]);
+  }, [models, searchQuery, activeCategory, generationTypeNames]);
 
   const handleModelSelect = (modelName: string) => {
     onModelSelect(modelName);

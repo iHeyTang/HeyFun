@@ -28,7 +28,7 @@ export const useLLM = () => {
       initiated.current = true;
       setInitiatedState(true);
     });
-  }, [store.refreshAvailableModels]);
+  }, [store]);
 
   return { ...store, initiate, initiated: initiatedState };
 };
@@ -58,7 +58,7 @@ export const useAigc = () => {
       initiated.current = true;
       setInitiatedState(true);
     });
-  }, [store.refreshAvailableModels]);
+  }, [store]);
 
   return { ...store, initiate, initiated: initiatedState };
 };
@@ -92,7 +92,7 @@ export const useAigcVoiceList = (provider: string, modelName: string) => {
       initiated.current = true;
       setInitiatedState(true);
     });
-  }, [provider, modelName, store.refreshVoiceList]);
+  }, [provider, modelName, store]);
 
   return {
     voiceList,

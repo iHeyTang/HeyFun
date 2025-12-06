@@ -295,7 +295,10 @@ const MentionListInner = <T extends MentionItem>(props: MentionListProps<T>, ref
     if (groupedItems.length > 0 && !selectedType) {
       const firstGroup = groupedItems[0];
       if (firstGroup) {
-        setSelectedType(firstGroup[0]);
+        // 使用 requestAnimationFrame 避免在 effect 中直接调用 setState
+        requestAnimationFrame(() => {
+          setSelectedType(firstGroup[0]);
+        });
       }
     }
   }, [groupedItems, selectedType]);
@@ -321,7 +324,12 @@ const MentionListInner = <T extends MentionItem>(props: MentionListProps<T>, ref
   };
 
   // 当切换类型时重置选中索引
-  useEffect(() => setSelectedIndex(0), [selectedType]);
+  useEffect(() => {
+    // 使用 requestAnimationFrame 避免在 effect 中直接调用 setState
+    requestAnimationFrame(() => {
+      setSelectedIndex(0);
+    });
+  }, [selectedType]);
 
   useImperativeHandle(ref, () => ({
     onKeyDown: ({ event }) => {

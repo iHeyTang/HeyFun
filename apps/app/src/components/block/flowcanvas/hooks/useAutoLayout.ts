@@ -36,13 +36,7 @@ export const useAutoLayout = () => {
         });
       });
     },
-    [
-      flowGraph.reactFlowInstance.getNodes,
-      flowGraph.reactFlowInstance.getEdges,
-      flowGraph.reactFlowInstance.setNodes,
-      flowGraph.reactFlowInstance.setEdges,
-      flowGraph.reactFlowInstance.fitView,
-    ],
+    [flowGraph.reactFlowInstance],
   );
 
   /**
@@ -59,7 +53,7 @@ export const useAutoLayout = () => {
 
       flowGraph.reactFlowInstance.setNodes(updatedNodes);
     },
-    [flowGraph.reactFlowInstance.getNodes, flowGraph.reactFlowInstance.getEdges, flowGraph.reactFlowInstance.setNodes],
+    [flowGraph.reactFlowInstance],
   );
 
   return { autoLayout, layoutGroup };

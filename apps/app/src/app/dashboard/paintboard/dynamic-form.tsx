@@ -199,7 +199,7 @@ export const DynamicForm = (props: DynamicFormProps) => {
   // 构建自定义渲染映射表
   const renderMap = useMemo<RenderMap>(() => {
     return buildRenderMapByGenerationType(generationType, provider, modelName, t);
-  }, [generationType, provider, modelName]);
+  }, [generationType, provider, modelName, t]);
 
   // 渲染上下文
   const renderContext = useMemo(

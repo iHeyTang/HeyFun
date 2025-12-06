@@ -25,18 +25,21 @@ export const usePreferences = () => {
     },
   );
 
-  const update = useCallback(async (preferences: UpdatePreferencesArgs) => {
-    const res = await updatePreferences(preferences);
-    if (res.error) {
-      throw new Error('Failed to update preferences');
-    }
-    mutate({
-      language: preferences.language,
-      defaultChatbotModel: preferences.defaultChatbotModel || undefined,
-      defaultAgentModel: preferences.defaultAgentModel || undefined,
-    });
-    return res.data;
-  }, []);
+  const update = useCallback(
+    async (preferences: UpdatePreferencesArgs) => {
+      const res = await updatePreferences(preferences);
+      if (res.error) {
+        throw new Error('Failed to update preferences');
+      }
+      mutate({
+        language: preferences.language,
+        defaultChatbotModel: preferences.defaultChatbotModel || undefined,
+        defaultAgentModel: preferences.defaultAgentModel || undefined,
+      });
+      return res.data;
+    },
+    [mutate],
+  );
 
   return { data, isLoading, error, update };
 };
