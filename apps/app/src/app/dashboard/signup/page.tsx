@@ -8,7 +8,8 @@ export default function SignUpPage() {
   const searchParams = useSearchParams();
 
   const redirectUrl = useMemo(() => {
-    const callback = searchParams.get('callback');
+    // 优先使用 callback，如果没有则使用 redirect_url
+    const callback = searchParams.get('callback') || searchParams.get('redirect_url');
     const app = searchParams.get('app');
 
     if (callback || app) {
@@ -23,7 +24,8 @@ export default function SignUpPage() {
   }, [searchParams]);
 
   const signInUrl = useMemo(() => {
-    const callback = searchParams.get('callback');
+    // 优先使用 callback，如果没有则使用 redirect_url
+    const callback = searchParams.get('callback') || searchParams.get('redirect_url');
     const app = searchParams.get('app');
 
     if (callback || app) {
