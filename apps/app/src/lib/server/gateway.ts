@@ -105,9 +105,9 @@ async function verifyDesktopToken(token: string): Promise<{ userId: string } | n
   try {
     const SECRET = getDesktopAuthSecret();
     const { payload } = await jwtVerify(token, SECRET);
-    
+
     console.log('Desktop token payload:', { sub: payload.sub, email: payload.email });
-    
+
     if (payload.sub && typeof payload.sub === 'string') {
       return { userId: payload.sub };
     }
@@ -115,7 +115,7 @@ async function verifyDesktopToken(token: string): Promise<{ userId: string } | n
     // JWT 验证失败
     console.error('Desktop token verification failed:', error instanceof Error ? error.message : error);
   }
-  
+
   return null;
 }
 
@@ -129,36 +129,36 @@ async function getOrganizationIdByUserId(userId: string): Promise<string | null>
       where: { userId },
       orderBy: { createdAt: 'asc' }, // 获取最早加入的组织（通常是主组织）
     });
-    
+
     if (orgUser) {
       console.log('Found organization for userId:', userId, 'orgId:', orgUser.organizationId);
       return orgUser.organizationId;
     }
-    
+
     console.warn('No organization found in OrganizationUsers for userId:', userId);
-    
+
     // 方法2: 尝试通过 ownerId 查找用户拥有的组织
     const ownedOrg = await prisma.organizations.findFirst({
       where: { ownerId: userId },
       orderBy: { createdAt: 'asc' },
     });
-    
+
     if (ownedOrg) {
       console.log('Found owned organization for userId:', userId, 'orgId:', ownedOrg.id);
       return ownedOrg.id;
     }
-    
+
     console.warn('No owned organization found for userId:', userId);
-    
+
     // 方法3: 如果数据库中没有，尝试通过 Clerk API 获取用户的组织列表
     try {
       const clerk = await clerkClient();
-      
+
       // 获取用户的组织成员关系列表
       const organizationMemberships = await clerk.users.getOrganizationMembershipList({
         userId,
       });
-      
+
       if (organizationMemberships.data && organizationMemberships.data.length > 0) {
         // 获取第一个组织的 ID（通常是主组织）
         const firstMembership = organizationMemberships.data[0];
@@ -166,17 +166,17 @@ async function getOrganizationIdByUserId(userId: string): Promise<string | null>
           console.warn('Invalid organization membership data');
           return null;
         }
-        
+
         const orgId = firstMembership.organization.id;
         const orgName = firstMembership.organization.name || 'Default Organization';
         console.log('Found organization from Clerk API for userId:', userId, 'orgId:', orgId);
-        
+
         // 可选：将组织信息同步到数据库（如果不存在）
         try {
           const existingOrg = await prisma.organizations.findUnique({
             where: { id: orgId },
           });
-          
+
           if (!existingOrg) {
             // 如果数据库中没有该组织，创建它
             await prisma.organizations.create({
@@ -189,7 +189,7 @@ async function getOrganizationIdByUserId(userId: string): Promise<string | null>
             });
             console.log('Created organization in database:', orgId);
           }
-          
+
           // 确保 OrganizationUsers 记录存在
           const existingOrgUser = await prisma.organizationUsers.findFirst({
             where: {
@@ -197,7 +197,7 @@ async function getOrganizationIdByUserId(userId: string): Promise<string | null>
               organizationId: orgId,
             },
           });
-          
+
           if (!existingOrgUser) {
             await prisma.organizationUsers.create({
               data: {
@@ -211,10 +211,10 @@ async function getOrganizationIdByUserId(userId: string): Promise<string | null>
           console.error('Failed to sync organization to database:', dbError);
           // 即使数据库同步失败，也返回组织 ID
         }
-        
+
         return orgId;
       }
-      
+
       // 如果用户没有组织，尝试从用户元数据获取
       const user = await clerk.users.getUser(userId);
       if (user.publicMetadata?.primaryOrganizationId) {
@@ -222,7 +222,7 @@ async function getOrganizationIdByUserId(userId: string): Promise<string | null>
         console.log('Found organization from user metadata:', orgId);
         return orgId;
       }
-      
+
       console.warn('No organization found for userId:', userId);
     } catch (clerkError) {
       console.error('Failed to get organization from Clerk:', clerkError);
@@ -230,7 +230,7 @@ async function getOrganizationIdByUserId(userId: string): Promise<string | null>
   } catch (error) {
     console.error('Failed to get organization by userId:', error);
   }
-  
+
   return null;
 }
 
@@ -240,12 +240,12 @@ async function getOrganizationIdByUserId(userId: string): Promise<string | null>
  */
 export async function verifyGatewayAuth(authHeader: string | null): Promise<{ organizationId: string; apiKeyId: string | null } | null> {
   console.log('verifyGatewayAuth called with authHeader:', authHeader ? `${authHeader.substring(0, 20)}...` : 'null');
-  
+
   // 模式1: 如果提供了 Authorization header，优先尝试使用 API Key 鉴权
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
     console.log('Token type check:', token.startsWith('sk-') ? 'API Key' : 'JWT Token');
-    
+
     // 尝试作为 Gateway API Key 验证（格式: sk-{prefix}-{random}）
     if (token.startsWith('sk-')) {
       const keyInfo = await verifyGatewayApiKey(token);
@@ -260,7 +260,7 @@ export async function verifyGatewayAuth(authHeader: string | null): Promise<{ or
       // 如果提供了 API Key 但验证失败，不尝试其他方式（安全考虑）
       return null;
     }
-    
+
     // 尝试作为桌面端 JWT token 验证
     console.log('Attempting desktop token verification...');
     const desktopTokenInfo = await verifyDesktopToken(token);
@@ -279,7 +279,7 @@ export async function verifyGatewayAuth(authHeader: string | null): Promise<{ or
     } else {
       console.error('Desktop token verification failed');
     }
-    
+
     // 如果提供了 token 但验证失败，不尝试 Clerk session 鉴权（安全考虑）
     return null;
   }
