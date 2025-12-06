@@ -9,7 +9,7 @@ const isPublicRoute = createRouteMatcher([
   '/favicon.ico',
   '/signin(.*)',
   '/signup(.*)',
-  '/auth/callback(.*)',
+  '/auth/desktop(.*)',
   '/api/auth/(.*)',
   '/share(.*)',
   '/api/share(.*)',
@@ -25,23 +25,21 @@ export default clerkMiddleware(async (auth, request) => {
   const { userId } = await auth();
   const url = new URL(request.url);
 
-  // 如果用户已登录，检查是否有回调参数需要处理
+  // 如果用户已登录，检查是否有桌面端认证参数需要处理
   if (userId) {
-    const redirectUrl = url.searchParams.get('redirect_url');
-    const callback = url.searchParams.get('callback');
+    const redirectUri = url.searchParams.get('redirect_uri');
+    const codeChallenge = url.searchParams.get('code_challenge');
+    const state = url.searchParams.get('state');
 
-    // 如果访问首页且有回调参数，重定向到回调页面
-    if (url.pathname === '/' && (redirectUrl || callback)) {
+    // 如果访问首页且有桌面端认证参数，重定向到桌面端认证页面
+    if (url.pathname === '/' && (redirectUri || codeChallenge || state)) {
       const params = new URLSearchParams();
-      if (callback) params.set('callback', callback);
-      if (redirectUrl && !callback) params.set('callback', redirectUrl);
-      if (url.searchParams.get('app')) params.set('app', url.searchParams.get('app')!);
+      if (redirectUri) params.set('redirect_uri', redirectUri);
+      if (codeChallenge) params.set('code_challenge', codeChallenge);
+      if (state) params.set('state', state);
 
-      return NextResponse.redirect(new URL(`/auth/callback?${params.toString()}`, request.url));
+      return NextResponse.redirect(new URL(`/auth/desktop?${params.toString()}`, request.url));
     }
-
-    // 如果访问首页且没有回调参数，但来自 accounts.heyfun.ai，可能需要检查 referer
-    // 这里我们主要依赖 URL 参数，因为 Clerk 应该通过 redirect_url 传递参数
   }
 
   if (!isPublicRoute(request)) {
