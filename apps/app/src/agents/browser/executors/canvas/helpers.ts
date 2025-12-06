@@ -23,7 +23,7 @@ export function updateCanvasState(context: ToolExecutionContext, state: any) {
   if (!context.canvasRef?.current) {
     throw new Error('Canvas reference not available');
   }
-  
+
   // 使用 importCanvas 来更新状态
   // importCanvas 内部已经使用 reactFlowInstance.setNodes/setEdges 直接更新
   context.canvasRef.current.importCanvas(JSON.stringify(state));

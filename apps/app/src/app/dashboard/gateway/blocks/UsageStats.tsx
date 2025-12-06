@@ -26,7 +26,7 @@ export function UsageStats({ refreshTrigger }: UsageStatsProps) {
     try {
       const endDate = new Date();
       const startDate = new Date();
-      
+
       switch (timeRange) {
         case '1d':
           startDate.setDate(startDate.getDate() - 1);
@@ -99,7 +99,7 @@ export function UsageStats({ refreshTrigger }: UsageStatsProps) {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-          <div className="group relative w-full cursor-default select-none rounded-lg bg-muted/30 px-4 py-3 text-left transition-all hover:bg-muted">
+          <div className="bg-muted/30 hover:bg-muted group relative w-full cursor-default select-none rounded-lg px-4 py-3 text-left transition-all">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-[12px]">{t('stats.totalRequests')}</p>
@@ -111,7 +111,7 @@ export function UsageStats({ refreshTrigger }: UsageStatsProps) {
             </div>
           </div>
 
-          <div className="group relative w-full cursor-default select-none rounded-lg bg-muted/30 px-4 py-3 text-left transition-all hover:bg-muted">
+          <div className="bg-muted/30 hover:bg-muted group relative w-full cursor-default select-none rounded-lg px-4 py-3 text-left transition-all">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-[12px]">{t('stats.totalTokens')}</p>
@@ -123,7 +123,7 @@ export function UsageStats({ refreshTrigger }: UsageStatsProps) {
             </div>
           </div>
 
-          <div className="group relative w-full cursor-default select-none rounded-lg bg-muted/30 px-4 py-3 text-left transition-all hover:bg-muted">
+          <div className="bg-muted/30 hover:bg-muted group relative w-full cursor-default select-none rounded-lg px-4 py-3 text-left transition-all">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-[12px]">{t('stats.inputTokens')}</p>
@@ -135,7 +135,7 @@ export function UsageStats({ refreshTrigger }: UsageStatsProps) {
             </div>
           </div>
 
-          <div className="group relative w-full cursor-default select-none rounded-lg bg-muted/30 px-4 py-3 text-left transition-all hover:bg-muted">
+          <div className="bg-muted/30 hover:bg-muted group relative w-full cursor-default select-none rounded-lg px-4 py-3 text-left transition-all">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-[12px]">{t('stats.outputTokens')}</p>
@@ -157,7 +157,7 @@ export function UsageStats({ refreshTrigger }: UsageStatsProps) {
             {stats.modelStats.map((model: any) => (
               <div
                 key={model.modelId}
-                className="group relative w-full cursor-default select-none rounded-lg bg-muted/30 px-4 py-3 text-left transition-all hover:bg-muted"
+                className="bg-muted/30 hover:bg-muted group relative w-full cursor-default select-none rounded-lg px-4 py-3 text-left transition-all"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -206,4 +206,3 @@ export function UsageStats({ refreshTrigger }: UsageStatsProps) {
     </div>
   );
 }
-

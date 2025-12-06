@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     // 验证鉴权（支持 API Key 或 Clerk 用户鉴权）
     const authHeader = request.headers.get('authorization');
     const authInfo = await verifyGatewayAuth(authHeader);
-    
+
     if (!authInfo) {
       statusCode = 401;
       return NextResponse.json(
