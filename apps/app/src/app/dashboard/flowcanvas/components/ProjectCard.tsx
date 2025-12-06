@@ -1,8 +1,9 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Clock } from 'lucide-react';
+import { formatTime } from '@/lib/shared/time';
+import { cn } from '@/lib/utils';
+import { Trash2, Clock, FileText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 interface FlowCanvasProject {
@@ -21,53 +22,44 @@ interface ProjectCardProps {
 export default function ProjectCard({ project, onDelete }: ProjectCardProps) {
   const t = useTranslations('flowcanvas.project');
 
-  // 格式化时间
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   return (
-    <Card
-      className="bg-card group relative cursor-pointer overflow-hidden border-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+    <div
       onClick={() => window.open(`/dashboard/flowcanvas/${project.id}`, '_blank')}
+      className={cn('bg-muted/30 hover:bg-muted group relative w-full cursor-pointer select-none rounded-lg px-4 py-3 text-left transition-all')}
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="min-w-0 flex-1">
-            <CardTitle className="text-card-foreground group-hover:text-card-foreground/80 truncate text-lg font-semibold transition-colors">
-              {project.name}
-            </CardTitle>
-          </div>
-          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="hover:bg-destructive/10 hover:text-destructive h-8 w-8 p-0"
-              onClick={e => {
-                e.stopPropagation();
-                onDelete(project.id, project.name);
-              }}
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            {/* 项目名称 */}
+            <div className="items-baseline gap-2">
+              <div className="text-foreground text-[14px] font-medium">{project.name}</div>
+            </div>
+
+            {/* 更新时间 */}
+            <div className="text-muted-foreground flex items-center text-[11px]">
+              <Clock className="mr-1 h-3 w-3" />
+              <span>
+                {t('updatedAt')} {formatTime(project.updatedAt.getTime())}
+              </span>
+            </div>
           </div>
         </div>
-      </CardHeader>
 
-      <CardContent className="pt-0">
-        <div className="text-muted-foreground flex items-center gap-1 text-xs">
-          <Clock className="h-3 w-3" />
-          <span>
-            {t('updatedAt')} {formatTime(project.updatedAt)}
-          </span>
+        {/* 删除按钮 */}
+        <div className="flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hover:bg-destructive/10 hover:text-destructive h-8 w-8 p-0"
+            onClick={e => {
+              e.stopPropagation();
+              onDelete(project.id, project.name);
+            }}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
         </div>
-      </CardContent>
-
-      {/* 悬停时的渐变覆盖层 */}
-      <div className="to-muted/20 pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-    </Card>
+      </div>
+    </div>
   );
 }
