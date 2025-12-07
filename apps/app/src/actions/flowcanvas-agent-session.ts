@@ -2,7 +2,7 @@
 
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
-import CHAT from '@repo/llm/chat';
+import type { ModelInfo } from '@repo/llm/chat';
 
 /**
  * FlowCanvas Project Agent Sessions Actions
@@ -116,11 +116,30 @@ export const deleteFlowCanvasAgentSession = withUserAuth(async ({ orgId, args }:
   }
 });
 
-// 获取模型列表（从 CHAT 模块）
+// 获取模型列表（从数据库加载）
 export const getAvailableModels = withUserAuth(async () => {
   try {
-    // 返回所有已注册的模型定义
-    const models = CHAT.registry.getAllModels();
+    // 从数据库加载所有模型定义
+    const definitions = await prisma.systemModelDefinitions.findMany({
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const models: ModelInfo[] = definitions.map(def => ({
+      id: def.modelId,
+      name: def.name,
+      provider: def.provider,
+      family: def.family,
+      type: (def.type as 'language' | 'embedding' | 'image') || undefined,
+      description: def.description || undefined,
+      contextLength: def.contextLength || undefined,
+      supportsStreaming: def.supportsStreaming,
+      supportsFunctionCalling: def.supportsFunctionCalling,
+      supportsVision: def.supportsVision,
+      pricing: def.pricing as ModelInfo['pricing'] | undefined,
+      enabled: def.enabled,
+      metadata: (def.metadata as Record<string, any>) || undefined,
+    }));
+
     return models;
   } catch (error) {
     console.error('Error getting available models:', error);

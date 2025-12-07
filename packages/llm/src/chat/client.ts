@@ -1,12 +1,12 @@
 import { UnifiedChat } from './types';
 import { createProvider, BaseProvider } from './providers';
 import { getAdapter, BaseAdapter } from './adapters';
-import { defaultModelRegistry, ModelRegistry, ModelInfo } from './models';
+import { ModelRegistry, ModelInfo } from './models';
 
 export interface ChatClientConfig {
   modelId: string;
   apiKey?: string;
-  registry?: ModelRegistry;
+  models?: ModelInfo[]; // 模型列表（从数据库加载）
   timeout?: number;
   maxRetries?: number;
   [key: string]: any;
@@ -21,8 +21,8 @@ export class ChatClient {
   public totalCompletionTokens: number = 0;
 
   constructor(private config: ChatClientConfig) {
-    const registry = config.registry || defaultModelRegistry;
-    const model = registry.getModel(config.modelId);
+    const models = config.models || [];
+    const model = ModelRegistry.getModel(models, config.modelId);
     if (!model) throw new Error(`Model not found: ${config.modelId}`);
     this.modelDef = model;
 

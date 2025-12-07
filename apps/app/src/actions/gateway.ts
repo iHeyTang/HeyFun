@@ -3,8 +3,7 @@
 import { withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
 import { encryptTextWithPublicKey } from '@/lib/server/crypto';
-import { getModelConfigsMap } from '@/lib/server/gateway';
-import CHAT from '@repo/llm/chat';
+import type { ModelInfo } from '@repo/llm/chat';
 import crypto from 'crypto';
 
 /**
@@ -212,76 +211,28 @@ export const getUsageStats = withUserAuth(
 );
 
 /**
- * 获取模型配置列表（返回完整模型信息 + 配置）
+ * 获取模型列表（从数据库加载）
  */
-export const getModelConfigs = withUserAuth(async ({ orgId }) => {
-  const allModels = CHAT.getModels();
-  const configMap = await getModelConfigsMap(orgId);
-
-  return allModels.map(model => {
-    const config = configMap.get(model.id);
-    return {
-      model, // 完整的模型信息
-      config: {
-        isEnabled: config?.isEnabled ?? true,
-        isVisible: config?.isVisible ?? true,
-        customConfig: config?.customConfig || null,
-        rateLimit: config?.rateLimit || null,
-        maxTokens: config?.maxTokens || null,
-      },
-    };
+export const getModelList = withUserAuth(async () => {
+  const definitions = await prisma.systemModelDefinitions.findMany({
+    orderBy: { createdAt: 'asc' },
   });
+
+  const models: ModelInfo[] = definitions.map(def => ({
+    id: def.modelId,
+    name: def.name,
+    provider: def.provider,
+    family: def.family,
+    type: (def.type as 'language' | 'embedding' | 'image') || undefined,
+    description: def.description || undefined,
+    contextLength: def.contextLength || undefined,
+    supportsStreaming: def.supportsStreaming,
+    supportsFunctionCalling: def.supportsFunctionCalling,
+    supportsVision: def.supportsVision,
+    pricing: def.pricing as ModelInfo['pricing'] | undefined,
+    enabled: def.enabled,
+    metadata: (def.metadata as Record<string, any>) || undefined,
+  }));
+
+  return models;
 });
-
-/**
- * 更新模型配置
- */
-export const updateModelConfig = withUserAuth(
-  async ({
-    orgId,
-    args,
-  }: {
-    orgId: string;
-    args: {
-      modelId: string;
-      isEnabled?: boolean;
-      isVisible?: boolean;
-      customConfig?: any;
-      rateLimit?: number | null;
-      maxTokens?: number | null;
-    };
-  }) => {
-    // 验证模型存在
-    const model = CHAT.getModelInfo(args.modelId);
-    if (!model) {
-      throw new Error('Model not found');
-    }
-
-    const config = await prisma.gatewayModelConfigs.upsert({
-      where: {
-        organizationId_modelId: {
-          organizationId: orgId,
-          modelId: args.modelId,
-        },
-      },
-      create: {
-        organizationId: orgId,
-        modelId: args.modelId,
-        isEnabled: args.isEnabled ?? true,
-        isVisible: args.isVisible ?? true,
-        customConfig: args.customConfig,
-        rateLimit: args.rateLimit,
-        maxTokens: args.maxTokens,
-      },
-      update: {
-        isEnabled: args.isEnabled,
-        isVisible: args.isVisible,
-        customConfig: args.customConfig,
-        rateLimit: args.rateLimit,
-        maxTokens: args.maxTokens,
-      },
-    });
-
-    return config;
-  },
-);

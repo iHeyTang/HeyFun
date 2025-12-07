@@ -8,14 +8,14 @@
  * 模型定价信息
  */
 export interface ModelPricing {
-  /** 输入价格（每 1K tokens） */
-  input?: number;
-  /** 输出价格（每 1K tokens） */
-  output?: number;
-  /** 输入缓存读取价格（每 1K tokens） */
-  inputCacheRead?: number;
-  /** 输入缓存写入价格（每 1K tokens） */
-  inputCacheWrite?: number;
+  /** 输入价格（每 1 token） */
+  input?: number | string;
+  /** 输出价格（每 1 token） */
+  output?: number | string;
+  /** 输入缓存读取价格（每 1 token） */
+  inputCacheRead?: number | string;
+  /** 输入缓存写入价格（每 1 token） */
+  inputCacheWrite?: number | string;
   /** 额外描述信息 */
   extraDescription?: string;
   /** 货币单位 */

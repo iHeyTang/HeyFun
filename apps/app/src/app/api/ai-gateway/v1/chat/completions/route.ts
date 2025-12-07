@@ -106,6 +106,9 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+
+    // 设置模型列表到 CHAT 实例
+    CHAT.setModels(availableModels);
     const llmClient = CHAT.createClient(modelId);
 
     // 转换消息格式

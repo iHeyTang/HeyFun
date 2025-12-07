@@ -4,7 +4,7 @@
  */
 
 import { ChatClient, createChatClient } from './client';
-import { defaultModelRegistry, ModelRegistry } from './models';
+import { ModelRegistry } from './models';
 import type { ModelInfo, ModelFilter } from './models';
 import type { ProviderConfig } from './providers';
 
@@ -25,7 +25,7 @@ export {
   getAvailableProviders,
 } from './providers';
 
-export { ModelRegistry, defaultModelRegistry, modelDefinitions } from './models';
+export { ModelRegistry } from './models';
 
 export { ChatClient, createChatClient } from './client';
 
@@ -42,10 +42,10 @@ export interface ChatHostConfig {
 
 export class ChatHost {
   private providerConfigs: Map<string, ProviderConfig> = new Map();
-  public registry: ModelRegistry;
+  private models: ModelInfo[] = [];
 
-  constructor(config: ChatHostConfig, registry?: ModelRegistry) {
-    this.registry = registry || defaultModelRegistry;
+  constructor(config: ChatHostConfig, models: ModelInfo[] = []) {
+    this.models = models;
 
     if (config.openai) this.providerConfigs.set('openai', config.openai);
     if (config.anthropic) this.providerConfigs.set('anthropic', config.anthropic);
@@ -55,8 +55,15 @@ export class ChatHost {
     if (config.vercel) this.providerConfigs.set('vercel', config.vercel);
   }
 
+  /**
+   * 设置模型列表（从数据库加载）
+   */
+  setModels(models: ModelInfo[]): void {
+    this.models = models;
+  }
+
   createClient(modelId: string, overrideConfig?: Partial<ProviderConfig>): ChatClient {
-    const modelDef = this.registry.getModel(modelId);
+    const modelDef = ModelRegistry.getModel(this.models, modelId);
     if (!modelDef) throw new Error(`Model not found: ${modelId}`);
 
     const providerId = (modelDef.metadata?.providerId as string) || modelDef.provider;
@@ -67,35 +74,35 @@ export class ChatHost {
 
     return createChatClient({
       modelId,
-      registry: this.registry,
+      models: this.models,
       ...providerConfig,
       ...overrideConfig,
     });
   }
 
   getModels(filter?: ModelFilter): ModelInfo[] {
-    if (filter) return this.registry.filterModels(filter);
-    return this.registry.getAllModels();
+    if (filter) return ModelRegistry.filterModels(this.models, filter);
+    return [...this.models];
   }
 
   getModelInfo(modelId: string): ModelInfo | null {
-    return this.registry.getModel(modelId);
+    return ModelRegistry.getModel(this.models, modelId);
   }
 
   searchModels(query: string): ModelInfo[] {
-    return this.registry.searchModels(query);
+    return ModelRegistry.searchModels(this.models, query);
   }
 
   getFreeModels(): ModelInfo[] {
-    return this.registry.getFreeModels();
+    return ModelRegistry.getFreeModels(this.models);
   }
 
   getModelsByFamily(): Map<string, ModelInfo[]> {
-    return this.registry.groupByFamily();
+    return ModelRegistry.groupByFamily(this.models);
   }
 
   getModelsByProvider(): Map<string, ModelInfo[]> {
-    return this.registry.groupByProvider();
+    return ModelRegistry.groupByProvider(this.models);
   }
 
   hasProvider(providerId: string): boolean {
@@ -108,6 +115,7 @@ export class ChatHost {
 }
 
 // ============ 默认实例（从环境变量读取配置）============
+// 注意：模型列表需要从数据库加载，使用 setModels() 方法设置
 
 const CHAT = new ChatHost({
   openai: {

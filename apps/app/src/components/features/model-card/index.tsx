@@ -47,9 +47,9 @@ export function ModelCard({ model, onClick, className = '', rightContent }: Mode
             {/* 价格信息 */}
             {model.pricing && (model.pricing.input !== undefined || model.pricing.output !== undefined) && (
               <div className="text-muted-foreground flex items-center text-[11px]">
-                {model.pricing.input !== undefined && <span>输入: {formatPrice(model.pricing.input)}</span>}
+                {model.pricing.input !== undefined && <span>输入: {formatPrice(Number(model.pricing.input))}</span>}
                 {model.pricing.input !== undefined && model.pricing.output !== undefined && <span className="mx-1">·</span>}
-                {model.pricing.output !== undefined && <span>输出: {formatPrice(model.pricing.output)}</span>}
+                {model.pricing.output !== undefined && <span>输出: {formatPrice(Number(model.pricing.output))}</span>}
               </div>
             )}
 

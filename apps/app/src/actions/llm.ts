@@ -2,14 +2,39 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
 import AIGC, { SubmitTaskParamsJsonSchema } from '@repo/llm/aigc';
-import CHAT from '@repo/llm/chat';
+import type { ModelInfo } from '@repo/llm/chat';
 import zodToJsonSchema from 'zod-to-json-schema';
+
+/**
+ * 从数据库加载所有模型定义
+ */
+export async function loadModelDefinitionsFromDatabase(): Promise<ModelInfo[]> {
+  const definitions = await prisma.systemModelDefinitions.findMany({
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return definitions.map(def => ({
+    id: def.modelId,
+    name: def.name,
+    provider: def.provider,
+    family: def.family,
+    type: (def.type as 'language' | 'embedding' | 'image') || undefined,
+    description: def.description || undefined,
+    contextLength: def.contextLength || undefined,
+    supportsStreaming: def.supportsStreaming,
+    supportsFunctionCalling: def.supportsFunctionCalling,
+    supportsVision: def.supportsVision,
+    pricing: def.pricing as ModelInfo['pricing'] | undefined,
+    enabled: def.enabled,
+    metadata: (def.metadata as Record<string, any>) || undefined,
+  }));
+}
 
 /**
  * Get all available models
  */
 export const getChatModels = withUserAuth(async () => {
-  const models = CHAT.getModels();
+  const models = await loadModelDefinitionsFromDatabase();
   return models;
 });
 

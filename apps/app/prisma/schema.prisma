@@ -607,3 +607,42 @@ model GatewayModelConfigs {
   @@index([organizationId, isEnabled])
   @@index([modelId])
 }
+
+// 系统模型定义表（系统级配置，所有组织共享）
+model SystemModelDefinitions {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 基础信息
+  modelId   String   @unique // 模型唯一标识符（格式：provider/model-name）
+  name      String   // 模型显示名称
+  provider  String   // 提供商名称
+  family    String   // 模型家族，用于显示不同的图标
+  type      String?  // 模型类型：language, embedding, image
+  description String? @db.Text // 模型描述
+
+  // 能力信息
+  contextLength         Int?     // 上下文长度（tokens）
+  supportsStreaming     Boolean   @default(false) // 是否支持流式输出
+  supportsFunctionCalling Boolean @default(false) // 是否支持函数调用
+  supportsVision        Boolean   @default(false) // 是否支持视觉/多模态
+
+  // 定价信息（JSON格式存储）
+  /// [ModelPricing]
+  pricing Json?
+
+  // 状态信息
+  enabled Boolean @default(false) // 是否启用（默认未启用，需要用户手动启用）
+
+  // 元数据（JSON格式存储）
+  /// [JSONSchema]
+  metadata Json?
+
+  @@index([modelId])
+  @@index([provider])
+  @@index([family])
+  @@index([type])
+  @@index([enabled])
+  @@index([createdAt])
+}

@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import { decryptTextWithPrivateKey } from './crypto';
-import CHAT from '@repo/llm/chat';
+import { ModelRegistry, type ModelInfo } from '@repo/llm/chat';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { jwtVerify } from 'jose';
 import { getDesktopAuthSecret } from './desktop-auth';
@@ -308,27 +308,61 @@ export async function verifyGatewayAuth(authHeader: string | null): Promise<{ or
 }
 
 /**
- * 获取组织的模型配置映射
+ * 从数据库加载模型定义
  */
-export async function getModelConfigsMap(organizationId: string) {
-  const modelConfigs = await prisma.gatewayModelConfigs.findMany({
-    where: { organizationId },
+let cachedModels: ModelInfo[] | null = null;
+let lastCacheTime: number = 0;
+const CACHE_TTL = 60000; // 缓存 60 秒
+
+async function getModelsFromDatabase(): Promise<ModelInfo[]> {
+  const now = Date.now();
+
+  // 如果缓存有效，直接返回
+  if (cachedModels && now - lastCacheTime < CACHE_TTL) {
+    return cachedModels;
+  }
+
+  // 从数据库加载模型定义
+  const definitions = await (prisma as any).systemModelDefinitions.findMany({
+    orderBy: { createdAt: 'asc' },
   });
 
-  return new Map(
-    modelConfigs.map(
-      (c: { modelId: string; isVisible: boolean; isEnabled: boolean; customConfig: any; rateLimit: number | null; maxTokens: number | null }) => [
-        c.modelId,
-        c,
-      ],
-    ),
-  );
+  const modelInfos: ModelInfo[] = definitions.map((def: any) => ({
+    id: def.modelId,
+    name: def.name,
+    provider: def.provider,
+    family: def.family,
+    type: (def.type as 'language' | 'embedding' | 'image') || undefined,
+    description: def.description || undefined,
+    contextLength: def.contextLength || undefined,
+    supportsStreaming: def.supportsStreaming,
+    supportsFunctionCalling: def.supportsFunctionCalling,
+    supportsVision: def.supportsVision,
+    pricing: def.pricing as ModelInfo['pricing'] | undefined,
+    enabled: def.enabled,
+    metadata: (def.metadata as Record<string, any>) || undefined,
+  }));
+
+  cachedModels = modelInfos;
+  lastCacheTime = now;
+
+  return modelInfos;
 }
 
 /**
- * 获取组织的可用模型列表（考虑模型配置）
+ * 获取组织的可用模型列表
  */
-export async function getAvailableModels(_organizationId: string) {
-  const allModels = CHAT.getModels();
-  return allModels;
+export async function getAvailableModels(organizationId: string) {
+  // 从数据库加载模型定义
+  const allModels = await getModelsFromDatabase();
+
+  // 只返回启用的模型
+  return allModels.filter(model => model.enabled);
+}
+
+/**
+ * 从数据库加载所有模型（包括未启用的）
+ */
+export async function getAllModelsFromDatabase(): Promise<ModelInfo[]> {
+  return getModelsFromDatabase();
 }

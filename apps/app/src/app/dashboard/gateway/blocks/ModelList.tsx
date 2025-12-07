@@ -1,49 +1,27 @@
 'use client';
 
-import { getModelConfigs, updateModelConfig } from '@/actions/gateway';
+import { getModelList } from '@/actions/gateway';
 import { ModelCard } from '@/components/features/model-card';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { ModelInfo } from '@repo/llm/chat';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { union } from 'lodash';
 
-interface ModelConfig {
-  isEnabled: boolean;
-  isVisible: boolean;
-  customConfig: any;
-  rateLimit: number | null;
-  maxTokens: number | null;
-}
-
-interface ModelWithConfig {
-  model: ModelInfo;
-  config: ModelConfig;
-}
-
-interface ModelConfigsProps {
+interface ModelListProps {
   refreshTrigger?: number;
   onRefresh?: () => void;
 }
 
-export function ModelList({ refreshTrigger, onRefresh }: ModelConfigsProps) {
+export function ModelList({ refreshTrigger, onRefresh }: ModelListProps) {
   const t = useTranslations('gateway');
-  const [modelsWithConfigs, setModelsWithConfigs] = useState<ModelWithConfig[]>([]);
+  const [models, setModels] = useState<ModelInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<string>('all');
-  const [editingModel, setEditingModel] = useState<ModelWithConfig | null>(null);
-  const [formData, setFormData] = useState({
-    isEnabled: true,
-    isVisible: true,
-    rateLimit: '',
-    maxTokens: '',
-  });
+  const [modelSearchQuery, setModelSearchQuery] = useState('');
+  const [modelSearchKeywords, setModelSearchKeywords] = useState<string[]>([]);
 
   useEffect(() => {
     loadConfigs();
@@ -52,9 +30,9 @@ export function ModelList({ refreshTrigger, onRefresh }: ModelConfigsProps) {
   const loadConfigs = async () => {
     setIsLoading(true);
     try {
-      const result = await getModelConfigs({});
+      const result = await getModelList({});
       if (result.data) {
-        setModelsWithConfigs(result.data as ModelWithConfig[]);
+        setModels(result.data);
       } else {
         toast.error(result.error || t('toast.loadConfigsFailed'));
       }
@@ -65,65 +43,130 @@ export function ModelList({ refreshTrigger, onRefresh }: ModelConfigsProps) {
     }
   };
 
-  const handleUpdateConfig = async () => {
-    if (!editingModel) return;
+  // 当前的所有模型类型/能力支持
+  const modelTypes = useMemo(() => {
+    const map = {
+      language: { label: '对话模型', color: 'purple' },
+      embedding: { label: '向量模型', color: 'blue' },
+      image: { label: '图像模型', color: 'green' },
+    };
 
-    try {
-      const result = await updateModelConfig({
-        modelId: editingModel.model.id,
-        isEnabled: formData.isEnabled,
-        isVisible: formData.isVisible,
-        rateLimit: formData.rateLimit ? parseInt(formData.rateLimit) : null,
-        maxTokens: formData.maxTokens ? parseInt(formData.maxTokens) : null,
-      });
+    const supportsMap = {
+      vision: { label: '视觉识别', color: 'green' },
+      function: { label: '函数调用', color: 'yellow' },
+    };
 
-      if (result.data) {
-        setEditingModel(null);
-        setFormData({ isEnabled: true, isVisible: true, rateLimit: '', maxTokens: '' });
-        loadConfigs();
-        onRefresh?.();
-        toast.success(t('toast.configUpdated'));
-      } else {
-        toast.error(result.error || t('toast.updateConfigFailed'));
+    const types = union(models.map(model => model.type))
+      .filter(type => type !== undefined && type !== null && type !== ('' as 'language' | 'embedding' | 'image'))
+      .map(type => ({
+        value: `type:${type}`,
+        label: map[type as 'language' | 'embedding' | 'image']?.label,
+        color: map[type as 'language' | 'embedding' | 'image']?.color,
+      }));
+
+    const supportsList: string[] = [];
+    models.forEach(model => {
+      if (model.supportsVision) {
+        supportsList.push('vision');
       }
-    } catch (error) {
-      toast.error(t('toast.updateConfigFailed'));
-    }
-  };
+      if (model.supportsFunctionCalling) {
+        supportsList.push('function');
+      }
+    });
+    const supports = union(supportsList)
+      .filter(support => support !== undefined && support !== null && support !== ('' as 'vision' | 'function'))
+      .map(support => ({
+        value: `support:${support}`,
+        label: supportsMap[support as 'vision' | 'function']?.label,
+        color: supportsMap[support as 'vision' | 'function']?.color,
+      }));
 
+    return [...types, ...supports];
+  }, [models]);
+
+  // 过滤模型列表（本地搜索）
   const filteredModels = useMemo(() => {
-    if (selectedProvider === 'all') return modelsWithConfigs;
-    return modelsWithConfigs.filter(item => item.model.provider === selectedProvider);
-  }, [modelsWithConfigs, selectedProvider]);
+    const query = modelSearchQuery.trim().toLowerCase();
+    return models.filter(model => {
+      const matchSearch =
+        model.name.toLowerCase().includes(query) ||
+        model.id.toLowerCase().includes(query) ||
+        (model.description && model.description.toLowerCase().includes(query));
 
-  const providers = useMemo(() => {
-    return Array.from(new Set(modelsWithConfigs.map(item => item.model.provider))).sort();
-  }, [modelsWithConfigs]);
+      const type = modelSearchKeywords.filter(keyword => keyword.startsWith('type:'));
+      const matchType = type.length === 1 ? type.includes(`type:${model.type}`) : type.length === 0 ? true : false;
+
+      const supportVision = modelSearchKeywords.find(keyword => keyword === 'support:vision');
+      const matchSupportVision = supportVision ? model.supportsVision : true;
+      const supportFunction = modelSearchKeywords.find(keyword => keyword === 'support:function');
+      const matchSupportFunction = supportFunction ? model.supportsFunctionCalling : true;
+      return matchSearch && matchType && matchSupportVision && matchSupportFunction;
+    });
+  }, [models, modelSearchQuery, modelSearchKeywords]);
 
   return (
     <div className="space-y-5">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between">
-        <Select value={selectedProvider} onValueChange={setSelectedProvider}>
-          <SelectTrigger className="bg-card/50 hover:border-border hover:bg-card/80 w-[160px] text-[13px] backdrop-blur-sm transition-colors">
-            <SelectValue placeholder={t('providers.selectPlaceholder')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" className="text-[13px]">
-              {t('providers.all')}
-            </SelectItem>
-            {providers.map(provider => (
-              <SelectItem key={provider} value={provider} className="text-[13px]">
-                {provider}
-              </SelectItem>
+      {/* 搜索框 */}
+      {!isLoading && models.length > 0 && (
+        <div className="relative">
+          <Search className="text-muted-foreground absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
+          <Input
+            type="text"
+            placeholder="搜索模型..."
+            value={modelSearchQuery}
+            onChange={e => setModelSearchQuery(e.target.value)}
+            className="h-8 pl-8 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+        </div>
+      )}
+
+      {/* Tag 快速选择 */}
+      {!isLoading && models.length > 0 && modelTypes.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {modelTypes
+            .filter(type => type.value.startsWith('type:'))
+            .map(type => (
+              <Badge
+                key={type.value}
+                variant={modelSearchKeywords.includes(type.value) ? 'default' : 'outline'}
+                className="cursor-pointer text-xs font-normal"
+                onClick={() =>
+                  setModelSearchKeywords(prev => {
+                    if (prev.includes(type.value)) {
+                      return prev.filter(keyword => keyword !== type.value);
+                    }
+                    const newKeywords = prev.filter(keyword => !keyword.startsWith('type:'));
+                    return [...newKeywords, type.value];
+                  })
+                }
+              >
+                {type.label}
+              </Badge>
             ))}
-          </SelectContent>
-        </Select>
-      </div>
+          {modelTypes
+            .filter(type => type.value.startsWith('support:'))
+            .map(type => (
+              <Badge
+                key={type.value}
+                variant={modelSearchKeywords.includes(type.value) ? 'default' : 'outline'}
+                className="cursor-pointer text-xs font-normal"
+                onClick={() =>
+                  setModelSearchKeywords(
+                    modelSearchKeywords.includes(type.value)
+                      ? modelSearchKeywords.filter(keyword => keyword !== type.value)
+                      : [...modelSearchKeywords, type.value],
+                  )
+                }
+              >
+                {type.label}
+              </Badge>
+            ))}
+        </div>
+      )}
 
       {/* Models List */}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(500px,1fr))] gap-3">
-        {filteredModels.map(({ model, config }) => (
+        {filteredModels.map(model => (
           <ModelCard key={model.id} model={model} className="bg-muted/30 hover:bg-muted" />
         ))}
       </div>
@@ -137,63 +180,6 @@ export function ModelList({ refreshTrigger, onRefresh }: ModelConfigsProps) {
       {isLoading && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-        </div>
-      )}
-
-      {/* Edit Dialog */}
-      {editingModel && (
-        <div className="bg-card/50 fixed inset-0 z-50 flex items-center justify-center border backdrop-blur-sm">
-          <Card className="bg-card w-full max-w-md border p-6">
-            <h3 className="text-foreground mb-4 text-lg font-semibold">{t('dialog.editTitle')}</h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>{t('form.modelId')}</Label>
-                <p className="text-muted-foreground text-sm">{editingModel.model.id}</p>
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="edit-enabled">{t('enabled')}</Label>
-                <Switch
-                  id="edit-enabled"
-                  checked={formData.isEnabled}
-                  onCheckedChange={checked => setFormData({ ...formData, isEnabled: checked })}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="edit-visible">{t('visible')}</Label>
-                <Switch
-                  id="edit-visible"
-                  checked={formData.isVisible}
-                  onCheckedChange={checked => setFormData({ ...formData, isVisible: checked })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-rateLimit">{t('form.rateLimit')}</Label>
-                <Input
-                  id="edit-rateLimit"
-                  type="number"
-                  value={formData.rateLimit}
-                  onChange={e => setFormData({ ...formData, rateLimit: e.target.value })}
-                  placeholder={t('form.rateLimitPlaceholder')}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-maxTokens">{t('form.maxTokens')}</Label>
-                <Input
-                  id="edit-maxTokens"
-                  type="number"
-                  value={formData.maxTokens}
-                  onChange={e => setFormData({ ...formData, maxTokens: e.target.value })}
-                  placeholder={t('form.maxTokensPlaceholder')}
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditingModel(null)}>
-                {t('actions.cancel')}
-              </Button>
-              <Button onClick={handleUpdateConfig}>{t('actions.save')}</Button>
-            </div>
-          </Card>
         </div>
       )}
     </div>

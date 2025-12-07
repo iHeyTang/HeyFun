@@ -3,6 +3,7 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
 import CHAT from '@repo/llm/chat';
+import { loadModelDefinitionsFromDatabase } from './llm';
 
 // 创建聊天会话
 export const createChatSession = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ modelId: string; title?: string; agentId?: string }>) => {
@@ -141,6 +142,11 @@ export const deleteMessage = withUserAuth(async ({ orgId, args }: AuthWrapperCon
 // 一次性聊天
 export const chatOnce = withUserAuth(async ({ args }: AuthWrapperContext<{ modelId: string; content: string }>) => {
   const { modelId, content } = args;
+
+  // 从数据库加载模型列表并设置到 CHAT 实例
+  const models = await loadModelDefinitionsFromDatabase();
+  CHAT.setModels(models);
+
   const llmClient = CHAT.createClient(modelId);
   const result = await llmClient.chat({
     messages: [{ role: 'user', content }],

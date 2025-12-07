@@ -1,68 +1,63 @@
 import { ModelInfo, ModelFilter } from './types';
-import { modelDefinitions } from '../definitions';
 
+/**
+ * ModelRegistry - 模型查询和过滤工具类
+ * 注意：模型信息现在存储在数据库中，不再通过注册表管理
+ * 此类仅提供查询和过滤功能
+ */
 export class ModelRegistry {
-  private models: Map<string, ModelInfo> = new Map();
-
-  constructor(definitions: ModelInfo[] = modelDefinitions) {
-    definitions.forEach(model => this.registerModel(model));
+  /**
+   * 从模型列表中获取指定模型
+   */
+  static getModel(models: ModelInfo[], modelId: string): ModelInfo | null {
+    return models.find(m => m.id === modelId) || null;
   }
 
-  registerModel(model: ModelInfo): void {
-    if (this.models.has(model.id)) {
-      console.warn(`Model ${model.id} is already registered, overwriting...`);
-    }
-    this.models.set(model.id, model);
+  /**
+   * 检查模型列表中是否包含指定模型
+   */
+  static hasModel(models: ModelInfo[], modelId: string): boolean {
+    return models.some(m => m.id === modelId);
   }
 
-  registerModels(models: ModelInfo[]): void {
-    models.forEach(model => this.registerModel(model));
-  }
+  /**
+   * 过滤模型列表
+   */
+  static filterModels(models: ModelInfo[], filter: ModelFilter): ModelInfo[] {
+    let filtered = [...models];
 
-  getModel(modelId: string): ModelInfo | null {
-    return this.models.get(modelId) || null;
-  }
-
-  hasModel(modelId: string): boolean {
-    return this.models.has(modelId);
-  }
-
-  getAllModels(): ModelInfo[] {
-    return Array.from(this.models.values());
-  }
-
-  filterModels(filter: ModelFilter): ModelInfo[] {
-    let models = this.getAllModels();
-
-    if (filter.provider) models = models.filter(m => m.provider === filter.provider);
-    if (filter.family) models = models.filter(m => m.family === filter.family);
-    if (filter.type) models = models.filter(m => m.type === filter.type);
+    if (filter.provider) filtered = filtered.filter(m => m.provider === filter.provider);
+    if (filter.family) filtered = filtered.filter(m => m.family === filter.family);
+    if (filter.type) filtered = filtered.filter(m => m.type === filter.type);
     if (filter.supportsStreaming !== undefined) {
-      models = models.filter(m => m.supportsStreaming === filter.supportsStreaming);
+      filtered = filtered.filter(m => m.supportsStreaming === filter.supportsStreaming);
     }
     if (filter.supportsFunctionCalling !== undefined) {
-      models = models.filter(m => m.supportsFunctionCalling === filter.supportsFunctionCalling);
+      filtered = filtered.filter(m => m.supportsFunctionCalling === filter.supportsFunctionCalling);
     }
     if (filter.supportsVision !== undefined) {
-      models = models.filter(m => m.supportsVision === filter.supportsVision);
+      filtered = filtered.filter(m => m.supportsVision === filter.supportsVision);
     }
     if (filter.maxPrice !== undefined) {
-      models = models.filter(m => {
-        const inputPrice = m.pricing?.input || 0;
-        const outputPrice = m.pricing?.output || 0;
+      filtered = filtered.filter(m => {
+        const inputPrice = m.pricing?.input ? Number(m.pricing.input) : 0;
+        const outputPrice = m.pricing?.output ? Number(m.pricing.output) : 0;
         return Math.max(inputPrice, outputPrice) <= filter.maxPrice!;
       });
     }
     if (filter.minContextLength !== undefined) {
-      models = models.filter(m => (m.contextLength || 0) >= filter.minContextLength!);
+      filtered = filtered.filter(m => (m.contextLength || 0) >= filter.minContextLength!);
     }
 
-    return models;
+    return filtered;
   }
 
-  groupByFamily(): Map<string, ModelInfo[]> {
+  /**
+   * 按家族分组模型
+   */
+  static groupByFamily(models: ModelInfo[]): Map<string, ModelInfo[]> {
     const groups = new Map<string, ModelInfo[]>();
-    this.getAllModels().forEach(model => {
+    models.forEach(model => {
       const family = model.family || 'other';
       if (!groups.has(family)) groups.set(family, []);
       groups.get(family)!.push(model);
@@ -70,25 +65,34 @@ export class ModelRegistry {
     return groups;
   }
 
-  groupByProvider(): Map<string, ModelInfo[]> {
+  /**
+   * 按提供商分组模型
+   */
+  static groupByProvider(models: ModelInfo[]): Map<string, ModelInfo[]> {
     const groups = new Map<string, ModelInfo[]>();
-    this.getAllModels().forEach(model => {
+    models.forEach(model => {
       if (!groups.has(model.provider)) groups.set(model.provider, []);
       groups.get(model.provider)!.push(model);
     });
     return groups;
   }
 
-  getFreeModels(): ModelInfo[] {
-    return this.getAllModels().filter(m => {
-      const inputPrice = m.pricing?.input || 0;
-      const outputPrice = m.pricing?.output || 0;
+  /**
+   * 获取免费模型
+   */
+  static getFreeModels(models: ModelInfo[]): ModelInfo[] {
+    return models.filter(m => {
+      const inputPrice = m.pricing?.input ? Number(m.pricing.input) : 0;
+      const outputPrice = m.pricing?.output ? Number(m.pricing.output) : 0;
       return inputPrice === 0 && outputPrice === 0;
     });
   }
 
-  getModelsWithCapability(capability: string): ModelInfo[] {
-    return this.getAllModels().filter(m => {
+  /**
+   * 获取具有特定能力的模型
+   */
+  static getModelsWithCapability(models: ModelInfo[], capability: string): ModelInfo[] {
+    return models.filter(m => {
       switch (capability) {
         case 'streaming':
           return m.supportsStreaming;
@@ -103,27 +107,16 @@ export class ModelRegistry {
     });
   }
 
-  searchModels(query: string): ModelInfo[] {
+  /**
+   * 搜索模型
+   */
+  static searchModels(models: ModelInfo[], query: string): ModelInfo[] {
     const lowerQuery = query.toLowerCase();
-    return this.getAllModels().filter(
+    return models.filter(
       m =>
         m.id.toLowerCase().includes(lowerQuery) ||
         m.name.toLowerCase().includes(lowerQuery) ||
         (m.description && m.description.toLowerCase().includes(lowerQuery)),
     );
   }
-
-  removeModel(modelId: string): boolean {
-    return this.models.delete(modelId);
-  }
-
-  clear(): void {
-    this.models.clear();
-  }
-
-  getModelCount(): number {
-    return this.models.size;
-  }
 }
-
-export const defaultModelRegistry = new ModelRegistry();
