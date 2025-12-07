@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import { useAuth, useUser, SignIn } from '@clerk/nextjs';
 import { useSearchParams } from 'next/navigation';
 
@@ -9,6 +9,7 @@ function DesktopAuthContent() {
   const { user } = useUser();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'redirecting' | 'error'>('loading');
+  const hasRedirectedRef = useRef(false);
 
   // 从 URL 获取 PKCE 参数
   const codeChallenge = searchParams.get('code_challenge');
@@ -18,6 +19,7 @@ function DesktopAuthContent() {
   useEffect(() => {
     async function handleAuth() {
       if (!isLoaded) return;
+      if (hasRedirectedRef.current) return; // 防止重复执行
 
       if (isSignedIn && user) {
         try {
@@ -95,8 +97,18 @@ function DesktopAuthContent() {
             }
           }
 
+          // 标记已重定向，防止重复执行
+          hasRedirectedRef.current = true;
+
           // 重定向到 Electron app
           window.location.href = callbackUrl;
+
+          // 尝试关闭窗口（如果是通过 window.open 打开的）
+          setTimeout(() => {
+            if (window.opener) {
+              window.close();
+            }
+          }, 1000);
         } catch (error) {
           console.error('Auth error:', error);
           setStatus('error');
@@ -105,7 +117,7 @@ function DesktopAuthContent() {
     }
 
     handleAuth();
-  }, [isLoaded, isSignedIn, user, getToken, state, redirectUri]);
+  }, [isLoaded, isSignedIn, user, redirectUri, state, getToken]);
 
   // 未登录时显示登录组件
   if (!isLoaded) {
