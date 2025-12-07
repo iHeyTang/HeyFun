@@ -352,17 +352,10 @@ async function getModelsFromDatabase(): Promise<ModelInfo[]> {
 /**
  * 获取组织的可用模型列表
  */
-export async function getAvailableModels(organizationId: string) {
+export async function getModels() {
   // 从数据库加载模型定义
   const allModels = await getModelsFromDatabase();
 
   // 只返回启用的模型
   return allModels.filter(model => model.enabled);
-}
-
-/**
- * 从数据库加载所有模型（包括未启用的）
- */
-export async function getAllModelsFromDatabase(): Promise<ModelInfo[]> {
-  return getModelsFromDatabase();
 }

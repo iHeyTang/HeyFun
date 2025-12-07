@@ -3,6 +3,8 @@ import { prisma } from '@/lib/server/prisma';
 import CHAT, { UnifiedChat } from '@repo/llm/chat';
 import { NextResponse } from 'next/server';
 import { getAgent } from '@/agents/server';
+import { calculateLLMCost, deductCredits, checkCreditsBalance } from '@/lib/server/credit';
+import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
 
 /**
  * 异步生成会话标题
@@ -11,8 +13,19 @@ import { getAgent } from '@/agents/server';
  */
 async function generateSessionTitle(sessionId: string, userMessage: string, organizationId: string): Promise<string> {
   try {
+    // 加载模型定义
+    const allModels = await loadModelDefinitionsFromDatabase();
+    const titleModelId = 'claude-3-5-sonnet';
+    const modelInfo = allModels.find(m => m.id === titleModelId);
+    if (!modelInfo) {
+      throw new Error(`Model ${titleModelId} not found`);
+    }
+
+    // 设置模型列表到 CHAT 实例
+    CHAT.setModels(allModels);
+
     // 使用快速模型生成标题
-    const llmClient = CHAT.createClient('claude-3-5-sonnet');
+    const llmClient = CHAT.createClient(titleModelId);
 
     const response = await llmClient.chat({
       messages: [
@@ -31,6 +44,20 @@ async function generateSessionTitle(sessionId: string, userMessage: string, orga
 
     const messageContent = response.choices[0]?.message?.content;
     const title = (typeof messageContent === 'string' ? messageContent.trim() : '') || userMessage.substring(0, 30);
+
+    // 计算并扣除credits（标题生成）
+    const inputTokens = response.usage?.prompt_tokens || 0;
+    const outputTokens = response.usage?.completion_tokens || 0;
+    const cost = calculateLLMCost(modelInfo, inputTokens, outputTokens);
+    if (cost > 0) {
+      try {
+        await deductCredits(organizationId, cost);
+        console.log(`[Chat] Deducted ${cost} credits for title generation (${inputTokens} input + ${outputTokens} output tokens)`);
+      } catch (error) {
+        console.error(`[Chat] Failed to deduct credits for title generation:`, error);
+        // 不抛出错误，继续执行
+      }
+    }
 
     // 更新会话标题
     await prisma.chatSessions.update({
@@ -121,6 +148,16 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
       data: { updatedAt: new Date() },
     });
 
+    // 加载模型定义
+    const allModels = await loadModelDefinitionsFromDatabase();
+    const modelInfo = allModels.find(m => m.id === session.modelId);
+    if (!modelInfo) {
+      throw new Error(`Model ${session.modelId} not found`);
+    }
+
+    // 设置模型列表到 CHAT 实例
+    CHAT.setModels(allModels);
+
     // 创建LLM客户端
     const llmClient = CHAT.createClient(session.modelId);
 
@@ -169,9 +206,12 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
       userMessageId: userMessage.id,
       aiMessageId: aiMessage.id,
       shouldGenerateTitle,
+      modelInfo,
       streamGenerator: async function* () {
         try {
           let fullContent = '';
+          let inputTokens = 0;
+          let outputTokens = 0;
 
           // 构建聊天参数，包含工具配置
           const chatParams: UnifiedChat.ChatCompletionParams = {
@@ -199,11 +239,28 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
             );
           }
 
+          // 在开始前检查余额（估算）
+          const estimatedOutputTokens = 1000;
+          const estimatedCost = calculateLLMCost(modelInfo, 0, estimatedOutputTokens);
+          const hasBalance = await checkCreditsBalance(organizationId, estimatedCost);
+          if (!hasBalance) {
+            yield {
+              type: 'error',
+              error: 'Insufficient credits balance',
+            };
+            return;
+          }
+
           const stream = llmClient.chatStream(chatParams);
 
           const toolCalls: any[] = [];
 
           for await (const chunk of stream) {
+            // 累积token使用量
+            if (chunk.usage) {
+              inputTokens += chunk.usage.prompt_tokens || 0;
+              outputTokens += chunk.usage.completion_tokens || 0;
+            }
             const choice = chunk.choices?.[0];
             if (!choice) continue;
 
@@ -310,6 +367,18 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
                 };
               }
               break;
+            }
+          }
+
+          // 流式响应完成后，计算并扣除credits
+          const cost = calculateLLMCost(modelInfo, inputTokens, outputTokens);
+          if (cost > 0) {
+            try {
+              await deductCredits(organizationId, cost);
+              console.log(`[Stream] Deducted ${cost} credits for session ${sessionId} (${inputTokens} input + ${outputTokens} output tokens)`);
+            } catch (error) {
+              console.error(`[Stream] Failed to deduct credits for session ${sessionId}:`, error);
+              // 注意：这里不抛出错误，因为响应已经发送给客户端了
             }
           }
         } catch (error) {

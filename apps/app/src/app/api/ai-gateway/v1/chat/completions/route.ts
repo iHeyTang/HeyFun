@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyGatewayAuth, recordGatewayUsage, getAvailableModels } from '@/lib/server/gateway';
+import { verifyGatewayAuth, recordGatewayUsage, getModels } from '@/lib/server/gateway';
+import { calculateLLMCost, deductCredits, checkCreditsBalance } from '@/lib/server/credit';
 import CHAT, { UnifiedChat } from '@repo/llm/chat';
 
 /**
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
     modelId = body.model;
 
     // 检查模型是否可用
-    const availableModels = await getAvailableModels(organizationId);
+    const availableModels = await getModels();
     const modelAvailable = availableModels.some((m: { id: string }) => m.id === modelId);
     if (!modelAvailable) {
       statusCode = 404;
@@ -110,6 +111,22 @@ export async function POST(request: NextRequest) {
     // 设置模型列表到 CHAT 实例
     CHAT.setModels(availableModels);
     const llmClient = CHAT.createClient(modelId);
+
+    // 获取模型信息用于计算费用
+    const modelInfo = availableModels.find((m: { id: string }) => m.id === modelId);
+    if (!modelInfo) {
+      statusCode = 404;
+      return NextResponse.json(
+        {
+          error: {
+            message: `Model '${modelId}' not found`,
+            type: 'invalid_request_error',
+            code: 'model_not_found',
+          },
+        },
+        { status: 404 },
+      );
+    }
 
     // 转换消息格式
     const messages: UnifiedChat.Message[] = body.messages.map((msg: any): UnifiedChat.Message => {
@@ -149,6 +166,36 @@ export async function POST(request: NextRequest) {
       const stream = new ReadableStream({
         async start(controller) {
           try {
+            // 在开始前检查余额（估算，使用请求的max_tokens）
+            if (!organizationId) {
+              const errorData = `data: ${JSON.stringify({
+                error: {
+                  message: 'Organization ID is required',
+                  type: 'invalid_request_error',
+                  code: 'missing_organization',
+                },
+              })}\n\n`;
+              controller.enqueue(encoder.encode(errorData));
+              controller.close();
+              return;
+            }
+
+            const estimatedOutputTokens = body.max_tokens || 1000;
+            const estimatedCost = calculateLLMCost(modelInfo, 0, estimatedOutputTokens);
+            const hasBalance = await checkCreditsBalance(organizationId, estimatedCost);
+            if (!hasBalance) {
+              const errorData = `data: ${JSON.stringify({
+                error: {
+                  message: 'Insufficient credits balance',
+                  type: 'insufficient_credits',
+                  code: 'insufficient_credits',
+                },
+              })}\n\n`;
+              controller.enqueue(encoder.encode(errorData));
+              controller.close();
+              return;
+            }
+
             const streamGenerator = llmClient.chatStream(chatParams);
             let fullContent = '';
 
@@ -172,6 +219,17 @@ export async function POST(request: NextRequest) {
             // 发送结束标记
             controller.enqueue(encoder.encode('data: [DONE]\n\n'));
             controller.close();
+
+            // 计算并扣除credits
+            const cost = calculateLLMCost(modelInfo, inputTokens, outputTokens);
+            if (cost > 0 && organizationId) {
+              try {
+                await deductCredits(organizationId, cost);
+              } catch (error) {
+                console.error('Failed to deduct credits after stream completion:', error);
+                // 注意：这里不抛出错误，因为响应已经发送给客户端了
+              }
+            }
 
             // 记录使用量
             if (apiKeyId && organizationId && modelId) {
@@ -235,9 +293,63 @@ export async function POST(request: NextRequest) {
     }
 
     // 非流式响应
+    if (!organizationId) {
+      statusCode = 400;
+      return NextResponse.json(
+        {
+          error: {
+            message: 'Organization ID is required',
+            type: 'invalid_request_error',
+            code: 'missing_organization',
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    // 在调用前检查余额（估算）
+    const estimatedOutputTokens = body.max_tokens || 1000;
+    const estimatedCost = calculateLLMCost(modelInfo, 0, estimatedOutputTokens);
+    const hasBalance = await checkCreditsBalance(organizationId, estimatedCost);
+    if (!hasBalance) {
+      statusCode = 402;
+      return NextResponse.json(
+        {
+          error: {
+            message: 'Insufficient credits balance',
+            type: 'insufficient_credits',
+            code: 'insufficient_credits',
+          },
+        },
+        { status: 402 },
+      );
+    }
+
     const response = await llmClient.chat(chatParams);
     inputTokens = response.usage?.prompt_tokens || 0;
     outputTokens = response.usage?.completion_tokens || 0;
+
+    // 计算并扣除credits
+    const cost = calculateLLMCost(modelInfo, inputTokens, outputTokens);
+    if (cost > 0) {
+      try {
+        await deductCredits(organizationId, cost);
+      } catch (error) {
+        console.error('Failed to deduct credits:', error);
+        // 如果扣费失败，返回错误
+        statusCode = 402;
+        return NextResponse.json(
+          {
+            error: {
+              message: error instanceof Error ? error.message : 'Failed to deduct credits',
+              type: 'insufficient_credits',
+              code: 'insufficient_credits',
+            },
+          },
+          { status: 402 },
+        );
+      }
+    }
 
     // 记录使用量
     if (apiKeyId && organizationId && modelId) {

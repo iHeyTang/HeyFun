@@ -1,9 +1,9 @@
 'use server';
 
 import { withUserAuth } from '@/lib/server/auth-wrapper';
-import { prisma } from '@/lib/server/prisma';
 import { encryptTextWithPublicKey } from '@/lib/server/crypto';
-import type { ModelInfo } from '@repo/llm/chat';
+import { getModels } from '@/lib/server/gateway';
+import { prisma } from '@/lib/server/prisma';
 import crypto from 'crypto';
 
 /**
@@ -214,25 +214,6 @@ export const getUsageStats = withUserAuth(
  * 获取模型列表（从数据库加载）
  */
 export const getModelList = withUserAuth(async () => {
-  const definitions = await prisma.systemModelDefinitions.findMany({
-    orderBy: { createdAt: 'asc' },
-  });
-
-  const models: ModelInfo[] = definitions.map(def => ({
-    id: def.modelId,
-    name: def.name,
-    provider: def.provider,
-    family: def.family,
-    type: (def.type as 'language' | 'embedding' | 'image') || undefined,
-    description: def.description || undefined,
-    contextLength: def.contextLength || undefined,
-    supportsStreaming: def.supportsStreaming,
-    supportsFunctionCalling: def.supportsFunctionCalling,
-    supportsVision: def.supportsVision,
-    pricing: def.pricing as ModelInfo['pricing'] | undefined,
-    enabled: def.enabled,
-    metadata: (def.metadata as Record<string, any>) || undefined,
-  }));
-
+  const models = await getModels();
   return models;
 });

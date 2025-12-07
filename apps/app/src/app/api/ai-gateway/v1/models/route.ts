@@ -1,5 +1,5 @@
+import { getModels, verifyGatewayAuth } from '@/lib/server/gateway';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyGatewayAuth, getAvailableModels } from '@/lib/server/gateway';
 
 /**
  * GET /api/ai-gateway/v1/models
@@ -27,13 +27,9 @@ export const GET = async (request: NextRequest) => {
       );
     }
 
-    // 获取可用模型
-    const models = await getAvailableModels(authInfo.organizationId);
+    const models = await getModels();
 
-    return NextResponse.json({
-      object: 'list',
-      data: models,
-    });
+    return NextResponse.json({ object: 'list', data: models });
   } catch (error) {
     console.error('Error in GET /api/ai-gateway/v1/models:', error);
     return NextResponse.json(

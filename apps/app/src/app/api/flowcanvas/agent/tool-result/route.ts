@@ -8,6 +8,8 @@ import { prisma } from '@/lib/server/prisma';
 import CHAT, { UnifiedChat } from '@repo/llm/chat';
 import { NextResponse } from 'next/server';
 import { getAgent } from '@/agents/server';
+import { calculateLLMCost, deductCredits, checkCreditsBalance } from '@/lib/server/credit';
+import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
 
 interface ToolResultRequest {
   sessionId: string;
@@ -57,6 +59,16 @@ export const POST = withUserAuthApi<{}, {}, ToolResultRequest>(async (_req, ctx)
 
     // 获取 Agent 配置
     const agentConfig = getAgent(session.agentId || undefined);
+
+    // 加载模型定义
+    const allModels = await loadModelDefinitionsFromDatabase();
+    const modelInfo = allModels.find(m => m.id === session.modelId);
+    if (!modelInfo) {
+      throw new Error(`Model ${session.modelId} not found`);
+    }
+
+    // 设置模型列表到 CHAT 实例
+    CHAT.setModels(allModels);
 
     // 创建 LLM 客户端
     const llmClient = CHAT.createClient(session.modelId);
@@ -199,6 +211,22 @@ export const POST = withUserAuthApi<{}, {}, ToolResultRequest>(async (_req, ctx)
 
           let fullContent = '';
           const toolCalls: any[] = [];
+          let inputTokens = 0;
+          let outputTokens = 0;
+
+          // 在开始前检查余额（估算）
+          const estimatedOutputTokens = 1000;
+          const estimatedCost = calculateLLMCost(modelInfo, 0, estimatedOutputTokens);
+          const hasBalance = await checkCreditsBalance(ctx.orgId, estimatedCost);
+          if (!hasBalance) {
+            const errorData = `data: ${JSON.stringify({
+              type: 'error',
+              error: 'Insufficient credits balance',
+            })}\n\n`;
+            controller.enqueue(encoder.encode(errorData));
+            controller.close();
+            return;
+          }
 
           // 调用 LLM 继续对话
           const chatStream = llmClient.chatStream({
@@ -208,6 +236,11 @@ export const POST = withUserAuthApi<{}, {}, ToolResultRequest>(async (_req, ctx)
           });
 
           for await (const chunk of chatStream) {
+            // 累积token使用量
+            if (chunk.usage) {
+              inputTokens += chunk.usage.prompt_tokens || 0;
+              outputTokens += chunk.usage.completion_tokens || 0;
+            }
             const choice = chunk.choices?.[0];
             if (!choice) continue;
 
@@ -307,6 +340,20 @@ export const POST = withUserAuthApi<{}, {}, ToolResultRequest>(async (_req, ctx)
                 );
               }
               break;
+            }
+          }
+
+          // 流式响应完成后，计算并扣除credits
+          const cost = calculateLLMCost(modelInfo, inputTokens, outputTokens);
+          if (cost > 0) {
+            try {
+              await deductCredits(ctx.orgId, cost);
+              console.log(
+                `[FlowCanvas Tool Result] Deducted ${cost} credits for session ${sessionId} (${inputTokens} input + ${outputTokens} output tokens)`,
+              );
+            } catch (error) {
+              console.error(`[FlowCanvas Tool Result] Failed to deduct credits for session ${sessionId}:`, error);
+              // 注意：这里不抛出错误，因为响应已经发送给客户端了
             }
           }
 

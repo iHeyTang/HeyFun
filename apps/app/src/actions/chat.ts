@@ -140,17 +140,40 @@ export const deleteMessage = withUserAuth(async ({ orgId, args }: AuthWrapperCon
 });
 
 // 一次性聊天
-export const chatOnce = withUserAuth(async ({ args }: AuthWrapperContext<{ modelId: string; content: string }>) => {
+export const chatOnce = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ modelId: string; content: string }>) => {
   const { modelId, content } = args;
 
   // 从数据库加载模型列表并设置到 CHAT 实例
   const models = await loadModelDefinitionsFromDatabase();
   CHAT.setModels(models);
 
+  // 获取模型信息用于计算费用
+  const modelInfo = models.find(m => m.id === modelId);
+  if (!modelInfo) {
+    throw new Error(`Model ${modelId} not found`);
+  }
+
+  // 在调用前检查余额（估算）
+  const { calculateLLMCost, checkCreditsBalance, deductCredits } = await import('@/lib/server/credit');
+  const estimatedOutputTokens = 1000;
+  const estimatedCost = calculateLLMCost(modelInfo, 0, estimatedOutputTokens);
+  const hasBalance = await checkCreditsBalance(orgId, estimatedCost);
+  if (!hasBalance) {
+    throw new Error('Insufficient credits balance');
+  }
+
   const llmClient = CHAT.createClient(modelId);
   const result = await llmClient.chat({
     messages: [{ role: 'user', content }],
   });
+
+  // 计算并扣除credits
+  const inputTokens = result.usage?.prompt_tokens || 0;
+  const outputTokens = result.usage?.completion_tokens || 0;
+  const cost = calculateLLMCost(modelInfo, inputTokens, outputTokens);
+  if (cost > 0) {
+    await deductCredits(orgId, cost);
+  }
 
   return result;
 });
