@@ -211,6 +211,74 @@ export const getUsageStats = withUserAuth(
 );
 
 /**
+ * 获取调用记录列表（带分页）
+ */
+export const getUsageRecords = withUserAuth(
+  async ({
+    orgId,
+    args,
+  }: {
+    orgId: string;
+    args: {
+      apiKeyId?: string;
+      startDate?: Date;
+      endDate?: Date;
+      modelId?: string;
+      page?: number;
+      pageSize?: number;
+    };
+  }) => {
+    const page = args.page || 1;
+    const pageSize = args.pageSize || 50;
+    const skip = (page - 1) * pageSize;
+
+    const where: any = {
+      organizationId: orgId,
+    };
+
+    if (args.apiKeyId) {
+      where.apiKeyId = args.apiKeyId;
+    }
+
+    if (args.startDate || args.endDate) {
+      where.createdAt = {};
+      if (args.startDate) {
+        where.createdAt.gte = args.startDate;
+      }
+      if (args.endDate) {
+        where.createdAt.lte = args.endDate;
+      }
+    }
+
+    if (args.modelId) {
+      where.modelId = args.modelId;
+    }
+
+    console.log('[getUsageRecords] Query params:', { orgId, where, page, pageSize });
+
+    const [records, total] = await Promise.all([
+      prisma.gatewayUsageRecords.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      prisma.gatewayUsageRecords.count({ where }),
+    ]);
+
+    console.log('[getUsageRecords] Found records:', { count: records.length, total });
+
+    return {
+      records,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  },
+);
+
+/**
  * 获取模型列表（从数据库加载）
  */
 export const getModelList = withUserAuth(async () => {

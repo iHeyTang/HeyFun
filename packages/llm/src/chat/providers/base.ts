@@ -71,6 +71,7 @@ export abstract class BaseProvider {
    */
   async sendRequest(request: HTTPRequest): Promise<HTTPResponse> {
     try {
+      console.log(`[${this.name}] Sending request to: ${request.url}`);
       const response = await fetch(request.url, {
         method: request.method,
         headers: request.headers,
@@ -85,13 +86,17 @@ export abstract class BaseProvider {
         headers[key] = value;
       });
 
+      if (response.status !== 200) {
+        console.error(`[${this.name}] Request failed with status ${response.status}:`, JSON.stringify(body));
+      }
+
       return {
         status: response.status,
         headers,
         body,
       };
     } catch (error) {
-      console.error('sendRequest error', error);
+      console.error(`[${this.name}] sendRequest error:`, error);
       throw error;
     }
   }

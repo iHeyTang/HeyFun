@@ -636,6 +636,7 @@
       "deleteKeyFailed": "API キーの削除に失敗しました",
       "keyCopied": "キーがクリップボードにコピーされました",
       "loadStatsFailed": "使用量統計の読み込みに失敗しました",
+      "loadRecordsFailed": "使用記録の読み込みに失敗しました",
       "loadConfigsFailed": "モデル設定の読み込みに失敗しました",
       "configUpdated": "モデル設定が更新されました",
       "updateConfigFailed": "モデル設定の更新に失敗しました"
@@ -650,6 +651,7 @@
     "emptyState": {
       "keys": "API キーがありません",
       "usage": "使用記録がありません",
+      "records": "使用記録がありません",
       "configs": "モデル設定がありません"
     },
     "stats": {
@@ -673,6 +675,20 @@
     "providers": {
       "selectPlaceholder": "プロバイダーを選択",
       "all": "すべて"
+    },
+    "records": {
+      "title": "使用記録",
+      "time": "時間",
+      "model": "モデル",
+      "endpoint": "エンドポイント",
+      "inputTokens": "入力トークン",
+      "outputTokens": "出力トークン",
+      "totalTokens": "合計トークン",
+      "responseTime": "応答時間",
+      "status": "ステータス",
+      "pagination": "{current} / {total} ページ、合計 {count} 件",
+      "prev": "前へ",
+      "next": "次へ"
     }
   }
 }

@@ -1,8 +1,9 @@
 'use client';
 
-import { getUsageStats } from '@/actions/gateway';
+import { getUsageStats, getUsageRecords } from '@/actions/gateway';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart3, Loader2, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BarChart3, Loader2, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -14,12 +15,17 @@ interface UsageStatsProps {
 export function UsageStats({ refreshTrigger }: UsageStatsProps) {
   const t = useTranslations('gateway');
   const [stats, setStats] = useState<any>(null);
+  const [records, setRecords] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingRecords, setIsLoadingRecords] = useState(false);
   const [timeRange, setTimeRange] = useState('7d');
+  const [recordsPage, setRecordsPage] = useState(1);
+  const recordsPageSize = 20;
 
   useEffect(() => {
     loadStats();
-  }, [timeRange, refreshTrigger]);
+    loadRecords();
+  }, [timeRange, refreshTrigger, recordsPage]);
 
   const loadStats = async () => {
     setIsLoading(true);
@@ -61,6 +67,52 @@ export function UsageStats({ refreshTrigger }: UsageStatsProps) {
     }
   };
 
+  const loadRecords = async () => {
+    setIsLoadingRecords(true);
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+
+      switch (timeRange) {
+        case '1d':
+          startDate.setDate(startDate.getDate() - 1);
+          break;
+        case '7d':
+          startDate.setDate(startDate.getDate() - 7);
+          break;
+        case '30d':
+          startDate.setDate(startDate.getDate() - 30);
+          break;
+        case '90d':
+          startDate.setDate(startDate.getDate() - 90);
+          break;
+        default:
+          startDate.setDate(startDate.getDate() - 7);
+      }
+
+      const result = await getUsageRecords({
+        startDate,
+        endDate,
+        page: recordsPage,
+        pageSize: recordsPageSize,
+      });
+
+      console.log('[UsageStats] getUsageRecords result:', result);
+
+      if (result.data) {
+        console.log('[UsageStats] Records data:', result.data);
+        setRecords(result.data);
+      } else {
+        console.error('[UsageStats] Failed to load records:', result.error);
+        toast.error(result.error || t('toast.loadRecordsFailed'));
+      }
+    } catch (error) {
+      toast.error(t('toast.loadRecordsFailed'));
+    } finally {
+      setIsLoadingRecords(false);
+    }
+  };
+
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(2) + 'M';
@@ -69,6 +121,24 @@ export function UsageStats({ refreshTrigger }: UsageStatsProps) {
       return (num / 1000).toFixed(2) + 'K';
     }
     return num.toString();
+  };
+
+  const formatDate = (date: Date | string) => {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
+  const formatDuration = (ms: number | null | undefined) => {
+    if (!ms) return '-';
+    if (ms < 1000) return `${ms}ms`;
+    return `${(ms / 1000).toFixed(2)}s`;
   };
 
   return (
@@ -197,6 +267,105 @@ export function UsageStats({ refreshTrigger }: UsageStatsProps) {
           <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
         </div>
       )}
+
+      {/* Usage Records List */}
+      <div className="space-y-3">
+        <h3 className="text-foreground text-sm font-medium">{t('records.title')}</h3>
+        {isLoadingRecords ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+          </div>
+        ) : records?.records && records.records.length > 0 ? (
+          <>
+            <div className="bg-muted/30 overflow-hidden rounded-lg">
+              <div className="max-h-[600px] overflow-x-auto overflow-y-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/95 sticky top-0 z-10 backdrop-blur-sm">
+                    <tr className="border-border/50 border-b">
+                      <th className="text-muted-foreground px-4 py-3 text-left text-[12px] font-medium">{t('records.time')}</th>
+                      <th className="text-muted-foreground px-4 py-3 text-left text-[12px] font-medium">{t('records.model')}</th>
+                      <th className="text-muted-foreground px-4 py-3 text-left text-[12px] font-medium">{t('records.endpoint')}</th>
+                      <th className="text-muted-foreground px-4 py-3 text-right text-[12px] font-medium">{t('records.inputTokens')}</th>
+                      <th className="text-muted-foreground px-4 py-3 text-right text-[12px] font-medium">{t('records.outputTokens')}</th>
+                      <th className="text-muted-foreground px-4 py-3 text-right text-[12px] font-medium">{t('records.totalTokens')}</th>
+                      <th className="text-muted-foreground px-4 py-3 text-right text-[12px] font-medium">{t('records.responseTime')}</th>
+                      <th className="text-muted-foreground px-4 py-3 text-center text-[12px] font-medium">{t('records.status')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {records.records.map((record: any) => (
+                      <tr key={record.id} className="border-border/30 hover:bg-muted/50 border-b transition-colors">
+                        <td className="text-foreground px-4 py-3 text-[12px]">{formatDate(record.createdAt)}</td>
+                        <td className="text-foreground px-4 py-3 font-mono text-[12px]">{record.modelId}</td>
+                        <td className="text-foreground px-4 py-3 font-mono text-[12px]">{record.endpoint}</td>
+                        <td className="text-foreground px-4 py-3 text-right text-[12px]">{formatNumber(record.inputTokens)}</td>
+                        <td className="text-foreground px-4 py-3 text-right text-[12px]">{formatNumber(record.outputTokens)}</td>
+                        <td className="text-foreground px-4 py-3 text-right text-[12px] font-medium">{formatNumber(record.totalTokens)}</td>
+                        <td className="text-muted-foreground px-4 py-3 text-right text-[12px]">{formatDuration(record.responseTime)}</td>
+                        <td className="px-4 py-3 text-center">
+                          {record.statusCode ? (
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                record.statusCode >= 400
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                  : record.statusCode >= 300
+                                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                    : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                              }`}
+                            >
+                              {record.statusCode}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-[11px]">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            {/* Pagination */}
+            {records.totalPages > 1 && (
+              <div className="flex items-center justify-between">
+                <div className="text-muted-foreground text-[12px]">
+                  {t('records.pagination', {
+                    current: recordsPage,
+                    total: records.totalPages,
+                    count: records.total,
+                  })}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setRecordsPage(p => Math.max(1, p - 1))}
+                    disabled={recordsPage === 1}
+                    className="h-8 text-[12px]"
+                  >
+                    <ChevronLeft className="h-3 w-3" />
+                    {t('records.prev')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setRecordsPage(p => Math.min(records.totalPages, p + 1))}
+                    disabled={recordsPage >= records.totalPages}
+                    className="h-8 text-[12px]"
+                  >
+                    {t('records.next')}
+                    <ChevronRight className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed">
+            <p className="text-muted-foreground text-[13px]">{t('emptyState.records')}</p>
+          </div>
+        )}
+      </div>
 
       {stats && stats.totalRequests === 0 && (
         <div className="flex h-[280px] items-center justify-center">

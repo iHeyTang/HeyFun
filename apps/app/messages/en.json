@@ -636,6 +636,7 @@
       "deleteKeyFailed": "Failed to delete API key",
       "keyCopied": "Key copied to clipboard",
       "loadStatsFailed": "Failed to load usage statistics",
+      "loadRecordsFailed": "Failed to load usage records",
       "loadConfigsFailed": "Failed to load model configurations",
       "configUpdated": "Model configuration updated",
       "updateConfigFailed": "Failed to update model configuration"
@@ -650,6 +651,7 @@
     "emptyState": {
       "keys": "No API keys",
       "usage": "No usage records",
+      "records": "No usage records",
       "configs": "No model configurations"
     },
     "stats": {
@@ -673,6 +675,20 @@
     "providers": {
       "selectPlaceholder": "Select Provider",
       "all": "All"
+    },
+    "records": {
+      "title": "Usage Records",
+      "time": "Time",
+      "model": "Model",
+      "endpoint": "Endpoint",
+      "inputTokens": "Input Tokens",
+      "outputTokens": "Output Tokens",
+      "totalTokens": "Total Tokens",
+      "responseTime": "Response Time",
+      "status": "Status",
+      "pagination": "Page {current} / {total}, {count} records total",
+      "prev": "Previous",
+      "next": "Next"
     }
   }
 }

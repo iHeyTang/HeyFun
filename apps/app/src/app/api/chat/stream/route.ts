@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { getAgent } from '@/agents/server';
 import { calculateLLMCost, deductCredits, checkCreditsBalance } from '@/lib/server/credit';
 import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
+import { recordGatewayUsage } from '@/lib/server/gateway';
 
 /**
  * 异步生成会话标题
@@ -82,7 +83,19 @@ async function generateSessionTitle(sessionId: string, userMessage: string, orga
 }
 
 // 获取AI流式响应
-async function getAIResponse({ organizationId, sessionId, content }: { organizationId: string; sessionId: string; content: string }) {
+async function getAIResponse({
+  organizationId,
+  sessionId,
+  content,
+  requestStartTime,
+  ipAddress,
+}: {
+  organizationId: string;
+  sessionId: string;
+  content: string;
+  requestStartTime?: number;
+  ipAddress?: string;
+}) {
   try {
     // 获取会话和消息历史
     const session = await prisma.chatSessions.findUnique({
@@ -208,11 +221,10 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
       shouldGenerateTitle,
       modelInfo,
       streamGenerator: async function* () {
+        let fullContent = '';
+        let inputTokens = 0;
+        let outputTokens = 0;
         try {
-          let fullContent = '';
-          let inputTokens = 0;
-          let outputTokens = 0;
-
           // 构建聊天参数，包含工具配置
           const chatParams: UnifiedChat.ChatCompletionParams = {
             messages,
@@ -381,6 +393,26 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
               // 注意：这里不抛出错误，因为响应已经发送给客户端了
             }
           }
+
+          // 记录 gateway 使用量
+          try {
+            await recordGatewayUsage({
+              organizationId,
+              apiKeyId: null, // Clerk 鉴权模式
+              modelId: modelInfo.id,
+              endpoint: '/api/chat/stream',
+              method: 'POST',
+              inputTokens,
+              outputTokens,
+              totalTokens: inputTokens + outputTokens,
+              statusCode: 200,
+              responseTime: requestStartTime ? Date.now() - requestStartTime : undefined,
+              ipAddress,
+            });
+          } catch (error) {
+            console.error(`[Stream] Failed to record gateway usage for session ${sessionId}:`, error);
+            // 不抛出错误，避免影响主流程
+          }
         } catch (error) {
           // 发生错误时更新消息状态
           await prisma.chatMessages.update({
@@ -391,6 +423,26 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
               content: 'Error: ' + (error as Error).message,
             },
           });
+
+          // 记录错误使用量
+          try {
+            await recordGatewayUsage({
+              organizationId,
+              apiKeyId: null, // Clerk 鉴权模式
+              modelId: modelInfo.id,
+              endpoint: '/api/chat/stream',
+              method: 'POST',
+              inputTokens,
+              outputTokens,
+              totalTokens: inputTokens + outputTokens,
+              statusCode: 500,
+              responseTime: requestStartTime ? Date.now() - requestStartTime : undefined,
+              errorMessage: (error as Error).message,
+              ipAddress,
+            });
+          } catch (recordError) {
+            console.error(`[Stream] Failed to record gateway usage error for session ${sessionId}:`, recordError);
+          }
 
           yield {
             type: 'error',
@@ -405,7 +457,8 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
   }
 }
 
-export const POST = withUserAuthApi<{}, {}, { sessionId: string; content: string }>(async (_req, ctx) => {
+export const POST = withUserAuthApi<{}, {}, { sessionId: string; content: string }>(async (req, ctx) => {
+  const requestStartTime = Date.now();
   try {
     const { sessionId, content } = ctx.body;
 
@@ -413,11 +466,16 @@ export const POST = withUserAuthApi<{}, {}, { sessionId: string; content: string
       return new NextResponse('Missing required parameters', { status: 400 });
     }
 
+    // 获取 IP 地址
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || undefined;
+
     // 获取AI响应流
     const result = await getAIResponse({
       organizationId: ctx.orgId,
       sessionId,
       content,
+      requestStartTime,
+      ipAddress,
     });
 
     // 创建SSE流

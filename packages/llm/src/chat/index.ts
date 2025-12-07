@@ -72,6 +72,11 @@ export class ChatHost {
       throw new Error(`Provider ${providerId} not configured. Please set API key in ChatHost config or environment variables.`);
     }
 
+    // 记录 provider 配置信息（用于调试）
+    const apiKey = overrideConfig?.apiKey || providerConfig.apiKey;
+    const apiKeyPreview = apiKey ? `${apiKey.substring(0, 8)}...` : 'not set';
+    console.log(`[ChatHost] Creating client for model ${modelId}, provider: ${providerId}, API key: ${apiKeyPreview}`);
+
     return createChatClient({
       modelId,
       models: this.models,

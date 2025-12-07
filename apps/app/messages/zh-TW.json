@@ -636,6 +636,7 @@
       "deleteKeyFailed": "刪除 API 金鑰失敗",
       "keyCopied": "金鑰已複製到剪貼簿",
       "loadStatsFailed": "載入使用量統計失敗",
+      "loadRecordsFailed": "載入調用記錄失敗",
       "loadConfigsFailed": "載入模型配置失敗",
       "configUpdated": "模型配置已更新",
       "updateConfigFailed": "更新模型配置失敗"
@@ -650,6 +651,7 @@
     "emptyState": {
       "keys": "暫無 API 金鑰",
       "usage": "暫無使用記錄",
+      "records": "暫無調用記錄",
       "configs": "暫無模型配置"
     },
     "stats": {
@@ -673,6 +675,20 @@
     "providers": {
       "selectPlaceholder": "選擇提供商",
       "all": "全部"
+    },
+    "records": {
+      "title": "調用記錄",
+      "time": "時間",
+      "model": "模型",
+      "endpoint": "端點",
+      "inputTokens": "輸入 Tokens",
+      "outputTokens": "輸出 Tokens",
+      "totalTokens": "總計 Tokens",
+      "responseTime": "響應時間",
+      "status": "狀態",
+      "pagination": "第 {current} / {total} 頁，共 {count} 條記錄",
+      "prev": "上一頁",
+      "next": "下一頁"
     }
   }
 }

@@ -637,6 +637,7 @@
       "deleteKeyFailed": "删除 API 密钥失败",
       "keyCopied": "密钥已复制到剪贴板",
       "loadStatsFailed": "加载使用量统计失败",
+      "loadRecordsFailed": "加载调用记录失败",
       "loadConfigsFailed": "加载模型配置失败",
       "configUpdated": "模型配置已更新",
       "updateConfigFailed": "更新模型配置失败"
@@ -651,6 +652,7 @@
     "emptyState": {
       "keys": "暂无 API 密钥",
       "usage": "暂无使用记录",
+      "records": "暂无调用记录",
       "configs": "暂无模型配置"
     },
     "stats": {
@@ -674,6 +676,20 @@
     "providers": {
       "selectPlaceholder": "选择提供商",
       "all": "全部"
+    },
+    "records": {
+      "title": "调用记录",
+      "time": "时间",
+      "model": "模型",
+      "endpoint": "端点",
+      "inputTokens": "输入 Tokens",
+      "outputTokens": "输出 Tokens",
+      "totalTokens": "总计 Tokens",
+      "responseTime": "响应时间",
+      "status": "状态",
+      "pagination": "第 {current} / {total} 页，共 {count} 条记录",
+      "prev": "上一页",
+      "next": "下一页"
     }
   }
 }

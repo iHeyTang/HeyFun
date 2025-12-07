@@ -54,7 +54,7 @@ export async function verifyGatewayApiKey(apiKey: string): Promise<{ organizatio
 
 /**
  * 记录Gateway使用量
- * apiKeyId 为可选，如果为 null 则不记录使用量（用于 Clerk 鉴权模式）
+ * apiKeyId 为可选，如果为 null 则记录为 null（用于 Clerk 鉴权模式）
  */
 export async function recordGatewayUsage(params: {
   organizationId: string;
@@ -70,30 +70,34 @@ export async function recordGatewayUsage(params: {
   errorMessage?: string;
   ipAddress?: string;
 }) {
-  // 如果没有 apiKeyId，则不记录使用量（Clerk 鉴权模式）
-  if (!params.apiKeyId) {
-    return;
-  }
-
   try {
-    await prisma.gatewayUsageRecords.create({
-      data: {
-        organizationId: params.organizationId,
-        apiKeyId: params.apiKeyId,
-        modelId: params.modelId,
-        endpoint: params.endpoint,
-        method: params.method,
-        inputTokens: params.inputTokens,
-        outputTokens: params.outputTokens,
-        totalTokens: params.totalTokens,
-        statusCode: params.statusCode,
-        responseTime: params.responseTime,
-        errorMessage: params.errorMessage,
-        ipAddress: params.ipAddress,
-      },
+    const data: any = {
+      organizationId: params.organizationId,
+      modelId: params.modelId,
+      endpoint: params.endpoint,
+      method: params.method,
+      inputTokens: params.inputTokens,
+      outputTokens: params.outputTokens,
+      totalTokens: params.totalTokens,
+      statusCode: params.statusCode,
+      responseTime: params.responseTime,
+      errorMessage: params.errorMessage,
+      ipAddress: params.ipAddress,
+    };
+    // 只有当 apiKeyId 不为 null 时才设置
+    if (params.apiKeyId !== null) {
+      data.apiKeyId = params.apiKeyId;
+    }
+
+    console.log('[recordGatewayUsage] Creating record with data:', {
+      ...data,
+      apiKeyId: data.apiKeyId || 'null',
     });
+
+    const record = await prisma.gatewayUsageRecords.create({ data });
+    console.log('[recordGatewayUsage] Record created successfully:', record.id);
   } catch (error) {
-    console.error('Failed to record gateway usage:', error);
+    console.error('[recordGatewayUsage] Failed to record gateway usage:', error);
     // 不抛出错误，避免影响主流程
   }
 }

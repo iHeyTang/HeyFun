@@ -636,6 +636,7 @@
       "deleteKeyFailed": "API 키 삭제 실패",
       "keyCopied": "키가 클립보드에 복사되었습니다",
       "loadStatsFailed": "사용량 통계 로드 실패",
+      "loadRecordsFailed": "사용 기록 로드 실패",
       "loadConfigsFailed": "모델 구성 로드 실패",
       "configUpdated": "모델 구성이 업데이트되었습니다",
       "updateConfigFailed": "모델 구성 업데이트 실패"
@@ -650,6 +651,7 @@
     "emptyState": {
       "keys": "API 키가 없습니다",
       "usage": "사용 기록이 없습니다",
+      "records": "사용 기록이 없습니다",
       "configs": "모델 구성이 없습니다"
     },
     "stats": {
@@ -673,6 +675,20 @@
     "providers": {
       "selectPlaceholder": "공급자 선택",
       "all": "전체"
+    },
+    "records": {
+      "title": "사용 기록",
+      "time": "시간",
+      "model": "모델",
+      "endpoint": "엔드포인트",
+      "inputTokens": "입력 토큰",
+      "outputTokens": "출력 토큰",
+      "totalTokens": "총 토큰",
+      "responseTime": "응답 시간",
+      "status": "상태",
+      "pagination": "{current} / {total} 페이지, 총 {count}개",
+      "prev": "이전",
+      "next": "다음"
     }
   }
 }

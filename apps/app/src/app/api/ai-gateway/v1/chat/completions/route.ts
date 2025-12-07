@@ -196,24 +196,75 @@ export async function POST(request: NextRequest) {
               return;
             }
 
-            const streamGenerator = llmClient.chatStream(chatParams);
+            // 调用外部API流式接口
+            let streamGenerator;
+            try {
+              const providerId = (modelInfo.metadata?.providerId as string) || modelInfo.provider;
+              console.log(`[Gateway] Calling external API stream for model ${modelId}, provider: ${providerId}, organization: ${organizationId}`);
+              streamGenerator = llmClient.chatStream(chatParams);
+            } catch (error) {
+              // 处理外部API返回的错误
+              if (error instanceof Error && error.message.includes('API error (402)')) {
+                const providerId = (modelInfo.metadata?.providerId as string) || modelInfo.provider;
+                console.error(
+                  `[Gateway] External API provider (${providerId}) returned insufficient balance error for organization ${organizationId}, model: ${modelId}`,
+                );
+                console.error(`[Gateway] Error details: ${error.message}`);
+                const errorData = `data: ${JSON.stringify({
+                  error: {
+                    message: `External API provider (${providerId}) has insufficient balance. Please check your ${providerId} account balance.`,
+                    type: 'external_api_insufficient_balance',
+                    code: 'external_api_insufficient_balance',
+                    provider: providerId,
+                    details: error.message,
+                  },
+                })}\n\n`;
+                controller.enqueue(encoder.encode(errorData));
+                controller.close();
+                return;
+              }
+              // 其他错误继续抛出
+              throw error;
+            }
             let fullContent = '';
 
-            for await (const chunk of streamGenerator) {
-              // 发送SSE格式的数据
-              const data = `data: ${JSON.stringify(chunk)}\n\n`;
-              controller.enqueue(encoder.encode(data));
+            try {
+              for await (const chunk of streamGenerator) {
+                // 发送SSE格式的数据
+                const data = `data: ${JSON.stringify(chunk)}\n\n`;
+                controller.enqueue(encoder.encode(data));
 
-              // 累积token使用量
-              if (chunk.usage) {
-                inputTokens += chunk.usage.prompt_tokens || 0;
-                outputTokens += chunk.usage.completion_tokens || 0;
-              }
+                // 累积token使用量
+                if (chunk.usage) {
+                  inputTokens += chunk.usage.prompt_tokens || 0;
+                  outputTokens += chunk.usage.completion_tokens || 0;
+                }
 
-              // 检查是否完成
-              if (chunk.choices?.[0]?.finish_reason) {
-                fullContent = chunk.choices[0].delta?.content || fullContent;
+                // 检查是否完成
+                if (chunk.choices?.[0]?.finish_reason) {
+                  fullContent = chunk.choices[0].delta?.content || fullContent;
+                }
               }
+            } catch (streamError) {
+              // 处理流式过程中的错误
+              if (streamError instanceof Error && streamError.message.includes('API error (402)')) {
+                console.error(
+                  `[Gateway] External API provider returned insufficient balance error during streaming for organization ${organizationId}`,
+                );
+                const errorData = `data: ${JSON.stringify({
+                  error: {
+                    message: 'External API provider has insufficient balance. Please check your API provider account balance.',
+                    type: 'external_api_insufficient_balance',
+                    code: 'external_api_insufficient_balance',
+                    details: streamError.message,
+                  },
+                })}\n\n`;
+                controller.enqueue(encoder.encode(errorData));
+                controller.close();
+                return;
+              }
+              // 其他错误继续抛出，由外层catch处理
+              throw streamError;
             }
 
             // 发送结束标记
@@ -231,11 +282,11 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            // 记录使用量
-            if (apiKeyId && organizationId && modelId) {
+            // 记录使用量（即使 apiKeyId 为 null 也要记录）
+            if (organizationId && modelId) {
               await recordGatewayUsage({
                 organizationId,
-                apiKeyId,
+                apiKeyId, // 可以为 null（Clerk 或桌面端鉴权模式）
                 modelId,
                 endpoint: '/v1/chat/completions',
                 method: 'POST',
@@ -259,11 +310,11 @@ export async function POST(request: NextRequest) {
             controller.enqueue(encoder.encode(errorData));
             controller.close();
 
-            // 记录错误使用量
-            if (apiKeyId && organizationId && modelId) {
+            // 记录错误使用量（即使 apiKeyId 为 null 也要记录）
+            if (organizationId && modelId) {
               await recordGatewayUsage({
                 organizationId,
-                apiKeyId,
+                apiKeyId, // 可以为 null（Clerk 或桌面端鉴权模式）
                 modelId,
                 endpoint: '/v1/chat/completions',
                 method: 'POST',
@@ -325,7 +376,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await llmClient.chat(chatParams);
+    // 调用外部API
+    let response;
+    try {
+      // 记录使用的模型和 provider 信息
+      const providerId = (modelInfo.metadata?.providerId as string) || modelInfo.provider;
+      console.log(`[Gateway] Calling external API for model ${modelId}, provider: ${providerId}, organization: ${organizationId}`);
+      response = await llmClient.chat(chatParams);
+    } catch (error) {
+      // 处理外部API返回的错误
+      if (error instanceof Error && error.message.includes('API error (402)')) {
+        // 外部API提供商（如Vercel AI Gateway）余额不足
+        const providerId = (modelInfo.metadata?.providerId as string) || modelInfo.provider;
+        console.error(
+          `[Gateway] External API provider (${providerId}) returned insufficient balance error for organization ${organizationId}, model: ${modelId}`,
+        );
+        console.error(`[Gateway] Error details: ${error.message}`);
+        statusCode = 402;
+        return NextResponse.json(
+          {
+            error: {
+              message: `External API provider (${providerId}) has insufficient balance. Please check your ${providerId} account balance.`,
+              type: 'external_api_insufficient_balance',
+              code: 'external_api_insufficient_balance',
+              provider: providerId,
+              details: error.message,
+            },
+          },
+          { status: 402 },
+        );
+      }
+      // 其他错误继续抛出
+      throw error;
+    }
     inputTokens = response.usage?.prompt_tokens || 0;
     outputTokens = response.usage?.completion_tokens || 0;
 
@@ -351,11 +434,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 记录使用量
-    if (apiKeyId && organizationId && modelId) {
+    // 记录使用量（即使 apiKeyId 为 null 也要记录）
+    if (organizationId && modelId) {
       await recordGatewayUsage({
         organizationId,
-        apiKeyId,
+        apiKeyId, // 可以为 null（Clerk 或桌面端鉴权模式）
         modelId,
         endpoint: '/v1/chat/completions',
         method: 'POST',
@@ -374,11 +457,11 @@ export async function POST(request: NextRequest) {
     errorMessage = error instanceof Error ? error.message : 'Unknown error';
     statusCode = 500;
 
-    // 记录错误使用量
-    if (apiKeyId && organizationId && modelId) {
+    // 记录错误使用量（即使 apiKeyId 为 null 也要记录）
+    if (organizationId && modelId) {
       await recordGatewayUsage({
         organizationId,
-        apiKeyId,
+        apiKeyId, // 可以为 null（Clerk 或桌面端鉴权模式）
         modelId: modelId || 'unknown',
         endpoint: '/v1/chat/completions',
         method: 'POST',

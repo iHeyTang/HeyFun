@@ -101,8 +101,11 @@ export async function checkCreditsBalance(organizationId: string, cost: number):
   });
 
   if (!credit) {
+    console.log(`[Credit Check] Organization ${organizationId}: No credit record found, balance insufficient`);
     return false;
   }
 
-  return credit.amount >= cost;
+  const hasBalance = credit.amount >= cost;
+  console.log(`[Credit Check] Organization ${organizationId}: Current balance: ${credit.amount}, Required: ${cost}, Sufficient: ${hasBalance}`);
+  return hasBalance;
 }
