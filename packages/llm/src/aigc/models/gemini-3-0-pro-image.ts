@@ -40,7 +40,7 @@ export class Gemini30ProImage extends BaseAigcModel {
   name = 'gemini-3-0-pro-image';
   displayName = 'Gemini Nano Banana Pro';
   description = 'Gemini Nano Banana Pro';
-  costDescription = '1 Credits / image';
+  costDescription = '2 Credits / image';
   generationTypes = ['text-to-image', 'image-to-image'] as GenerationType[];
 
   tags = ['recommended'];
@@ -203,6 +203,6 @@ export class Gemini30ProImage extends BaseAigcModel {
 
   calculateCost(params: z.infer<typeof this.paramsSchema>): number {
     const count = params.n ? parseInt(params.n) : 1;
-    return 1000 * count;
+    return 2000 * count;
   }
 }
