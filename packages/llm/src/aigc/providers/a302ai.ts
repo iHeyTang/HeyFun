@@ -26,16 +26,29 @@ export class A302aiProvider {
     const query = new URLSearchParams(params.query);
     url.search = query.toString();
     try {
-      const response = await fetch(url, {
-        method: params.method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
-          ...params.headers,
-        },
-        body: params.body ? JSON.stringify(params.body) : undefined,
-      });
-      return response.json() as Promise<R>;
+      // 设置更长的超时时间（10分钟），避免默认的60秒超时导致连接被关闭
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000); // 10分钟
+
+      try {
+        const response = await fetch(url, {
+          method: params.method,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.apiKey}`,
+            ...params.headers,
+          },
+          body: params.body ? JSON.stringify(params.body) : undefined,
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        const res = (await response.json()) as Promise<R>;
+        console.log(JSON.stringify(res));
+        return res;
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        throw fetchError;
+      }
     } catch (error) {
       console.error(error);
       throw error;

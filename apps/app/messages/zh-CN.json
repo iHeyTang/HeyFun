@@ -57,7 +57,8 @@
         "textToSpeech": "语音合成"
       },
       "noModels": "暂无可用模型",
-      "noMatch": "未找到匹配的模型"
+      "noMatch": "未找到匹配的模型",
+      "recommended": "推荐"
     },
     "agentSelector": {
       "title": "选择智能体",
@@ -359,7 +360,8 @@
         "advanced": "高级设置",
         "video": "视频",
         "audio": "音频",
-        "lyrics": "歌词"
+        "lyrics": "歌词",
+        "n": "生成数量"
       }
     }
   },

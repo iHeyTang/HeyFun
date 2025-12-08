@@ -57,7 +57,8 @@
         "textToSpeech": "音声合成"
       },
       "noModels": "利用可能なモデルがありません",
-      "noMatch": "一致するモデルが見つかりません"
+      "noMatch": "一致するモデルが見つかりません",
+      "recommended": "おすすめ"
     },
     "agentSelector": {
       "title": "エージェントを選択",
@@ -358,7 +359,8 @@
         "advanced": "詳細設定",
         "video": "動画",
         "audio": "音声",
-        "lyrics": "歌詞"
+        "lyrics": "歌詞",
+        "n": "生成数"
       }
     }
   },

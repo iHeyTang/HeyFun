@@ -57,7 +57,8 @@
         "textToSpeech": "語音合成"
       },
       "noModels": "暫無可用模型",
-      "noMatch": "未找到符合的模型"
+      "noMatch": "未找到符合的模型",
+      "recommended": "推薦"
     },
     "agentSelector": {
       "title": "選擇智慧體",
@@ -358,7 +359,8 @@
         "advanced": "進階設定",
         "video": "影片",
         "audio": "音訊",
-        "lyrics": "歌詞"
+        "lyrics": "歌詞",
+        "n": "生成數量"
       }
     }
   },

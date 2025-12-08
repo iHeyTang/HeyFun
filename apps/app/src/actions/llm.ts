@@ -50,6 +50,7 @@ export const getAigcModels = withUserAuth(async () => {
     description: model.description,
     costDescription: model.costDescription,
     generationTypes: model.generationTypes,
+    tags: model.tags,
     paramsSchema: zodToJsonSchema(model.paramsSchema) as { properties: SubmitTaskParamsJsonSchema },
   }));
 });

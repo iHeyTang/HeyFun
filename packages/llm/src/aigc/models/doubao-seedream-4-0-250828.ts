@@ -16,6 +16,8 @@ export class DoubaoSeedream40 extends BaseAigcModel {
   costDescription = '0.3 Credits / image';
   generationTypes = ['image-to-image', 'text-to-image'] as GenerationType[];
 
+  tags = ['recommended'];
+
   paramsSchema = z.object({
     prompt: z.string(),
     aspectRatio: z.enum(['16:9', '4:3', '9:16', '3:4', '3:2', '2:3', '1:1', '21:9']),

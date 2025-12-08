@@ -57,7 +57,8 @@
         "textToSpeech": "Speech"
       },
       "noModels": "No models available",
-      "noMatch": "No matching models found"
+      "noMatch": "No matching models found",
+      "recommended": "Recommended"
     },
     "agentSelector": {
       "title": "Select Agent",
@@ -358,7 +359,8 @@
         "advanced": "Advanced Settings",
         "video": "Video",
         "audio": "Audio",
-        "lyrics": "Lyrics"
+        "lyrics": "Lyrics",
+        "n": "Number of generations"
       }
     }
   },

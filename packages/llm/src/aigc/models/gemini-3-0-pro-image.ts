@@ -43,6 +43,8 @@ export class Gemini30ProImage extends BaseAigcModel {
   costDescription = '1 Credits / image';
   generationTypes = ['text-to-image', 'image-to-image'] as GenerationType[];
 
+  tags = ['recommended'];
+
   paramsSchema = paramsSchema;
 
   providerName = '302ai';

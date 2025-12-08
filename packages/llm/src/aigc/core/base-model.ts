@@ -115,6 +115,8 @@ export abstract class BaseAigcModel {
   public abstract costDescription?: string;
   public abstract generationTypes: GenerationType[];
 
+  public tags: string[] = [];
+
   // 抽象方法：子类必须实现自己的参数验证规则
   public abstract paramsSchema: z.ZodSchema<
     z.infer<typeof videoParamsSchema> | z.infer<typeof imageParamsSchema> | z.infer<typeof t2aParamsSchema> | z.infer<typeof musicParamsSchema>

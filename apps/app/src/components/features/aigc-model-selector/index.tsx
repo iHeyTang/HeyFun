@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GenerationType } from '@repo/llm/aigc';
-import { Image, Mic, Search, Sparkles, Video } from 'lucide-react';
+import { Image, Mic, Search, Sparkles, Star, Video } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
@@ -94,7 +94,17 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
       }
     }
 
-    return filtered;
+    // 排序：推荐的模型排在最前面
+    const sorted = [...filtered].sort((a, b) => {
+      const aIsRecommended = a.tags?.some(tag => tag.toLowerCase().includes('recommended')) ?? false;
+      const bIsRecommended = b.tags?.some(tag => tag.toLowerCase().includes('recommended')) ?? false;
+
+      if (aIsRecommended && !bIsRecommended) return -1;
+      if (!aIsRecommended && bIsRecommended) return 1;
+      return 0; // 保持原有顺序
+    });
+
+    return sorted;
   }, [models, searchQuery, activeCategory, generationTypeNames]);
 
   const handleModelSelect = (modelName: string) => {
@@ -151,40 +161,47 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
 
               <TabsContent value={activeCategory} className="mt-4">
                 <ScrollArea className="h-[60vh]">
-                  <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,320px))] gap-4">
-                    {filteredModels.map(model => (
-                      <Card
-                        key={model.name}
-                        className={`h-48 cursor-pointer overflow-hidden shadow-none transition-all hover:shadow-md ${selectedModel === model.name ? 'border-primary border-2' : ''}`}
-                        onClick={() => handleModelSelect(model.name)}
-                      >
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(360px,1fr))] gap-4">
+                    {filteredModels.map(model => {
+                      const isRecommended = model.tags?.some(tag => tag.toLowerCase().includes('recommended'));
+                      return (
+                        <Card
+                          key={model.name}
+                          className={`cursor-pointer overflow-hidden shadow-none transition-all hover:shadow-md ${selectedModel === model.name ? 'border-primary border-2' : ''}`}
+                          onClick={() => handleModelSelect(model.name)}
+                        >
+                          <CardHeader>
                             <CardTitle className="text-base">{model.displayName}</CardTitle>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {model.generationTypes.map(type => {
-                              const Icon = generationTypeIcons[type as keyof typeof generationTypeIcons];
-                              return (
-                                <Badge key={type} variant="secondary" className="text-xs">
-                                  {Icon ? <Icon className="text-muted-foreground h-4 w-4" /> : null}
-                                  {generationTypeNames[type as keyof typeof generationTypeNames] || type}
+                            <div className="flex flex-wrap gap-1">
+                              {isRecommended && (
+                                <Badge variant="secondary" className="border border-yellow-200 bg-yellow-50 text-xs text-yellow-600">
+                                  <Star className="mr-1 h-3 w-3 fill-yellow-400" />
+                                  {t('recommended')}
                                 </Badge>
-                              );
-                            })}
-                          </div>
-                          {model.costDescription && (
-                            <Badge variant="secondary" className="text-xs">
-                              <Sparkles className="text-muted-foreground h-4 w-4" />
-                              {model.costDescription}
-                            </Badge>
-                          )}
-                        </CardHeader>
-                        <CardContent className="overflow-hidden">
-                          {model.description && <CardDescription className="line-clamp-2 text-sm">{model.description}</CardDescription>}
-                        </CardContent>
-                      </Card>
-                    ))}
+                              )}
+                              {model.generationTypes.map(type => {
+                                const Icon = generationTypeIcons[type as keyof typeof generationTypeIcons];
+                                return (
+                                  <Badge key={type} variant="secondary" className="text-xs">
+                                    {Icon ? <Icon className="text-muted-foreground h-4 w-4" /> : null}
+                                    {generationTypeNames[type as keyof typeof generationTypeNames] || type}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                            {model.costDescription && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Sparkles className="text-muted-foreground h-4 w-4" />
+                                {model.costDescription}
+                              </Badge>
+                            )}
+                          </CardHeader>
+                          <CardContent className="overflow-hidden">
+                            {model.description && <CardDescription className="line-clamp-2 text-sm">{model.description}</CardDescription>}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
 
                   {filteredModels.length === 0 && (

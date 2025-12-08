@@ -14,6 +14,8 @@ export class Jimeng40 extends BaseAigcModel {
   costDescription = '0.3 Credits / image';
   generationTypes = ['text-to-image', 'image-to-image'] as GenerationType[];
 
+  tags = ['recommended'];
+
   paramsSchema = z.object({
     prompt: z.string(),
     referenceImage: z.array(z.string()).min(0).max(10).optional(),

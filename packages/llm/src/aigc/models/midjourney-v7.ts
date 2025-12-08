@@ -31,6 +31,8 @@ export class MidjourneyV7 extends BaseAigcModel {
   costDescription = '0.5 Credits / 4 images';
   generationTypes = ['text-to-image', 'image-to-image'] as GenerationType[];
 
+  tags = ['recommended'];
+
   paramsSchema = paramsSchema;
 
   providerName = '302ai';
