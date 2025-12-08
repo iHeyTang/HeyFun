@@ -52,7 +52,7 @@ import { DoubaoSeedream40 } from './models/doubao-seedream-4-0-250828';
 // 即梦模型
 
 // Minimax
-import { Gemini25FlashImage } from './models/gemini-2-5-flash-image-preview';
+import { Gemini25FlashImage } from './models/gemini-2-5-flash-image';
 import { Kling21 } from './models/kling-2-1';
 import { MidjourneyV7 } from './models/midjourney-v7';
 import { Minimax25Speech } from './models/minimax-2-5-speech';
@@ -63,6 +63,7 @@ import { MurekaSong } from './models/mureka-song';
 import { MurekaInstrumental } from './models/mureka-instrumental';
 import { TopzlabsVideo } from './models/topzlabs-video';
 import { JimengOmnihuman } from './models/jimeng-omnihuman';
+import { Gemini30ProImage } from './models/gemini-3-0-pro-image';
 
 const aigcProviderConfigSchema = z.object({
   doubao: volcengineArkServiceConfigSchema.optional(),
@@ -196,6 +197,7 @@ AIGC.registerModel(providers => (providers['302ai'] ? new Kling21(providers['302
 
 // Gemini模型注册
 AIGC.registerModel(providers => (providers['302ai'] ? new Gemini25FlashImage(providers['302ai']) : null));
+AIGC.registerModel(providers => (providers['302ai'] ? new Gemini30ProImage(providers['302ai']) : null));
 
 // Sora模型注册
 AIGC.registerModel(providers => (providers['302ai'] ? new SoraVideo2(providers['302ai']) : null));

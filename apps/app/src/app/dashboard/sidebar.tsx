@@ -54,7 +54,7 @@ const useBottomNavItems = () => {
     {
       icon: Network,
       label: t('gateway'),
-      path: '/dashboard/gateway',
+      path: '/dashboard/ai-gateway',
     },
     {
       icon: SettingsIcon,

@@ -1,7 +1,7 @@
 import { UnifiedChat } from './types';
 import { createProvider, BaseProvider } from './providers';
 import { getAdapter, BaseAdapter } from './adapters';
-import { ModelRegistry, ModelInfo } from './models';
+import { ModelInfo } from './models';
 
 export interface ChatClientConfig {
   modelId: string;
@@ -22,7 +22,7 @@ export class ChatClient {
 
   constructor(private config: ChatClientConfig) {
     const models = config.models || [];
-    const model = ModelRegistry.getModel(models, config.modelId);
+    const model = models.find(m => m.id === config.modelId);
     if (!model) throw new Error(`Model not found: ${config.modelId}`);
     this.modelDef = model;
 

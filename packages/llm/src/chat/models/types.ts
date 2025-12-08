@@ -64,14 +64,3 @@ export interface ModelInfo {
   /** 额外的元数据信息 */
   metadata?: Record<string, any>;
 }
-
-export interface ModelFilter {
-  provider?: string;
-  family?: string;
-  type?: 'language' | 'embedding' | 'image';
-  supportsStreaming?: boolean;
-  supportsFunctionCalling?: boolean;
-  supportsVision?: boolean;
-  maxPrice?: number;
-  minContextLength?: number;
-}

@@ -4,14 +4,13 @@
  */
 
 import { ChatClient, createChatClient } from './client';
-import { ModelRegistry } from './models';
-import type { ModelInfo, ModelFilter } from './models';
+import type { ModelInfo } from './models';
 import type { ProviderConfig } from './providers';
 
 // ============ 导出类型 ============
 export type { UnifiedChat } from './types';
 export type { ProviderConfig } from './providers';
-export type { ModelInfo, ModelPricing, ModelFilter } from './models';
+export type { ModelInfo, ModelPricing } from './models';
 export type { ChatClientConfig } from './client';
 
 // ============ 导出类和函数 ============
@@ -24,8 +23,6 @@ export {
   createProvider,
   getAvailableProviders,
 } from './providers';
-
-export { ModelRegistry } from './models';
 
 export { ChatClient, createChatClient } from './client';
 
@@ -63,7 +60,7 @@ export class ChatHost {
   }
 
   createClient(modelId: string, overrideConfig?: Partial<ProviderConfig>): ChatClient {
-    const modelDef = ModelRegistry.getModel(this.models, modelId);
+    const modelDef = this.models.find(m => m.id === modelId);
     if (!modelDef) throw new Error(`Model not found: ${modelId}`);
 
     const providerId = (modelDef.metadata?.providerId as string) || modelDef.provider;
@@ -83,39 +80,6 @@ export class ChatHost {
       ...providerConfig,
       ...overrideConfig,
     });
-  }
-
-  getModels(filter?: ModelFilter): ModelInfo[] {
-    if (filter) return ModelRegistry.filterModels(this.models, filter);
-    return [...this.models];
-  }
-
-  getModelInfo(modelId: string): ModelInfo | null {
-    return ModelRegistry.getModel(this.models, modelId);
-  }
-
-  searchModels(query: string): ModelInfo[] {
-    return ModelRegistry.searchModels(this.models, query);
-  }
-
-  getFreeModels(): ModelInfo[] {
-    return ModelRegistry.getFreeModels(this.models);
-  }
-
-  getModelsByFamily(): Map<string, ModelInfo[]> {
-    return ModelRegistry.groupByFamily(this.models);
-  }
-
-  getModelsByProvider(): Map<string, ModelInfo[]> {
-    return ModelRegistry.groupByProvider(this.models);
-  }
-
-  hasProvider(providerId: string): boolean {
-    return this.providerConfigs.has(providerId);
-  }
-
-  getConfiguredProviders(): string[] {
-    return Array.from(this.providerConfigs.keys());
   }
 }
 
