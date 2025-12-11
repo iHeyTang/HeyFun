@@ -7,13 +7,12 @@ import { auth } from '@clerk/nextjs/server';
 import { Github } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import NotificationEn from './notification-en';
-import NotificationZhCN from './notification-zh-CN';
 import { AppSidebar } from './sidebar';
 import { CreditBadge } from '@/components/features/credit-badge';
 import { ThemeToggle } from '@/components/features/theme-toggle';
 import { LanguageToggle } from '@/components/features/language-toggle';
 import { ThemeLogo } from '@/components/features/theme-logo';
+import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'FlowCanvas',
@@ -30,33 +29,13 @@ const Header = ({ className }: { className?: string }) => {
         </Link>
         <OrganizationSwitcher hidePersonal />
         <CreditBadge />
-        <Dialog>
-          <DialogTrigger asChild>
-            <Badge className="bg-badge text-badge hover:scale-101 cursor-pointer transition">EARLY ACCESS</Badge>
-          </DialogTrigger>
-          <DialogContent showCloseButton={false} style={{ maxWidth: '800px' }}>
-            <DialogHeader>
-              <DialogTitle>EARLY ACCESS</DialogTitle>
-            </DialogHeader>
-            <Tabs className="flex-1">
-              <TabsList>
-                <TabsTrigger value="zh-CN">中文</TabsTrigger>
-                <TabsTrigger value="en">English</TabsTrigger>
-              </TabsList>
-              <TabsContent value="zh-CN">
-                <NotificationZhCN />
-              </TabsContent>
-              <TabsContent value="en">
-                <NotificationEn />
-              </TabsContent>
-            </Tabs>
-          </DialogContent>
-        </Dialog>
-        <Link href="https://github.com/iHeyTang/HeyFun" target="_blank">
-          <Github className="text-muted-foreground h-3 w-3 cursor-pointer" />
-        </Link>
       </div>
       <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="https://github.com/iHeyTang/HeyFun" target="_blank">
+            <Github className="text-foreground h-4 w-4" />
+          </Link>
+        </Button>
         <LanguageToggle />
         <ThemeToggle />
         <UserButton />
