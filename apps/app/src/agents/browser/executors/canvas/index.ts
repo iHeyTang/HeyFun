@@ -7,15 +7,7 @@ import { ToolResult, ToolExecutionContext } from '../../types';
 import { CanvasTool } from './base';
 
 // 导入所有工具
-import { addNodeTool } from './tools/add-node';
-import { addNodesBatchTool } from './tools/add-nodes-batch';
-import { editNodeTool } from './tools/edit-node';
-import { deleteNodeTool } from './tools/delete-node';
-import { connectNodesTool } from './tools/connect-nodes';
-import { connectNodesBatchTool } from './tools/connect-nodes-batch';
-import { connectNodesChainTool } from './tools/connect-nodes-chain';
-import { disconnectNodesTool } from './tools/disconnect-nodes';
-import { disconnectNodeAllTool } from './tools/disconnect-node-all';
+import { editFlowCanvasTool } from './tools/edit-flow-canvas';
 import { getCanvasStateTool } from './tools/get-canvas-state';
 import { getCanvasCapabilitiesTool } from './tools/get-canvas-capabilities';
 import { getNodeTypeInfoTool } from './tools/get-node-type-info';
@@ -27,18 +19,8 @@ import { runWorkflowTool } from './tools/run-workflow';
  * 工具定义和执行器在这里配对
  */
 export const CANVAS_TOOLS: Record<string, CanvasTool> = {
-  // 节点管理
-  add_canvas_node: addNodeTool,
-  add_canvas_nodes_batch: addNodesBatchTool,
-  edit_canvas_node: editNodeTool,
-  delete_canvas_node: deleteNodeTool,
-
-  // 连接管理
-  connect_canvas_nodes: connectNodesTool,
-  connect_canvas_nodes_batch: connectNodesBatchTool,
-  connect_canvas_nodes_chain: connectNodesChainTool,
-  disconnect_canvas_nodes: disconnectNodesTool,
-  disconnect_node_all: disconnectNodeAllTool,
+  // 工作流编辑（统一工具，替代所有节点和连接管理工具）
+  edit_flow_canvas: editFlowCanvasTool,
 
   // 查询
   get_canvas_state: getCanvasStateTool,
@@ -48,7 +30,7 @@ export const CANVAS_TOOLS: Record<string, CanvasTool> = {
   // 布局
   auto_layout_canvas: autoLayoutTool,
 
-  // 工作流
+  // 工作流执行
   run_canvas_workflow: runWorkflowTool,
 };
 

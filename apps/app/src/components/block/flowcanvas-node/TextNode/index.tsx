@@ -1,9 +1,10 @@
 import { BaseNode, NodeData, NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
 import { FlowCanvasTextEditor, FlowCanvasTextEditorRef } from '@/components/block/flowcanvas/components/FlowCanvasTextEditor';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TextNodeActionData } from './processor';
 import { TextNodeTooltip, TextNodeTooltipProps } from './tooltip';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TextNodeProps {
   data: NodeData<TextNodeActionData>;
@@ -18,6 +19,14 @@ export default function TextNode({ data, id }: TextNodeProps) {
   const [text, setText] = useState(data.output?.texts?.list?.[0] || '');
   const editorRef = useRef<FlowCanvasTextEditorRef>(null);
   const status = useNodeStatusById(id);
+
+  // 获取节点尺寸，使用 useMemo 确保尺寸变化时重新计算
+  const node = flowGraph.getNodeById(id);
+  const hasFixedSize = useMemo(() => {
+    const nodeWidth = node?.width || node?.style?.width;
+    const nodeHeight = node?.height || node?.style?.height;
+    return typeof nodeWidth === 'number' && typeof nodeHeight === 'number';
+  }, [node?.width, node?.height, node?.style?.width, node?.style?.height]);
 
   // 监听data.output变化，强制更新组件状态
   useEffect(() => {
@@ -38,9 +47,34 @@ export default function TextNode({ data, id }: TextNodeProps) {
     setText(newText);
   };
 
-  const handleTextBlur = () => {
-    setIsEditing(false);
-    updateNodeOutput(text);
+  const handleTextBlur = (event: React.FocusEvent) => {
+    // 检查 blur 事件的相关目标（relatedTarget）是否在 MentionList 中
+    const relatedTarget = event.relatedTarget as HTMLElement | null;
+
+    // 如果相关目标是 mention list 或其子元素，则不触发 blur
+    if (relatedTarget) {
+      const isMentionList = relatedTarget.closest('[data-mention-list]') !== null;
+      if (isMentionList) {
+        // 延迟重新聚焦编辑器，确保 mention 选择完成
+        setTimeout(() => {
+          editorRef.current?.focus();
+        }, 0);
+        return;
+      }
+    }
+
+    // 使用 setTimeout 延迟处理，确保 mention 选择完成后再处理 blur
+    setTimeout(() => {
+      // 检查当前焦点是否在编辑器内（通过检查 activeElement 是否包含在编辑器容器中）
+      const activeElement = document.activeElement as HTMLElement | null;
+      const isEditorFocused = activeElement?.closest('.ProseMirror') !== null;
+
+      // 如果编辑器仍然失去焦点，且不在 mention list 中，则处理 blur
+      if (!isEditorFocused && activeElement?.closest('[data-mention-list]') === null) {
+        setIsEditing(false);
+        updateNodeOutput(text);
+      }
+    }, 150);
   };
 
   // 更新节点输出数据的函数
@@ -93,8 +127,9 @@ export default function TextNode({ data, id }: TextNodeProps) {
     <BaseNode
       data={data}
       id={id}
-      className={`bg-card h-fit w-fit`}
+      className={`bg-card`}
       onBlur={handleTextBlur}
+      resizeConfig={{ enabled: true, minWidth: 200, minHeight: 80, maxWidth: 800, maxHeight: 600 }}
       tooltip={
         <TextNodeTooltip nodeId={id} value={data.actionData} onValueChange={handleActionDataChange} onSubmitSuccess={handleTooltipSubmitSuccess} />
       }
@@ -110,19 +145,28 @@ export default function TextNode({ data, id }: TextNodeProps) {
         </div>
       )}
       {isEditing ? (
-        <FlowCanvasTextEditor
-          ref={editorRef}
-          value={text}
-          onChange={handleTextChange}
-          editable={isEditing}
-          placeholder="Enter text directly, or chat with AI below"
-          className="nodrag h-fit min-h-[80px] w-fit min-w-[200px] cursor-text"
-          autoFocus={true}
-          nodeId={id}
-        />
+        <div
+          className={cn('nodrag cursor-text', hasFixedSize ? 'h-full w-full' : 'h-fit min-h-[80px] w-fit min-w-[200px]')}
+          style={hasFixedSize ? { width: '100%', height: '100%' } : undefined}
+        >
+          <FlowCanvasTextEditor
+            ref={editorRef}
+            value={text}
+            onChange={handleTextChange}
+            editable={isEditing}
+            placeholder="Enter text directly, or chat with AI below"
+            className={hasFixedSize ? 'h-full w-full' : 'h-fit min-h-[80px] w-fit min-w-[200px]'}
+            autoFocus={true}
+            nodeId={id}
+          />
+        </div>
       ) : (
         <div
-          className={`border-border-primary text-foreground hover:border-border-secondary hover:bg-accent/50 h-fit min-h-[80px] w-fit min-w-[200px] cursor-pointer whitespace-pre-wrap break-words rounded border-dashed p-2 text-xs transition-colors duration-200`}
+          className={cn(
+            'border-border-primary text-foreground hover:border-border-secondary hover:bg-accent/50 cursor-pointer whitespace-pre-wrap break-words rounded border-dashed p-2 text-xs transition-colors duration-200',
+            hasFixedSize ? 'flex h-full w-full flex-col' : 'h-fit min-h-[80px] w-fit min-w-[200px]',
+          )}
+          style={hasFixedSize ? { width: '100%', height: '100%' } : undefined}
           onDoubleClick={handleTextDoubleClick}
         >
           <FlowCanvasTextEditor
@@ -131,7 +175,7 @@ export default function TextNode({ data, id }: TextNodeProps) {
             onChange={handleTextChange}
             editable={isEditing}
             placeholder="Double click to edit"
-            className="h-fit min-h-[80px] w-fit min-w-[200px]"
+            className={cn(hasFixedSize ? 'h-full w-full flex-1' : 'h-fit min-h-[80px] w-fit min-w-[200px]')}
             autoFocus={true}
             nodeId={id}
           />

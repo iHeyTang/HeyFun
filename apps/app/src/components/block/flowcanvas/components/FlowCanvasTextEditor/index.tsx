@@ -3,6 +3,7 @@
 import Mention, { MentionOptions } from '@tiptap/extension-mention';
 import { EditorContent, useEditor, Editor, ReactNodeViewRenderer } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { ListItem } from '@tiptap/extension-list-item';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState, createContext, useContext } from 'react';
 import { suggestion } from './sugesstion';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -51,7 +52,7 @@ const MentionNodeView: React.FC<NodeViewProps> = ({ node }) => {
   const className = item ? 'mention' : 'mention mention-warning';
 
   return (
-    <NodeViewWrapper as="span" className={className} data-type="mention" data-id={id}>
+    <NodeViewWrapper as="span" className={cn(className, 'px-[1px]')} data-type="mention" data-id={id}>
       @{label}
     </NodeViewWrapper>
   );
@@ -206,7 +207,13 @@ export const FlowCanvasTextEditor = forwardRef<FlowCanvasTextEditorRef, FlowCanv
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        listItem: false, // 禁用默认的 ListItem，使用自定义配置
+      }),
+      // 扩展 ListItem 以允许段落内容，这样可以在列表项中使用 markdown 格式
+      ListItem.extend({
+        content: 'paragraph+', // 允许一个或多个段落，这样可以在列表项中使用 markdown 格式（如加粗）
+      }),
       Placeholder.configure({
         placeholder: placeholder,
         emptyEditorClass: 'is-editor-empty',
@@ -255,6 +262,13 @@ export const FlowCanvasTextEditor = forwardRef<FlowCanvasTextEditorRef, FlowCanv
       editor.commands.setContent(value, { emitUpdate: false });
     }
   }, [editor, value]);
+
+  // 同步 editable 状态到编辑器
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(editable);
+    }
+  }, [editor, editable]);
 
   // 当 editable 变为 true 时自动聚焦
   useEffect(() => {
@@ -387,6 +401,12 @@ export const FlowCanvasTextEditor = forwardRef<FlowCanvasTextEditorRef, FlowCanv
       editor.view.dom.removeEventListener('keydown', handleKeyDown);
     };
   }, [editor]);
+
+  // TipTap 编辑器在非编辑模式下也会正常渲染内容，只是不可编辑
+  // 这样可以利用 TipTap 的原生渲染能力，包括 markdown 语法转换后的 HTML
+  if (!editor) {
+    return null;
+  }
 
   return (
     <MentionContext.Provider value={{ mentionItemsMap, nodeId }}>

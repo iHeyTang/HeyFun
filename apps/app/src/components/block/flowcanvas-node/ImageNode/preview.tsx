@@ -5,7 +5,7 @@ import { FullscreenModal, fullscreenModalRef } from './fullscreen';
 interface ImagePreviewProps {
   images?: NodeOutput['images'];
   className?: string;
-  onLoad?: () => void;
+  onLoad?: (event: React.SyntheticEvent<HTMLImageElement>) => void;
   onSetCover?: (key: string) => void;
 }
 
@@ -35,7 +35,12 @@ export function ImagePreview({ images, className, onLoad, onSetCover }: ImagePre
             <span className="text-xs font-medium text-white">{images?.list?.length}</span>
           </div>
         )}
-        <img src={coverUrl || ''} className={finalClassName} onDoubleClick={handleDoubleClick} onLoad={onLoad} />
+        <img
+          src={coverUrl || ''}
+          className={finalClassName}
+          onDoubleClick={handleDoubleClick}
+          onLoad={onLoad ? (e: React.SyntheticEvent<HTMLImageElement>) => onLoad(e) : undefined}
+        />
       </div>
 
       {/* 全屏模态窗口 */}

@@ -6,7 +6,7 @@ import { ImageNodeActionData } from './processor';
 import { ImageNodeTooltip, ImageNodeTooltipProps } from './tooltip';
 import { ImagePreview } from './preview';
 import { useTranslations } from 'next-intl';
-import { NodeResizer } from '@xyflow/react';
+import { cn } from '@/lib/utils';
 
 interface ImageNodeProps {
   data: NodeData<ImageNodeActionData>;
@@ -22,6 +22,18 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const status = useNodeStatusById(id);
+  const [aspectRatio, setAspectRatio] = useState<number | undefined>(undefined);
+
+  // 获取节点尺寸，使用 useMemo 确保尺寸变化时重新计算
+  const node = flowGraph.getNodeById(id);
+  const hasFixedSize = useMemo(() => {
+    // 检查节点是否有明确的尺寸设置（包括通过 resize 设置的）
+    const nodeWidth = node?.width ?? node?.style?.width;
+    const nodeHeight = node?.height ?? node?.style?.height;
+    // 只有当 width 和 height 都存在且都是数字时，才认为有固定尺寸
+    // 这样可以确保 tooltip 基于正确的尺寸定位
+    return typeof nodeWidth === 'number' && typeof nodeHeight === 'number' && nodeWidth > 0 && nodeHeight > 0;
+  }, [node?.width, node?.height, node?.style?.width, node?.style?.height]);
 
   const handleUploadFIle = useCallback(async (file: File) => {
     const res = await uploadFile(file, 'flowcanvas');
@@ -54,12 +66,12 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
   // 处理actionData变化
   const handleActionDataChange = useCallback<NonNullable<ImageNodeTooltipProps['onValueChange']>>(newActionData => {
     flowGraph.updateNodeData(id, { actionData: newActionData });
-  }, []);
+  }, [flowGraph, id]);
 
   // 处理tooltip提交
   const handleTooltipSubmit = useCallback<NonNullable<ImageNodeTooltipProps['onSubmitSuccess']>>(output => {
     flowGraph.updateNodeData(id, { output });
-  }, []);
+  }, [flowGraph, id]);
 
   // 处理设置封面
   const handleSetCover = useCallback(
@@ -69,10 +81,65 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
     [flowGraph, id, data.output],
   );
 
+  // 处理图片加载，根据图片尺寸更新节点尺寸
+  const handleImageLoad = useCallback(
+    (event: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = event.currentTarget;
+      const naturalWidth = img.naturalWidth;
+      const naturalHeight = img.naturalHeight;
+
+      if (naturalWidth > 0 && naturalHeight > 0) {
+        const ratio = naturalWidth / naturalHeight;
+        setAspectRatio(ratio);
+
+        // 如果节点还没有固定尺寸，根据图片尺寸设置节点尺寸
+        if (!hasFixedSize) {
+          const defaultWidth = 400;
+          const defaultHeight = defaultWidth / ratio;
+
+          flowGraph.reactFlowInstance.setNodes(nodes =>
+            nodes.map(n => {
+              if (n.id === id) {
+                return {
+                  ...n,
+                  width: defaultWidth,
+                  height: defaultHeight,
+                  style: {
+                    ...n.style,
+                    width: defaultWidth,
+                    height: defaultHeight,
+                  },
+                };
+              }
+              return n;
+            }),
+          );
+        }
+      }
+    },
+    [flowGraph, id, hasFixedSize],
+  );
+
+  // 当内容变化时，重置宽高比
+  useEffect(() => {
+    if (!data.output?.images?.list?.length) {
+      setAspectRatio(undefined);
+    }
+  }, [data.output?.images?.list?.length, data.output?.images?.selected]);
+
   return (
     <BaseNode
       data={data}
       id={id}
+      resizeConfig={{
+        enabled: true,
+        mode: 'aspectRatio',
+        minWidth: 200,
+        minHeight: 200,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        aspectRatio: aspectRatio,
+      }}
       tooltip={
         <ImageNodeTooltip
           nodeId={id}
@@ -94,18 +161,25 @@ export default function ImageNode({ id, data }: ImageNodeProps) {
       )}
 
       {data.output?.images?.list?.length ? (
-        <div>
-          <NodeResizer
-            minWidth={140}
-            maxWidth={400}
-            lineStyle={{ border: 'none', backgroundColor: 'transparent' }}
-            handleStyle={{ border: 'none', backgroundColor: 'transparent' }}
-            keepAspectRatio={true}
+        <div
+          className={cn('relative overflow-hidden', hasFixedSize ? 'h-full w-full' : 'h-fit w-fit')}
+          style={hasFixedSize ? { width: '100%', height: '100%', minWidth: 0, minHeight: 0 } : undefined}
+        >
+          <ImagePreview
+            images={data.output.images}
+            className={cn('block rounded', hasFixedSize ? 'h-full w-full object-contain' : 'h-fit w-fit')}
+            onSetCover={handleSetCover}
+            onLoad={handleImageLoad}
           />
-          <ImagePreview images={data.output.images} className="mx-auto block h-full min-h-16 w-full min-w-16 rounded" onSetCover={handleSetCover} />
         </div>
       ) : (
-        <div className="bg-muted flex h-full w-full items-center justify-center rounded p-2 text-center transition-colors">
+        <div
+          className={cn(
+            'bg-muted flex items-center justify-center rounded p-2 text-center transition-colors',
+            hasFixedSize ? 'h-full w-full' : 'h-fit w-fit',
+          )}
+          style={hasFixedSize ? { width: '100%', height: '100%' } : undefined}
+        >
           {isUploading ? (
             <div className="text-chart-2 flex flex-col items-center">
               <div className="border-border-primary border-t-chart-2 mb-2 h-5 w-5 animate-spin rounded-full border-2"></div>

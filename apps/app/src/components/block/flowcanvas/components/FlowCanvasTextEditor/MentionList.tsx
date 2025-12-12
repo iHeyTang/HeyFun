@@ -303,7 +303,13 @@ const MentionListInner = <T extends MentionItem>(props: MentionListProps<T>, ref
     }
   }, [groupedItems, selectedType]);
 
-  const selectItem = (index: number) => {
+  const selectItem = (index: number, event?: React.MouseEvent) => {
+    // 阻止事件冒泡，避免触发编辑器的 blur 事件
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     const item = currentTypeItems[index];
 
     if (item) {
@@ -354,7 +360,7 @@ const MentionListInner = <T extends MentionItem>(props: MentionListProps<T>, ref
 
   return (
     <Panel position="bottom-center">
-      <div className="bg-popover text-popover-foreground animate-in slide-in-from-bottom-2 min-w-[400px] overflow-hidden rounded-md border shadow-lg duration-200">
+      <div className="bg-popover text-popover-foreground animate-in slide-in-from-bottom-2 min-w-[400px] overflow-hidden rounded-md border shadow-lg duration-200" data-mention-list="true">
         {groupedItems.length ? (
           <div className="flex h-[300px]">
             {/* 左侧类型选择 */}
@@ -368,7 +374,15 @@ const MentionListInner = <T extends MentionItem>(props: MentionListProps<T>, ref
                         'text-muted-foreground flex cursor-pointer items-center justify-between rounded px-2 py-1.5 text-xs transition-colors',
                         selectedType === type ? 'bg-accent text-accent-foreground font-medium' : 'text-muted-foreground hover:bg-muted',
                       )}
-                      onClick={() => setSelectedType(type)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedType(type);
+                      }}
+                      onMouseDown={(e) => {
+                        // 阻止 mousedown 事件，避免触发 blur
+                        e.preventDefault();
+                      }}
                     >
                       <div className="truncate">{TYPE_GROUPS[type as keyof typeof TYPE_GROUPS]?.label || type}</div>
                       <div className="text-muted-foreground/70 mt-0.5 text-xs">{items.length}</div>
@@ -390,7 +404,11 @@ const MentionListInner = <T extends MentionItem>(props: MentionListProps<T>, ref
                           'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground outline-hidden relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm transition-colors',
                           index === selectedIndex && 'bg-accent text-accent-foreground',
                         )}
-                        onClick={() => selectItem(index)}
+                        onClick={(e) => selectItem(index, e)}
+                        onMouseDown={(e) => {
+                          // 阻止 mousedown 事件，避免触发 blur
+                          e.preventDefault();
+                        }}
                       >
                         {renderItemPreview(item)}
                       </div>

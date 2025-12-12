@@ -69,7 +69,7 @@ export const ChatInput = ({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             disabled={disabled}
-            className="min-h-[80px] flex-1 resize-none border-none bg-transparent px-4 py-3 shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent"
+            className="min-h-[80px] max-h-[200px] flex-1 resize-none border-none bg-transparent px-4 py-3 shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent overflow-y-auto"
           />
           {renderFooter && <div className="border-border/50 border-t">{renderFooter({ message, handleSend, disabled })}</div>}
         </div>

@@ -1,0 +1,302 @@
+/* TipTap ProseMirror Markdown 样式优化 */
+/* 这些样式会覆盖 Tailwind Typography 的默认样式，提供更好的 markdown 渲染效果 */
+
+.ProseMirror {
+  /* 基础样式 */
+  @apply overflow-x-auto;
+  background-color: transparent !important;
+  font-size: 0.875rem;
+  line-height: 1.75;
+  color: hsl(var(--foreground)) !important;
+  letter-spacing: 0.01em;
+
+  /* 标题样式 - 层级分明，呼吸感强 */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: hsl(var(--foreground)) !important;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.625rem;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  h4 {
+    font-size: 1.125rem;
+  }
+
+  h5 {
+    font-size: 1rem;
+  }
+
+  h6 {
+    font-size: 0.9375rem;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* 段落样式 - 增加间距和透气感 */
+  p {
+    color: hsl(var(--foreground)) !important;
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    line-height: 1.8;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  /* 链接样式 - 优雅过渡 */
+  a {
+    color: hsl(var(--foreground));
+    text-decoration: none;
+    border-bottom: 1px solid hsl(var(--border));
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: hsl(var(--primary));
+      border-bottom-color: hsl(var(--primary));
+    }
+  }
+
+  /* 列表样式 - 清晰且有层次 */
+  ul,
+  ol {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-left: 1.75rem;
+
+    ul,
+    ol {
+      margin-top: 0.375rem;
+      margin-bottom: 0.375rem;
+    }
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  ol {
+    list-style: decimal;
+  }
+
+  li {
+    margin-top: 0.375rem;
+    margin-bottom: 0.375rem;
+    line-height: 1.75;
+    color: hsl(var(--foreground));
+
+    > p {
+      margin-bottom: 0.5rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  /* 代码样式 */
+  code {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Consolas', monospace;
+    border: 1px solid hsl(var(--border));
+    letter-spacing: 0;
+
+    a {
+      border-bottom: none;
+      color: hsl(var(--foreground));
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.7;
+        border-bottom: none;
+      }
+    }
+  }
+
+  pre {
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    line-height: 1.6;
+
+    code {
+      background-color: transparent;
+      border: none;
+      padding: 0;
+      font-size: 0.875rem;
+      color: hsl(var(--foreground));
+    }
+  }
+
+  /* 引用块 - 简洁优雅 */
+  blockquote {
+    border-left: 3px solid hsl(var(--border));
+    background-color: hsl(var(--muted) / 0.3);
+    color: hsl(var(--muted-foreground));
+    padding: 0.75rem 1rem;
+    margin: 1.5rem 0;
+    border-radius: 0 0.25rem 0.25rem 0;
+
+    p {
+      margin-bottom: 0.5rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  /* 表格样式 - 清晰且现代 */
+  table {
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    width: 100%;
+    background-color: transparent;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid hsl(var(--border));
+  }
+
+  thead {
+    background: hsl(var(--muted));
+  }
+
+  th {
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.01em;
+  }
+
+  td {
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  tbody tr {
+    transition: background-color 0.15s ease;
+
+    &:nth-child(even) {
+      background-color: hsl(var(--muted) / 0.3);
+    }
+
+    &:hover {
+      background-color: hsl(var(--muted) / 0.5);
+    }
+  }
+
+  /* 分隔线 - 简洁分明 */
+  hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, hsl(var(--border)) 50%, transparent 100%);
+    margin: 2rem 0;
+  }
+
+  /* 图片样式 - 优雅呈现 */
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  /* 文本强调样式 */
+  strong {
+    font-weight: 600;
+    color: hsl(var(--foreground));
+  }
+
+  em {
+    font-style: italic;
+    color: hsl(var(--muted-foreground));
+  }
+
+  del {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+
+  /* 任务列表 */
+  input[type='checkbox'] {
+    margin-right: 0.5rem;
+    accent-color: hsl(var(--primary));
+  }
+
+  /* 水平规则 */
+  hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, hsl(var(--border)) 50%, transparent 100%);
+    margin: 2rem 0;
+  }
+}
+
+/* 非编辑模式下的样式优化 */
+.ProseMirror[contenteditable='false'] {
+  /* 确保文本可以选择 */
+  @apply select-text;
+
+  /* 优化非编辑模式下的视觉效果 */
+  p {
+    @apply mb-3;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply mt-4 mb-2;
+  }
+
+  blockquote {
+    @apply my-4;
+  }
+
+  pre {
+    @apply my-4;
+  }
+
+  table {
+    @apply my-4;
+  }
+}
