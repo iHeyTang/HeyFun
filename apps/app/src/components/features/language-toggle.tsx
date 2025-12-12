@@ -1,15 +1,14 @@
 'use client';
 
-import * as React from 'react';
-import { Languages, Check } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { useAuth } from '@clerk/nextjs';
-
+import { getPreferences, updatePreferences } from '@/actions/settings';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { getPreferences, updatePreferences } from '@/actions/settings';
-import { locales, localeNames, type Locale, defaultLocale } from '@/i18n/config';
+import { defaultLocale, type Locale, localeNames, locales } from '@/i18n/config';
+import { useAuth } from '@clerk/nextjs';
+import { Check, Languages } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
+import { toast } from 'sonner';
 
 const LOCALE_COOKIE_KEY = 'NEXT_LOCALE';
 

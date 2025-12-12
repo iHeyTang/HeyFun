@@ -32,9 +32,7 @@ export function ModelCard({ model, onClick, className = '', rightContent }: Mode
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 items-start gap-3">
           {/* 模型图标 */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#fafafa] shadow">
-            <ModelIcon family={model.family} className="text-foreground h-4 w-4" />
-          </div>
+          <ModelIcon family={model.family} />
 
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             {/* 模型名称 */}

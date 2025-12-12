@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Bot } from 'lucide-react';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
 
 /**
  * 图标类型定义
@@ -75,7 +76,7 @@ function getModelIconConfig(modelId?: string, family?: string): ModelIconConfig 
 /**
  * 图片图标组件（带错误处理）
  */
-function ImageIcon({ src, className, size }: { src: string; className?: string; size?: number }) {
+function ImageIcon({ src, alt, className, size }: { src: string; alt: string; className?: string; size?: number }) {
   const [hasError, setHasError] = useState(false);
   const [imgSrc, setImgSrc] = useState(src);
 
@@ -110,13 +111,13 @@ function ImageIcon({ src, className, size }: { src: string; className?: string; 
 
   const imgProps = {
     src: imgSrc,
-    alt: 'Model icon',
+    alt,
     className,
     style: size ? { width: size, height: size } : undefined,
     onError: handleError,
   };
 
-  return <img {...imgProps} />;
+  return <Image {...imgProps} width={size || 16} height={size || 16} />;
 }
 
 /**
@@ -126,23 +127,11 @@ function ImageIcon({ src, className, size }: { src: string; className?: string; 
  * @param className CSS类名
  * @param size 图标大小（可选）
  */
-export function ModelIcon({
-  modelId,
-  family,
-  className,
-  iconClassName,
-  size,
-}: {
-  modelId?: string;
-  family?: string;
-  className?: string;
-  iconClassName?: string;
-  size?: number;
-}) {
+export function ModelIcon({ modelId, family, className, size }: { modelId?: string; family?: string; className?: string; size?: number }) {
   const config = getModelIconConfig(modelId, family);
   return (
-    <div className={cn('flex h-8 w-8 items-center justify-center rounded-full bg-[#fafafa] shadow', className)}>
-      <ImageIcon src={config.src} className={cn('h-4 w-4', iconClassName)} size={size} />
+    <div className={cn('flex h-6 w-6 items-center justify-center rounded-full bg-[#ffffff]', className)}>
+      <ImageIcon src={config.src} alt={`${modelId || family || 'default'} icon`} className={cn('h-full w-full p-1')} size={size} />
     </div>
   );
 }

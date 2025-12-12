@@ -1,14 +1,16 @@
 'use client';
 
 import { ChatInput as BaseChatInput } from '@/components/block/chat-input/index';
-import { ModelInfo, ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
+import { ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useLLM } from '@/hooks/use-llm';
 import { usePreferences } from '@/hooks/use-preferences';
-import { Bot, Send, Trash2 } from 'lucide-react';
+import { ModelInfo } from '@repo/llm/chat';
+import { Send, Trash2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
+import { ModelIcon } from '../model-icon';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -67,7 +69,7 @@ export const ChatInput = ({ onSend, disabled = false, onClearChat, showClearChat
     <div className="flex items-center justify-between px-4 py-2">
       <div className="flex items-center gap-2">
         <Badge variant="secondary" className="flex cursor-pointer items-center gap-1" onClick={() => modelSelectorRef.current?.open()}>
-          <Bot className="h-3 w-3" />
+          <ModelIcon family={selectedModel?.family} className="h-4 w-4" />
           <span>{selectedModel?.name || 'Select Model'}</span>
         </Badge>
       </div>
@@ -107,7 +109,7 @@ export const ChatInput = ({ onSend, disabled = false, onClearChat, showClearChat
         placeholder={disabled ? 'AI is responding...' : 'Type your message...'}
         renderFooter={renderFooter}
       />
-      <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={handleModelSelect} />
+      <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={handleModelSelect} type="language" />
     </>
   );
 };

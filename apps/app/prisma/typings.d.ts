@@ -8,6 +8,7 @@ declare global {
 
     type ModelInfo = {
       id: string;
+      family: string;
       name: string;
     };
 

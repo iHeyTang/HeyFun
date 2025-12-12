@@ -1,31 +1,34 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useLLM } from '@/hooks/use-llm';
-import { Bot, Check, Search } from 'lucide-react';
-import { useImperativeHandle, useMemo, useState, forwardRef } from 'react';
-import { Preferences } from '@prisma/client';
+import { ModelInfo } from '@repo/llm/chat';
+import { Check, Code, Eye, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
+import { ModelIcon } from '../model-icon';
 
 export type ModelSelectorRef = {
   open: () => void;
 };
 
-export type ModelInfo = Preferences['defaultChatbotModel'] | Preferences['defaultAgentModel'];
-
 interface ModelSelectorProps {
   selectedModel?: ModelInfo | null;
   onModelSelect: (model: ModelInfo) => void;
+  type?: ModelInfo['type'];
 }
 
-export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorProps>(({ selectedModel, onModelSelect }, ref) => {
+export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorProps>(({ selectedModel, onModelSelect, type }, ref) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const t = useTranslations('common.modelSelector');
 
   const { availableModels } = useLLM();
+
+  const filteredModels = useMemo(() => {
+    return availableModels.filter(model => (type ? model.type === type : true));
+  }, [availableModels, type]);
 
   useImperativeHandle(ref, () => ({
     open: () => {
@@ -55,17 +58,31 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
         </div>
 
         <div className="max-h-96 overflow-y-auto">
-          {availableModels.map((model, index) => (
+          {filteredModels.map((model, index) => (
             <button
               key={model?.id}
               className={`hover:bg-muted/50 flex w-full cursor-pointer items-center justify-between px-4 py-2 text-left transition-colors ${
                 selectedModel?.id === model?.id ? 'bg-muted' : ''
-              } ${index === availableModels.length - 1 ? 'border-b-0' : ''}`}
+              } ${index === filteredModels.length - 1 ? 'border-b-0' : ''}`}
               onClick={() => handleModelSelect(model)}
             >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <Bot className="text-muted-foreground h-4 w-4 flex-shrink-0" />
-                <div className="truncate font-normal">{model?.name}</div>
+              <div className="flex min-w-0 flex-1 items-center gap-4">
+                <ModelIcon family={model?.family} className="h-8 w-8" />
+                <div>
+                  <div className="truncate font-normal">{model?.name}</div>
+                  <div className="flex items-center gap-2">
+                    {model?.supportsFunctionCalling && (
+                      <div className="rounded border border-blue-500/20 bg-blue-500/10 px-1">
+                        <Code className="h-3 w-3 text-blue-500" />
+                      </div>
+                    )}
+                    {model?.supportsVision && (
+                      <div className="rounded border border-green-500/20 bg-green-500/10 px-1">
+                        <Eye className="h-3 w-3 text-green-500" />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               {selectedModel?.id === model?.id && <Check className="text-primary ml-2 h-4 w-4 flex-shrink-0" />}
             </button>

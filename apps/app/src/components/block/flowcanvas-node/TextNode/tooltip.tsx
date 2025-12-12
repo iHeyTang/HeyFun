@@ -1,12 +1,13 @@
 import { NodeStatus, useFlowGraph, useNodeStatusById } from '@/components/block/flowcanvas';
 import { FlowCanvasTextEditor, FlowCanvasTextEditorRef } from '@/components/block/flowcanvas/components/FlowCanvasTextEditor';
-import { ModelInfo, ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
+import { ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
 import { Button } from '@/components/ui/button';
 import { useLLM } from '@/hooks/use-llm';
+import { ModelInfo } from '@repo/llm/chat';
 import { WandSparkles } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { memo, useEffect, useRef, useState } from 'react';
 import { TextNodeActionData, TextNodeProcessor } from './processor';
-import { useTranslations } from 'next-intl';
 
 export interface TextNodeTooltipProps {
   nodeId: string;
@@ -112,7 +113,7 @@ const TextNodeTooltipComponent = ({ nodeId, value: actionData, onValueChange, on
           <WandSparkles />
         </Button>
       </div>
-      <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={setSelectedModel} />
+      <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={setSelectedModel} type="language" />
     </div>
   );
 };
