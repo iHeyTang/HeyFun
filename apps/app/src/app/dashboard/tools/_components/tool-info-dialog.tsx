@@ -1,5 +1,4 @@
 import { refreshToolMetadata } from '@/actions/tools';
-import { Markdown } from '@/components/block/markdown/markdown';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';

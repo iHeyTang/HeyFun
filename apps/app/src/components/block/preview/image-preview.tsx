@@ -6,8 +6,18 @@ import { fullscreenModalRef } from './fullscreen';
 
 interface ImagePreviewProps extends ImgHTMLAttributes<HTMLImageElement> {}
 
-export function ImagePreview({ onDoubleClick, className = '', ...imgProps }: ImagePreviewProps) {
+export function ImagePreview({ onClick, onDoubleClick, className = '', ...imgProps }: ImagePreviewProps) {
   const imageFullscreenModalRef = useRef<fullscreenModalRef | null>(null);
+  const handleClick = useCallback<NonNullable<React.DOMAttributes<HTMLImageElement>['onClick']>>(
+    e => {
+      // 调用用户自定义的 onClick
+      if (onClick) {
+        onClick(e);
+      }
+      imageFullscreenModalRef.current?.show(imgProps.src || '', 'image');
+    },
+    [onClick, imgProps.src],
+  );
   const handleDoubleClick = useCallback<NonNullable<React.DOMAttributes<HTMLImageElement>['onDoubleClick']>>(
     e => {
       // 调用用户自定义的 onDoubleClick
@@ -25,9 +35,7 @@ export function ImagePreview({ onDoubleClick, className = '', ...imgProps }: Ima
 
   return (
     <>
-      <div className="relative">
-        <img {...imgProps} className={finalClassName} onDoubleClick={handleDoubleClick} />
-      </div>
+      <img {...imgProps} className={finalClassName} onClick={handleClick} onDoubleClick={handleDoubleClick} />
 
       {/* 全屏模态窗口 */}
       <FullscreenModal ref={imageFullscreenModalRef} />

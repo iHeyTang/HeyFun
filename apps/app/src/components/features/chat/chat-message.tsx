@@ -1,6 +1,5 @@
 'use client';
 
-import { Markdown } from '@/components/block/markdown/markdown';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useLLM } from '@/hooks/use-llm';
 import { cn } from '@/lib/utils';
@@ -9,6 +8,7 @@ import { memo, useMemo, useState } from 'react';
 import { ModelIcon } from '../model-icon';
 import { ToolCallCard } from './tool-call-card';
 import type { ToolCall, ToolResult } from './types';
+import { Markdown } from '@/components/block/markdown';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
