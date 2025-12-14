@@ -13,7 +13,7 @@ export default function AgentPage() {
       <div className="flex-1 overflow-hidden">
         <ChatContainer
           sessionManager={sessionManager}
-          apiPrefix="/api/chat"
+          apiPrefix="/api/agent"
           layout="sidebar"
           sidebarWidth="280px"
         />

@@ -290,6 +290,7 @@ model ChatSessions {
   id             String   @id @default(cuid())
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  deletedAt      DateTime? // 软删除时间戳，用于审计
   organizationId String
 
   // 会话信息
@@ -299,15 +300,18 @@ model ChatSessions {
   agentId       String? // 关联的Agent ID，不传则使用默认对话
 
   // 会话状态
-  status String @default("active") // 会话状态：active, archived
+  /// [ChatSessionStatus]
+  status String @default("idle") // 处理状态：idle（空闲）, pending（挂起，准备执行）, processing（正在执行）, failed（执行失败）
 
   // 关联的消息
   messages ChatMessages[]
 
   @@index([organizationId])
   @@index([organizationId, status])
+  @@index([organizationId, deletedAt])
   @@index([createdAt])
   @@index([agentId])
+  @@index([deletedAt])
 }
 
 model ChatMessages {

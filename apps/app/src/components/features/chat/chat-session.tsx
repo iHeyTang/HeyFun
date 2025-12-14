@@ -10,8 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ChatInput } from './chat-input';
 import { ChatMessage as ChatMessageComponent } from './chat-message';
-import type { ChatMessage as Message, ToolCall, ToolResult } from './types';
-import { canvasToolbox } from '@/agents/toolboxes/canvas-toolbox';
+import type { ChatMessage as Message } from './types';
 
 interface ChatSessionProps {
   /** 必需的 sessionId */
@@ -24,9 +23,7 @@ interface ChatSessionProps {
   onClearChat?: () => void;
   /** 消息更新回调（用于本地存储） */
   onMessagesChange?: (messages: Message[]) => void;
-  /** 工具执行上下文（包含 canvasRef 等） */
-  toolExecutionContext?: any;
-  /** API 端点前缀（可选，默认 '/api/chat'，FlowCanvas 使用 '/api/flowcanvas/agent'） */
+  /** API 端点前缀（可选，默认 '/api/agent'） */
   apiPrefix?: string;
   /** 标题更新回调 */
   onTitleUpdated?: (title: string) => void;
@@ -44,14 +41,16 @@ export function ChatSession({
   disabled = false,
   onClearChat,
   onMessagesChange,
-  toolExecutionContext,
-  apiPrefix = '/api/chat',
+  apiPrefix = '/api/agent',
   onTitleUpdated,
   modelId,
 }: ChatSessionProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastMessageIdRef = useRef<string | null>(null);
+  const shouldPollRef = useRef<boolean>(false);
 
   // 使用 useCallback 优化滚动函数
   const scrollToBottom = useCallback(() => {
@@ -86,129 +85,178 @@ export function ChatSession({
     }
   }, [messages, initialMessages, handleMessagesChange]);
 
-  // 执行工具调用并获取 AI 后续响应 - 使用 useCallback 优化
-  const executeToolsAndContinue = useCallback(
-    async (messageId: string, toolCalls: ToolCall[]) => {
-      if (!toolCalls || toolCalls.length === 0) {
-        return;
+  // 获取消息并更新状态
+  const fetchMessages = useCallback(async (): Promise<{ status: string; shouldContinue: boolean }> => {
+    try {
+      const url = new URL(`${apiPrefix}/messages`, window.location.origin);
+      url.searchParams.set('sessionId', sessionId);
+      url.searchParams.set('limit', '100'); // 获取更多消息以确保完整性
+
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error('Failed to fetch messages');
       }
 
-      try {
-        // 执行工具
-        const context = toolExecutionContext || {};
-        const results = await canvasToolbox.executeMany(toolCalls, context);
+      const data = await response.json();
+      const rawMessages = (data.messages || []).map((m: any) => ({
+        ...m,
+        createdAt: new Date(m.createdAt),
+      }));
 
-        // 构建工具结果对象
-        const toolResults: ToolResult[] = results.map((r, i) => ({
-          toolName: toolCalls[i]?.function?.name || 'unknown',
-          success: r.success,
-          data: r.data,
-          error: r.error,
-          message: r.message,
-        }));
+      // 获取处理状态和标题
+      const sessionStatus = data.status || 'idle';
+      const sessionTitle = data.title;
 
-        // 将工具执行结果附加到原消息上
-        setMessages(prev => prev.map(msg => (msg.id === messageId ? { ...msg, toolResults } : msg)));
+      // 如果标题有更新，调用回调
+      if (sessionTitle) {
+        onTitleUpdated?.(sessionTitle);
+      }
 
-        // 提交工具结果到后端，获取 AI 的后续响应
-        const response = await fetch(`${apiPrefix}/tool-result`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            sessionId,
-            messageId,
-            toolResults: toolCalls.map((tc, i) => ({
-              toolCallId: tc.id,
-              result: results[i],
-            })),
-          }),
-        });
+      // 处理消息：将 tool 消息转换为 toolResults
+      const processedMessages: Message[] = [];
+      for (let i = 0; i < rawMessages.length; i++) {
+        const msg = rawMessages[i];
+        if (!msg) continue;
 
-        if (!response.ok) {
-          throw new Error('Failed to submit tool results');
+        // 跳过 role='tool' 的消息，它们会被处理为 toolResults
+        if (msg.role === 'tool') {
+          continue;
         }
 
-        // 处理 AI 的后续响应
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
+        // 只处理 user 和 assistant 消息
+        if (msg.role !== 'user' && msg.role !== 'assistant') {
+          continue;
+        }
 
-        if (reader) {
-          let buffer = '';
-          let aiMessageId: string | null = null;
+        const chatMessage: Message = {
+          id: msg.id,
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+          isStreaming: msg.isStreaming || false,
+          isComplete: msg.isComplete,
+          createdAt: new Date(msg.createdAt),
+          toolCalls: msg.toolCalls ? (msg.toolCalls as any[]) : undefined,
+        };
 
-          // 添加新的 AI 响应占位
-          const continueMessage: Message = {
-            id: `temp_continue_${Date.now()}`,
-            role: 'assistant',
-            content: '',
-            isStreaming: true,
-            isComplete: false,
-            createdAt: new Date(),
-          };
-          setMessages(prev => [...prev, continueMessage]);
+        // 如果这是一个有 toolCalls 的 assistant 消息，查找后续的 tool 消息
+        if (msg.role === 'assistant' && msg.toolCalls) {
+          const toolCalls = msg.toolCalls as any[];
+          const toolResults: any[] = [];
 
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+          // 查找所有后续的 tool 消息
+          for (let j = i + 1; j < rawMessages.length; j++) {
+            const nextMsg = rawMessages[j];
+            if (!nextMsg || nextMsg.role !== 'tool') break;
 
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
+            // 解析工具结果内容
+            try {
+              const resultData = JSON.parse(nextMsg.content);
+              const toolCall = toolCalls.find((tc: any) => tc.id === nextMsg.toolCallId);
 
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6);
-                if (data === '[DONE]') break;
-
-                try {
-                  const parsed = JSON.parse(data);
-
-                  if (parsed.type === 'init') {
-                    aiMessageId = parsed.aiMessageId;
-                    setMessages(prev => prev.map(msg => (msg.id === continueMessage.id ? { ...msg, id: aiMessageId! } : msg)));
-                  } else if (parsed.type === 'content' && aiMessageId) {
-                    // 优化：只更新内容，避免创建新对象如果内容相同
-                    setMessages(prev => {
-                      const msg = prev.find(m => m.id === aiMessageId);
-                      if (msg && msg.content !== parsed.fullContent) {
-                        return prev.map(msg => (msg.id === aiMessageId ? { ...msg, content: parsed.fullContent } : msg));
-                      }
-                      return prev;
-                    });
-                  } else if (parsed.type === 'tool_calls' && aiMessageId) {
-                    // 接收到工具调用，先更新消息
-                    setMessages(prev =>
-                      prev.map(msg =>
-                        msg.id === aiMessageId
-                          ? { ...msg, content: parsed.fullContent, toolCalls: parsed.toolCalls, isStreaming: false, isComplete: true }
-                          : msg,
-                      ),
-                    );
-
-                    // 执行工具调用并继续对话
-                    await executeToolsAndContinue(aiMessageId, parsed.toolCalls);
-                  } else if (parsed.type === 'finished' && aiMessageId) {
-                    setMessages(prev =>
-                      prev.map(msg => (msg.id === aiMessageId ? { ...msg, content: parsed.fullContent, isStreaming: false, isComplete: true } : msg)),
-                    );
-                  }
-                } catch (e) {
-                  console.error('Failed to parse SSE data:', e);
-                }
-              }
+              toolResults.push({
+                toolName: toolCall?.function?.name || 'unknown',
+                success: resultData.success ?? true,
+                data: resultData.data,
+                error: resultData.error,
+                message: resultData.message,
+              });
+            } catch (e) {
+              console.error('[ChatSession] Failed to parse tool result:', e);
             }
+          }
+
+          if (toolResults.length > 0) {
+            chatMessage.toolResults = toolResults;
           }
         }
 
-        toast.success(`工具执行完成`);
-      } catch (error) {
-        console.error('Tool execution error:', error);
-        toast.error('工具执行失败: ' + (error as Error).message);
+        processedMessages.push(chatMessage);
+      }
+
+      // 更新消息列表
+      if (processedMessages.length > 0) {
+        setMessages(prev => {
+          // 创建消息映射，以ID为key
+          const messageMap = new Map<string, Message>();
+          prev.forEach(msg => messageMap.set(msg.id, msg));
+
+          // 更新或添加消息
+          processedMessages.forEach((newMsg: Message) => {
+            const existing = messageMap.get(newMsg.id);
+            if (existing) {
+              // 更新现有消息（保留 toolResults 等前端状态）
+              messageMap.set(newMsg.id, {
+                ...existing,
+                ...newMsg,
+                createdAt: new Date(newMsg.createdAt),
+                // 如果新消息有 toolResults，更新它
+                toolResults: newMsg.toolResults || existing.toolResults,
+              });
+            } else {
+              // 添加新消息
+              messageMap.set(newMsg.id, newMsg);
+            }
+          });
+
+          // 转换为数组并按时间排序
+          const sortedMessages = Array.from(messageMap.values()).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+          // 更新最后一条消息ID
+          if (sortedMessages.length > 0) {
+            lastMessageIdRef.current = sortedMessages[sortedMessages.length - 1]!.id;
+          }
+
+          return sortedMessages;
+        });
+      }
+
+      // 基于处理状态判断是否继续轮询
+      // idle: 空闲状态，处理完成，停止轮询
+      // failed: 处理失败，停止轮询
+      // pending/processing: 正在处理中，继续轮询
+      const shouldContinue = sessionStatus === 'pending' || sessionStatus === 'processing';
+
+      console.log('[ChatSession] 获取消息完成，session 状态:', sessionStatus, '，是否继续轮询:', shouldContinue);
+
+      return { status: sessionStatus, shouldContinue };
+    } catch (error) {
+      console.error('[ChatSession] 获取消息失败:', error);
+      // 出错时继续轮询，避免因网络问题导致轮询停止
+      return { status: 'unknown', shouldContinue: true };
+    }
+  }, [apiPrefix, sessionId, onTitleUpdated]);
+
+  // 轮询消息（带延时）
+  const pollMessagesWithDelay = useCallback(
+    async (delay: number = 1000) => {
+      // 等待指定延时
+      await new Promise(resolve => setTimeout(resolve, delay));
+
+      // 检查是否应该继续轮询
+      if (!shouldPollRef.current) {
+        return;
+      }
+
+      const { status, shouldContinue } = await fetchMessages();
+
+      if (!shouldContinue) {
+        // 状态为 idle 或 failed，停止轮询
+        console.log('[ChatSession] session 状态为', status, '，停止轮询');
+        shouldPollRef.current = false;
+        setIsLoading(false);
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        return;
+      }
+
+      // 继续轮询，递归调用
+      if (shouldPollRef.current) {
+        pollMessagesWithDelay(delay);
       }
     },
-    [toolExecutionContext, apiPrefix, sessionId],
+    [fetchMessages],
   );
 
   const handleSendMessage = useCallback(
@@ -240,6 +288,7 @@ export function ChatSession({
 
       // 远程模式：调用后端 API
       setIsLoading(true);
+      console.log('[ChatSession] 发送消息，开始加载...');
 
       try {
         // 添加临时用户消息
@@ -252,19 +301,8 @@ export function ChatSession({
         };
         setMessages(prev => [...prev, tempUserMessage]);
 
-        // 添加临时 AI 消息占位
-        const tempAiMessage: Message = {
-          id: `temp_ai_${Date.now()}`,
-          role: 'assistant',
-          content: '',
-          isStreaming: true,
-          isComplete: false,
-          createdAt: new Date(),
-        };
-        setMessages(prev => [...prev, tempAiMessage]);
-
-        // 发送消息到后端
-        const response = await fetch(`${apiPrefix}/stream`, {
+        // 发送消息到后端，触发 workflow
+        const response = await fetch(`${apiPrefix}/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -276,114 +314,45 @@ export function ChatSession({
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to get streaming response: ${response.status} ${errorText}`);
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || `Failed to send message: ${response.status}`);
         }
 
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
+        const data = await response.json();
+        console.log('[ChatSession] 消息发送成功，userMessageId:', data.userMessageId, 'workflowRunId:', data.workflowRunId);
 
-        if (reader) {
-          let buffer = '';
-          let realUserMessageId: string | null = null;
-          let realAiMessageId: string | null = null;
+        // 更新临时用户消息ID
+        if (data.userMessageId) {
+          setMessages(prev => prev.map(msg => (msg.id === tempUserMessage.id ? { ...msg, id: data.userMessageId } : msg)));
+          lastMessageIdRef.current = data.userMessageId;
+        }
 
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+        // 立即请求一次 messages，获取最新状态
+        const { status, shouldContinue } = await fetchMessages();
+        console.log('[ChatSession] 首次获取消息，session 状态:', status);
 
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6);
-
-                if (data === '[DONE]') {
-                  if (realAiMessageId) {
-                    setMessages(prev => prev.map(msg => (msg.id === realAiMessageId ? { ...msg, isStreaming: false, isComplete: true } : msg)));
-                  }
-                  break;
-                }
-
-                try {
-                  const parsed = JSON.parse(data);
-
-                  if (parsed.type === 'init') {
-                    realUserMessageId = parsed.userMessageId;
-                    realAiMessageId = parsed.aiMessageId;
-
-                    setMessages(prev =>
-                      prev.map(msg => {
-                        if (msg.id === tempUserMessage.id) {
-                          return { ...msg, id: realUserMessageId! };
-                        }
-                        if (msg.id === tempAiMessage.id) {
-                          return { ...msg, id: realAiMessageId! };
-                        }
-                        return msg;
-                      }),
-                    );
-                  } else if (parsed.type === 'content' && realAiMessageId) {
-                    // 优化：只更新内容，避免创建新对象如果内容相同
-                    setMessages(prev => {
-                      const msg = prev.find(m => m.id === realAiMessageId);
-                      if (msg && msg.content !== parsed.fullContent) {
-                        return prev.map(msg => (msg.id === realAiMessageId ? { ...msg, content: parsed.fullContent } : msg));
-                      }
-                      return prev;
-                    });
-                  } else if (parsed.type === 'tool_calls' && realAiMessageId) {
-                    // 接收到工具调用，先更新消息
-                    setMessages(prev =>
-                      prev.map(msg =>
-                        msg.id === realAiMessageId
-                          ? { ...msg, content: parsed.fullContent, toolCalls: parsed.toolCalls, isStreaming: false, isComplete: true }
-                          : msg,
-                      ),
-                    );
-
-                    // 执行工具调用并继续对话
-                    await executeToolsAndContinue(realAiMessageId, parsed.toolCalls);
-                  } else if (parsed.type === 'finished' && realAiMessageId) {
-                    setMessages(prev =>
-                      prev.map(msg =>
-                        msg.id === realAiMessageId ? { ...msg, content: parsed.fullContent, isStreaming: false, isComplete: true } : msg,
-                      ),
-                    );
-                  } else if (parsed.type === 'title_updated') {
-                    // 标题已更新，通知父组件
-                    console.log('[ChatSession] 📝 Title updated:', parsed.title);
-                    onTitleUpdated?.(parsed.title);
-                  } else if (parsed.type === 'error') {
-                    if (realAiMessageId) {
-                      setMessages(prev =>
-                        prev.map(msg =>
-                          msg.id === realAiMessageId ? { ...msg, content: `Error: ${parsed.error}`, isStreaming: false, isComplete: true } : msg,
-                        ),
-                      );
-                    }
-                    toast.error('AI response error: ' + parsed.error);
-                  }
-                } catch (e) {
-                  console.error('Failed to parse SSE data:', e);
-                }
-              }
-            }
-          }
+        if (!shouldContinue) {
+          // 如果状态已经是 idle 或 failed，直接停止加载
+          console.log('[ChatSession] session 状态为', status, '，无需轮询');
+          shouldPollRef.current = false;
+          setIsLoading(false);
+        } else {
+          // 状态为 pending 或 processing，开始轮询（带延时）
+          console.log('[ChatSession] session 状态为', status, '，开始轮询');
+          shouldPollRef.current = true;
+          pollMessagesWithDelay(1000); // 1秒后开始下一次请求
         }
       } catch (error) {
-        console.error('Send message error:', error);
-        toast.error('Failed to send message: ' + (error as Error).message);
+        console.error('[ChatSession] 发送消息失败:', error);
+        toast.error('发送消息失败: ' + (error as Error).message);
 
         // 移除临时消息
         setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp_')));
-      } finally {
+        shouldPollRef.current = false;
         setIsLoading(false);
       }
     },
-    [sessionId, apiPrefix, executeToolsAndContinue, onTitleUpdated],
+    [sessionId, apiPrefix, fetchMessages, pollMessagesWithDelay],
   );
 
   // 使用 useMemo 优化消息列表渲染

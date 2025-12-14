@@ -18,7 +18,7 @@ export const createChatSession = withUserAuth(
           modelId,
           title: title || null,
           agentId: agentId || null,
-          status: 'active',
+          status: 'idle',
           modelProvider: '',
         },
       });
@@ -41,7 +41,7 @@ export const getChatSessions = withUserAuth(
       const sessions = await prisma.chatSessions.findMany({
         where: {
           organizationId: orgId,
-          status: 'active',
+          deletedAt: null, // 排除已删除的会话
         },
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -57,7 +57,7 @@ export const getChatSessions = withUserAuth(
       const total = await prisma.chatSessions.count({
         where: {
           organizationId: orgId,
-          status: 'active',
+          deletedAt: null, // 排除已删除的会话
         },
       });
 
@@ -97,7 +97,7 @@ export const getChatSession = withUserAuth('chat/getChatSession', async ({ orgId
   }
 });
 
-// 删除会话（归档）
+// 删除会话（软删除）
 export const deleteSession = withUserAuth('chat/deleteSession', async ({ orgId, args }: AuthWrapperContext<{ sessionId: string }>) => {
   const { sessionId } = args;
 
@@ -107,7 +107,7 @@ export const deleteSession = withUserAuth('chat/deleteSession', async ({ orgId, 
         id: sessionId,
         organizationId: orgId,
       },
-      data: { status: 'archived' },
+      data: { deletedAt: new Date() },
     });
 
     return;

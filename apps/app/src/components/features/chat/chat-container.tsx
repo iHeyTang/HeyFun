@@ -39,7 +39,7 @@ interface ChatContainerProps {
   toolExecutionContext?: any;
   /** 外部操作按钮 */
   actions?: ChatAction[];
-  /** API 端点前缀（可选，默认 '/api/chat'，FlowCanvas 使用 '/api/flowcanvas/agent'） */
+  /** API 端点前缀（可选，默认 '/api/agent'，FlowCanvas 使用 '/api/flowcanvas/agent'） */
   apiPrefix?: string;
   /** 布局类型：'tabs' 为上方 tabs，'sidebar' 为左侧侧边栏（默认 'tabs'） */
   layout?: ChatContainerLayout;
@@ -58,7 +58,7 @@ export const ChatContainer = ({
   sessionId: externalSessionId,
   toolExecutionContext,
   actions = [],
-  apiPrefix = '/api/chat',
+  apiPrefix = '/api/agent',
   layout = 'tabs',
   sidebarWidth = '280px',
 }: ChatContainerProps) => {

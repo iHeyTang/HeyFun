@@ -8,6 +8,7 @@
 
 import { AgentConfig } from '@/agents/core/frameworks/base';
 import { ReactAgent } from '@/agents/core/frameworks/react';
+import { GENERAL_TOOLS } from './tools';
 
 /**
  * 通用 Agent 实现 - 基于 ReactAgent 框架
@@ -66,7 +67,16 @@ export class GeneralAgent extends ReactAgent {
 用一句话总结结果
 
 开始工作。`,
-    tools: [], // 通用 agent 暂时不包含特定工具，可以后续扩展
+    tools: GENERAL_TOOLS.map(definition => {
+      return {
+        type: 'function',
+        function: {
+          name: definition.name,
+          description: definition.description,
+          parameters: definition.parameters,
+        },
+      };
+    }),
     isDefault: false,
     observationPrompt: `工具执行完成。请继续：
 1. 分析当前任务状态，判断是否完成
