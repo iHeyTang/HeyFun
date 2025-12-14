@@ -1,6 +1,7 @@
 'use client';
 
-import { getPreferences, updatePreferences } from '@/actions/settings';
+import { updatePreferences } from '@/actions/settings';
+import { usePreferences } from '@/hooks/use-preferences';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { defaultLocale, type Locale, localeNames, locales } from '@/i18n/config';
@@ -36,6 +37,7 @@ const getCookie = (name: string): string | null => {
 export function LanguageToggle() {
   const router = useRouter();
   const { isSignedIn } = useAuth();
+  const { data: preferences } = usePreferences();
   const [currentLocale, setCurrentLocale] = React.useState<Locale>(defaultLocale);
   const [mounted, setMounted] = React.useState(false);
   const [isChanging, setIsChanging] = React.useState(false);
@@ -43,27 +45,20 @@ export function LanguageToggle() {
   React.useEffect(() => {
     setMounted(true);
     // Load current language settings
-    const loadLanguage = async () => {
-      try {
-        if (isSignedIn) {
-          // 已登录用户：从 preferences 加载
-          const preferences = await getPreferences({});
-          setCurrentLocale((preferences.data?.language as Locale) || defaultLocale);
-        } else {
-          // 未登录用户：从 cookie 加载
-          const savedLocale = getCookie(LOCALE_COOKIE_KEY) as Locale;
-          if (savedLocale && locales.includes(savedLocale)) {
-            setCurrentLocale(savedLocale);
-          } else {
-            setCurrentLocale(defaultLocale);
-          }
-        }
-      } catch (error) {
+    if (isSignedIn) {
+      // 已登录用户：从 preferences store 加载
+      const locale = (preferences?.language as Locale) || defaultLocale;
+      setCurrentLocale(locale);
+    } else {
+      // 未登录用户：从 cookie 加载
+      const savedLocale = getCookie(LOCALE_COOKIE_KEY) as Locale;
+      if (savedLocale && locales.includes(savedLocale)) {
+        setCurrentLocale(savedLocale);
+      } else {
         setCurrentLocale(defaultLocale);
       }
-    };
-    loadLanguage();
-  }, [isSignedIn]);
+    }
+  }, [isSignedIn, preferences]);
 
   const handleLanguageChange = async (locale: Locale) => {
     if (isChanging || locale === currentLocale) return;

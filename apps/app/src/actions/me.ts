@@ -2,7 +2,7 @@
 
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 
-export const getMe = withUserAuth(async ({ getCurrentUser, getCurrentOrg }: AuthWrapperContext<{}>) => {
+export const getMe = withUserAuth('me/getMe', async ({ getCurrentUser, getCurrentOrg }: AuthWrapperContext<{}>) => {
   const user = await getCurrentUser();
   const organization = await getCurrentOrg();
   if (!user) {

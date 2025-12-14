@@ -13,6 +13,7 @@ import { ThemeToggle } from '@/components/features/theme-toggle';
 import { LanguageToggle } from '@/components/features/language-toggle';
 import { ThemeLogo } from '@/components/features/theme-logo';
 import { Button } from '@/components/ui/button';
+import { AppInitializer } from '@/components/features/app-initializer';
 
 export const metadata: Metadata = {
   title: 'FlowCanvas',
@@ -59,6 +60,7 @@ export default async function RootLayout({
         </div>
       ) : (
         <div className="flex h-full flex-col">
+          <AppInitializer />
           <Header className="h-12" />
           <div className="flex h-[calc(100vh-48px)] w-full">
             <AppSidebar />

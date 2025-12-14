@@ -439,7 +439,7 @@ export const deleteVoiceFromModel = withUserAuth(async ({ orgId, args }: AuthWra
 /**
  * 获取支持音色功能的 AIGC 模型列表
  */
-export const getVoiceSupportedModels = withUserAuth(async () => {
+export const getVoiceSupportedModels = withUserAuth('voices/getVoiceSupportedModels', async () => {
   try {
     const allModels = await AIGC.getAllServiceModels();
 

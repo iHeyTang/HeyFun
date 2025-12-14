@@ -10,7 +10,7 @@ import { FunMaxConfig } from '@repo/agent';
 import { UnifiedChat } from '@repo/llm/chat';
 import { union } from 'lodash';
 
-export const getTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ taskId: string }>) => {
+export const getTask = withUserAuth('tasks/getTask', async ({ orgId, args }: AuthWrapperContext<{ taskId: string }>) => {
   const { taskId } = args;
   const task = await prisma.tasks.findUnique({
     where: { id: taskId, organizationId: orgId },
@@ -19,7 +19,7 @@ export const getTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{
   return task;
 });
 
-export const pageTasks = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ page: number; pageSize: number }>) => {
+export const pageTasks = withUserAuth('tasks/pageTasks', async ({ orgId, args }: AuthWrapperContext<{ page: number; pageSize: number }>) => {
   const { page = 1, pageSize = 10 } = args || {};
   const tasks = await prisma.tasks.findMany({
     where: { organizationId: orgId },
@@ -106,7 +106,7 @@ const getTools = async (orgId: string, toolIds: string[]) => {
   return tools.filter(tool => tool !== undefined) as AddMcpConfig[];
 };
 
-export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<CreateTaskArgs>) => {
+export const createTask = withUserAuth('tasks/createTask', async ({ orgId, args }: AuthWrapperContext<CreateTaskArgs>) => {
   const { taskId, agentId, modelId, prompt, toolIds, files } = args;
   const preferences = await prisma.preferences.findUnique({
     where: { organizationId: orgId },
@@ -144,7 +144,7 @@ export const createTask = withUserAuth(async ({ orgId, args }: AuthWrapperContex
   return { id: task.id, outId: body.task_id };
 });
 
-export const terminateTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ taskId: string }>) => {
+export const terminateTask = withUserAuth('tasks/terminateTask', async ({ orgId, args }: AuthWrapperContext<{ taskId: string }>) => {
   const { taskId } = args;
 
   const task = await prisma.tasks.findUnique({ where: { id: taskId, organizationId: orgId } });
@@ -154,14 +154,15 @@ export const terminateTask = withUserAuth(async ({ orgId, args }: AuthWrapperCon
   }
 });
 
-export const shareTask = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ taskId: string; expiresAt: number }>) => {
+export const shareTask = withUserAuth('tasks/shareTask', async ({ orgId, args }: AuthWrapperContext<{ taskId: string; expiresAt: number }>) => {
   const { taskId, expiresAt } = args;
   const task = await prisma.tasks.findUnique({ where: { id: taskId, organizationId: orgId } });
   if (!task) throw new Error('Task not found');
   await prisma.tasks.update({ where: { id: taskId }, data: { shareExpiresAt: new Date(expiresAt) } });
 });
 
-export const getSharedTask = async ({ taskId }: { taskId: string }) => {
+export const getSharedTask = withUserAuth('tasks/getSharedTask', async ({ orgId, args }: AuthWrapperContext<{ taskId: string }>) => {
+  const { taskId } = args;
   const task = await prisma.tasks.findUnique({
     where: { id: taskId },
     include: { progresses: { orderBy: { createdAt: 'asc' } } },
@@ -171,7 +172,7 @@ export const getSharedTask = async ({ taskId }: { taskId: string }) => {
     throw new Error('Task Share Link expired');
   }
   return { data: task, error: null };
-};
+});
 
 async function createOrFetchTask(organizationId: string, config: { taskId: string } | { prompt: string; llmId: string; tools: string[] }) {
   if (!('taskId' in config) || !config.taskId) {

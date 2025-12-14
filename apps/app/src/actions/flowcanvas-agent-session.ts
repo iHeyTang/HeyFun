@@ -11,6 +11,7 @@ import type { ModelInfo } from '@repo/llm/chat';
 
 // 创建 FlowCanvas Agent 会话
 export const createFlowCanvasAgentSession = withUserAuth(
+  'flowcanvas-agent-session/createFlowCanvasAgentSession',
   async ({ orgId, args }: AuthWrapperContext<{ projectId: string; modelId: string; title?: string; agentId?: string }>) => {
     const { projectId, modelId, title, agentId } = args;
 
@@ -36,6 +37,7 @@ export const createFlowCanvasAgentSession = withUserAuth(
 
 // 获取 FlowCanvas 项目的 Agent 会话列表
 export const getFlowCanvasAgentSessions = withUserAuth(
+  'flowcanvas-agent-session/getFlowCanvasAgentSessions',
   async ({ orgId, args }: AuthWrapperContext<{ projectId: string; page?: number; pageSize?: number }>) => {
     const { projectId, page = 1, pageSize = 20 } = args;
 
@@ -74,50 +76,56 @@ export const getFlowCanvasAgentSessions = withUserAuth(
 );
 
 // 获取特定 FlowCanvas Agent 会话的详细信息和消息
-export const getFlowCanvasAgentSession = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ sessionId: string }>) => {
-  const { sessionId } = args;
+export const getFlowCanvasAgentSession = withUserAuth(
+  'flowcanvas-agent-session/getFlowCanvasAgentSession',
+  async ({ orgId, args }: AuthWrapperContext<{ sessionId: string }>) => {
+    const { sessionId } = args;
 
-  try {
-    const session = await prisma.flowCanvasProjectAgentSessions.findUnique({
-      where: {
-        id: sessionId,
-        organizationId: orgId,
-      },
-      include: {
-        messages: {
-          orderBy: { createdAt: 'asc' },
+    try {
+      const session = await prisma.flowCanvasProjectAgentSessions.findUnique({
+        where: {
+          id: sessionId,
+          organizationId: orgId,
         },
-      },
-    });
+        include: {
+          messages: {
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+      });
 
-    return session;
-  } catch (error) {
-    console.error('Error getting flowcanvas agent session:', error);
-    throw error;
-  }
-});
+      return session;
+    } catch (error) {
+      console.error('Error getting flowcanvas agent session:', error);
+      throw error;
+    }
+  },
+);
 
 // 删除 FlowCanvas Agent 会话
-export const deleteFlowCanvasAgentSession = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ sessionId: string }>) => {
-  const { sessionId } = args;
+export const deleteFlowCanvasAgentSession = withUserAuth(
+  'flowcanvas-agent-session/deleteFlowCanvasAgentSession',
+  async ({ orgId, args }: AuthWrapperContext<{ sessionId: string }>) => {
+    const { sessionId } = args;
 
-  try {
-    await prisma.flowCanvasProjectAgentSessions.delete({
-      where: {
-        id: sessionId,
-        organizationId: orgId,
-      },
-    });
+    try {
+      await prisma.flowCanvasProjectAgentSessions.delete({
+        where: {
+          id: sessionId,
+          organizationId: orgId,
+        },
+      });
 
-    return { success: true };
-  } catch (error) {
-    console.error('Error deleting flowcanvas agent session:', error);
-    throw error;
-  }
-});
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting flowcanvas agent session:', error);
+      throw error;
+    }
+  },
+);
 
 // 获取模型列表（从数据库加载）
-export const getAvailableModels = withUserAuth(async () => {
+export const getAvailableModels = withUserAuth('flowcanvas-agent-session/getAvailableModels', async () => {
   try {
     // 从数据库加载所有模型定义
     const definitions = await prisma.systemModelDefinitions.findMany({

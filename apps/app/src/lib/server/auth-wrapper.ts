@@ -1,6 +1,7 @@
 import { auth, clerkClient, Organization, User } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { to } from '../shared/to';
+import { serverLogger } from './logger';
 
 export class UnauthorizedError extends Error {
   constructor(message: string) {
@@ -30,18 +31,44 @@ export type AuthWrapper<T, R> = (fn: AuthWrapped<T, R>) => AuthAction<T, R>;
 /**
  * Regular user authentication wrapper
  */
-export function withUserAuth<T = unknown, R = unknown>(fn: AuthWrapped<T, R>): AuthAction<T, R> {
-  return async (args: T) => {
+export function withUserAuth<T = unknown, R = unknown>(fn: AuthWrapped<T, R>): AuthAction<T, R>;
+export function withUserAuth<T = unknown, R = unknown>(actionName: string, fn: AuthWrapped<T, R>): AuthAction<T, R>;
+export function withUserAuth<T = unknown, R = unknown>(actionName: string | AuthWrapped<T, R>, _fn?: AuthWrapped<T, R>): AuthAction<T, R> {
+  let fn: AuthWrapped<T, R>;
+  if (typeof actionName === 'function') {
+    fn = actionName;
+    actionName = 'unknown-action';
+  } else {
+    fn = _fn!;
+  }
+  if (!fn) {
+    throw new Error('Server action function not found');
+  }
+
+  const wrappedFn = async (args: T) => {
+    const startTime = Date.now();
     const authObj = await auth();
     const clerk = await clerkClient();
     const { userId, orgId } = authObj;
+
+    // 记录开始日志
+    serverLogger.start(actionName, {
+      userId,
+      orgId,
+      args: typeof args === 'object' && args !== null ? JSON.stringify(args).substring(0, 200) : args,
+      timestamp: new Date().toISOString(),
+    });
+
     if (!userId) {
+      serverLogger.warn(actionName, 'Unauthorized: userId not found', { userId, orgId });
       throw new UnauthorizedError('Unauthorized access');
     }
 
     if (!orgId) {
+      serverLogger.warn(actionName, 'Unauthorized: orgId not found', { userId, orgId });
       throw new UnauthorizedError('OrganizationId not found');
     }
+
     try {
       const res = await fn({
         userId,
@@ -50,11 +77,43 @@ export function withUserAuth<T = unknown, R = unknown>(fn: AuthWrapped<T, R>): A
         getCurrentOrg: () => getCurrentOrg(authObj, clerk),
         args,
       });
+      const duration = Date.now() - startTime;
+
+      // 记录成功日志
+      serverLogger.success(
+        actionName,
+        duration,
+        {
+          userId,
+          orgId,
+          timestamp: new Date().toISOString(),
+        },
+      );
+
       return { data: res, error: undefined };
     } catch (error) {
+      const duration = Date.now() - startTime;
+
+      // 记录错误日志
+      serverLogger.error(
+        actionName,
+        duration,
+        error instanceof Error ? error : new Error('Unknown error'),
+        {
+          userId,
+          orgId,
+          timestamp: new Date().toISOString(),
+        },
+      );
+
       return { data: undefined, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   };
+
+  // 保留原始函数名以便日志识别
+  Object.defineProperty(wrappedFn, 'name', { value: actionName, writable: false });
+
+  return wrappedFn;
 }
 
 export type AuthApiWrapperContext<P, Q, B> = BaseAuthWrapper & { query: Q; params: P; body: B };
@@ -86,7 +145,15 @@ export function withUserAuthApi<P = unknown, Q = unknown, B = unknown, R = unkno
       const res = await apiFn(request, ctx);
       return res;
     } catch (error) {
-      console.error(error);
+      serverLogger.error(
+        'API Route',
+        0,
+        error instanceof Error ? error : new Error('Unknown error'),
+        {
+          path: request.nextUrl.pathname,
+          method: request.method,
+        },
+      );
       if (error instanceof UnauthorizedError) {
         return new NextResponse('Unauthorized', { status: 401 });
       }

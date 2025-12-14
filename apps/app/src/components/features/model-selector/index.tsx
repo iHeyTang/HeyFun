@@ -6,7 +6,7 @@ import { useLLM } from '@/hooks/use-llm';
 import { ModelInfo } from '@repo/llm/chat';
 import { Check, Code, Eye, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { forwardRef, useImperativeHandle, useMemo, useState, useEffect } from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
 import { ModelIcon } from '../model-icon';
 
 export type ModelSelectorRef = {
@@ -24,12 +24,7 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
   const [search, setSearch] = useState('');
   const t = useTranslations('common.modelSelector');
 
-  const { availableModels, initiate } = useLLM();
-
-  // 初始化模型列表
-  useEffect(() => {
-    initiate();
-  }, [initiate]);
+  const { availableModels } = useLLM();
 
   const filteredModels = useMemo(() => {
     let models = availableModels.filter(model => (type ? model.type === type : true));

@@ -33,7 +33,7 @@ export async function loadModelDefinitionsFromDatabase(): Promise<ModelInfo[]> {
 /**
  * Get all available models
  */
-export const getChatModels = withUserAuth(async () => {
+export const getChatModels = withUserAuth('llm/getChatModels', async () => {
   const models = await loadModelDefinitionsFromDatabase();
   return models;
 });
@@ -41,7 +41,7 @@ export const getChatModels = withUserAuth(async () => {
 /**
  * Get all AIGC models
  */
-export const getAigcModels = withUserAuth(async () => {
+export const getAigcModels = withUserAuth('llm/getAigcModels', async () => {
   const models = await AIGC.getAllServiceModels();
   return models.map(model => ({
     name: model.name,
@@ -58,53 +58,56 @@ export const getAigcModels = withUserAuth(async () => {
 /**
  * Get all voices of a model
  */
-export const getAigcVoiceList = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ provider: string; modelName: string }>) => {
-  const { modelName } = args;
+export const getAigcVoiceList = withUserAuth(
+  'llm/getAigcVoiceList',
+  async ({ orgId, args }: AuthWrapperContext<{ provider: string; modelName: string }>) => {
+    const { modelName } = args;
 
-  try {
-    const model = AIGC.getModel(modelName);
+    try {
+      const model = AIGC.getModel(modelName);
 
-    if (!model) {
-      throw new Error('Model not found');
+      if (!model) {
+        throw new Error('Model not found');
+      }
+
+      // 检查模型是否有 getAigcVoiceList 方法
+      if (typeof model.getVoiceList !== 'function') {
+        throw new Error('Model does not support voice selection');
+      }
+
+      // 获取自定义音色
+      const customVoices = await prisma.voices
+        .findMany({
+          where: { organizationId: orgId, model: modelName },
+          select: { externalVoiceId: true, name: true, description: true, previewAudio: true },
+        })
+        .then(voices =>
+          voices.map(voice => ({
+            id: voice.externalVoiceId!,
+            name: voice.name,
+            description: voice.description || '',
+            audio: voice.previewAudio || '',
+            custom: true,
+          })),
+        );
+
+      // 获取模型自带音色
+      const voices = await model.getVoiceList();
+      const systemVoices = await prisma.systemVoices.findMany({
+        where: { provider: model.providerName },
+        select: { externalVoiceId: true, name: true, description: true, audio: true },
+      });
+      return [
+        ...customVoices,
+        ...voices.map(voice => {
+          const systemVoice = systemVoices.find(v => v.externalVoiceId === voice.id);
+          const description = voice.description || systemVoice?.description || '';
+          return { id: voice.id, name: voice.name, description: description, audio: systemVoice?.audio || '', custom: false };
+        }),
+      ];
+    } catch (error) {
+      console.error('Error getting voice list:', error);
+      throw new Error((error as Error).message);
     }
-
-    // 检查模型是否有 getAigcVoiceList 方法
-    if (typeof model.getVoiceList !== 'function') {
-      throw new Error('Model does not support voice selection');
-    }
-
-    // 获取自定义音色
-    const customVoices = await prisma.voices
-      .findMany({
-        where: { organizationId: orgId, model: modelName },
-        select: { externalVoiceId: true, name: true, description: true, previewAudio: true },
-      })
-      .then(voices =>
-        voices.map(voice => ({
-          id: voice.externalVoiceId!,
-          name: voice.name,
-          description: voice.description || '',
-          audio: voice.previewAudio || '',
-          custom: true,
-        })),
-      );
-
-    // 获取模型自带音色
-    const voices = await model.getVoiceList();
-    const systemVoices = await prisma.systemVoices.findMany({
-      where: { provider: model.providerName },
-      select: { externalVoiceId: true, name: true, description: true, audio: true },
-    });
-    return [
-      ...customVoices,
-      ...voices.map(voice => {
-        const systemVoice = systemVoices.find(v => v.externalVoiceId === voice.id);
-        const description = voice.description || systemVoice?.description || '';
-        return { id: voice.id, name: voice.name, description: description, audio: systemVoice?.audio || '', custom: false };
-      }),
-    ];
-  } catch (error) {
-    console.error('Error getting voice list:', error);
-    throw new Error((error as Error).message);
-  }
-});
+  },
+);

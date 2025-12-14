@@ -4,7 +4,7 @@ import { prisma } from '@/lib/server/prisma';
 import { Prisma } from '@prisma/client';
 import { ModelInfo } from '@repo/llm/chat';
 
-export const getPreferences = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
+export const getPreferences = withUserAuth('settings/getPreferences', async ({ orgId }: AuthWrapperContext<{}>) => {
   const preferences = await prisma.preferences.findUnique({
     where: { organizationId: orgId },
   });
@@ -18,7 +18,7 @@ export type UpdatePreferencesArgs = {
   defaultAgentModel?: ModelInfo | null | undefined;
 };
 
-export const updatePreferences = withUserAuth(async ({ orgId, args }: AuthWrapperContext<UpdatePreferencesArgs>) => {
+export const updatePreferences = withUserAuth('settings/updatePreferences', async ({ orgId, args }: AuthWrapperContext<UpdatePreferencesArgs>) => {
   const existingPreferences = await prisma.preferences.findUnique({
     where: { organizationId: orgId },
   });

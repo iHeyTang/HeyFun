@@ -30,14 +30,9 @@ const useChatbotModelSelectorStore = create<{
 }));
 
 export const useChatbotModelSelector = () => {
-  const { availableModels, initiate } = useLLM();
+  const { availableModels } = useLLM();
   const { data: preferences, update: updatePreferences } = usePreferences();
   const { selectedModel, setSelectedModel } = useChatbotModelSelectorStore();
-
-  // 初始化模型列表
-  useEffect(() => {
-    initiate();
-  }, [initiate]);
 
   useEffect(() => {
     if (preferences?.defaultChatbotModel && !selectedModel) {

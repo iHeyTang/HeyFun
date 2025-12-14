@@ -11,7 +11,7 @@ import { z } from 'zod';
 
 const ajv = new Ajv();
 
-export const listAgentTools = withUserAuth(async ({ orgId }: AuthWrapperContext<{}>) => {
+export const listAgentTools = withUserAuth('tools/listAgentTools', async ({ orgId }: AuthWrapperContext<{}>) => {
   // Get organization custom tools
   const tools = await prisma.agentTools
     .findMany({
@@ -43,7 +43,7 @@ type ToolConfig = {
   query?: Record<string, any>;
   headers?: Record<string, any>;
 };
-export const installTool = withUserAuth(async ({ orgId, args }: AuthWrapperContext<ToolConfig>) => {
+export const installTool = withUserAuth('tools/installTool', async ({ orgId, args }: AuthWrapperContext<ToolConfig>) => {
   const { toolId, env, query = {}, headers = {} } = args;
   const tool = await prisma.toolSchemas.findUnique({
     where: { id: toolId },
@@ -105,31 +105,34 @@ export const installTool = withUserAuth(async ({ orgId, args }: AuthWrapperConte
   }
 });
 
-export const installCustomTool = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ name: string; config: string }>) => {
-  const { name, config } = args;
-  const [err, json] = await to<z.infer<typeof mcpServerSchema>>(JSON.parse(config));
-  if (err) {
-    throw new Error('Invalid config, config should be a valid JSON object');
-  }
+export const installCustomTool = withUserAuth(
+  'tools/installCustomTool',
+  async ({ orgId, args }: AuthWrapperContext<{ name: string; config: string }>) => {
+    const { name, config } = args;
+    const [err, json] = await to<z.infer<typeof mcpServerSchema>>(JSON.parse(config));
+    if (err) {
+      throw new Error('Invalid config, config should be a valid JSON object');
+    }
 
-  const validationResult = mcpServerSchema.safeParse(json);
-  if (!validationResult.success) {
-    throw new Error(`Invalid config: ${validationResult.error.message}`);
-  }
+    const validationResult = mcpServerSchema.safeParse(json);
+    if (!validationResult.success) {
+      throw new Error(`Invalid config: ${validationResult.error.message}`);
+    }
 
-  await prisma.agentTools.create({
-    data: {
-      source: 'CUSTOM',
-      organizationId: orgId,
-      name,
-      customConfig: encryptTextWithPublicKey(config),
-    },
-  });
+    await prisma.agentTools.create({
+      data: {
+        source: 'CUSTOM',
+        organizationId: orgId,
+        name,
+        customConfig: encryptTextWithPublicKey(config),
+      },
+    });
 
-  return { message: 'Tool installed successfully' };
-});
+    return { message: 'Tool installed successfully' };
+  },
+);
 
-export const removeTool = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ toolId: string }>) => {
+export const removeTool = withUserAuth('tools/removeTool', async ({ orgId, args }: AuthWrapperContext<{ toolId: string }>) => {
   const { toolId } = args;
   const tool = await prisma.agentTools.findFirst({
     where: { id: toolId, organizationId: orgId },
@@ -149,7 +152,7 @@ export const removeTool = withUserAuth(async ({ orgId, args }: AuthWrapperContex
 /**
  * list all ToolSchemas from marketplace
  */
-export const listToolSchemas = withUserAuth(async ({}: AuthWrapperContext<{}>) => {
+export const listToolSchemas = withUserAuth('tools/listToolSchemas', async ({}: AuthWrapperContext<{}>) => {
   const tools = await prisma.toolSchemas.findMany({});
   return tools;
 });
@@ -160,12 +163,13 @@ export const listToolSchemas = withUserAuth(async ({}: AuthWrapperContext<{}>) =
  * @deprecated
  */
 export const registerTool = withUserAuth(
+  'tools/registerTool',
   async ({}: AuthWrapperContext<{ name: string; description: string; repoUrl?: string; command: string; args: string[]; envSchema: JSONSchema }>) => {
     throw new Error('Deprecated');
   },
 );
 
-export const refreshToolMetadata = withUserAuth(async ({ args }: AuthWrapperContext<{ toolId: string }>) => {
+export const refreshToolMetadata = withUserAuth('tools/refreshToolMetadata', async ({ args }: AuthWrapperContext<{ toolId: string }>) => {
   const { toolId } = args;
 
   if (!toolId) {

@@ -6,9 +6,13 @@ type ProviderModelInfo = NonNullable<Awaited<ReturnType<typeof getChatModels>>['
 
 export const useProvidersStore = create<{
   availableModels: ProviderModelInfo[];
+  initiated: boolean;
+  initiating: boolean;
   refreshAvailableModels: () => Promise<void>;
 }>((set, get) => ({
   availableModels: [],
+  initiated: false,
+  initiating: false,
   refreshAvailableModels: async () => {
     const res = await getChatModels({});
     set({ availableModels: res.data || [] });
@@ -16,21 +20,23 @@ export const useProvidersStore = create<{
 }));
 
 export const useLLM = () => {
-  const { availableModels, refreshAvailableModels } = useProvidersStore();
-  const initiated = useRef(false);
-  const [initiatedState, setInitiatedState] = useState(false);
+  const { availableModels, initiated, refreshAvailableModels } = useProvidersStore();
 
   const initiate = useCallback(() => {
-    if (initiated.current) {
+    const state = useProvidersStore.getState();
+    // 如果已经初始化完成或正在初始化，直接返回
+    if (state.initiated || state.initiating) {
       return;
     }
+    // 设置 initiating 为 true，防止并发调用
+    useProvidersStore.setState({ initiating: true });
     Promise.allSettled([refreshAvailableModels()]).then(() => {
-      initiated.current = true;
-      setInitiatedState(true);
+      // 完成后设置 initiated 为 true，initiating 为 false
+      useProvidersStore.setState({ initiated: true, initiating: false });
     });
   }, [refreshAvailableModels]);
 
-  return { availableModels, refreshAvailableModels, initiate, initiated: initiatedState };
+  return { availableModels, refreshAvailableModels, initiate, initiated };
 };
 
 export const useAigcStore = create<{

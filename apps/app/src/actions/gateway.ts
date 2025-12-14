@@ -17,7 +17,7 @@ function generateApiKey(): string {
 /**
  * 获取API密钥列表
  */
-export const getApiKeys = withUserAuth(async ({ orgId }) => {
+export const getApiKeys = withUserAuth('gateway/getApiKeys', async ({ orgId }) => {
   const keys = await prisma.gatewayApiKeys.findMany({
     where: { organizationId: orgId },
     orderBy: { createdAt: 'desc' },
@@ -41,6 +41,7 @@ export const getApiKeys = withUserAuth(async ({ orgId }) => {
  * 创建API密钥
  */
 export const createApiKey = withUserAuth(
+  'gateway/createApiKey',
   async ({ orgId, args }: { orgId: string; args: { name: string; description?: string; rateLimit?: number } }) => {
     const apiKey = generateApiKey();
     const keyPrefix = apiKey.substring(0, 20);
@@ -72,6 +73,7 @@ export const createApiKey = withUserAuth(
  * 更新API密钥
  */
 export const updateApiKey = withUserAuth(
+  'gateway/updateApiKey',
   async ({
     orgId,
     args,
@@ -105,7 +107,7 @@ export const updateApiKey = withUserAuth(
 /**
  * 删除API密钥
  */
-export const deleteApiKey = withUserAuth(async ({ orgId, args }: { orgId: string; args: { id: string } }) => {
+export const deleteApiKey = withUserAuth('gateway/deleteApiKey', async ({ orgId, args }: { orgId: string; args: { id: string } }) => {
   // 验证密钥属于该组织
   const existingKey = await prisma.gatewayApiKeys.findFirst({
     where: { id: args.id, organizationId: orgId },
@@ -126,6 +128,7 @@ export const deleteApiKey = withUserAuth(async ({ orgId, args }: { orgId: string
  * 获取使用量统计
  */
 export const getUsageStats = withUserAuth(
+  'gateway/getUsageStats',
   async ({
     orgId,
     args,
@@ -214,6 +217,7 @@ export const getUsageStats = withUserAuth(
  * 获取调用记录列表（带分页）
  */
 export const getUsageRecords = withUserAuth(
+  'gateway/getUsageRecords',
   async ({
     orgId,
     args,
@@ -281,7 +285,7 @@ export const getUsageRecords = withUserAuth(
 /**
  * 获取模型列表（从数据库加载）
  */
-export const getModelList = withUserAuth(async () => {
+export const getModelList = withUserAuth('gateway/getModelList', async () => {
   const models = await getModels();
   return models;
 });

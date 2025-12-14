@@ -6,65 +6,71 @@ import CHAT from '@repo/llm/chat';
 import { loadModelDefinitionsFromDatabase } from './llm';
 
 // 创建聊天会话
-export const createChatSession = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ modelId: string; title?: string; agentId?: string }>) => {
-  const { modelId, title, agentId } = args;
+export const createChatSession = withUserAuth(
+  'chat/createChatSession',
+  async ({ orgId, args }: AuthWrapperContext<{ modelId: string; title?: string; agentId?: string }>) => {
+    const { modelId, title, agentId } = args;
 
-  try {
-    const session = await prisma.chatSessions.create({
-      data: {
-        organizationId: orgId,
-        modelId,
-        title: title || null,
-        agentId: agentId || null,
-        status: 'active',
-        modelProvider: '',
-      },
-    });
+    try {
+      const session = await prisma.chatSessions.create({
+        data: {
+          organizationId: orgId,
+          modelId,
+          title: title || null,
+          agentId: agentId || null,
+          status: 'active',
+          modelProvider: '',
+        },
+      });
 
-    return session;
-  } catch (error) {
-    console.error('Error creating chat session:', error);
-    throw error;
-  }
-});
+      return session;
+    } catch (error) {
+      console.error('Error creating chat session:', error);
+      throw error;
+    }
+  },
+);
 
 // 获取用户的聊天会话列表
-export const getChatSessions = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ page?: number; pageSize?: number }>) => {
-  const { page = 1, pageSize = 20 } = args || {};
+export const getChatSessions = withUserAuth(
+  'chat/getChatSessions',
+  async ({ orgId, args }: AuthWrapperContext<{ page?: number; pageSize?: number }>) => {
+    const { page = 1, pageSize = 20 } = args || {};
 
-  try {
-    const sessions = await prisma.chatSessions.findMany({
-      where: {
-        organizationId: orgId,
-        status: 'active',
-      },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      orderBy: { updatedAt: 'desc' },
-      include: {
-        messages: {
-          orderBy: { createdAt: 'asc' },
-          take: 1, // 只取第一条消息用于显示预览
+    try {
+      const sessions = await prisma.chatSessions.findMany({
+        where: {
+          organizationId: orgId,
+          status: 'active',
         },
-      },
-    });
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          messages: {
+            orderBy: { createdAt: 'asc' },
+            take: 1, // 只取第一条消息用于显示预览
+          },
+        },
+      });
 
-    const total = await prisma.chatSessions.count({
-      where: {
-        organizationId: orgId,
-        status: 'active',
-      },
-    });
+      const total = await prisma.chatSessions.count({
+        where: {
+          organizationId: orgId,
+          status: 'active',
+        },
+      });
 
-    return { sessions, total };
-  } catch (error) {
-    console.error('Error getting chat sessions:', error);
-    throw error;
-  }
-});
+      return { sessions, total };
+    } catch (error) {
+      console.error('Error getting chat sessions:', error);
+      throw error;
+    }
+  },
+);
 
 // 获取特定会话的详细信息和消息
-export const getChatSession = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ sessionId: string }>) => {
+export const getChatSession = withUserAuth('chat/getChatSession', async ({ orgId, args }: AuthWrapperContext<{ sessionId: string }>) => {
   const { sessionId } = args;
 
   try {
@@ -92,7 +98,7 @@ export const getChatSession = withUserAuth(async ({ orgId, args }: AuthWrapperCo
 });
 
 // 删除会话（归档）
-export const deleteSession = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ sessionId: string }>) => {
+export const deleteSession = withUserAuth('chat/deleteSession', async ({ orgId, args }: AuthWrapperContext<{ sessionId: string }>) => {
   const { sessionId } = args;
 
   try {
@@ -112,7 +118,7 @@ export const deleteSession = withUserAuth(async ({ orgId, args }: AuthWrapperCon
 });
 
 // 删除消息
-export const deleteMessage = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ messageId: string }>) => {
+export const deleteMessage = withUserAuth('chat/deleteMessage', async ({ orgId, args }: AuthWrapperContext<{ messageId: string }>) => {
   const { messageId } = args;
 
   try {
@@ -140,7 +146,7 @@ export const deleteMessage = withUserAuth(async ({ orgId, args }: AuthWrapperCon
 });
 
 // 一次性聊天
-export const chatOnce = withUserAuth(async ({ orgId, args }: AuthWrapperContext<{ modelId: string; content: string }>) => {
+export const chatOnce = withUserAuth('chat/chatOnce', async ({ orgId, args }: AuthWrapperContext<{ modelId: string; content: string }>) => {
   const { modelId, content } = args;
 
   // 从数据库加载模型列表并设置到 CHAT 实例

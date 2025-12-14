@@ -12,7 +12,7 @@ import ToolbarMenuButton from '@/components/block/flowcanvas/components/ToolbarM
 import ToolbarPanel from '@/components/block/flowcanvas/components/ToolbarPanel';
 import TooltipButton from '@/components/block/tooltip-button';
 import { Button } from '@/components/ui/button';
-import { useAigc, useLLM } from '@/hooks/use-llm';
+import { useAigc } from '@/hooks/use-llm';
 import { format } from 'date-fns';
 import { FileDown, FileIcon, FileUp, LayoutGridIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -134,7 +134,6 @@ const FlowCanvasPage = () => {
     };
   }, []);
 
-  const { initiate } = useLLM();
   const { initiate: initiateAigc } = useAigc();
 
   // 格式化更新时间
@@ -173,9 +172,8 @@ const FlowCanvasPage = () => {
   );
 
   useEffect(() => {
-    initiate();
     initiateAigc();
-  }, [initiate]);
+  }, [initiateAigc]);
 
   useEffect(() => {
     refreshSchema();
