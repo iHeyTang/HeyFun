@@ -228,7 +228,7 @@ export function ChatSession({
 
   // 轮询消息（带延时）
   const pollMessagesWithDelay = useCallback(
-    async (delay: number = 1000) => {
+    async (delay: number = 3000) => {
       // 等待指定延时
       await new Promise(resolve => setTimeout(resolve, delay));
 
@@ -340,7 +340,7 @@ export function ChatSession({
           // 状态为 pending 或 processing，开始轮询（带延时）
           console.log('[ChatSession] session 状态为', status, '，开始轮询');
           shouldPollRef.current = true;
-          pollMessagesWithDelay(1000); // 1秒后开始下一次请求
+          pollMessagesWithDelay(3000); // 3秒后开始下一次请求
         }
       } catch (error) {
         console.error('[ChatSession] 发送消息失败:', error);
