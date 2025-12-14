@@ -1,14 +1,11 @@
 'use client';
 
-import { pageTasks } from '@/actions/tasks';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Tasks } from '@prisma/client';
-import { Bot, BoxIcon, Flower, FolderOpen, MessageSquare, Network, Palette, SettingsIcon } from 'lucide-react';
+import { Bot, Flower, Network, Palette, SettingsIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { create } from 'zustand';
-import { useTranslations } from 'next-intl';
 
 const useNavItems = () => {
   const t = useTranslations('dashboard.sidebar');
@@ -68,14 +65,6 @@ const useBottomNavItems = () => {
     },
   ];
 };
-
-export const useRecentTasks = create<{ tasks: Tasks[]; refreshTasks: () => Promise<void> }>(set => ({
-  tasks: [],
-  refreshTasks: async () => {
-    const res = await pageTasks({ page: 1, pageSize: 30 });
-    set({ tasks: res.data?.tasks || [] });
-  },
-}));
 
 export function AppSidebar() {
   const router = useRouter();
