@@ -1,7 +1,7 @@
 import { auth, clerkClient, Organization, User } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { to } from '../shared/to';
-import { serverLogger } from './logger';
+import { serverActionLogger } from './logger';
 
 export class UnauthorizedError extends Error {
   constructor(message: string) {
@@ -52,7 +52,7 @@ export function withUserAuth<T = unknown, R = unknown>(actionName: string | Auth
     const { userId, orgId } = authObj;
 
     // 记录开始日志
-    serverLogger.start(actionName, {
+    serverActionLogger.start(actionName, {
       userId,
       orgId,
       args: typeof args === 'object' && args !== null ? JSON.stringify(args).substring(0, 200) : args,
@@ -60,12 +60,12 @@ export function withUserAuth<T = unknown, R = unknown>(actionName: string | Auth
     });
 
     if (!userId) {
-      serverLogger.warn(actionName, 'Unauthorized: userId not found', { userId, orgId });
+      serverActionLogger.warn(actionName, 'Unauthorized: userId not found', { userId, orgId });
       throw new UnauthorizedError('Unauthorized access');
     }
 
     if (!orgId) {
-      serverLogger.warn(actionName, 'Unauthorized: orgId not found', { userId, orgId });
+      serverActionLogger.warn(actionName, 'Unauthorized: orgId not found', { userId, orgId });
       throw new UnauthorizedError('OrganizationId not found');
     }
 
@@ -80,31 +80,22 @@ export function withUserAuth<T = unknown, R = unknown>(actionName: string | Auth
       const duration = Date.now() - startTime;
 
       // 记录成功日志
-      serverLogger.success(
-        actionName,
-        duration,
-        {
-          userId,
-          orgId,
-          timestamp: new Date().toISOString(),
-        },
-      );
+      serverActionLogger.success(actionName, duration, {
+        userId,
+        orgId,
+        timestamp: new Date().toISOString(),
+      });
 
       return { data: res, error: undefined };
     } catch (error) {
       const duration = Date.now() - startTime;
 
       // 记录错误日志
-      serverLogger.error(
-        actionName,
-        duration,
-        error instanceof Error ? error : new Error('Unknown error'),
-        {
-          userId,
-          orgId,
-          timestamp: new Date().toISOString(),
-        },
-      );
+      serverActionLogger.error(actionName, duration, error instanceof Error ? error : new Error('Unknown error'), {
+        userId,
+        orgId,
+        timestamp: new Date().toISOString(),
+      });
 
       return { data: undefined, error: error instanceof Error ? error.message : 'Unknown error' };
     }
@@ -145,15 +136,10 @@ export function withUserAuthApi<P = unknown, Q = unknown, B = unknown, R = unkno
       const res = await apiFn(request, ctx);
       return res;
     } catch (error) {
-      serverLogger.error(
-        'API Route',
-        0,
-        error instanceof Error ? error : new Error('Unknown error'),
-        {
-          path: request.nextUrl.pathname,
-          method: request.method,
-        },
-      );
+      serverActionLogger.error('API Route', 0, error instanceof Error ? error : new Error('Unknown error'), {
+        path: request.nextUrl.pathname,
+        method: request.method,
+      });
       if (error instanceof UnauthorizedError) {
         return new NextResponse('Unauthorized', { status: 401 });
       }

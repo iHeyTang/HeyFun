@@ -1,12 +1,10 @@
 /**
  * 日志工具
  * 使用 Consola 提供美观的日志输出
+ * 支持分层设计，不同模块可以使用不同的 tag
  */
 
-import { consola } from 'consola';
-
-// 配置 Consola
-const logger = consola.withTag('Server Action');
+import { consola, type ConsolaInstance } from 'consola';
 
 // ANSI 颜色代码
 const colors = {
@@ -31,69 +29,94 @@ const formatMeta = (meta?: Record<string, any>): string | undefined => {
   }
 };
 
-export const serverLogger = {
+/**
+ * Logger 接口
+ */
+export interface Logger {
   /**
    * 记录开始日志
    */
-  start: (actionName: string, meta?: Record<string, any>) => {
-    const metaStr = formatMeta(meta);
-    if (metaStr) {
-      logger.info(`→ ${actionName} - Started\n${metaStr}`);
-    } else {
-      logger.info(`→ ${actionName} - Started`);
-    }
-  },
-
+  start: (actionName: string, meta?: Record<string, any>) => void;
   /**
    * 记录成功日志
    */
-  success: (actionName: string, duration: number, meta?: Record<string, any>) => {
-    const metaStr = formatMeta(meta);
-    if (metaStr) {
-      logger.success(`✓ ${actionName} - Success (${duration}ms)\n${metaStr}`);
-    } else {
-      logger.success(`✓ ${actionName} - Success (${duration}ms)`);
-    }
-  },
-
+  success: (actionName: string, duration: number, meta?: Record<string, any>) => void;
   /**
    * 记录错误日志
    */
-  error: (actionName: string, duration: number, error: Error | string, meta?: Record<string, any>) => {
-    const errorMessage = error instanceof Error ? error.message : error;
-    const fullMeta = {
-      ...meta,
-      error: errorMessage,
-    };
-    const metaStr = formatMeta(fullMeta);
-    if (metaStr) {
-      logger.error(`✗ ${actionName} - Error (${duration}ms)\n${metaStr}`);
-    } else {
-      logger.error(`✗ ${actionName} - Error (${duration}ms): ${errorMessage}`);
-    }
-  },
-
+  error: (actionName: string, duration: number, error: Error | string, meta?: Record<string, any>) => void;
   /**
    * 记录警告日志
    */
-  warn: (actionName: string, message: string, meta?: Record<string, any>) => {
-    const metaStr = formatMeta(meta);
-    if (metaStr) {
-      logger.warn(`⚠ ${actionName} - ${message}\n${metaStr}`);
-    } else {
-      logger.warn(`⚠ ${actionName} - ${message}`);
-    }
-  },
-
+  warn: (actionName: string, message: string, meta?: Record<string, any>) => void;
   /**
    * 记录调试日志
    */
-  debug: (actionName: string, message: string, meta?: Record<string, any>) => {
-    const metaStr = formatMeta(meta);
-    if (metaStr) {
-      logger.debug(`🔍 ${actionName} - ${message}\n${metaStr}`);
-    } else {
-      logger.debug(`🔍 ${actionName} - ${message}`);
-    }
-  },
-};
+  debug: (actionName: string, message: string, meta?: Record<string, any>) => void;
+}
+
+/**
+ * 创建带 tag 的 logger 实例
+ * @param tag 日志标签，用于区分不同的模块或场景
+ * @returns Logger 实例
+ */
+export function createLogger(tag: string): Logger {
+  const logger = consola.withTag(tag);
+
+  return {
+    start: (actionName: string, meta?: Record<string, any>) => {
+      const metaStr = formatMeta(meta);
+      if (metaStr) {
+        logger.info(`→ ${actionName} - Started\n${metaStr}`);
+      } else {
+        logger.info(`→ ${actionName} - Started`);
+      }
+    },
+
+    success: (actionName: string, duration: number, meta?: Record<string, any>) => {
+      const metaStr = formatMeta(meta);
+      if (metaStr) {
+        logger.success(`✓ ${actionName} - Success (${duration}ms)\n${metaStr}`);
+      } else {
+        logger.success(`✓ ${actionName} - Success (${duration}ms)`);
+      }
+    },
+
+    error: (actionName: string, duration: number, error: Error | string, meta?: Record<string, any>) => {
+      const errorMessage = error instanceof Error ? error.message : error;
+      const fullMeta = {
+        ...meta,
+        error: errorMessage,
+      };
+      const metaStr = formatMeta(fullMeta);
+      if (metaStr) {
+        logger.error(`✗ ${actionName} - Error (${duration}ms)\n${metaStr}`);
+      } else {
+        logger.error(`✗ ${actionName} - Error (${duration}ms): ${errorMessage}`);
+      }
+    },
+
+    warn: (actionName: string, message: string, meta?: Record<string, any>) => {
+      const metaStr = formatMeta(meta);
+      if (metaStr) {
+        logger.warn(`⚠ ${actionName} - ${message}\n${metaStr}`);
+      } else {
+        logger.warn(`⚠ ${actionName} - ${message}`);
+      }
+    },
+
+    debug: (actionName: string, message: string, meta?: Record<string, any>) => {
+      const metaStr = formatMeta(meta);
+      if (metaStr) {
+        logger.debug(`🔍 ${actionName} - ${message}\n${metaStr}`);
+      } else {
+        logger.debug(`🔍 ${actionName} - ${message}`);
+      }
+    },
+  };
+}
+
+/**
+ * 默认的 Server Action logger（向后兼容）
+ */
+export const serverActionLogger = createLogger('Server Action');
