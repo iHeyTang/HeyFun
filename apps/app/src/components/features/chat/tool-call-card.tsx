@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { CheckCircle2, Wrench, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import type { ToolCall, ToolResult } from './types';
+import { WebSearchResult } from './tool-renderers/web-search-result';
 
 interface ToolCallCardProps {
   toolCalls: ToolCall[];
@@ -44,6 +45,46 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
     return toolResults?.find(r => r.toolName === toolName);
   };
 
+  // 获取工具的自定义渲染器
+  const getToolRenderer = (toolName: string) => {
+    const renderers: Record<
+      string,
+      React.ComponentType<{ args?: Record<string, any>; result?: any; status: 'pending' | 'running' | 'success' | 'error'; error?: string }>
+    > = {
+      web_search: WebSearchResult,
+    };
+    return renderers[toolName];
+  };
+
+  // 渲染工具结果（支持自定义渲染器）
+  const renderToolResult = (toolName: string, args: any, result: ToolResult | undefined, isExpanded: boolean) => {
+    if (!isExpanded || !result) return null;
+
+    const CustomRenderer = getToolRenderer(toolName);
+
+    // 如果有自定义渲染器，使用自定义渲染
+    if (CustomRenderer) {
+      const status = result.success ? 'success' : 'error';
+      return (
+        <div className="min-w-0 overflow-hidden px-2.5 pb-2 pt-1.5">
+          <CustomRenderer args={args} result={result.data} status={status} error={result.error} />
+        </div>
+      );
+    }
+
+    // 否则使用默认的 JSON 显示
+    return (
+      <div className="min-w-0 overflow-hidden px-2.5 pb-2 pt-1.5">
+        <div className="text-muted-foreground mb-1 text-[9px] font-medium uppercase opacity-50">Output</div>
+        <pre className="text-muted-foreground overflow-x-auto text-[10px] leading-relaxed">
+          <code>
+            {result.success ? (typeof result.data === 'object' ? JSON.stringify(result.data, null, 2) : String(result.data)) : result.error}
+          </code>
+        </pre>
+      </div>
+    );
+  };
+
   // 如果只有一个工具，显示精简版
   if (toolCalls.length === 1) {
     const toolCall = toolCalls[0];
@@ -54,12 +95,9 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
     const result = getResultForTool(toolCall.function.name);
 
     return (
-      <div className={cn('space-y-0', className)}>
-        <div
-          className="border-border/20 bg-muted/30 hover:border-border/40 hover:bg-muted/50 group cursor-pointer rounded-md border transition-all"
-          onClick={() => toggleExpand(toolCall.id)}
-        >
-          <div className="flex items-center gap-2 px-2.5 py-1.5 text-xs">
+      <div className={cn('min-w-0 space-y-0', className)}>
+        <div className="border-border/20 bg-muted/30 hover:border-border/40 hover:bg-muted/50 group w-full min-w-0 rounded-md border transition-all">
+          <div className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-xs" onClick={() => toggleExpand(toolCall.id)}>
             <Wrench className="text-muted-foreground h-3 w-3 opacity-60" />
             <span className="text-muted-foreground flex-1 opacity-80">{toolCall.function.name}</span>
 
@@ -75,30 +113,21 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
           {/* 展开内容：输入参数 + 输出结果 */}
           {isExpanded && (
             <div className="border-border/20 border-t">
-              {/* 输入参数 */}
-              <div className="px-2.5 pb-2 pt-1.5">
-                <div className="text-muted-foreground mb-1 text-[9px] font-medium uppercase opacity-50">Input</div>
-                <pre className="text-muted-foreground overflow-x-auto text-[10px] leading-relaxed">
-                  <code>{typeof args === 'object' ? JSON.stringify(args, null, 2) : args}</code>
-                </pre>
-              </div>
+              {/* 输入参数 - 只有在没有自定义渲染器或需要显示时才显示 */}
+              {!getToolRenderer(toolCall.function.name) && (
+                <div className="min-w-0 overflow-hidden px-2.5 pb-2 pt-1.5">
+                  <div className="text-muted-foreground mb-1 text-[9px] font-medium uppercase opacity-50">Input</div>
+                  <pre className="text-muted-foreground overflow-x-auto text-[10px] leading-relaxed">
+                    <code>{typeof args === 'object' ? JSON.stringify(args, null, 2) : args}</code>
+                  </pre>
+                </div>
+              )}
 
               {/* 分割线 + 输出结果 */}
               {result && (
                 <>
-                  <div className="border-border/20 border-t" />
-                  <div className="px-2.5 pb-2 pt-1.5">
-                    <div className="text-muted-foreground mb-1 text-[9px] font-medium uppercase opacity-50">Output</div>
-                    <pre className="text-muted-foreground overflow-x-auto text-[10px] leading-relaxed">
-                      <code>
-                        {result.success
-                          ? typeof result.data === 'object'
-                            ? JSON.stringify(result.data, null, 2)
-                            : String(result.data)
-                          : result.error}
-                      </code>
-                    </pre>
-                  </div>
+                  {!getToolRenderer(toolCall.function.name) && <div className="border-border/20 border-t" />}
+                  {renderToolResult(toolCall.function.name, args, result, true)}
                 </>
               )}
             </div>
@@ -110,7 +139,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
 
   // 多个工具时，显示紧凑列表
   return (
-    <div className={cn('space-y-1', className)}>
+    <div className={cn('min-w-0 space-y-1', className)}>
       {toolCalls.map((toolCall, index) => {
         const isExpanded = expandedIds.has(toolCall.id);
         const args = parseArguments(toolCall.function.arguments);
@@ -119,7 +148,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
         return (
           <div
             key={toolCall.id}
-            className="border-border/20 bg-muted/30 hover:border-border/40 hover:bg-muted/50 group rounded-md border transition-all"
+            className="border-border/20 bg-muted/30 hover:border-border/40 hover:bg-muted/50 group w-full min-w-0 rounded-md border transition-all"
           >
             <div className="group flex cursor-pointer items-center gap-2 px-2.5 py-1.5" onClick={() => toggleExpand(toolCall.id)}>
               <Wrench className="text-muted-foreground h-3 w-3 opacity-60" />
@@ -140,30 +169,21 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
             {/* 展开内容：输入参数 + 输出结果 */}
             {isExpanded && (
               <div className="border-border/20 border-t">
-                {/* 输入参数 */}
-                <div className="px-2.5 pb-2 pt-1.5">
-                  <div className="text-muted-foreground mb-1 text-[9px] font-medium uppercase opacity-50">Input</div>
-                  <pre className="text-muted-foreground overflow-x-auto text-[10px] leading-relaxed">
-                    <code>{typeof args === 'object' ? JSON.stringify(args, null, 2) : args}</code>
-                  </pre>
-                </div>
+                {/* 输入参数 - 只有在没有自定义渲染器或需要显示时才显示 */}
+                {!getToolRenderer(toolCall.function.name) && (
+                  <div className="min-w-0 overflow-hidden px-2.5 pb-2 pt-1.5">
+                    <div className="text-muted-foreground mb-1 text-[9px] font-medium uppercase opacity-50">Input</div>
+                    <pre className="text-muted-foreground overflow-x-auto text-[10px] leading-relaxed">
+                      <code>{typeof args === 'object' ? JSON.stringify(args, null, 2) : args}</code>
+                    </pre>
+                  </div>
+                )}
 
                 {/* 分割线 + 输出结果 */}
                 {result && (
                   <>
-                    <div className="border-border/20 border-t" />
-                    <div className="px-2.5 pb-2 pt-1.5">
-                      <div className="text-muted-foreground mb-1 text-[9px] font-medium uppercase opacity-50">Output</div>
-                      <pre className="text-muted-foreground overflow-x-auto text-[10px] leading-relaxed">
-                        <code>
-                          {result.success
-                            ? typeof result.data === 'object'
-                              ? JSON.stringify(result.data, null, 2)
-                              : String(result.data)
-                            : result.error}
-                        </code>
-                      </pre>
-                    </div>
+                    {!getToolRenderer(toolCall.function.name) && <div className="border-border/20 border-t" />}
+                    {renderToolResult(toolCall.function.name, args, result, true)}
                   </>
                 )}
               </div>

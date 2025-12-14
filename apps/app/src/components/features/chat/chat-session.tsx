@@ -358,7 +358,7 @@ export function ChatSession({
   // 使用 useMemo 优化消息列表渲染
   const messagesList = useMemo(
     () => (
-      <div className="space-y-0">
+      <div className="min-w-0 space-y-0">
         {messages.map(message => (
           <ChatMessageComponent
             key={message.id}
@@ -385,7 +385,7 @@ export function ChatSession({
   return (
     <div className="flex h-full flex-col">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center gap-4 opacity-50">
             <ThemeLogo width={64} height={64} alt="HeyFun" />

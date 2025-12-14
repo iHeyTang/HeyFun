@@ -6,8 +6,7 @@
 import { BaseToolbox, ToolExecutor } from '@/agents/core/tools/base-tool-registry';
 import { WebSearchToolboxContext } from './context';
 import { webSearchTool } from './tools/web-search';
-import { searchNewsTool } from './tools/search-news';
-import { searchImagesTool } from './tools/search-images';
+import { imageSearchTool } from './tools/image-search';
 
 /**
  * Web Search 工具执行函数
@@ -27,7 +26,6 @@ class WebSearchToolbox extends BaseToolbox<WebSearchToolExecutor, WebSearchToolb
  */
 const webSearchToolbox = new WebSearchToolbox();
 
-webSearchToolbox.registerMany([webSearchTool, searchNewsTool, searchImagesTool]);
+webSearchToolbox.registerMany([webSearchTool, imageSearchTool]);
 
 export { webSearchToolbox };
-

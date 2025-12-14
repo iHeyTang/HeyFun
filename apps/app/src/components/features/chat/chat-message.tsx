@@ -51,9 +51,9 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
   const hasToolResults = useMemo(() => toolResults && toolResults.length > 0, [toolResults]);
 
   return (
-    <div className={cn('flex gap-3 px-4 py-1', isUser ? 'justify-end' : 'justify-start')}>
+    <div className={cn('flex min-w-0 gap-3 px-4 py-1', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
-        <Avatar className="h-8 w-8">
+        <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarFallback className="bg-white p-0">
             {modelInfo ? (
               <ModelIcon modelId={modelInfo.id} family={modelInfo.family} className="h-8 w-8 border p-1" size={32} />
@@ -64,7 +64,7 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
         </Avatar>
       )}
 
-      <div className={cn('group flex w-full flex-col gap-1.5', isUser ? 'items-end' : 'items-start')}>
+      <div className={cn('group flex min-w-0 flex-1 flex-col gap-1.5', isUser ? 'items-end' : 'items-start')}>
         <span className="group-hover:text-muted-foreground text-xs text-transparent transition-all">{timestamp.toLocaleTimeString()}</span>
 
         {/* 消息内容（包含思考过程和主要内容） */}
@@ -98,7 +98,7 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
 
         {/* 工具调用卡片（包含结果）- 更小的宽度 */}
         {hasToolCalls && toolCalls && (
-          <div className="max-w-[50%]">
+          <div className="min-w-0 max-w-[50%]">
             <ToolCallCard toolCalls={toolCalls} toolResults={toolResults} />
           </div>
         )}
@@ -112,7 +112,7 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
       </div>
 
       {isUser && (
-        <Avatar className="h-8 w-8">
+        <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarFallback className="bg-secondary">
             <User className="h-4 w-4" />
           </AvatarFallback>

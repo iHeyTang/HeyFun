@@ -1,8 +1,8 @@
 import { ToolDefinition, ToolRuntime } from '@/agents/core/tools/tool-definition';
 
 export const searchImagesDefinition: ToolDefinition = {
-  name: 'search_images',
-  description: '在互联网上搜索图片。可以搜索特定主题的图片，返回图片链接、缩略图和相关信息。注意：需要配置 SERPAPI_API_KEY 环境变量才能使用图片搜索功能。',
+  name: 'image_search',
+  description: '在互联网上搜索图片。可以搜索特定主题的图片，返回图片链接、缩略图和相关信息。',
   parameters: {
     type: 'object',
     properties: {
@@ -60,4 +60,3 @@ export const searchImagesDefinition: ToolDefinition = {
     },
   },
 };
-

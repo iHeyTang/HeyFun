@@ -93,7 +93,7 @@ export class GeneralAgent extends ReactAgent {
 
 ## 搜索工具使用规则（适用于所有搜索工具）
 
-当使用搜索工具（\`search_news\`、\`web_search\`、\`search_images\` 等）时：
+当使用搜索工具（\`web_search\`、\`image_search\` 等）时：
 
 ### 时间处理原则
 
