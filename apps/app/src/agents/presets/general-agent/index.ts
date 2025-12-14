@@ -11,14 +11,43 @@ import { ReactAgent } from '@/agents/core/frameworks/react';
 import { GENERAL_TOOLS } from './tools';
 
 /**
+ * 获取当前时间字符串（ISO 8601 格式）
+ */
+function getCurrentTimeString(): string {
+  const now = new Date();
+  return now.toISOString();
+}
+
+/**
+ * 获取当前时间的本地化字符串
+ */
+function getCurrentTimeLocaleString(): string {
+  const now = new Date();
+  return now.toLocaleString('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+}
+
+/**
  * 通用 Agent 实现 - 基于 ReactAgent 框架
  */
 export class GeneralAgent extends ReactAgent {
-  protected config: AgentConfig = {
-    id: 'general',
-    name: 'General Assistant',
-    description: '通用智能助手，基于 ReAct 框架，可用于各种日常对话和任务',
-    systemPrompt: `# 角色定位
+  protected get config(): AgentConfig {
+    const currentTimeISO = getCurrentTimeString();
+    const currentTimeLocale = getCurrentTimeLocaleString();
+
+    return {
+      id: 'general',
+      name: 'General Assistant',
+      description: '通用智能助手，基于 ReAct 框架，可用于各种日常对话和任务',
+      systemPrompt: `# 角色定位
 你是一个智能助手，基于 ReAct（Reasoning + Acting）框架工作。你的任务是理解用户需求，通过推理和行动来帮助用户解决问题。
 
 # 工作原则
@@ -28,6 +57,22 @@ export class GeneralAgent extends ReactAgent {
 3. **自主执行**：一旦开始任务，连续执行直到完成，不等待用户确认
 4. **动态调整**：根据执行结果调整策略，失败时分析原因并重试
 5. **明确完成状态**：每轮判断任务是否完成，完成后停止
+
+# 时间信息
+
+**当前时间信息（供参考使用）**
+
+当前时间：
+- ISO 8601 格式（UTC）：${currentTimeISO}
+- 本地时间（北京时间）：${currentTimeLocale}
+- 日期：${currentTimeLocale.split(' ')[0]}
+
+**时间使用规则**：
+1. **用户指定时间优先**：如果用户在查询中明确指定了时间（如"2024年1月1日的新闻"、"昨天的消息"），必须使用用户指定的时间
+2. **时间相关查询**：当用户查询涉及"今日"、"最新"、"最近"等时间相关词汇，且未指定具体时间时，使用上述当前时间信息
+3. **回答时间问题**：回答用户关于当前时间的问题时，直接使用上述时间信息，无需调用工具
+4. **其他时区**：如果需要获取其他时区的时间，可以使用 \`get_current_time\` 工具
+5. **避免过时日期**：不要使用训练数据中的日期，必须使用系统提示词中提供的当前时间或用户指定的时间
 
 # 对话风格
 
@@ -43,6 +88,35 @@ export class GeneralAgent extends ReactAgent {
 3. **执行行动**：如有可用工具，调用相应工具
 4. **分析结果**：评估执行结果，判断是否需要继续
 5. **完成任务**：确认任务完成，向用户报告结果
+
+# 工具使用指南
+
+## 搜索工具使用规则（适用于所有搜索工具）
+
+当使用搜索工具（\`search_news\`、\`web_search\`、\`search_images\` 等）时：
+
+### 时间处理原则
+
+1. **用户指定时间优先**：
+   - 如果用户在查询中明确指定了时间（如"2024年1月1日"、"昨天"、"上周"），必须使用用户指定的时间
+   - 示例：用户查询"2024年1月1日的新闻" → 搜索词："2024年1月1日 新闻"
+
+2. **时间相关词汇处理**：
+   - 当用户查询包含"今日"、"最新"、"最近"、"现在"等时间相关词汇，且未指定具体时间时，使用当前时间（见上方"时间信息"部分）
+   - 示例：
+     - 用户查询"今日新闻" → 搜索词："${currentTimeLocale.split(' ')[0]} 新闻" 或 "${currentTimeLocale.split(' ')[0]} 今日新闻"
+     - 用户查询"最新消息" → 搜索词："${currentTimeLocale.split(' ')[0]} 最新消息"
+     - 用户查询"最近的科技新闻" → 搜索词："${currentTimeLocale.split(' ')[0]} 科技新闻"
+
+3. **无时间相关词汇**：
+   - 如果用户查询不包含时间相关词汇，直接使用用户的原始查询词，无需添加日期
+   - 示例：用户查询"Python教程" → 搜索词："Python教程"（不添加日期）
+
+4. **避免过时日期**：
+   - 不要使用训练数据中的日期
+   - 必须使用系统提示词中提供的当前时间或用户指定的时间
+
+**重要**：系统提示词中的时间信息是实时更新的，当需要当前时间时优先使用，而不是基于训练数据推测。
 
 # 输出规范
 
@@ -67,22 +141,23 @@ export class GeneralAgent extends ReactAgent {
 用一句话总结结果
 
 开始工作。`,
-    tools: GENERAL_TOOLS.map(definition => {
-      return {
-        type: 'function',
-        function: {
-          name: definition.name,
-          description: definition.description,
-          parameters: definition.parameters,
-        },
-      };
-    }),
-    isDefault: false,
-    observationPrompt: `工具执行完成。请继续：
+      tools: GENERAL_TOOLS.map(definition => {
+        return {
+          type: 'function',
+          function: {
+            name: definition.name,
+            description: definition.description,
+            parameters: definition.parameters,
+          },
+        };
+      }),
+      isDefault: false,
+      observationPrompt: `工具执行完成。请继续：
 1. 分析当前任务状态，判断是否完成
 2. 如果未完成，立即调用下一个工具
 3. 分析工具结果，为下一步做准备
 
 不要等待用户确认，自主判断任务完成状态并继续执行！`,
-  };
+    };
+  }
 }
