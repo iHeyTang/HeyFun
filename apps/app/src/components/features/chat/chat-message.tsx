@@ -1,12 +1,14 @@
 'use client';
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Bot, Brain, ChevronDown, ChevronUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Markdown } from '@/components/block/markdown/markdown';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useLLM } from '@/hooks/use-llm';
+import { cn } from '@/lib/utils';
+import { Bot, Brain, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { memo, useMemo, useState } from 'react';
+import { ModelIcon } from '../model-icon';
 import { ToolCallCard } from './tool-call-card';
 import type { ToolCall, ToolResult } from './types';
-import { useState } from 'react';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -15,32 +17,49 @@ interface ChatMessageProps {
   timestamp: Date;
   toolCalls?: ToolCall[];
   toolResults?: ToolResult[];
+  modelId?: string;
 }
 
-export const ChatMessage = ({ role, content, isStreaming = false, timestamp, toolCalls, toolResults }: ChatMessageProps) => {
+const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, toolCalls, toolResults, modelId }: ChatMessageProps) => {
   const isUser = role === 'user';
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
+  const { availableModels } = useLLM();
 
-  // 提取 thinking 内容
-  const thinkingMatch = content.match(/<thinking[\s\S]*?>([\s\S]*?)<\/thinking>/);
-  const thinkingContent = thinkingMatch?.[1]?.trim() || null;
+  // 根据 modelId 获取模型信息
+  const modelInfo = useMemo(() => {
+    if (!modelId) return null;
+    return availableModels.find(m => m.id === modelId) || null;
+  }, [modelId, availableModels]);
 
-  // 移除 thinking 和 antml 标签，保留其他内容
-  const mainContent = content
-    .replace(/<thinking[\s\S]*?<\/thinking>/g, '')
-    .replace(/<antml[\s\S]*?<\/antml>/g, '')
-    .trim();
+  // 使用 useMemo 优化计算，避免每次渲染都重新计算
+  const { thinkingContent, mainContent } = useMemo(() => {
+    // 提取 thinking 内容
+    const thinkingMatch = content.match(/<thinking[\s\S]*?>([\s\S]*?)<\/thinking>/);
+    const thinking = thinkingMatch?.[1]?.trim() || null;
+
+    // 移除 thinking 和 antml 标签，保留其他内容
+    const main = content
+      .replace(/<thinking[\s\S]*?<\/thinking>/g, '')
+      .replace(/<antml[\s\S]*?<\/antml>/g, '')
+      .trim();
+
+    return { thinkingContent: thinking, mainContent: main };
+  }, [content]);
 
   // 判断是否有特殊内容需要渲染
-  const hasToolCalls = toolCalls && toolCalls.length > 0;
-  const hasToolResults = toolResults && toolResults.length > 0;
+  const hasToolCalls = useMemo(() => toolCalls && toolCalls.length > 0, [toolCalls]);
+  const hasToolResults = useMemo(() => toolResults && toolResults.length > 0, [toolResults]);
 
   return (
     <div className={cn('flex gap-3 px-4 py-1', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
         <Avatar className="h-8 w-8">
-          <AvatarFallback className="bg-primary text-primary-foreground">
-            <Bot className="h-4 w-4" />
+          <AvatarFallback className="bg-white p-0">
+            {modelInfo ? (
+              <ModelIcon modelId={modelInfo.id} family={modelInfo.family} className="h-8 w-8 border p-1" size={32} />
+            ) : (
+              <Bot className="text-primary h-4 w-4" />
+            )}
           </AvatarFallback>
         </Avatar>
       )}
@@ -78,7 +97,7 @@ export const ChatMessage = ({ role, content, isStreaming = false, timestamp, too
         )}
 
         {/* 工具调用卡片（包含结果）- 更小的宽度 */}
-        {hasToolCalls && (
+        {hasToolCalls && toolCalls && (
           <div className="max-w-[50%]">
             <ToolCallCard toolCalls={toolCalls} toolResults={toolResults} />
           </div>
@@ -102,3 +121,17 @@ export const ChatMessage = ({ role, content, isStreaming = false, timestamp, too
     </div>
   );
 };
+
+// 使用 React.memo 优化，只有当 props 真正变化时才重新渲染
+export const ChatMessage = memo(ChatMessageComponent, (prevProps, nextProps) => {
+  // 自定义比较函数，只有关键属性变化时才重新渲染
+  return (
+    prevProps.role === nextProps.role &&
+    prevProps.content === nextProps.content &&
+    prevProps.isStreaming === nextProps.isStreaming &&
+    prevProps.timestamp.getTime() === nextProps.timestamp.getTime() &&
+    prevProps.modelId === nextProps.modelId &&
+    JSON.stringify(prevProps.toolCalls) === JSON.stringify(nextProps.toolCalls) &&
+    JSON.stringify(prevProps.toolResults) === JSON.stringify(nextProps.toolResults)
+  );
+});

@@ -2,85 +2,11 @@ import { withUserAuthApi } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
 import CHAT, { UnifiedChat } from '@repo/llm/chat';
 import { NextResponse } from 'next/server';
-import { getAgent } from '@/agents/server';
+import { getAgent } from '@/agents';
 import { calculateLLMCost, deductCredits, checkCreditsBalance } from '@/lib/server/credit';
 import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
 import { recordGatewayUsage } from '@/lib/server/gateway';
-
-/**
- * 异步生成会话标题
- * 根据用户的第一条消息，使用 AI 生成简洁的标题
- * @returns 生成的标题，用于通过 SSE 通知前端
- */
-async function generateSessionTitle(sessionId: string, userMessage: string, organizationId: string): Promise<string> {
-  try {
-    // 加载模型定义
-    const allModels = await loadModelDefinitionsFromDatabase();
-    const titleModelId = 'claude-3-5-sonnet';
-    const modelInfo = allModels.find(m => m.id === titleModelId);
-    if (!modelInfo) {
-      throw new Error(`Model ${titleModelId} not found`);
-    }
-
-    // 设置模型列表到 CHAT 实例
-    CHAT.setModels(allModels);
-
-    // 使用快速模型生成标题
-    const llmClient = CHAT.createClient(titleModelId);
-
-    const response = await llmClient.chat({
-      messages: [
-        {
-          role: 'system',
-          content: '你是一个标题生成助手。根据用户的消息，生成一个简洁的会话标题（5-8个字），直接返回标题文本，不要有任何其他内容。',
-        },
-        {
-          role: 'user',
-          content: `用户消息：${userMessage}\n\n请为这个会话生成一个简洁的标题（5-8个字）：`,
-        },
-      ],
-      max_tokens: 50,
-      temperature: 0.7,
-    });
-
-    const messageContent = response.choices[0]?.message?.content;
-    const title = (typeof messageContent === 'string' ? messageContent.trim() : '') || userMessage.substring(0, 30);
-
-    // 计算并扣除credits（标题生成）
-    const inputTokens = response.usage?.prompt_tokens || 0;
-    const outputTokens = response.usage?.completion_tokens || 0;
-    const cost = calculateLLMCost(modelInfo, inputTokens, outputTokens);
-    if (cost > 0) {
-      try {
-        await deductCredits(organizationId, cost);
-        console.log(`[Chat] Deducted ${cost} credits for title generation (${inputTokens} input + ${outputTokens} output tokens)`);
-      } catch (error) {
-        console.error(`[Chat] Failed to deduct credits for title generation:`, error);
-        // 不抛出错误，继续执行
-      }
-    }
-
-    // 更新会话标题
-    await prisma.chatSessions.update({
-      where: { id: sessionId, organizationId },
-      data: { title },
-    });
-
-    console.log(`[Chat] Generated title for session ${sessionId}: ${title}`);
-    return title;
-  } catch (error) {
-    console.error('[Chat] Failed to generate title:', error);
-    // 如果失败，使用简单截取
-    const fallbackTitle = userMessage.length > 30 ? userMessage.substring(0, 30) + '...' : userMessage;
-    await prisma.chatSessions
-      .update({
-        where: { id: sessionId, organizationId },
-        data: { title: fallbackTitle },
-      })
-      .catch(err => console.error('[Chat] Failed to set fallback title:', err));
-    return fallbackTitle;
-  }
-}
+import { queue } from '@/lib/server/queue';
 
 // 获取AI流式响应
 async function getAIResponse({
@@ -122,47 +48,50 @@ async function getAIResponse({
     const shouldGenerateTitle = session.messages.length === 0 && (!session.title || session.title === 'New Chat');
     console.log(`[Stream] Session has ${session.messages.length} messages, title: ${session.title}, shouldGenerateTitle: ${shouldGenerateTitle}`);
 
-    // 加载Agent配置（系统提示词和工具）
-    // 优先使用session关联的agentId，如果没有则使用默认的 Coordinator
-    let agentConfig;
-    try {
-      agentConfig = getAgent(session.agentId || undefined);
-    } catch (agentError) {
-      console.error('Error loading agent config:', agentError);
-      throw new Error(`Failed to load agent: ${agentError instanceof Error ? agentError.message : 'Unknown error'}`);
-    }
+    // 并行执行独立操作以提升性能
+    const [agentConfig, allModels, userMessage, aiMessage] = await Promise.all([
+      // 加载Agent配置（系统提示词和工具）
+      (async () => {
+        try {
+          return getAgent(session.agentId || undefined);
+        } catch (agentError) {
+          console.error('Error loading agent config:', agentError);
+          throw new Error(`Failed to load agent: ${agentError instanceof Error ? agentError.message : 'Unknown error'}`);
+        }
+      })(),
+      // 加载模型定义
+      loadModelDefinitionsFromDatabase(),
+      // 创建用户消息记录
+      prisma.chatMessages.create({
+        data: {
+          sessionId,
+          organizationId,
+          role: 'user',
+          content,
+          isComplete: true,
+        },
+      }),
+      // 创建AI消息记录（初始为空，用于流式更新）
+      prisma.chatMessages.create({
+        data: {
+          sessionId,
+          organizationId,
+          role: 'assistant',
+          content: '',
+          isStreaming: true,
+          isComplete: false,
+        },
+      }),
+    ]);
 
-    // 创建用户消息记录
-    const userMessage = await prisma.chatMessages.create({
-      data: {
-        sessionId,
-        organizationId,
-        role: 'user',
-        content,
-        isComplete: true,
-      },
-    });
+    // 异步更新会话的最后更新时间（不阻塞流式响应）
+    prisma.chatSessions
+      .update({
+        where: { id: sessionId },
+        data: { updatedAt: new Date() },
+      })
+      .catch(err => console.error('[Stream] Failed to update session timestamp:', err));
 
-    // 创建AI消息记录（初始为空，用于流式更新）
-    const aiMessage = await prisma.chatMessages.create({
-      data: {
-        sessionId,
-        organizationId,
-        role: 'assistant',
-        content: '',
-        isStreaming: true,
-        isComplete: false,
-      },
-    });
-
-    // 更新会话的最后更新时间
-    await prisma.chatSessions.update({
-      where: { id: sessionId },
-      data: { updatedAt: new Date() },
-    });
-
-    // 加载模型定义
-    const allModels = await loadModelDefinitionsFromDatabase();
     const modelInfo = allModels.find(m => m.id === session.modelId);
     if (!modelInfo) {
       throw new Error(`Model ${session.modelId} not found`);
@@ -267,6 +196,9 @@ async function getAIResponse({
 
           const toolCalls: any[] = [];
 
+          let finishReason: string | null = null;
+          let validToolCalls: any[] = [];
+
           for await (const chunk of stream) {
             // 累积token使用量
             if (chunk.usage) {
@@ -280,15 +212,6 @@ async function getAIResponse({
             if (choice.delta?.content) {
               const contentDelta = choice.delta.content;
               fullContent += contentDelta;
-
-              // 更新数据库中的消息内容
-              await prisma.chatMessages.update({
-                where: { id: aiMessage.id },
-                data: {
-                  content: fullContent,
-                  isStreaming: true,
-                },
-              });
 
               yield {
                 type: 'content',
@@ -326,10 +249,12 @@ async function getAIResponse({
 
             // 处理结束
             if (choice.finish_reason) {
+              finishReason = choice.finish_reason;
+
               // 如果有工具调用，发送给前端
               if (choice.finish_reason === 'tool_calls' && toolCalls.length > 0) {
                 // 验证 tool calls 的完整性
-                const validToolCalls = toolCalls
+                validToolCalls = toolCalls
                   .filter(tc => tc)
                   .map(tc => {
                     // 验证 JSON 是否完整
@@ -344,17 +269,6 @@ async function getAIResponse({
                     return tc;
                   });
 
-                await prisma.chatMessages.update({
-                  where: { id: aiMessage.id },
-                  data: {
-                    content: fullContent,
-                    isStreaming: false,
-                    isComplete: false, // 等待工具执行结果
-                    finishReason: 'tool_calls',
-                    toolCalls: validToolCalls,
-                  },
-                });
-
                 yield {
                   type: 'tool_calls',
                   toolCalls: validToolCalls,
@@ -362,16 +276,6 @@ async function getAIResponse({
                 };
               } else {
                 // 正常结束
-                await prisma.chatMessages.update({
-                  where: { id: aiMessage.id },
-                  data: {
-                    content: fullContent,
-                    isStreaming: false,
-                    isComplete: true,
-                    finishReason: choice.finish_reason,
-                  },
-                });
-
                 yield {
                   type: 'finished',
                   finishReason: choice.finish_reason,
@@ -379,6 +283,32 @@ async function getAIResponse({
                 };
               }
               break;
+            }
+          }
+
+          // 流式响应完成后，统一更新数据库
+          if (finishReason) {
+            if (finishReason === 'tool_calls' && validToolCalls.length > 0) {
+              await prisma.chatMessages.update({
+                where: { id: aiMessage.id },
+                data: {
+                  content: fullContent,
+                  isStreaming: false,
+                  isComplete: false, // 等待工具执行结果
+                  finishReason: 'tool_calls',
+                  toolCalls: validToolCalls,
+                },
+              });
+            } else {
+              await prisma.chatMessages.update({
+                where: { id: aiMessage.id },
+                data: {
+                  content: fullContent,
+                  isStreaming: false,
+                  isComplete: true,
+                  finishReason: finishReason,
+                },
+              });
             }
           }
 
@@ -478,6 +408,15 @@ export const POST = withUserAuthApi<{}, {}, { sessionId: string; content: string
       ipAddress,
     });
 
+    // 通过队列异步生成标题，不阻塞流的关闭
+    if (result.shouldGenerateTitle) {
+      console.log(`[Stream] Queuing title generation for new session ${sessionId}...`);
+      // 异步调用队列，不等待完成
+      queue.publish({ url: '/api/queue/summary', body: { sessionId, userMessage: content, organizationId: ctx.orgId } }).catch((err: unknown) => {
+        console.error('[Stream] Failed to queue title generation:', err);
+      });
+    }
+
     // 创建SSE流
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
@@ -520,22 +459,6 @@ export const POST = withUserAuthApi<{}, {}, { sessionId: string; content: string
           for await (const chunk of generator) {
             const data = `data: ${JSON.stringify(chunk)}\n\n`;
             controller.enqueue(encoder.encode(data));
-          }
-
-          // 如果需要生成标题，等待标题生成完成后再关闭流
-          if (result.shouldGenerateTitle) {
-            console.log(`[Stream] Generating title for new session ${sessionId}...`);
-            try {
-              const title = await generateSessionTitle(sessionId, content, ctx.orgId);
-              console.log(`[Stream] Title generated: ${title}`);
-              const titleData = `data: ${JSON.stringify({ type: 'title_updated', title })}\n\n`;
-              controller.enqueue(encoder.encode(titleData));
-              console.log(`[Stream] Title update sent to client`);
-            } catch (err) {
-              console.error('[Stream] Failed to generate title:', err);
-            }
-          } else {
-            console.log(`[Stream] Skip title generation (shouldGenerateTitle: ${result.shouldGenerateTitle})`);
           }
 
           stopHeartbeat();

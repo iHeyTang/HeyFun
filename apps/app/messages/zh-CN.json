@@ -105,6 +105,7 @@
   "dashboard": {
     "sidebar": {
       "flowcanvas": "FlowCanvas",
+      "agent": "智能助手",
       "chat": "聊天",
       "tasks": "任务",
       "paintboard": "画板",

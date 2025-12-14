@@ -8,6 +8,15 @@ import { PaintboardTasks } from '@prisma/client';
 import AIGC, { SubmitTaskParams } from '@repo/llm/aigc';
 import { NextResponse } from 'next/server';
 
+// 注册此 route 的 body 类型到 QueueRoutes interface
+declare module '@/lib/server/queue' {
+  interface QueueRoutes {
+    '/api/queue/paintboard': {
+      taskId: string;
+    };
+  }
+}
+
 export const POST = async (req: Request) => {
   try {
     const body = (await req.json()) as { taskId: string };

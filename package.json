@@ -10,7 +10,8 @@
     "prisma:generate": "cd apps/app && bunx prisma generate",
     "postinstall": "bun prisma:generate",
     "generate-keys": "node scripts/gen-certificate.js",
-    "db:push": "cd apps/app && bunx prisma db push"
+    "db:push": "cd apps/app && bunx prisma db push",
+    "qstash": "npx @upstash/qstash-cli@latest dev"
   },
   "devDependencies": {
     "prettier": "^3.6.2",

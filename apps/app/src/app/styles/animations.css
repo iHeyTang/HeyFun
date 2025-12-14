@@ -86,7 +86,8 @@
 
 /* 简洁液体流动动画 */
 @keyframes gradient-flow {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 0% 50%;
   }
   50% {

@@ -39,7 +39,9 @@ export function ModelCard({ model, onClick, className = '', rightContent }: Mode
             <div className="items-baseline gap-2">
               <div className="text-foreground text-[14px] font-medium">{model.name}</div>
               {/* 详细模式：显示模型 ID */}
-              <div className="text-muted-foreground font-mono text-[11px]">{model.id.replace(`${model.provider}/`, '')}</div>
+              <div className="text-muted-foreground font-mono text-[11px]">
+                {model.family}:{model.id.replace(`${model.provider}/`, '')}
+              </div>
             </div>
 
             {/* 价格信息 */}

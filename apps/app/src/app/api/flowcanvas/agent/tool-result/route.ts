@@ -7,7 +7,7 @@ import { withUserAuthApi } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
 import CHAT, { UnifiedChat } from '@repo/llm/chat';
 import { NextResponse } from 'next/server';
-import { getAgent } from '@/agents/server';
+import { getAgent } from '@/agents';
 import { calculateLLMCost, deductCredits, checkCreditsBalance } from '@/lib/server/credit';
 import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
 

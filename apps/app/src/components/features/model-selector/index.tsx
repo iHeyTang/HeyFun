@@ -6,7 +6,7 @@ import { useLLM } from '@/hooks/use-llm';
 import { ModelInfo } from '@repo/llm/chat';
 import { Check, Code, Eye, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useState, useEffect } from 'react';
 import { ModelIcon } from '../model-icon';
 
 export type ModelSelectorRef = {
@@ -24,11 +24,29 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
   const [search, setSearch] = useState('');
   const t = useTranslations('common.modelSelector');
 
-  const { availableModels } = useLLM();
+  const { availableModels, initiate } = useLLM();
+
+  // 初始化模型列表
+  useEffect(() => {
+    initiate();
+  }, [initiate]);
 
   const filteredModels = useMemo(() => {
-    return availableModels.filter(model => (type ? model.type === type : true));
-  }, [availableModels, type]);
+    let models = availableModels.filter(model => (type ? model.type === type : true));
+
+    // 根据搜索关键词过滤
+    if (search.trim()) {
+      const searchLower = search.toLowerCase().trim();
+      models = models.filter(
+        model =>
+          model.name?.toLowerCase().includes(searchLower) ||
+          model.id?.toLowerCase().includes(searchLower) ||
+          model.family?.toLowerCase().includes(searchLower),
+      );
+    }
+
+    return models;
+  }, [availableModels, type, search]);
 
   useImperativeHandle(ref, () => ({
     open: () => {
@@ -58,35 +76,39 @@ export const ModelSelectorDialog = forwardRef<ModelSelectorRef, ModelSelectorPro
         </div>
 
         <div className="max-h-96 overflow-y-auto">
-          {filteredModels.map((model, index) => (
-            <button
-              key={model?.id}
-              className={`hover:bg-muted/50 flex w-full cursor-pointer items-center justify-between px-4 py-2 text-left transition-colors ${
-                selectedModel?.id === model?.id ? 'bg-muted' : ''
-              } ${index === filteredModels.length - 1 ? 'border-b-0' : ''}`}
-              onClick={() => handleModelSelect(model)}
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-4">
-                <ModelIcon family={model?.family} className="h-8 w-8" />
-                <div>
-                  <div className="truncate font-normal">{model?.name}</div>
-                  <div className="flex items-center gap-2">
-                    {model?.supportsFunctionCalling && (
-                      <div className="rounded border border-blue-500/20 bg-blue-500/10 px-1">
-                        <Code className="h-3 w-3 text-blue-500" />
-                      </div>
-                    )}
-                    {model?.supportsVision && (
-                      <div className="rounded border border-green-500/20 bg-green-500/10 px-1">
-                        <Eye className="h-3 w-3 text-green-500" />
-                      </div>
-                    )}
+          {filteredModels.length === 0 ? (
+            <div className="text-muted-foreground px-4 py-8 text-center text-sm">{search.trim() ? t('noModelsFound') : 'No models available'}</div>
+          ) : (
+            filteredModels.map((model, index) => (
+              <button
+                key={model?.id}
+                className={`hover:bg-muted/50 flex w-full cursor-pointer items-center justify-between px-4 py-2 text-left transition-colors ${
+                  selectedModel?.id === model?.id ? 'bg-muted' : ''
+                } ${index === filteredModels.length - 1 ? 'border-b-0' : ''}`}
+                onClick={() => handleModelSelect(model)}
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-4">
+                  <ModelIcon family={model?.family} className="h-8 w-8" />
+                  <div>
+                    <div className="truncate font-normal">{model?.name}</div>
+                    <div className="flex items-center gap-2">
+                      {model?.supportsFunctionCalling && (
+                        <div className="rounded border border-blue-500/20 bg-blue-500/10 px-1">
+                          <Code className="h-3 w-3 text-blue-500" />
+                        </div>
+                      )}
+                      {model?.supportsVision && (
+                        <div className="rounded border border-green-500/20 bg-green-500/10 px-1">
+                          <Eye className="h-3 w-3 text-green-500" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              {selectedModel?.id === model?.id && <Check className="text-primary ml-2 h-4 w-4 flex-shrink-0" />}
-            </button>
-          ))}
+                {selectedModel?.id === model?.id && <Check className="text-primary ml-2 h-4 w-4 flex-shrink-0" />}
+              </button>
+            ))
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -89,11 +89,6 @@ export async function recordGatewayUsage(params: {
       data.apiKeyId = params.apiKeyId;
     }
 
-    console.log('[recordGatewayUsage] Creating record with data:', {
-      ...data,
-      apiKeyId: data.apiKeyId || 'null',
-    });
-
     const record = await prisma.gatewayUsageRecords.create({ data });
     console.log('[recordGatewayUsage] Record created successfully:', record.id);
   } catch (error) {

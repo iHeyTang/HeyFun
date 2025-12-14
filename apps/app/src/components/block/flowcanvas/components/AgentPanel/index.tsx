@@ -9,7 +9,6 @@ import { ChatContainer } from '@/components/features/chat/chat-container';
 import type { ChatAction } from '@/components/features/chat/chat-container';
 import { FlowCanvasRef } from '../../FlowCanvas';
 import { getAigcModels } from '@/actions/llm';
-import type { ToolExecutionContext } from '@/agents/browser';
 import { createFlowCanvasSessionManager } from '@/lib/browser/session-manager';
 
 export interface AgentPanelProps {
@@ -89,7 +88,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
   }, [onCollapsedChange]);
 
   // 配置工具执行上下文
-  const toolExecutionContext: ToolExecutionContext = useMemo(
+  const toolExecutionContext = useMemo(
     () => ({
       canvasRef,
       // 提供动态查询 AIGC 模型的函数

@@ -19,6 +19,11 @@ const useNavItems = () => {
       label: t('flowcanvas'),
       path: '/dashboard/flowcanvas',
     },
+    {
+      icon: Bot,
+      label: t('agent'),
+      path: '/dashboard/agent',
+    },
     // {
     //   icon: MessageSquare,
     //   label: t('chat'),

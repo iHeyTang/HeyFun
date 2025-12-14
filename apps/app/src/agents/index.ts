@@ -1,10 +1,12 @@
-/**
- * Agent 系统统一入口
- */
+import { AgentRegistry } from '@/agents/core/frameworks/registry';
+import { CanvasAgent } from './presets/canvas-agent';
+import { GeneralAgent } from './presets/general-agent';
 
-// 服务端
-export { getAgent } from './server';
-export type { AgentConfig } from './server/types';
+const agentRegistry = new AgentRegistry();
 
-// 浏览器端
-export type { ToolCall, ToolResult, ToolExecutionContext, ToolExecutor } from './browser/types';
+agentRegistry.register(new CanvasAgent());
+agentRegistry.register(new GeneralAgent());
+
+export function getAgent(agentId?: string) {
+  return agentRegistry.get(agentId).getConfig();
+}

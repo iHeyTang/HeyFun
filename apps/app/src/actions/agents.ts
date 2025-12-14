@@ -4,7 +4,7 @@
 
 'use server';
 
-import { getAgent } from '@/agents/server';
+import { getAgent } from '@/agents';
 
 /**
  * 获取 Agent 配置

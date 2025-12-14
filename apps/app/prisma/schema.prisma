@@ -646,3 +646,29 @@ model SystemModelDefinitions {
   @@index([enabled])
   @@index([createdAt])
 }
+
+// 系统提示词片段（System Prompt Snippets）
+// 用于动态组装 Agent 的系统提示词
+// 系统级别，不属于任何租户
+model SystemPromptSnippets {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 基本信息
+  name        String
+  description String
+  enabled     Boolean  @default(true)
+  content     String   @db.Text
+
+  // 元数据
+  version     String?
+  author      String?
+  category    String? // syntax, guideline, rule, example, knowledge, format, other
+  priority    Int      @default(0)
+  section     String? // 所属章节
+
+  @@index([enabled])
+  @@index([category])
+  @@index([createdAt])
+}

@@ -5,9 +5,9 @@
 
 'use client';
 
-import { Wrench, CheckCircle2, XCircle } from 'lucide-react';
-import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { CheckCircle2, Wrench, XCircle } from 'lucide-react';
+import { useState } from 'react';
 import type { ToolCall, ToolResult } from './types';
 
 interface ToolCallCardProps {

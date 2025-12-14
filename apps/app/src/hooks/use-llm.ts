@@ -16,7 +16,7 @@ export const useProvidersStore = create<{
 }));
 
 export const useLLM = () => {
-  const store = useProvidersStore();
+  const { availableModels, refreshAvailableModels } = useProvidersStore();
   const initiated = useRef(false);
   const [initiatedState, setInitiatedState] = useState(false);
 
@@ -24,13 +24,13 @@ export const useLLM = () => {
     if (initiated.current) {
       return;
     }
-    Promise.allSettled([store.refreshAvailableModels()]).then(() => {
+    Promise.allSettled([refreshAvailableModels()]).then(() => {
       initiated.current = true;
       setInitiatedState(true);
     });
-  }, [store]);
+  }, [refreshAvailableModels]);
 
-  return { ...store, initiate, initiated: initiatedState };
+  return { availableModels, refreshAvailableModels, initiate, initiated: initiatedState };
 };
 
 export const useAigcStore = create<{

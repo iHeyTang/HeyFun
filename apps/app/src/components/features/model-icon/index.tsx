@@ -44,6 +44,14 @@ const MODEL_ICONS: Record<string, ModelIconConfig> = {
   grok: { type: 'image', src: '/icons/grok.svg' },
   zai: { type: 'image', src: '/icons/zhipu.svg' },
   xai: { type: 'image', src: '/icons/xai.svg' },
+  bfl: { type: 'image', src: '/icons/bfl.svg' },
+  minimax: { type: 'image', src: '/icons/minimax.svg' },
+  mistral: { type: 'image', src: '/icons/mistral.svg' },
+  morph: { type: 'image', src: '/icons/morph.svg' },
+  voyage: { type: 'image', src: '/icons/voyage.svg' },
+  perplexity: { type: 'image', src: '/icons/perplexity.svg' },
+  cohere: { type: 'image', src: '/icons/cohere.svg' },
+  meta: { type: 'image', src: '/icons/meta.svg' },
 
   // 默认图标 (最低优先级)
   default: { type: 'image', src: '/icons/model-default.svg' },
