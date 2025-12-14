@@ -10,6 +10,7 @@ import { CheckCircle2, Wrench, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import type { ToolCall, ToolResult } from './types';
 import { WebSearchResult } from './tool-renderers/web-search-result';
+import { AigcModelsResult } from './tool-renderers/aigc-models-result';
 
 interface ToolCallCardProps {
   toolCalls: ToolCall[];
@@ -52,6 +53,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
       React.ComponentType<{ args?: Record<string, any>; result?: any; status: 'pending' | 'running' | 'success' | 'error'; error?: string }>
     > = {
       web_search: WebSearchResult,
+      get_aigc_models: AigcModelsResult,
     };
     return renderers[toolName];
   };

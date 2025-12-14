@@ -12,6 +12,7 @@ import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
 import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { generalToolbox } from '@/agents/toolboxes/general-toolbox';
 import { webSearchToolbox } from '@/agents/toolboxes/web-search-toolbox';
+import { aigcToolbox } from '@/agents/toolboxes/aigc-toolbox';
 import { queue } from '@/lib/server/queue';
 
 interface AgentWorkflowConfig {
@@ -34,7 +35,7 @@ const CLIENT_TOOLS = new Set([
 
 /**
  * 执行工具调用（后端版本）
- * 使用 generalToolbox 和 webSearchToolbox 来执行服务端工具
+ * 使用 generalToolbox、webSearchToolbox 和 aigcToolbox 来执行服务端工具
  */
 async function executeTools(toolCalls: any[], context: { organizationId: string; sessionId: string }): Promise<ToolResult[]> {
   const results: ToolResult[] = [];
@@ -60,7 +61,7 @@ async function executeTools(toolCalls: any[], context: { organizationId: string;
       continue;
     }
 
-    // 尝试使用 generalToolbox 执行工具
+    // 尝试使用各个toolbox执行工具
     let result: ToolResult | null = null;
     if (generalToolbox.has(toolName)) {
       try {
@@ -75,9 +76,20 @@ async function executeTools(toolCalls: any[], context: { organizationId: string;
         };
       }
     } else if (webSearchToolbox.has(toolName)) {
-      // 如果 generalToolbox 没有，尝试 webSearchToolbox
       try {
         result = await webSearchToolbox.execute(toolCall, {
+          organizationId: context.organizationId,
+          sessionId: context.sessionId,
+        });
+      } catch (error) {
+        result = {
+          success: false,
+          error: `Failed to execute tool "${toolName}": ${(error as Error).message}`,
+        };
+      }
+    } else if (aigcToolbox.has(toolName)) {
+      try {
+        result = await aigcToolbox.execute(toolCall, {
           organizationId: context.organizationId,
           sessionId: context.sessionId,
         });
@@ -94,6 +106,7 @@ async function executeTools(toolCalls: any[], context: { organizationId: string;
         error: `Tool "${toolName}" is not registered. Available tools: ${[
           ...generalToolbox.getAllToolNames(),
           ...webSearchToolbox.getAllToolNames(),
+          ...aigcToolbox.getAllToolNames(),
         ].join(', ')}`,
       };
     }

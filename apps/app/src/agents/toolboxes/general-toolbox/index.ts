@@ -7,6 +7,7 @@ import { BaseToolbox, ToolExecutor } from '@/agents/core/tools/base-tool-registr
 import { GeneralToolboxContext as GeneralTToolboxContext } from './context';
 import { getCurrentTimeTool } from './tools/get-current-time';
 import { getCurrentWeatherTool } from './tools/get-current-weather';
+import { waitTool } from './tools/wait';
 
 /**
  * 服务端工具执行函数
@@ -26,6 +27,6 @@ class GeneralTToolbox extends BaseToolbox<GeneralToolExecutor, GeneralTToolboxCo
  */
 const generalToolbox = new GeneralTToolbox();
 
-generalToolbox.registerMany([getCurrentTimeTool, getCurrentWeatherTool]);
+generalToolbox.registerMany([getCurrentTimeTool, getCurrentWeatherTool, waitTool]);
 
 export { generalToolbox };
