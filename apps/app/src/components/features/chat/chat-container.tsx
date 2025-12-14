@@ -255,7 +255,6 @@ export const ChatContainer = ({
         onCreateSession={handleCreateSession}
         onDeleteSession={handleDeleteSession}
         onSwitchSession={handleSwitchSession}
-        disabled={!selectedModel}
         actions={actions}
         width={sidebarWidth}
       />
