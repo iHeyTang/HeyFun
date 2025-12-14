@@ -34,16 +34,10 @@
   "prefer_related_applications": false,
   "shortcuts": [
     {
-      "name": "聊天助手",
-      "short_name": "聊天",
-      "description": "开始与 AI 对话",
-      "url": "/dashboard/chat",
-      "icons": [
-        {
-          "src": "/logo.png",
-          "sizes": "192x192"
-        }
-      ]
+      "name": "智能助手",
+      "short_name": "助手",
+      "description": "开始与智能助手对话",
+      "url": "/dashboard/agent"
     },
     {
       "name": "工作流画布",

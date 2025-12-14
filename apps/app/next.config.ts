@@ -45,7 +45,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/dashboard',
-        destination: '/dashboard/flowcanvas',
+        destination: '/dashboard/agent',
         permanent: true,
       },
       {

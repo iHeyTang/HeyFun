@@ -40,3 +40,4 @@ yarn-error.log*
 # HeyFun
 apps/agent/workspace/**/*
 !apps/agent/workspace/example.md
+.env*.local

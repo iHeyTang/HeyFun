@@ -178,12 +178,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
 
           {/* 面板内容 */}
           <div className="flex-1 overflow-auto">
-            <ChatContainer
-              sessionManager={sessionManager}
-              toolExecutionContext={toolExecutionContext}
-              actions={chatActions}
-              apiPrefix="/api/flowcanvas/agent"
-            />
+            <ChatContainer sessionManager={sessionManager} actions={chatActions} apiPrefix="/api/flowcanvas/agent" />
             {children}
           </div>
         </div>

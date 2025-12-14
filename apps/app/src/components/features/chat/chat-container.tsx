@@ -35,8 +35,6 @@ interface ChatContainerProps {
   initialSessionId?: string;
   /** 外部控制的 sessionId（可选，用于路由控制） */
   sessionId?: string;
-  /** 工具执行上下文（包含 canvasRef 等） */
-  toolExecutionContext?: any;
   /** 外部操作按钮 */
   actions?: ChatAction[];
   /** API 端点前缀（可选，默认 '/api/agent'，FlowCanvas 使用 '/api/flowcanvas/agent'） */
@@ -56,7 +54,6 @@ export const ChatContainer = ({
   sessionManager: externalSessionManager,
   initialSessionId,
   sessionId: externalSessionId,
-  toolExecutionContext,
   actions = [],
   apiPrefix = '/api/agent',
   layout = 'tabs',
@@ -235,7 +232,6 @@ export const ChatContainer = ({
                 initialMessages={sessionMessages[activeSessionId] || []}
                 onClearChat={handleClearChat}
                 disabled={!selectedModel}
-                toolExecutionContext={toolExecutionContext}
                 apiPrefix={apiPrefix}
                 onTitleUpdated={handleTitleUpdated}
                 modelId={sessions.find(s => s.id === activeSessionId)?.modelId}
@@ -276,7 +272,6 @@ export const ChatContainer = ({
               initialMessages={sessionMessages[activeSessionId] || []}
               onClearChat={handleClearChat}
               disabled={!selectedModel}
-              toolExecutionContext={toolExecutionContext}
               apiPrefix={apiPrefix}
               onTitleUpdated={handleTitleUpdated}
               modelId={sessions.find(s => s.id === activeSessionId)?.modelId}

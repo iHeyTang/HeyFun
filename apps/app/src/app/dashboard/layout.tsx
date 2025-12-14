@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { AppInitializer } from '@/components/features/app-initializer';
 
 export const metadata: Metadata = {
-  title: 'FlowCanvas',
+  title: 'Dashboard',
 };
 
 const Header = ({ className }: { className?: string }) => {

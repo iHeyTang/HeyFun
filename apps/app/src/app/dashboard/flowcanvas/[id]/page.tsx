@@ -7,7 +7,6 @@ import ImageNode, { ImageNodeProcessor } from '@/components/block/flowcanvas-nod
 import MusicNode, { MusicNodeProcessor } from '@/components/block/flowcanvas-node/MusicNode';
 import TextNode, { TextNodeProcessor } from '@/components/block/flowcanvas-node/TextNode';
 import VideoNode, { VideoNodeProcessor } from '@/components/block/flowcanvas-node/VideoNode';
-import AgentPanel from '@/components/block/flowcanvas/components/AgentPanel';
 import ToolbarMenuButton from '@/components/block/flowcanvas/components/ToolbarMenuButton';
 import ToolbarPanel from '@/components/block/flowcanvas/components/ToolbarPanel';
 import TooltipButton from '@/components/block/tooltip-button';
@@ -383,7 +382,7 @@ const FlowCanvasPage = () => {
             />
           </ToolbarPanel>
         }
-        agentPanel={<AgentPanel canvasId={id} canvasRef={canvasRef} />}
+        // agentPanel={<AgentPanel canvasId={id} canvasRef={canvasRef} />}
       />
     </div>
   );

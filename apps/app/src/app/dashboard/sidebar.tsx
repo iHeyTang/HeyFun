@@ -12,14 +12,14 @@ const useNavItems = () => {
 
   return [
     {
-      icon: Flower,
-      label: t('flowcanvas'),
-      path: '/dashboard/flowcanvas',
-    },
-    {
       icon: Bot,
       label: t('agent'),
       path: '/dashboard/agent',
+    },
+    {
+      icon: Flower,
+      label: t('flowcanvas'),
+      path: '/dashboard/flowcanvas',
     },
     // {
     //   icon: MessageSquare,
