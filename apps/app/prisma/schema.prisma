@@ -287,16 +287,16 @@ model PaintboardTasks {
 }
 
 model ChatSessions {
-  id             String   @id @default(cuid())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id             String    @id @default(cuid())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   deletedAt      DateTime? // 软删除时间戳，用于审计
   organizationId String
 
   // 会话信息
   title         String? // 会话标题，可由第一条消息自动生成
-  modelProvider String // 模型提供商
-  modelId       String // 模型ID
+  modelProvider String? // 模型提供商（已废弃，保留用于兼容性）
+  modelId       String? // 模型ID（已废弃，保留用于兼容性，实际使用消息中的 modelId）
   agentId       String? // 关联的Agent ID，不传则使用默认对话
 
   // 会话状态
@@ -332,6 +332,7 @@ model ChatMessages {
   // 元数据
   tokenCount   Int? // token数量
   finishReason String? // 完成原因
+  modelId      String? // 模型ID（仅用于assistant消息，标识该消息由哪个模型生成）
 
   // 工具调用相关
   /// [JSONSchema] ToolCall[]
@@ -415,6 +416,7 @@ model FlowCanvasProjectAgentMessages {
   // 元数据
   tokenCount   Int? // token数量
   finishReason String? // 完成原因
+  modelId      String? // 模型ID（仅用于assistant消息，标识该消息由哪个模型生成）
 
   // 工具调用相关
   /// [JSONSchema] ToolCall[]
@@ -658,13 +660,11 @@ model SystemPromptSnippets {
   id          String   @id @default(cuid())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
   // 基本信息
   name        String
   description String
   enabled     Boolean  @default(true)
   content     String   @db.Text
-
   // 元数据
   version     String?
   author      String?

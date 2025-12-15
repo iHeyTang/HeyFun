@@ -8,7 +8,7 @@
 import { ThemeLogo } from '@/components/features/theme-logo';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { ChatInput } from './chat-input';
+import { ChatInput, useChatbotModelSelector } from './chat-input';
 import { ChatMessage as ChatMessageComponent } from './chat-message';
 import type { ChatMessage as Message } from './types';
 
@@ -27,8 +27,6 @@ interface ChatSessionProps {
   apiPrefix?: string;
   /** 标题更新回调 */
   onTitleUpdated?: (title: string) => void;
-  /** 模型ID（用于显示模型图标） */
-  modelId?: string;
 }
 
 /**
@@ -43,7 +41,6 @@ export function ChatSession({
   onMessagesChange,
   apiPrefix = '/api/agent',
   onTitleUpdated,
-  modelId,
 }: ChatSessionProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,6 +48,7 @@ export function ChatSession({
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastMessageIdRef = useRef<string | null>(null);
   const shouldPollRef = useRef<boolean>(false);
+  const { selectedModel } = useChatbotModelSelector();
 
   // 使用 useCallback 优化滚动函数
   const scrollToBottom = useCallback(() => {
@@ -136,6 +134,7 @@ export function ChatSession({
           isComplete: msg.isComplete,
           createdAt: new Date(msg.createdAt),
           toolCalls: msg.toolCalls ? (msg.toolCalls as any[]) : undefined,
+          modelId: msg.modelId || undefined,
         };
 
         // 如果这是一个有 toolCalls 的 assistant 消息，查找后续的 tool 消息
@@ -302,6 +301,13 @@ export function ChatSession({
         setMessages(prev => [...prev, tempUserMessage]);
 
         // 发送消息到后端，触发 workflow
+        if (!selectedModel) {
+          toast.error('Please select a model first');
+          setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp_')));
+          setIsLoading(false);
+          return;
+        }
+
         const response = await fetch(`${apiPrefix}/chat`, {
           method: 'POST',
           headers: {
@@ -310,6 +316,7 @@ export function ChatSession({
           body: JSON.stringify({
             sessionId,
             content,
+            modelId: selectedModel.id,
           }),
         });
 
@@ -352,7 +359,7 @@ export function ChatSession({
         setIsLoading(false);
       }
     },
-    [sessionId, apiPrefix, fetchMessages, pollMessagesWithDelay],
+    [sessionId, apiPrefix, fetchMessages, pollMessagesWithDelay, selectedModel],
   );
 
   // 使用 useMemo 优化消息列表渲染
@@ -368,13 +375,13 @@ export function ChatSession({
             timestamp={message.createdAt}
             toolCalls={message.toolCalls}
             toolResults={message.toolResults}
-            modelId={message.role === 'assistant' ? modelId : undefined}
+            modelId={message.role === 'assistant' ? message.modelId : undefined}
           />
         ))}
         <div ref={messagesEndRef} />
       </div>
     ),
-    [messages, modelId],
+    [messages],
   );
 
   // 使用 useCallback 优化回调函数

@@ -5,7 +5,6 @@
 
 export interface ChatSession {
   id: string;
-  modelId: string;
   title?: string | null;
   agentId?: string | null;
   createdAt: Date;
@@ -39,6 +38,7 @@ export interface ChatMessage {
   createdAt: Date;
   toolCalls?: ToolCall[];
   toolResults?: ToolResult[];
+  modelId?: string; // 模型ID（仅用于assistant消息，标识该消息由哪个模型生成）
 }
 
 /**
@@ -56,7 +56,7 @@ export interface SessionManager {
   /**
    * 创建新会话
    */
-  createSession(params: { modelId: string; title?: string; agentId?: string }): Promise<ChatSession>;
+  createSession(params: { title?: string; agentId?: string }): Promise<ChatSession>;
 
   /**
    * 获取会话

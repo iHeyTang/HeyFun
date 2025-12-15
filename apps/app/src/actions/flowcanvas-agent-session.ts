@@ -12,15 +12,15 @@ import type { ModelInfo } from '@repo/llm/chat';
 // 创建 FlowCanvas Agent 会话
 export const createFlowCanvasAgentSession = withUserAuth(
   'flowcanvas-agent-session/createFlowCanvasAgentSession',
-  async ({ orgId, args }: AuthWrapperContext<{ projectId: string; modelId: string; title?: string; agentId?: string }>) => {
-    const { projectId, modelId, title, agentId } = args;
+  async ({ orgId, args }: AuthWrapperContext<{ projectId: string; title?: string; agentId?: string }>) => {
+    const { projectId, title, agentId } = args;
 
     try {
       const session = await prisma.flowCanvasProjectAgentSessions.create({
         data: {
           organizationId: orgId,
           projectId,
-          modelId,
+          modelId: '',
           title: title || null,
           agentId: agentId || null,
           status: 'active',

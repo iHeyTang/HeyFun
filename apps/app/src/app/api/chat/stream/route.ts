@@ -13,12 +13,14 @@ async function getAIResponse({
   organizationId,
   sessionId,
   content,
+  modelId,
   requestStartTime,
   ipAddress,
 }: {
   organizationId: string;
   sessionId: string;
   content: string;
+  modelId: string;
   requestStartTime?: number;
   ipAddress?: string;
 }) {
@@ -80,6 +82,7 @@ async function getAIResponse({
           content: '',
           isStreaming: true,
           isComplete: false,
+          modelId,
         },
       }),
     ]);
@@ -92,16 +95,16 @@ async function getAIResponse({
       })
       .catch(err => console.error('[Stream] Failed to update session timestamp:', err));
 
-    const modelInfo = allModels.find(m => m.id === session.modelId);
+    const modelInfo = allModels.find(m => m.id === modelId);
     if (!modelInfo) {
-      throw new Error(`Model ${session.modelId} not found`);
+      throw new Error(`Model ${modelId} not found`);
     }
 
     // 设置模型列表到 CHAT 实例
     CHAT.setModels(allModels);
 
     // 创建LLM客户端
-    const llmClient = CHAT.createClient(session.modelId);
+    const llmClient = CHAT.createClient(modelId);
 
     // 构建消息历史（包括新的用户消息）
     const messages: UnifiedChat.Message[] = [
@@ -387,10 +390,10 @@ async function getAIResponse({
   }
 }
 
-export const POST = withUserAuthApi<{}, {}, { sessionId: string; content: string }>(async (req, ctx) => {
+export const POST = withUserAuthApi<{}, {}, { sessionId: string; content: string; modelId: string }>(async (req, ctx) => {
   const requestStartTime = Date.now();
   try {
-    const { sessionId, content } = ctx.body;
+    const { sessionId, content, modelId } = ctx.body;
 
     if (!sessionId || !content) {
       return new NextResponse('Missing required parameters', { status: 400 });
@@ -404,6 +407,7 @@ export const POST = withUserAuthApi<{}, {}, { sessionId: string; content: string
       organizationId: ctx.orgId,
       sessionId,
       content,
+      modelId,
       requestStartTime,
       ipAddress,
     });

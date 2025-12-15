@@ -37,4 +37,5 @@ export interface ChatMessage {
   createdAt: Date;
   toolCalls?: ToolCall[];
   toolResults?: ToolResult[];
+  modelId?: string; // 模型ID（仅用于assistant消息，标识该消息由哪个模型生成）
 }

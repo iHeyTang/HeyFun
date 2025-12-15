@@ -11,13 +11,14 @@ import { NextResponse } from 'next/server';
 interface ChatRequest {
   sessionId: string;
   content: string;
+  modelId: string;
 }
 
 export const POST = withUserAuthApi<{}, {}, ChatRequest>(async (_req, ctx) => {
   try {
-    const { sessionId, content } = ctx.body;
+    const { sessionId, content, modelId } = ctx.body;
 
-    if (!sessionId || !content) {
+    if (!sessionId || !content || !modelId) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
@@ -40,10 +41,7 @@ export const POST = withUserAuthApi<{}, {}, ChatRequest>(async (_req, ctx) => {
 
     // 检查当前处理状态，如果正在处理中，不允许新请求
     if (session.status === 'pending' || session.status === 'processing') {
-      return NextResponse.json(
-        { error: 'Session is already processing, please wait for the current request to complete' },
-        { status: 409 },
-      );
+      return NextResponse.json({ error: 'Session is already processing, please wait for the current request to complete' }, { status: 409 });
     }
 
     // 创建用户消息
@@ -73,7 +71,7 @@ export const POST = withUserAuthApi<{}, {}, ChatRequest>(async (_req, ctx) => {
         organizationId: ctx.orgId,
         sessionId,
         userMessageId: userMessage.id,
-        modelId: session.modelId,
+        modelId: modelId,
         agentId: session.agentId,
       },
     });
@@ -94,4 +92,3 @@ export const POST = withUserAuthApi<{}, {}, ChatRequest>(async (_req, ctx) => {
     );
   }
 });
-

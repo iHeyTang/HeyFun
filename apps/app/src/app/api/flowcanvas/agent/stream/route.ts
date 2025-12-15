@@ -87,7 +87,17 @@ async function generateSessionTitle(sessionId: string, userMessage: string, orga
 }
 
 // 获取AI流式响应
-async function getAIResponse({ organizationId, sessionId, content }: { organizationId: string; sessionId: string; content: string }) {
+async function getAIResponse({
+  organizationId,
+  sessionId,
+  content,
+  modelId,
+}: {
+  organizationId: string;
+  sessionId: string;
+  content: string;
+  modelId: string;
+}) {
   try {
     // 获取会话和消息历史
     const session = await prisma.flowCanvasProjectAgentSessions.findUnique({
@@ -143,6 +153,7 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
         content: '',
         isStreaming: true,
         isComplete: false,
+        modelId,
       },
     });
 
@@ -154,16 +165,16 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
 
     // 加载模型定义
     const allModels = await loadModelDefinitionsFromDatabase();
-    const modelInfo = allModels.find(m => m.id === session.modelId);
+    const modelInfo = allModels.find(m => m.id === modelId);
     if (!modelInfo) {
-      throw new Error(`Model ${session.modelId} not found`);
+      throw new Error(`Model ${modelId} not found`);
     }
 
     // 设置模型列表到 CHAT 实例
     CHAT.setModels(allModels);
 
     // 创建LLM客户端
-    const llmClient = CHAT.createClient(session.modelId);
+    const llmClient = CHAT.createClient(modelId);
 
     // 构建消息历史（包括新的用户消息）
     const messages: UnifiedChat.Message[] = [
@@ -403,9 +414,9 @@ async function getAIResponse({ organizationId, sessionId, content }: { organizat
   }
 }
 
-export const POST = withUserAuthApi<{}, {}, { sessionId: string; content: string }>(async (_req, ctx) => {
+export const POST = withUserAuthApi<{}, {}, { sessionId: string; content: string; modelId: string }>(async (_req, ctx) => {
   try {
-    const { sessionId, content } = ctx.body;
+    const { sessionId, content, modelId } = ctx.body;
 
     if (!sessionId || !content) {
       return new NextResponse('Missing required parameters', { status: 400 });
@@ -416,6 +427,7 @@ export const POST = withUserAuthApi<{}, {}, { sessionId: string; content: string
       organizationId: ctx.orgId,
       sessionId,
       content,
+      modelId,
     });
 
     // 创建SSE流

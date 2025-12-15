@@ -112,14 +112,8 @@ export const ChatContainer = ({
 
   // 创建新 session
   const handleCreateSession = async () => {
-    if (!selectedModel) {
-      toast.error('Please select a model first');
-      return;
-    }
-
     try {
       const newSession = await sessionManager.createSession({
-        modelId: selectedModel.id,
         title: 'New Chat',
       });
 
@@ -234,7 +228,6 @@ export const ChatContainer = ({
                 disabled={!selectedModel}
                 apiPrefix={apiPrefix}
                 onTitleUpdated={handleTitleUpdated}
-                modelId={sessions.find(s => s.id === activeSessionId)?.modelId}
               />
             )
           ) : (
@@ -273,7 +266,6 @@ export const ChatContainer = ({
               disabled={!selectedModel}
               apiPrefix={apiPrefix}
               onTitleUpdated={handleTitleUpdated}
-              modelId={sessions.find(s => s.id === activeSessionId)?.modelId}
             />
           )
         ) : (

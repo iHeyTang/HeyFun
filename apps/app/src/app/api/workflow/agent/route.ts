@@ -121,9 +121,14 @@ async function executeTools(toolCalls: any[], context: { organizationId: string;
 
 export const { POST } = serve<AgentWorkflowConfig>(async context => {
   const { organizationId, sessionId, userMessageId, modelId, agentId } = context.requestPayload;
+  // Upstash Workflow 的 runId 可能通过 context.id 或其他方式获取
+  // 暂时使用 sessionId 和 messageId 来构造唯一标识
+  const workflowRunId = (context as any).id || (context as any).runId || `${sessionId}-${userMessageId}`;
 
-  // 更新状态：pending -> processing（开始执行）
+  // 更新状态：pending -> processing（开始执行），并保存 workflow run ID
   await context.run('start-processing', async () => {
+    // 将 workflow run ID 存储到 session 的某个地方（可以通过 metadata 或其他方式）
+    // 这里我们暂时通过日志记录，实际可以通过 Redis 或其他方式存储
     await prisma.chatSessions.update({
       where: { id: sessionId },
       data: { status: 'processing' },
@@ -319,6 +324,7 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
             content: '余额不足，无法继续对话。请充值后重试。',
             isComplete: true,
             isStreaming: false,
+            modelId: modelId,
           },
         });
       });
@@ -335,6 +341,7 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
           content: '',
           isStreaming: false,
           isComplete: false,
+          modelId: modelId,
         },
       });
     });
@@ -437,33 +444,75 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
 
     // 步骤9：如果有工具调用，执行工具
     if (llmResponse.toolCalls.length > 0) {
-      const toolResults = await context.run(`round-${roundCount}-execute-tools`, async () => {
-        return await executeTools(llmResponse.toolCalls, {
-          organizationId,
-          sessionId,
-        });
-      });
+      // 分离客户端工具和服务端工具
+      const clientTools: any[] = [];
+      const serverTools: any[] = [];
 
-      // 保存工具结果消息
-      await context.run(`round-${roundCount}-save-tool-results`, async () => {
-        for (let i = 0; i < llmResponse.toolCalls.length; i++) {
-          const toolCall = llmResponse.toolCalls[i];
-          const result = toolResults[i];
-
-          if (toolCall && result) {
-            await prisma.chatMessages.create({
-              data: {
-                sessionId,
-                organizationId,
-                role: 'tool',
-                content: JSON.stringify(result),
-                toolCallId: toolCall.id,
-                isComplete: true,
-              },
-            });
-          }
+      for (const toolCall of llmResponse.toolCalls) {
+        const toolName = toolCall.function?.name;
+        if (toolName && CLIENT_TOOLS.has(toolName)) {
+          clientTools.push(toolCall);
+        } else {
+          serverTools.push(toolCall);
         }
-      });
+      }
+
+      // 执行服务端工具
+      let serverToolResults: ToolResult[] = [];
+      if (serverTools.length > 0) {
+        serverToolResults = await context.run(`round-${roundCount}-execute-server-tools`, async () => {
+          return await executeTools(serverTools, {
+            organizationId,
+            sessionId,
+          });
+        });
+
+        // 保存服务端工具结果消息
+        await context.run(`round-${roundCount}-save-server-tool-results`, async () => {
+          for (let i = 0; i < serverTools.length; i++) {
+            const toolCall = serverTools[i];
+            const result = serverToolResults[i];
+
+            if (toolCall && result) {
+              await prisma.chatMessages.create({
+                data: {
+                  sessionId,
+                  organizationId,
+                  role: 'tool',
+                  content: JSON.stringify(result),
+                  toolCallId: toolCall.id,
+                  isComplete: true,
+                },
+              });
+            }
+          }
+        });
+      }
+
+      // 如果有客户端工具，等待前端执行完成
+      if (clientTools.length > 0) {
+        // 等待客户端工具完成事件
+        const eventName = `tool-result:${sessionId}:${aiMessage.id}`;
+        await context.run(`round-${roundCount}-wait-for-client-tools`, async () => {
+          // 标记消息状态，表示正在等待客户端工具执行
+          // 同时将 workflow run ID 和 event name 存储到消息的 metadata 中（可以通过其他字段存储）
+          await prisma.chatMessages.update({
+            where: { id: aiMessage.id },
+            data: {
+              isComplete: false, // 等待工具执行
+              // 可以将 workflowRunId 和 eventName 存储到 finishReason 字段（临时使用）
+              finishReason: JSON.stringify({ workflowRunId, eventName }),
+            },
+          });
+        });
+
+        // 等待事件（Upstash Workflow 的 waitForEvent）
+        await context.waitForEvent(`round-${roundCount}-wait-for-client-tools`, eventName, {
+          timeout: '5m', // 5分钟超时
+        });
+
+        // 事件触发后，继续执行（工具结果已经由 tool-result API 保存）
+      }
 
       // 继续下一轮对话（工具执行后需要继续）
       continue;

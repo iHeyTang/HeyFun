@@ -11,7 +11,7 @@ import type { SessionManager, ChatSession, ChatMessage, ChatSessionWithMessages 
  * Session 数据存储在后端数据库
  */
 export class RemoteSessionManager implements SessionManager {
-  async createSession(params: { modelId: string; title?: string; agentId?: string }): Promise<ChatSession> {
+  async createSession(params: { title?: string; agentId?: string }): Promise<ChatSession> {
     const result = await createChatSession(params);
 
     if (!result.data) {
@@ -20,7 +20,6 @@ export class RemoteSessionManager implements SessionManager {
 
     return {
       id: result.data.id,
-      modelId: result.data.modelId,
       title: result.data.title || undefined,
       agentId: result.data.agentId || undefined,
       createdAt: new Date(result.data.createdAt),
@@ -37,7 +36,6 @@ export class RemoteSessionManager implements SessionManager {
 
     return {
       id: result.data.id,
-      modelId: result.data.modelId,
       title: result.data.title || undefined,
       agentId: result.data.agentId || undefined,
       createdAt: new Date(result.data.createdAt),
@@ -58,7 +56,6 @@ export class RemoteSessionManager implements SessionManager {
 
     const sessions = result.data.sessions.map(s => ({
       id: s.id,
-      modelId: s.modelId,
       title: s.title || undefined,
       agentId: s.agentId || undefined,
       createdAt: new Date(s.createdAt),
@@ -80,7 +77,6 @@ export class RemoteSessionManager implements SessionManager {
 
     const session: ChatSession = {
       id: result.data.id,
-      modelId: result.data.modelId,
       title: result.data.title || null,
       agentId: result.data.agentId || null,
       createdAt: new Date(result.data.createdAt),
@@ -109,6 +105,7 @@ export class RemoteSessionManager implements SessionManager {
         isComplete: msg.isComplete,
         createdAt: new Date(msg.createdAt),
         toolCalls: msg.toolCalls ? (msg.toolCalls as any[]) : undefined,
+        modelId: msg.modelId || undefined,
       };
 
       // 如果这是一个有 toolCalls 的 assistant 消息，查找后续的 tool 消息

@@ -18,10 +18,9 @@ import type { SessionManager, ChatSession, ChatMessage, ChatSessionWithMessages 
 export class FlowCanvasSessionManager implements SessionManager {
   constructor(private projectId: string) {}
 
-  async createSession(params: { modelId: string; title?: string; agentId?: string }): Promise<ChatSession> {
+  async createSession(params: { title?: string; agentId?: string }): Promise<ChatSession> {
     const result = await createFlowCanvasAgentSession({
       projectId: this.projectId,
-      modelId: params.modelId,
       title: params.title,
       agentId: params.agentId,
     });
@@ -32,7 +31,6 @@ export class FlowCanvasSessionManager implements SessionManager {
 
     return {
       id: result.data.id,
-      modelId: result.data.modelId,
       title: result.data.title || undefined,
       agentId: result.data.agentId || undefined,
       createdAt: new Date(result.data.createdAt),
@@ -49,7 +47,6 @@ export class FlowCanvasSessionManager implements SessionManager {
 
     return {
       id: result.data.id,
-      modelId: result.data.modelId,
       title: result.data.title || undefined,
       agentId: result.data.agentId || undefined,
       createdAt: new Date(result.data.createdAt),
@@ -73,7 +70,6 @@ export class FlowCanvasSessionManager implements SessionManager {
 
     const sessions = result.data.sessions.map(s => ({
       id: s.id,
-      modelId: s.modelId,
       title: s.title || undefined,
       agentId: s.agentId || undefined,
       createdAt: new Date(s.createdAt),
@@ -95,7 +91,6 @@ export class FlowCanvasSessionManager implements SessionManager {
 
     const session: ChatSession = {
       id: result.data.id,
-      modelId: result.data.modelId,
       title: result.data.title || null,
       agentId: result.data.agentId || null,
       createdAt: new Date(result.data.createdAt),

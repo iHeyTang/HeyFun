@@ -8,18 +8,18 @@ import { loadModelDefinitionsFromDatabase } from './llm';
 // 创建聊天会话
 export const createChatSession = withUserAuth(
   'chat/createChatSession',
-  async ({ orgId, args }: AuthWrapperContext<{ modelId: string; title?: string; agentId?: string }>) => {
-    const { modelId, title, agentId } = args;
+  async ({ orgId, args }: AuthWrapperContext<{ title?: string; agentId?: string }>) => {
+    const { title, agentId } = args;
 
     try {
       const session = await prisma.chatSessions.create({
         data: {
           organizationId: orgId,
-          modelId,
           title: title || null,
           agentId: agentId || null,
           status: 'idle',
-          modelProvider: '',
+          modelProvider: null,
+          modelId: null,
         },
       });
 

@@ -13,10 +13,9 @@ const STORAGE_KEY_MESSAGES = 'chat_messages_';
  * Session 数据存储在浏览器 localStorage
  */
 export class LocalSessionManager implements SessionManager {
-  async createSession(params: { modelId: string; title?: string; agentId?: string }): Promise<ChatSession> {
+  async createSession(params: { title?: string; agentId?: string }): Promise<ChatSession> {
     const session: ChatSession = {
       id: `local_${Date.now()}`,
-      modelId: params.modelId,
       title: params.title,
       agentId: params.agentId,
       createdAt: new Date(),

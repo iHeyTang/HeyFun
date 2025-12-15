@@ -23,6 +23,10 @@ class Workflow {
       workflowRunId: res.workflowRunId,
     };
   }
+
+  async notify(eventId: string, eventData?: unknown): Promise<void> {
+    await this.workflow.notify({ eventId, eventData });
+  }
 }
 
 export const workflow = new Workflow();
