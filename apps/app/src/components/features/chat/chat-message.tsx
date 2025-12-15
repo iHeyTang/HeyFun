@@ -65,7 +65,10 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
       )}
 
       <div className={cn('group flex min-w-0 flex-1 flex-col gap-1.5', isUser ? 'items-end' : 'items-start')}>
-        <span className="group-hover:text-muted-foreground text-xs text-transparent transition-all">{timestamp.toLocaleTimeString()}</span>
+        <div className="text-muted-foreground flex items-center gap-1 text-xs">
+          <div>{modelInfo?.name}</div>
+          <span className="group-hover:text-muted-foreground text-transparent transition-all">{timestamp.toLocaleTimeString()}</span>
+        </div>
 
         {/* 消息内容（包含思考过程和主要内容） */}
         {(mainContent || thinkingContent) && (
