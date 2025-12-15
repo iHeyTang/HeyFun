@@ -217,7 +217,14 @@ const MarkdownComponent = ({ children, className = '', isStreaming = false }: Ma
       td: ({ children }) => <td className="text-muted-foreground">{children}</td>,
       // 自定义图片组件
       img: ({ src, alt, ...props }: any) => {
-        return <ImagePreview src={src} alt={alt} className="my-4 block max-h-[200px] max-w-full rounded-lg object-contain" {...props} />;
+        // 判断 src 是否是 OSS key，如果是则转换为 /api/oss/ 路径
+        // 如果 src 已经是完整的 URL（http/https/data:）或者是绝对路径（以 / 开头），则不需要转换
+        let imageSrc = src;
+        if (src && !src.startsWith('http://') && !src.startsWith('https://') && !src.startsWith('data:') && !src.startsWith('/')) {
+          // 认为是 OSS key，转换为 API 路径
+          imageSrc = `/api/oss/${src}`;
+        }
+        return <ImagePreview src={imageSrc} alt={alt} className="my-4 block max-h-[200px] max-w-full rounded-lg object-contain" {...props} />;
       },
       // 自定义 Mermaid 组件
       'mermaid-container': ({ node, ...props }: any) => {

@@ -1,7 +1,6 @@
 import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { AigcToolboxContext } from '../context';
 import { prisma } from '@/lib/server/prisma';
-import storage from '@/lib/server/storage';
 
 const executor = async (args: any, context: AigcToolboxContext): Promise<ToolResult> => {
   try {
@@ -41,27 +40,8 @@ const executor = async (args: any, context: AigcToolboxContext): Promise<ToolRes
       };
     }
 
-    // 如果有结果，需要获取签名URL
-    let results = task.results;
-    if (results && Array.isArray(results) && results.length > 0) {
-      results = await Promise.all(
-        (results as any[]).map(async (result: any) => {
-          if (result.key) {
-            try {
-              const signedUrl = await storage.getSignedUrl(result.key, { expiresIn: 3600 });
-              return {
-                ...result,
-                url: signedUrl,
-              };
-            } catch (error) {
-              console.error('Error getting signed URL:', error);
-              return result;
-            }
-          }
-          return result;
-        }),
-      );
-    }
+    // 直接返回结果，包含 key，前端可以根据需要获取 signedUrl
+    const results = task.results;
 
     return {
       success: true,
