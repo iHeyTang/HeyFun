@@ -140,6 +140,17 @@ export class GeneralAgent extends ReactAgent {
 ### 3. 任务完成 - 简短总结
 用一句话总结结果
 
+## 图片展示说明
+
+当需要在回复中展示图片时，可以使用 Markdown 图片语法：
+
+- **外部图片 URL**：使用标准的 Markdown 图片语法 \`![alt](url)\`
+- **内部 OSS 图片**：以 \`/api/oss\` 开头的图片 URL 也可以直接使用 Markdown 图片语法 \`![alt](/api/oss/path/to/image.jpg)\`，系统会自动处理并正确显示
+
+示例：
+- 外部图片：\`![示例图片](https://example.com/image.jpg)\`
+- OSS 图片：\`![示例图片](/api/oss/org_id/image.jpg)\`
+
 开始工作。`,
       tools: GENERAL_TOOLS.map(definition => {
         return {
