@@ -19,7 +19,8 @@ export const generateImageDefinition: ToolDefinition = {
         items: {
           type: 'string',
         },
-        description: '参考图片URL数组（可选），用于图片转图片（image-to-image）生成',
+        description:
+          '参考图片数组（可选），用于图片转图片（image-to-image）生成。可以接受以下格式：1) OSS key格式（oss://fileKey），这是推荐格式，可以直接使用用户上传图片的OSS key，工具会自动处理前缀；2) 完整的HTTP/HTTPS URL；3) Base64数据URL（data:image/...）。如果用户在当前对话中上传了图片，应该使用oss://格式的key，而不是编造URL。',
       },
       aspectRatio: {
         type: 'string',

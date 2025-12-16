@@ -2,7 +2,7 @@
 
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
-import { queue } from '@/lib/server/queue';
+import { workflow } from '@/lib/server/workflow';
 import { SubmitTaskParams } from '@repo/llm/aigc';
 
 // 获取用户的所有画板任务
@@ -109,8 +109,12 @@ export const submitGenerationTask = withUserAuth(
       },
     });
 
-    // 发布任务到队列 固定2个并发
-    await queue.publish({ url: '/api/queue/paintboard', body: { taskId: res.id }, flowControl: { key: `paintboard-${orgId}`, parallelism: 2 } });
+    // 触发 workflow 执行 固定2个并发
+    await workflow.trigger({
+      url: '/api/workflow/paintboard',
+      body: { taskId: res.id },
+      flowControl: { key: `paintboard-${orgId}`, parallelism: 2 },
+    });
 
     // 返回创建的任务信息
     return res;

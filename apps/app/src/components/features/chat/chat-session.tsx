@@ -9,6 +9,7 @@ import { ThemeLogo } from '@/components/features/theme-logo';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ChatInput, useChatbotModelSelector } from './chat-input';
+import type { ChatInputAttachment } from '@/components/block/chat-input/index';
 import { ChatMessage as ChatMessageComponent } from './chat-message';
 import type { ChatMessage as Message } from './types';
 
@@ -259,16 +260,73 @@ export function ChatSession({
   );
 
   const handleSendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, attachments?: ChatInputAttachment[]) => {
       // 检查是否是本地 session（以 local_ 开头）
       const isLocalSession = sessionId.startsWith('local_');
+
+      // 构建多模态内容（文本和附件一起发送）
+      let messageContent: string;
+      if (attachments && attachments.length > 0) {
+        // 如果有附件，构建多模态内容格式
+        const contentParts: Array<
+          | { type: 'text'; text: string }
+          | { type: 'image_url'; image_url: { url: string } }
+          | { type: 'attachment'; attachment: { fileKey: string; type: string; name?: string; mimeType?: string } }
+        > = [];
+
+        // 添加文本内容（如果有）
+        if (content.trim()) {
+          contentParts.push({ type: 'text', text: content });
+        }
+
+        // 添加附件内容
+        for (const attachment of attachments) {
+          if (attachment.type === 'image') {
+            // 图片类型，使用 image_url 格式（用于 LLM 视觉能力）
+            let imageUrl: string;
+            if (attachment.fileKey) {
+              // 使用特殊格式标识OSS key
+              imageUrl = `oss://${attachment.fileKey}`;
+            } else if (attachment.url.startsWith('data:image')) {
+              // 已经是base64，直接使用
+              imageUrl = attachment.url;
+            } else {
+              // 其他URL，转换为绝对URL
+              imageUrl = attachment.url.startsWith('http') ? attachment.url : `${window.location.origin}${attachment.url}`;
+            }
+            contentParts.push({
+              type: 'image_url',
+              image_url: { url: imageUrl },
+            });
+          } else {
+            // 非图片附件，使用 attachment 格式
+            if (attachment.fileKey) {
+              contentParts.push({
+                type: 'attachment',
+                attachment: {
+                  fileKey: attachment.fileKey,
+                  type: attachment.type,
+                  name: attachment.name,
+                  mimeType: attachment.mimeType,
+                },
+              });
+            }
+          }
+        }
+
+        // 将多模态内容序列化为JSON字符串
+        messageContent = JSON.stringify(contentParts);
+      } else {
+        // 纯文本消息
+        messageContent = content;
+      }
 
       if (isLocalSession) {
         // 本地模式：不调用后端 API，直接添加消息
         const userMessage: Message = {
           id: `msg_${Date.now()}`,
           role: 'user',
-          content,
+          content: messageContent,
           isComplete: true,
           createdAt: new Date(),
         };
@@ -294,7 +352,7 @@ export function ChatSession({
         const tempUserMessage: Message = {
           id: `temp_user_${Date.now()}`,
           role: 'user',
-          content,
+          content: messageContent,
           isComplete: true,
           createdAt: new Date(),
         };
@@ -315,7 +373,7 @@ export function ChatSession({
           },
           body: JSON.stringify({
             sessionId,
-            content,
+            content: messageContent,
             modelId: selectedModel.id,
           }),
         });

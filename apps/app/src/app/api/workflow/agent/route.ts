@@ -3,17 +3,121 @@
  * 使用 Upstash Workflow 自动执行多轮次对话和工具调用
  */
 
-import { prisma } from '@/lib/server/prisma';
-import CHAT, { UnifiedChat } from '@repo/llm/chat';
-import { serve } from '@upstash/workflow/nextjs';
-import { getAgent } from '@/agents';
-import { calculateLLMCost, deductCredits, checkCreditsBalance } from '@/lib/server/credit';
 import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
+import { getAgent } from '@/agents';
 import { ToolResult } from '@/agents/core/tools/tool-definition';
+import { aigcToolbox } from '@/agents/toolboxes/aigc-toolbox';
 import { generalToolbox } from '@/agents/toolboxes/general-toolbox';
 import { webSearchToolbox } from '@/agents/toolboxes/web-search-toolbox';
-import { aigcToolbox } from '@/agents/toolboxes/aigc-toolbox';
+import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/server/credit';
+import { prisma } from '@/lib/server/prisma';
 import { queue } from '@/lib/server/queue';
+import storage from '@/lib/server/storage';
+import CHAT, { UnifiedChat } from '@repo/llm/chat';
+import { WorkflowContext } from '@upstash/workflow';
+import { serve } from '@upstash/workflow/nextjs';
+
+/**
+ * 将图片URL转换为base64数据
+ * 某些LLM提供商（如Vercel AI SDK）不支持文件URL，只支持base64数据
+ */
+async function convertImageUrlToBase64(imageUrl: string, organizationId: string): Promise<string> {
+  // 如果已经是base64数据URL，直接返回
+  if (imageUrl.startsWith('data:image')) {
+    return imageUrl;
+  }
+
+  // 如果是OSS key格式（oss://fileKey），直接从存储中读取
+  if (imageUrl.startsWith('oss://')) {
+    const fileKey = imageUrl.replace('oss://', '');
+
+    // 验证文件权限：确保是组织文件或系统文件
+    const isSystemFile = fileKey.startsWith('system/');
+    const isOrgFile = fileKey.startsWith(`${organizationId}/`);
+
+    if (!isSystemFile && !isOrgFile) {
+      throw new Error(`Access denied: Cannot access file ${fileKey}`);
+    }
+
+    // 从OSS直接读取文件
+    const fileData = await storage.getBytes(fileKey);
+    if (!fileData) {
+      throw new Error(`File not found: ${fileKey}`);
+    }
+
+    // 识别文件类型
+    const buffer = Buffer.from(fileData);
+    const { identifyFileTypeFromBuffer } = await import('@/lib/shared/file-type');
+    const mimeType = identifyFileTypeFromBuffer(buffer) || 'image/png';
+
+    // 转换为base64
+    const base64 = buffer.toString('base64');
+    return `data:${mimeType};base64,${base64}`;
+  }
+
+  // 兼容旧格式：如果是OSS路径（/api/oss/xxx），也从存储中读取
+  if (imageUrl.startsWith('/api/oss/')) {
+    const fileKey = imageUrl.replace('/api/oss/', '');
+
+    // 验证文件权限：确保是组织文件或系统文件
+    const isSystemFile = fileKey.startsWith('system/');
+    const isOrgFile = fileKey.startsWith(`${organizationId}/`);
+
+    if (!isSystemFile && !isOrgFile) {
+      throw new Error(`Access denied: Cannot access file ${fileKey}`);
+    }
+
+    // 从OSS直接读取文件
+    const fileData = await storage.getBytes(fileKey);
+    if (!fileData) {
+      throw new Error(`File not found: ${fileKey}`);
+    }
+
+    // 识别文件类型
+    const buffer = Buffer.from(fileData);
+    const { identifyFileTypeFromBuffer } = await import('@/lib/shared/file-type');
+    const mimeType = identifyFileTypeFromBuffer(buffer) || 'image/png';
+
+    // 转换为base64
+    const base64 = buffer.toString('base64');
+    return `data:${mimeType};base64,${base64}`;
+  }
+
+  // 对于其他URL，通过HTTP请求下载
+  // 构建完整的URL（如果是相对路径，需要添加origin）
+  let fullUrl = imageUrl;
+  if (imageUrl.startsWith('/')) {
+    // 相对路径，需要添加origin（在服务器端，我们需要从环境变量或配置中获取）
+    let origin = process.env.NEXT_PUBLIC_APP_URL;
+    if (!origin) {
+      // 如果没有设置NEXT_PUBLIC_APP_URL，尝试使用VERCEL_URL
+      if (process.env.VERCEL_URL) {
+        origin = `https://${process.env.VERCEL_URL}`;
+      } else {
+        // 开发环境默认使用localhost
+        origin = 'http://localhost:3000';
+      }
+    }
+    fullUrl = `${origin}${imageUrl}`;
+  }
+
+  // 下载图片
+  const response = await fetch(fullUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to download image: ${response.statusText}`);
+  }
+
+  // 检查Content-Type
+  const contentType = response.headers.get('content-type') || 'image/png';
+  if (!contentType.startsWith('image/')) {
+    throw new Error(`Invalid image content type: ${contentType}`);
+  }
+
+  // 转换为base64
+  const buffer = Buffer.from(await response.arrayBuffer());
+  const base64 = buffer.toString('base64');
+  return `data:${contentType};base64,${base64}`;
+}
 
 interface AgentWorkflowConfig {
   organizationId: string;
@@ -37,7 +141,10 @@ const CLIENT_TOOLS = new Set([
  * 执行工具调用（后端版本）
  * 使用 generalToolbox、webSearchToolbox 和 aigcToolbox 来执行服务端工具
  */
-async function executeTools(toolCalls: any[], context: { organizationId: string; sessionId: string }): Promise<ToolResult[]> {
+async function executeTools(
+  toolCalls: any[],
+  context: { organizationId: string; sessionId: string; workflow: WorkflowContext },
+): Promise<ToolResult[]> {
   const results: ToolResult[] = [];
 
   for (const toolCall of toolCalls) {
@@ -64,41 +171,24 @@ async function executeTools(toolCalls: any[], context: { organizationId: string;
     // 尝试使用各个toolbox执行工具
     let result: ToolResult | null = null;
     if (generalToolbox.has(toolName)) {
-      try {
-        result = await generalToolbox.execute(toolCall, {
-          organizationId: context.organizationId,
-          sessionId: context.sessionId,
-        });
-      } catch (error) {
-        result = {
-          success: false,
-          error: `Failed to execute tool "${toolName}": ${(error as Error).message}`,
-        };
-      }
+      result = await generalToolbox.execute(toolCall, {
+        organizationId: context.organizationId,
+        sessionId: context.sessionId,
+        workflow: context.workflow,
+      });
     } else if (webSearchToolbox.has(toolName)) {
-      try {
-        result = await webSearchToolbox.execute(toolCall, {
-          organizationId: context.organizationId,
-          sessionId: context.sessionId,
-        });
-      } catch (error) {
-        result = {
-          success: false,
-          error: `Failed to execute tool "${toolName}": ${(error as Error).message}`,
-        };
-      }
+      result = await webSearchToolbox.execute(toolCall, {
+        organizationId: context.organizationId,
+        sessionId: context.sessionId,
+        workflow: context.workflow,
+      });
     } else if (aigcToolbox.has(toolName)) {
-      try {
-        result = await aigcToolbox.execute(toolCall, {
-          organizationId: context.organizationId,
-          sessionId: context.sessionId,
-        });
-      } catch (error) {
-        result = {
-          success: false,
-          error: `Failed to execute tool "${toolName}": ${(error as Error).message}`,
-        };
-      }
+      result = await aigcToolbox.execute(toolCall, {
+        organizationId: context.organizationId,
+        sessionId: context.sessionId,
+        workflow: context.workflow,
+        toolCallId: toolCall.id,
+      });
     } else {
       // 工具未找到
       result = {
@@ -164,20 +254,15 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
 
     // 如果需要生成标题，立即触发异步标题生成任务（不阻塞主流程）
     if (shouldGenerateTitle) {
-      try {
-        await queue.publish({
-          url: '/api/queue/summary',
-          body: {
-            sessionId,
-            userMessage: userMessage.content,
-            organizationId,
-          },
-        });
-        console.log(`[Workflow] Triggered title generation for session ${sessionId} at start`);
-      } catch (error) {
-        console.error('[Workflow] Failed to trigger title generation:', error);
-        // 标题生成失败不影响主流程，只记录错误
-      }
+      await queue.publish({
+        url: '/api/queue/summary',
+        body: {
+          sessionId,
+          userMessage: userMessage.content,
+          organizationId,
+        },
+      });
+      console.log(`[Workflow] Triggered title generation for session ${sessionId} at start`);
     }
   });
 
@@ -298,10 +383,127 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
         // tool 消息已经在上面处理了，跳过
         continue;
       } else {
-        // 普通消息直接添加
+        // 普通消息，需要解析多模态内容
+        let messageContent: UnifiedChat.MessageContent = msg.content;
+
+        // 尝试解析JSON格式的多模态内容（支持文本、图片和附件）
+        if (msg.role === 'user' && msg.content.trim().startsWith('[')) {
+          try {
+            const parsed = JSON.parse(msg.content);
+            if (Array.isArray(parsed)) {
+              // 在 workflow 步骤中处理附件（转换图片URL为base64，处理其他附件）
+              const processedContent = await context.run(`round-${roundCount}-process-attachments-${msg.id}`, async () => {
+                const ossKeys: string[] = [];
+
+                // 先收集所有OSS key
+                for (const item of parsed) {
+                  if (item.type === 'image_url' && item.image_url?.url && item.image_url.url.startsWith('oss://')) {
+                    ossKeys.push(item.image_url.url);
+                  }
+                }
+
+                // 处理所有内容项
+                const processedItems = await Promise.all(
+                  parsed.map(async (item: any) => {
+                    // 处理图片
+                    if (item.type === 'image_url' && item.image_url?.url) {
+                      // 如果已经是base64，直接返回
+                      if (item.image_url.url.startsWith('data:image')) {
+                        return item;
+                      }
+                      // 转换URL为base64，如果失败则抛出错误
+                      const base64Url = await convertImageUrlToBase64(item.image_url.url, organizationId);
+                      return {
+                        type: 'image_url' as const,
+                        image_url: { url: base64Url },
+                      };
+                    }
+                    // 处理其他附件类型
+                    if (item.type === 'attachment' && item.attachment) {
+                      // 对于文本类型的附件（如 MD、TXT 等），读取文件内容并转换为文本
+                      const attachmentType = item.attachment.type || 'file';
+                      const mimeType = item.attachment.mimeType || '';
+
+                      // 判断是否是文本文件
+                      const isTextFile =
+                        attachmentType === 'document' ||
+                        mimeType.startsWith('text/') ||
+                        mimeType.includes('markdown') ||
+                        mimeType.includes('json') ||
+                        item.attachment.fileKey.endsWith('.md') ||
+                        item.attachment.fileKey.endsWith('.txt') ||
+                        item.attachment.fileKey.endsWith('.json') ||
+                        item.attachment.fileKey.endsWith('.csv');
+
+                      if (isTextFile) {
+                        try {
+                          // 从 OSS 读取文件内容
+                          const fileData = await storage.getBytes(item.attachment.fileKey);
+                          if (fileData) {
+                            const textContent = Buffer.from(fileData).toString('utf-8');
+                            // 将文件内容作为文本添加到消息中
+                            return {
+                              type: 'text' as const,
+                              text: `[附件: ${item.attachment.name || item.attachment.fileKey}]\n${textContent}`,
+                            };
+                          }
+                        } catch (error) {
+                          console.error(`[Workflow] Failed to read attachment file: ${item.attachment.fileKey}`, error);
+                          // 如果读取失败，在文本中提及附件
+                          return {
+                            type: 'text' as const,
+                            text: `[附件: ${item.attachment.name || item.attachment.fileKey} - 无法读取文件内容]`,
+                          };
+                        }
+                      } else {
+                        // 非文本附件，在消息文本中提及，但不包含在 content 数组中
+                        // 这些附件可以通过工具访问
+                        return {
+                          type: 'text' as const,
+                          text: `[附件: ${item.attachment.name || item.attachment.fileKey} (${attachmentType})]`,
+                        };
+                      }
+                    }
+                    // 文本内容直接返回
+                    if (item.type === 'text') {
+                      return item;
+                    }
+                    return item;
+                  }),
+                );
+
+                // 如果有OSS格式的图片，在消息末尾添加OSS key信息，方便工具调用时使用
+                if (ossKeys.length > 0) {
+                  const existingTextIndex = processedItems.findIndex(r => r.type === 'text');
+                  const ossKeyText = `\n[用户上传的图片OSS key（可在工具调用中使用）: ${ossKeys.join(', ')}]`;
+                  if (existingTextIndex >= 0) {
+                    // 如果有文本项，追加到现有文本
+                    processedItems[existingTextIndex] = {
+                      ...processedItems[existingTextIndex],
+                      text: (processedItems[existingTextIndex] as any).text + ossKeyText,
+                    };
+                  } else {
+                    // 如果没有文本项，创建一个新的文本项
+                    processedItems.push({
+                      type: 'text' as const,
+                      text: ossKeyText.trim(),
+                    });
+                  }
+                }
+
+                return processedItems;
+              });
+              messageContent = processedContent;
+            }
+          } catch (e) {
+            // 解析失败，使用原始字符串
+            messageContent = msg.content;
+          }
+        }
+
         const baseMsg: any = {
           role: msg.role as UnifiedChat.Message['role'],
-          content: msg.content,
+          content: messageContent,
         };
         messages.push(baseMsg);
       }
@@ -346,80 +548,117 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
       });
     });
 
-    // 步骤6：调用 LLM
-    const [llmResponse, inputTokens, outputTokens] = await context.run(`round-${roundCount}-call-llm`, async () => {
-      // 在 context.run 内部设置模型和创建客户端，避免重复创建
-      CHAT.setModels(allModels);
-      const llmClient = CHAT.createClient(modelId);
+    // 步骤6：调用 LLM（在步骤内部处理错误，避免步骤名称冲突）
+    const llmResult = await context.run(`round-${roundCount}-call-llm`, async () => {
+      try {
+        // 在 context.run 内部设置模型和创建客户端，避免重复创建
+        CHAT.setModels(allModels);
+        const llmClient = CHAT.createClient(modelId);
 
-      const chatParams: UnifiedChat.ChatCompletionParams = {
-        messages,
-        ...(agentConfig.tools.length > 0 && {
-          tools: agentConfig.tools,
-          tool_choice: 'auto' as const,
-        }),
-      };
+        const chatParams: UnifiedChat.ChatCompletionParams = {
+          messages,
+          ...(agentConfig.tools.length > 0 && {
+            tools: agentConfig.tools,
+            tool_choice: 'auto' as const,
+          }),
+        };
 
-      let inputTokens = 0;
-      let outputTokens = 0;
-      let fullContent = '';
-      const toolCalls: any[] = [];
-      let finishReason: string | null = null;
+        let inputTokens = 0;
+        let outputTokens = 0;
+        let fullContent = '';
+        const toolCalls: any[] = [];
+        let finishReason: string | null = null;
 
-      const stream = llmClient.chatStream(chatParams);
+        const stream = llmClient.chatStream(chatParams);
 
-      for await (const chunk of stream) {
-        if (chunk.usage) {
-          inputTokens += chunk.usage.prompt_tokens || 0;
-          outputTokens += chunk.usage.completion_tokens || 0;
-        }
+        for await (const chunk of stream) {
+          if (chunk.usage) {
+            inputTokens += chunk.usage.prompt_tokens || 0;
+            outputTokens += chunk.usage.completion_tokens || 0;
+          }
 
-        const choice = chunk.choices?.[0];
-        if (!choice) continue;
+          const choice = chunk.choices?.[0];
+          if (!choice) continue;
 
-        if (choice.delta?.content) {
-          fullContent += choice.delta.content;
-        }
+          if (choice.delta?.content) {
+            fullContent += choice.delta.content;
+          }
 
-        if (choice.delta?.tool_calls) {
-          for (const toolCall of choice.delta.tool_calls) {
-            const index = (toolCall as any).index ?? 0;
-            if (!toolCalls[index]) {
-              toolCalls[index] = {
-                id: (toolCall as any).id || `tool_${index}`,
-                type: (toolCall as any).type || 'function',
-                function: {
-                  name: (toolCall as any).function?.name || '',
-                  arguments: (toolCall as any).function?.arguments || '',
-                },
-              };
-            } else {
-              if ((toolCall as any).function?.name) {
-                toolCalls[index].function.name = (toolCall as any).function.name;
-              }
-              if ((toolCall as any).function?.arguments) {
-                toolCalls[index].function.arguments += (toolCall as any).function.arguments;
+          if (choice.delta?.tool_calls) {
+            for (const toolCall of choice.delta.tool_calls) {
+              const index = (toolCall as any).index ?? 0;
+              if (!toolCalls[index]) {
+                toolCalls[index] = {
+                  id: (toolCall as any).id || `tool_${index}`,
+                  type: (toolCall as any).type || 'function',
+                  function: {
+                    name: (toolCall as any).function?.name || '',
+                    arguments: (toolCall as any).function?.arguments || '',
+                  },
+                };
+              } else {
+                if ((toolCall as any).function?.name) {
+                  toolCalls[index].function.name = (toolCall as any).function.name;
+                }
+                if ((toolCall as any).function?.arguments) {
+                  toolCalls[index].function.arguments += (toolCall as any).function.arguments;
+                }
               }
             }
           }
+
+          if (choice.finish_reason) {
+            finishReason = choice.finish_reason;
+            break;
+          }
         }
 
-        if (choice.finish_reason) {
-          finishReason = choice.finish_reason;
-          break;
-        }
+        return {
+          success: true,
+          data: {
+            content: fullContent,
+            toolCalls: finishReason === 'tool_calls' ? toolCalls.filter(tc => tc) : [],
+            finishReason,
+          },
+          inputTokens,
+          outputTokens,
+        };
+      } catch (error) {
+        // 在步骤内部捕获错误，返回错误信息而不是抛出异常
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`[Workflow] LLM call error in round ${roundCount}:`, error);
+        return {
+          success: false,
+          error: errorMessage,
+          data: null,
+          inputTokens: 0,
+          outputTokens: 0,
+        };
       }
-
-      return [
-        {
-          content: fullContent,
-          toolCalls: finishReason === 'tool_calls' ? toolCalls.filter(tc => tc) : [],
-          finishReason,
-        },
-        inputTokens,
-        outputTokens,
-      ] as const;
     });
+
+    // 如果LLM调用失败，处理错误
+    if (!llmResult.success || !llmResult.data) {
+      const llmErrorMessage = llmResult.error || 'Unknown error';
+      await context.run(`round-${roundCount}-update-ai-message`, async () => {
+        await prisma.chatMessages.update({
+          where: { id: aiMessage.id },
+          data: {
+            content: `错误: ${llmErrorMessage}`,
+            isComplete: true,
+            isStreaming: false,
+          },
+        });
+      });
+
+      hasError = true;
+      errorMessage = `LLM调用失败: ${llmErrorMessage}`;
+      break;
+    }
+
+    const llmResponse = llmResult.data;
+    const inputTokens = llmResult.inputTokens;
+    const outputTokens = llmResult.outputTokens;
 
     // 步骤7：更新 AI 消息
     await context.run(`round-${roundCount}-update-ai-message`, async () => {
@@ -460,11 +699,10 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
       // 执行服务端工具
       let serverToolResults: ToolResult[] = [];
       if (serverTools.length > 0) {
-        serverToolResults = await context.run(`round-${roundCount}-execute-server-tools`, async () => {
-          return await executeTools(serverTools, {
-            organizationId,
-            sessionId,
-          });
+        serverToolResults = await executeTools(serverTools, {
+          organizationId,
+          sessionId,
+          workflow: context,
         });
 
         // 保存服务端工具结果消息
@@ -553,12 +791,12 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
     });
   }
 
-  // 更新状态：processing -> idle（执行完成）或 failed（执行失败）
+  // 更新状态：processing -> idle（执行完成或失败都设为idle，避免阻塞新消息）
   await context.run('finish-processing', async () => {
     await prisma.chatSessions.update({
       where: { id: sessionId },
       data: {
-        status: hasError ? 'failed' : 'idle',
+        status: 'idle', // 无论成功还是失败，都设为idle，避免阻塞新消息
         updatedAt: new Date(),
       },
     });

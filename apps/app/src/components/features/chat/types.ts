@@ -31,7 +31,7 @@ export interface ToolResult {
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
-  content: string;
+  content: string; // 可以是纯文本，也可以是JSON字符串（多模态内容）
   isStreaming?: boolean;
   isComplete: boolean;
   createdAt: Date;

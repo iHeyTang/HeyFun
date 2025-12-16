@@ -1,12 +1,12 @@
+import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
+import { getAgent } from '@/agents';
 import { withUserAuthApi } from '@/lib/server/auth-wrapper';
+import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/server/credit';
+import { recordGatewayUsage } from '@/lib/server/gateway';
 import { prisma } from '@/lib/server/prisma';
+import { queue } from '@/lib/server/queue';
 import CHAT, { UnifiedChat } from '@repo/llm/chat';
 import { NextResponse } from 'next/server';
-import { getAgent } from '@/agents';
-import { calculateLLMCost, deductCredits, checkCreditsBalance } from '@/lib/server/credit';
-import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
-import { recordGatewayUsage } from '@/lib/server/gateway';
-import { queue } from '@/lib/server/queue';
 
 // 获取AI流式响应
 async function getAIResponse({

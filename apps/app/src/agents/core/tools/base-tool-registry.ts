@@ -109,14 +109,7 @@ export abstract class BaseToolbox<TExecutor extends ToolExecutor<TContext>, TCon
       };
     }
 
-    try {
-      return await executor(args, execContext);
-    } catch (error) {
-      return {
-        success: false,
-        error: `Failed to execute ${this.toolTypeName.toLowerCase()} tool "${toolName}": ${(error as Error).message}`,
-      };
-    }
+    return await executor(args, execContext);
   }
 
   /**
