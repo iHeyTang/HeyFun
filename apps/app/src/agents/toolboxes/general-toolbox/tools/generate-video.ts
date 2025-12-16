@@ -3,7 +3,7 @@ import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
 import AIGC, { GenerationType, videoParamsSchema } from '@repo/llm/aigc';
 import type { z } from 'zod';
-import { AigcToolboxContext } from '../context';
+import { GeneralToolboxContext } from '../context';
 
 /**
  * 根据参数推断视频生成类型
@@ -21,9 +21,9 @@ function inferVideoGenerationType(params: z.infer<typeof videoParamsSchema>): Ge
   return 'text-to-video';
 }
 
-const executor = async (args: any, context: AigcToolboxContext): Promise<ToolResult> => {
+const executor = async (args: any, context: GeneralToolboxContext): Promise<ToolResult> => {
   // 使用 context.run 包装创建 task 和触发 workflow，确保只执行一次（即使 workflow 恢复也不会重复执行）
-  const stepName = context.toolCallId ? `generate-video-create-${context.toolCallId}` : `generate-video-create-${Date.now()}`;
+  const stepName = `generate-video-create-${context.toolCallId}`;
   const { error, task } = await context.workflow.run(stepName, async () => {
     const { model, prompt, firstFrame, lastFrame, referenceImage, video, audio, aspectRatio, resolution, duration, advanced } = args;
 

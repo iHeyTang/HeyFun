@@ -48,50 +48,52 @@ export const POST = withUserAuthApi<{}, {}, ToolResultRequest>(async (_req, ctx)
       return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
 
-    // 标记原始的工具调用消息为已完成
-    await prisma.flowCanvasProjectAgentMessages.update({
-      where: { id: messageWithTools.id },
-      data: { isComplete: true },
-    });
+    // 获取现有的toolCalls和toolResults
+    const existingToolCalls = messageWithTools.toolCalls || [];
+    const existingToolResults = messageWithTools.toolResults || [];
 
-    // 保存工具结果消息到数据库
-    const savedToolMessages = [];
+    // 构建新的toolResults数组
+    const newToolResults = [...existingToolResults];
+
+    // 为每个工具结果找到对应的toolCall并添加到toolResults
     for (const toolResult of toolResults) {
-      // 先检查是否已经存在相同的工具结果
-      const existingToolMessage = await prisma.flowCanvasProjectAgentMessages.findFirst({
-        where: {
-          sessionId,
-          organizationId: ctx.orgId,
-          role: 'tool',
+      const toolCall = existingToolCalls.find(tc => tc.id === toolResult.toolCallId);
+      if (toolCall) {
+        // 检查是否已经存在该toolCallId的结果
+        const existingResultIndex = newToolResults.findIndex(tr => tr.toolCallId === toolResult.toolCallId);
+        const resultData: PrismaJson.ToolResult = {
           toolCallId: toolResult.toolCallId,
-        },
-      });
+          toolName: toolCall.function.name,
+          success: toolResult.result.success ?? true,
+          data: toolResult.result.data,
+          error: toolResult.result.error,
+          message: toolResult.result.message,
+        };
 
-      if (!existingToolMessage) {
-        const toolMessage = await prisma.flowCanvasProjectAgentMessages.create({
-          data: {
-            sessionId,
-            organizationId: ctx.orgId,
-            role: 'tool',
-            content: JSON.stringify(toolResult.result),
-            toolCallId: toolResult.toolCallId,
-            isComplete: true,
-          },
-        });
-        savedToolMessages.push(toolMessage);
-      } else {
-        savedToolMessages.push(existingToolMessage);
+        if (existingResultIndex >= 0) {
+          // 更新已存在的结果
+          newToolResults[existingResultIndex] = resultData;
+        } else {
+          // 添加新结果
+          newToolResults.push(resultData);
+        }
       }
     }
+
+    // 更新assistant消息的toolResults字段，并标记为已完成
+    await prisma.flowCanvasProjectAgentMessages.update({
+      where: { id: messageWithTools.id },
+      data: {
+        toolResults: newToolResults,
+        isComplete: true,
+      },
+    });
 
     // 返回成功响应
     return NextResponse.json({
       success: true,
       messageId: messageWithTools.id,
-      toolMessages: savedToolMessages.map(msg => ({
-        id: msg.id,
-        toolCallId: msg.toolCallId,
-      })),
+      toolResults: newToolResults,
     });
   } catch (error) {
     console.error('Tool result API error:', error);

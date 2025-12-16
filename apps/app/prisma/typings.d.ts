@@ -16,6 +16,30 @@ declare global {
     type PaintboardTaskParams = SubmitTaskParams;
     type PaintboardTaskResult = { bucket: string; key: string }[];
     type Record = { [key: string]: any };
+
+    /**
+     * 工具调用
+     */
+    type ToolCall = {
+      id: string;
+      type: 'function';
+      function: {
+        name: string;
+        arguments: string; // JSON 字符串
+      };
+    };
+
+    /**
+     * 工具执行结果
+     */
+    type ToolResult = {
+      toolCallId: string;
+      toolName: string;
+      success: boolean;
+      data?: any;
+      error?: string;
+      message?: string;
+    };
   }
 }
 

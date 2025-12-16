@@ -9,7 +9,6 @@ import { ChatContainer } from '@/components/features/chat/chat-container';
 import type { ChatAction } from '@/components/features/chat/chat-container';
 import { FlowCanvasRef } from '../../FlowCanvas';
 import { getAigcModels } from '@/actions/llm';
-import { createFlowCanvasSessionManager } from '@/lib/browser/session-manager';
 
 export interface AgentPanelProps {
   canvasId: string;
@@ -43,9 +42,6 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
   const panelRef = useRef<HTMLDivElement>(null);
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(defaultWidth);
-
-  // 为当前 FlowCanvas 项目创建专门的 session manager
-  const sessionManager = useMemo(() => createFlowCanvasSessionManager(canvasId), [canvasId]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -178,7 +174,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
 
           {/* 面板内容 */}
           <div className="flex-1 overflow-auto">
-            <ChatContainer sessionManager={sessionManager} actions={chatActions} apiPrefix="/api/flowcanvas/agent" />
+            <ChatContainer actions={chatActions} apiPrefix="/api/flowcanvas/agent" />
             {children}
           </div>
         </div>

@@ -1,10 +1,10 @@
 import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { AigcToolboxContext } from '../context';
+import { GeneralToolboxContext } from '../context';
 import AIGC from '@repo/llm/aigc';
 import zodToJsonSchema from 'zod-to-json-schema';
 
-const executor = async (args: any, context: AigcToolboxContext): Promise<ToolResult> => {
-  try {
+const executor = async (args: any, context: GeneralToolboxContext): Promise<ToolResult> => {
+  return await context.workflow.run(`get-aigc-models-${context.toolCallId}`, async () => {
     const { generationType } = args;
 
     // 获取所有模型
@@ -36,16 +36,10 @@ const executor = async (args: any, context: AigcToolboxContext): Promise<ToolRes
         generationType: generationType || 'all',
       },
     };
-  } catch (error) {
-    return {
-      success: false,
-      error: (error as Error).message,
-    };
-  }
+  });
 };
 
 export const getAigcModelsTool = {
   toolName: 'get_aigc_models',
   executor,
 };
-

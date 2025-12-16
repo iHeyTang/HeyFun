@@ -3,11 +3,11 @@ import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
 import AIGC, { GenerationType, imageParamsSchema } from '@repo/llm/aigc';
 import type { z } from 'zod';
-import { AigcToolboxContext } from '../context';
+import { GeneralToolboxContext } from '../context';
 
-const executor = async (args: any, context: AigcToolboxContext): Promise<ToolResult> => {
+const executor = async (args: any, context: GeneralToolboxContext): Promise<ToolResult> => {
   const { model, prompt, referenceImage, aspectRatio, n, advanced } = args; // 使用 context.run 包装创建 task 和触发 workflow，确保只执行一次（即使 workflow 恢复也不会重复执行）
-  const stepName = context.toolCallId ? `generate-image-create-${context.toolCallId}` : `generate-image-create-${Date.now()}`;
+  const stepName = `generate-image-create-${context.toolCallId}`;
   const { error, task } = await context.workflow.run(stepName, async () => {
     if (!model || typeof model !== 'string') {
       return { error: 'Model is required and must be a string' };

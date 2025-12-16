@@ -8,13 +8,12 @@
 import { cn } from '@/lib/utils';
 import { CheckCircle2, Wrench, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import type { ToolCall, ToolResult } from './types';
 import { WebSearchResult } from './tool-renderers/web-search-result';
 import { AigcModelsResult } from './tool-renderers/aigc-models-result';
 
 interface ToolCallCardProps {
-  toolCalls: ToolCall[];
-  toolResults?: ToolResult[];
+  toolCalls: PrismaJson.ToolCall[];
+  toolResults?: PrismaJson.ToolResult[];
   className?: string;
 }
 
@@ -42,7 +41,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
   };
 
   // 根据工具名称找到对应的结果
-  const getResultForTool = (toolName: string): ToolResult | undefined => {
+  const getResultForTool = (toolName: string): PrismaJson.ToolResult | undefined => {
     return toolResults?.find(r => r.toolName === toolName);
   };
 
@@ -59,7 +58,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
   };
 
   // 渲染工具结果（支持自定义渲染器）
-  const renderToolResult = (toolName: string, args: any, result: ToolResult | undefined, isExpanded: boolean) => {
+  const renderToolResult = (toolName: string, args: any, result: PrismaJson.ToolResult | undefined, isExpanded: boolean) => {
     if (!isExpanded || !result) return null;
 
     const CustomRenderer = getToolRenderer(toolName);

@@ -409,7 +409,6 @@ export class CanvasAgent extends ReactAgent {
         },
       };
     }),
-    isDefault: true,
     observationPrompt: `工具执行完成。请继续：
 1. 分析当前任务状态，判断是否完成
 2. 如果未完成，立即调用下一个工具

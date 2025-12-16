@@ -7,7 +7,6 @@ import { Bot, Brain, ChevronDown, ChevronUp, User } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { ModelIcon } from '../model-icon';
 import { ToolCallCard } from './tool-call-card';
-import type { ToolCall, ToolResult } from './types';
 import { Markdown } from '@/components/block/markdown';
 
 interface ChatMessageProps {
@@ -15,8 +14,8 @@ interface ChatMessageProps {
   content: string;
   isStreaming?: boolean;
   timestamp: Date;
-  toolCalls?: ToolCall[];
-  toolResults?: ToolResult[];
+  toolCalls?: PrismaJson.ToolCall[];
+  toolResults?: PrismaJson.ToolResult[];
   modelId?: string;
 }
 

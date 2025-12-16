@@ -14,8 +14,6 @@ export interface AgentConfig {
   systemPrompt: string;
   /** Agent 支持的工具列表 */
   tools: UnifiedChat.Tool[];
-  /** 是否为默认 Agent */
-  isDefault?: boolean;
   /** Observation 提示词（可选，用于 ReAct 框架的观察阶段，引导 Agent 分析工具结果并继续推理） */
   observationPrompt?: string;
 }

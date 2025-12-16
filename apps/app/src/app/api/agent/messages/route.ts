@@ -84,7 +84,7 @@ export const GET = withUserAuthApi<{}, { sessionId: string; cursor?: string; lim
         isComplete: msg.isComplete,
         createdAt: msg.createdAt,
         toolCalls: msg.toolCalls,
-        toolCallId: msg.toolCallId,
+        toolResults: msg.toolResults,
         finishReason: msg.finishReason,
         modelId: msg.modelId,
       })),

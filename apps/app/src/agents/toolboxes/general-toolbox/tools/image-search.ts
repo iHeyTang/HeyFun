@@ -1,5 +1,5 @@
 import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { WebSearchToolboxContext } from '../context';
+import { GeneralToolboxContext } from '../context';
 
 interface ImageResult {
   title: string;
@@ -195,7 +195,7 @@ async function searchImagesFromMultipleSources(query: string, maxResults: number
   return uniqueResults;
 }
 
-const executor = async (args: any, context: WebSearchToolboxContext): Promise<ToolResult> => {
+const executor = async (args: any, context: GeneralToolboxContext): Promise<ToolResult> => {
   try {
     const { query, maxResults = 10, imageType = 'all', size = 'all' } = args;
 

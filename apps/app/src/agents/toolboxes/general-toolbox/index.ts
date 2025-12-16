@@ -8,6 +8,13 @@ import { GeneralToolboxContext as GeneralTToolboxContext } from './context';
 import { getCurrentTimeTool } from './tools/get-current-time';
 import { getCurrentWeatherTool } from './tools/get-current-weather';
 import { waitTool } from './tools/wait';
+import { webSearchTool } from './tools/web-search';
+import { imageSearchTool } from './tools/image-search';
+import { getAigcModelsTool } from './tools/get-aigc-models';
+import { generateImageTool } from './tools/generate-image';
+import { generateVideoTool } from './tools/generate-video';
+import { generateAudioTool } from './tools/generate-audio';
+import { generateMusicTool } from './tools/generate-music';
 
 /**
  * 服务端工具执行函数
@@ -27,6 +34,17 @@ class GeneralTToolbox extends BaseToolbox<GeneralToolExecutor, GeneralTToolboxCo
  */
 const generalToolbox = new GeneralTToolbox();
 
-generalToolbox.registerMany([getCurrentTimeTool, getCurrentWeatherTool, waitTool]);
+generalToolbox.registerMany([
+  getCurrentTimeTool,
+  getCurrentWeatherTool,
+  waitTool,
+  webSearchTool,
+  imageSearchTool,
+  getAigcModelsTool,
+  generateImageTool,
+  generateVideoTool,
+  generateAudioTool,
+  generateMusicTool,
+]);
 
 export { generalToolbox };

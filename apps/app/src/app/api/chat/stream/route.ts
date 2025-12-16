@@ -107,28 +107,51 @@ async function getAIResponse({
     const llmClient = CHAT.createClient(modelId);
 
     // 构建消息历史（包括新的用户消息）
-    const messages: UnifiedChat.Message[] = [
-      { role: 'system' as const, content: agentConfig.systemPrompt },
-      ...session.messages.map(msg => {
-        const baseMsg: any = {
-          role: msg.role as UnifiedChat.Message['role'],
+    const messages: UnifiedChat.Message[] = [{ role: 'system' as const, content: agentConfig.systemPrompt }];
+
+    // 按顺序处理消息，确保工具调用和工具结果配对
+    for (const msg of session.messages) {
+      if (msg.role === 'assistant' && msg.toolCalls) {
+        // 对于有 toolCalls 的 assistant 消息，从 toolResults 读取工具结果
+        const toolCalls = msg.toolCalls;
+        const toolResults = msg.toolResults || [];
+        const toolCallIds = toolCalls.map(tc => tc.id);
+
+        // 只有当工具结果数量等于工具调用数量时，才添加这条消息
+        if (toolResults.length === toolCallIds.length) {
+          const baseMsg: UnifiedChat.Message = {
+            role: 'assistant' as const,
+            content: msg.content,
+            tool_calls: toolCalls,
+          };
+          messages.push(baseMsg);
+
+          // 添加对应的 tool 消息（从 toolResults 构建）
+          for (const toolCallId of toolCallIds) {
+            const toolResult = toolResults.find(tr => tr.toolCallId === toolCallId);
+            if (toolResult) {
+              // 从 toolResult 中提取内容，序列化整个对象
+              const toolContent = JSON.stringify(toolResult);
+              messages.push({
+                role: 'tool' as const,
+                content: toolContent,
+                tool_call_id: toolCallId,
+              });
+            }
+          }
+        }
+      } else if (msg.role === 'user' || msg.role === 'system') {
+        // 普通消息直接添加
+        messages.push({
+          role: msg.role as 'user' | 'system',
           content: msg.content,
-        };
+        });
+      }
+      // 跳过 role='tool' 的消息，因为它们已经作为 toolResults 处理了
+    }
 
-        // 如果是 assistant 消息且有 toolCalls，包含 toolCalls
-        if (msg.role === 'assistant' && msg.toolCalls) {
-          baseMsg.tool_calls = msg.toolCalls;
-        }
-
-        // 如果是 tool 消息，包含 tool_call_id
-        if (msg.role === 'tool' && msg.toolCallId) {
-          baseMsg.tool_call_id = msg.toolCallId;
-        }
-
-        return baseMsg;
-      }),
-      { role: 'user', content },
-    ];
+    // 添加新的用户消息
+    messages.push({ role: 'user', content });
 
     // 调试：打印消息结构
     console.log('[Stream] Messages structure:');
@@ -140,7 +163,7 @@ async function getAIResponse({
         );
       } else if (msg.role === 'tool') {
         console.log(`  [${idx}] tool result for tool_call_id: ${msg.tool_call_id}`);
-      } else {
+      } else if (msg.role === 'user' || msg.role === 'system') {
         console.log(`  [${idx}] ${msg.role}: ${typeof msg.content === 'string' ? msg.content.substring(0, 50) : '[complex]'}`);
       }
     });
@@ -227,24 +250,25 @@ async function getAIResponse({
             if (choice.delta?.tool_calls) {
               // 累积tool_calls（流式返回可能分多次）
               for (const toolCall of choice.delta.tool_calls) {
-                const index = (toolCall as any).index ?? 0;
+                const toolCallWithIndex = toolCall as UnifiedChat.ToolCall & { index?: number };
+                const index = toolCallWithIndex.index ?? 0;
                 if (!toolCalls[index]) {
                   toolCalls[index] = {
-                    id: (toolCall as any).id || `tool_${index}`,
-                    type: (toolCall as any).type || 'function',
+                    id: toolCallWithIndex.id || `tool_${index}`,
+                    type: toolCallWithIndex.type || 'function',
                     function: {
-                      name: (toolCall as any).function?.name || '',
-                      arguments: (toolCall as any).function?.arguments || '',
+                      name: toolCallWithIndex.function?.name || '',
+                      arguments: toolCallWithIndex.function?.arguments || '',
                     },
                   };
                 } else {
                   // 累加 name（某些 provider 可能分多次发送）
-                  if ((toolCall as any).function?.name) {
-                    toolCalls[index].function.name = (toolCall as any).function.name;
+                  if (toolCallWithIndex.function?.name) {
+                    toolCalls[index].function.name = toolCallWithIndex.function.name;
                   }
                   // 累加 arguments
-                  if ((toolCall as any).function?.arguments) {
-                    toolCalls[index].function.arguments += (toolCall as any).function.arguments;
+                  if (toolCallWithIndex.function?.arguments) {
+                    toolCalls[index].function.arguments += toolCallWithIndex.function.arguments;
                   }
                 }
               }

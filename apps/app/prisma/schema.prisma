@@ -335,9 +335,10 @@ model ChatMessages {
   modelId      String? // 模型ID（仅用于assistant消息，标识该消息由哪个模型生成）
 
   // 工具调用相关
-  /// [JSONSchema] ToolCall[]
-  toolCalls  Json? // AI返回的工具调用
-  toolCallId String? // 工具结果消息关联的toolCallId
+  /// [ToolCall[]]
+  toolCalls   Json? // AI返回的工具调用
+  /// [ToolResult[]]
+  toolResults Json? // AI返回的工具结果
 
   // 关联的会话
   session ChatSessions @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -346,7 +347,6 @@ model ChatMessages {
   @@index([organizationId])
   @@index([createdAt])
   @@index([role])
-  @@index([toolCallId])
 }
 
 model FlowCanvasProjects {
@@ -419,9 +419,10 @@ model FlowCanvasProjectAgentMessages {
   modelId      String? // 模型ID（仅用于assistant消息，标识该消息由哪个模型生成）
 
   // 工具调用相关
-  /// [JSONSchema] ToolCall[]
-  toolCalls  Json? // AI返回的工具调用
-  toolCallId String? // 工具结果消息关联的toolCallId
+  /// [ToolCall[]]
+  toolCalls   Json? // AI返回的工具调用
+  /// [ToolResult[]]
+  toolResults Json? // AI返回的工具结果
 
   // 关联的会话
   session FlowCanvasProjectAgentSessions @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -430,7 +431,6 @@ model FlowCanvasProjectAgentMessages {
   @@index([organizationId])
   @@index([createdAt])
   @@index([role])
-  @@index([toolCallId])
 }
 
 // 音色管理

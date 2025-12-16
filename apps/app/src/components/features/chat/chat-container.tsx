@@ -6,7 +6,6 @@
 
 'use client';
 
-import { createSessionManager, type ChatMessage, type ChatSession as SessionData, type SessionManager } from '@/lib/browser/session-manager';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useChatbotModelSelector } from './chat-input';
@@ -15,6 +14,8 @@ import { SessionTabs } from './session-tabs';
 import { SessionSidebar } from './session-sidebar';
 import { ChatContainerSkeleton } from './chat-container-skeleton';
 import { ChatSessionSkeleton } from './chat-session-skeleton';
+import { ChatMessages, ChatSessions } from '@prisma/client';
+import { createChatSession, deleteSession, getChatSession, getChatSessions } from '@/actions/chat';
 
 export interface ChatAction {
   id: string;
@@ -27,10 +28,6 @@ export interface ChatAction {
 type ChatContainerLayout = 'tabs' | 'sidebar';
 
 interface ChatContainerProps {
-  /** Session 管理器类型（当 sessionManager 未提供时使用） */
-  sessionManagerType?: 'remote' | 'local';
-  /** 自定义 Session 管理器实例（可选，优先于 sessionManagerType） */
-  sessionManager?: SessionManager;
   /** 初始 sessionId（可选） */
   initialSessionId?: string;
   /** 外部控制的 sessionId（可选，用于路由控制） */
@@ -50,8 +47,6 @@ interface ChatContainerProps {
  * 内置 session 管理，支持 tabs 和 sidebar 两种布局
  */
 export const ChatContainer = ({
-  sessionManagerType = 'local',
-  sessionManager: externalSessionManager,
   initialSessionId,
   sessionId: externalSessionId,
   actions = [],
@@ -59,10 +54,9 @@ export const ChatContainer = ({
   layout = 'tabs',
   sidebarWidth = '280px',
 }: ChatContainerProps) => {
-  const [sessionManager] = useState(() => externalSessionManager || createSessionManager(sessionManagerType));
-  const [sessions, setSessions] = useState<SessionData[]>([]);
+  const [sessions, setSessions] = useState<ChatSessions[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(initialSessionId || externalSessionId || null);
-  const [sessionMessages, setSessionMessages] = useState<Record<string, ChatMessage[]>>({});
+  const [sessionMessages, setSessionMessages] = useState<Record<string, ChatMessages[]>>({});
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState<Set<string>>(new Set());
 
@@ -79,16 +73,16 @@ export const ChatContainer = ({
   const loadSessions = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await sessionManager.listSessions({ page: 1, pageSize: 10 });
-      setSessions(result.sessions);
+      const result = await getChatSessions({ page: 1, pageSize: 10 });
+      setSessions(result.data?.sessions || []);
 
       // 如果有初始 sessionId，加载其消息
       if (initialSessionId || externalSessionId) {
         const sessionId = initialSessionId || externalSessionId;
         setLoadingMessages(prev => new Set(prev).add(sessionId!));
         try {
-          const messages = await sessionManager.getMessages(sessionId!);
-          setSessionMessages(prev => ({ ...prev, [sessionId!]: messages }));
+          const session = await getChatSession({ sessionId: sessionId! });
+          setSessionMessages(prev => ({ ...prev, [sessionId!]: session.data?.messages || [] }));
         } catch (error) {
           console.error('Error loading messages:', error);
         } finally {
@@ -104,7 +98,7 @@ export const ChatContainer = ({
     } finally {
       setLoading(false);
     }
-  }, [sessionManager, initialSessionId, externalSessionId]);
+  }, [initialSessionId, externalSessionId]);
 
   useEffect(() => {
     loadSessions();
@@ -113,13 +107,16 @@ export const ChatContainer = ({
   // 创建新 session
   const handleCreateSession = async () => {
     try {
-      const newSession = await sessionManager.createSession({
+      const createSessionResult = await createChatSession({
         title: 'New Chat',
       });
+      if (!createSessionResult.data) {
+        throw new Error('Failed to create session');
+      }
 
-      setSessions(prev => [newSession, ...prev]);
-      setActiveSessionId(newSession.id);
-      setSessionMessages(prev => ({ ...prev, [newSession.id]: [] }));
+      setSessions(prev => [createSessionResult.data, ...prev]);
+      setActiveSessionId(createSessionResult.data.id);
+      setSessionMessages(prev => ({ ...prev, [createSessionResult.data.id]: [] }));
 
       toast.success('New chat created');
     } catch (error) {
@@ -133,7 +130,7 @@ export const ChatContainer = ({
     e.stopPropagation();
 
     try {
-      await sessionManager.deleteSession(sessionId);
+      await deleteSession({ sessionId });
 
       setSessions(prev => prev.filter(s => s.id !== sessionId));
       setSessionMessages(prev => {
@@ -163,8 +160,8 @@ export const ChatContainer = ({
     if (!sessionMessages[sessionId]) {
       setLoadingMessages(prev => new Set(prev).add(sessionId));
       try {
-        const messages = await sessionManager.getMessages(sessionId);
-        setSessionMessages(prev => ({ ...prev, [sessionId]: messages }));
+        const messages = await getChatSession({ sessionId });
+        setSessionMessages(prev => ({ ...prev, [sessionId]: messages.data?.messages || [] }));
       } catch (error) {
         console.error('Error loading messages:', error);
       } finally {

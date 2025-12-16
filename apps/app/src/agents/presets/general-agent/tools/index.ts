@@ -8,7 +8,6 @@ import { generateVideoDefinition } from './generate-video';
 import { generateAudioDefinition } from './generate-audio';
 import { generateMusicDefinition } from './generate-music';
 import { getAigcModelsDefinition } from './get-aigc-models';
-import { getGenerationResultDefinition } from './get-generation-result';
 import { waitDefinition } from './wait';
 
 export const GENERAL_TOOLS = [
@@ -22,6 +21,5 @@ export const GENERAL_TOOLS = [
   generateAudioDefinition,
   generateMusicDefinition,
   getAigcModelsDefinition,
-  getGenerationResultDefinition,
   waitDefinition,
 ];

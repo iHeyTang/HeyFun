@@ -7,14 +7,15 @@
 
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { ChatSession } from '@/lib/browser/session-manager';
+import { ChatSessions } from '@prisma/client';
 import { Loader2, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import type { ChatAction } from './chat-container';
+import { cn } from '@/lib/utils';
 
 interface SessionSidebarProps {
   /** Sessions 列表 */
-  sessions: ChatSession[];
+  sessions: ChatSessions[];
   /** 当前激活的 sessionId */
   activeSessionId: string | null;
   /** 创建新 session 的回调 */
@@ -58,9 +59,9 @@ export const SessionSidebar = ({
   };
 
   return (
-    <div className="flex h-full flex-col border-r border-border/50 bg-background/50" style={{ width }}>
+    <div className="border-border/50 bg-background/50 flex h-full flex-col border-r" style={{ width }}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-3 py-2">
+      <div className="border-border/50 flex items-center justify-between border-b px-3 py-2">
         <div className="text-sm font-medium">Chats</div>
         <div className="flex items-center gap-0.5">
           {/* 添加新 session */}
@@ -102,12 +103,11 @@ export const SessionSidebar = ({
               <div
                 key={session.id}
                 className={`group flex cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 py-2 text-sm transition-all ${
-                  activeSessionId === session.id
-                    ? 'bg-primary/5 text-foreground'
-                    : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+                  activeSessionId === session.id ? 'bg-primary/5 text-foreground' : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
                 }`}
                 onClick={() => onSwitchSession(session.id)}
               >
+                <div className={cn('h-1.5 w-1.5 rounded-full', session.status === 'processing' ? 'animate-pulse bg-green-500' : '')} />
                 <div className="flex-1 truncate font-medium">{session.title || 'Untitled Chat'}</div>
                 <div className="flex shrink-0 items-center gap-1">
                   <span className="text-muted-foreground/60 text-xs">
@@ -130,4 +130,3 @@ export const SessionSidebar = ({
     </div>
   );
 };
-

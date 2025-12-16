@@ -1,30 +1,26 @@
 import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
-import AIGC, { musicParamsSchema } from '@repo/llm/aigc';
+import AIGC, { t2aParamsSchema } from '@repo/llm/aigc';
 import type { z } from 'zod';
-import { AigcToolboxContext } from '../context';
+import { GeneralToolboxContext } from '../context';
 
-const executor = async (args: any, context: AigcToolboxContext): Promise<ToolResult> => {
+const executor = async (args: any, context: GeneralToolboxContext): Promise<ToolResult> => {
   // 使用 context.run 包装创建 task 和触发 workflow，确保只执行一次（即使 workflow 恢复也不会重复执行）
-  const stepName = context.toolCallId ? `generate-music-create-${context.toolCallId}` : `generate-music-create-${Date.now()}`;
+  const stepName = `generate-audio-create-${context.toolCallId}`;
   const { error, task } = await context.workflow.run(stepName, async () => {
-    const { model, lyrics, prompt, advanced } = args;
+    const { model, text, voiceId, advanced } = args;
 
     if (!model || typeof model !== 'string') {
       return { error: 'Model is required and must be a string' };
     }
 
-    if (!context.organizationId) {
-      return { error: 'Organization ID is required' };
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+      return { error: 'Text is required and must be a non-empty string' };
     }
 
-    // 至少需要lyrics或prompt中的一个
-    if (
-      (!lyrics || typeof lyrics !== 'string' || lyrics.trim().length === 0) &&
-      (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0)
-    ) {
-      return { error: 'At least one of lyrics or prompt is required and must be a non-empty string' };
+    if (!context.organizationId) {
+      return { error: 'Organization ID is required' };
     }
 
     // 获取模型信息
@@ -39,20 +35,18 @@ const executor = async (args: any, context: AigcToolboxContext): Promise<ToolRes
       return { error: 'Insufficient balance' };
     }
 
-    // 验证模型是否支持music
-    if (!modelInstance.generationTypes.includes('music')) {
-      return { error: `Model "${model}" does not support music generation. Supported types: ${modelInstance.generationTypes.join(', ')}` };
+    // 验证模型是否支持text-to-speech
+    if (!modelInstance.generationTypes.includes('text-to-speech')) {
+      return { error: `Model "${model}" does not support text-to-speech generation. Supported types: ${modelInstance.generationTypes.join(', ')}` };
     }
 
     // 构建参数
-    const params: z.infer<typeof musicParamsSchema> = {};
+    const params: z.infer<typeof t2aParamsSchema> = {
+      text: text.trim(),
+    };
 
-    if (lyrics && typeof lyrics === 'string' && lyrics.trim().length > 0) {
-      params.lyrics = lyrics.trim();
-    }
-
-    if (prompt && typeof prompt === 'string' && prompt.trim().length > 0) {
-      params.prompt = prompt.trim();
+    if (voiceId && typeof voiceId === 'string') {
+      params.voice_id = voiceId;
     }
 
     if (advanced && typeof advanced === 'object') {
@@ -68,7 +62,7 @@ const executor = async (args: any, context: AigcToolboxContext): Promise<ToolRes
         organizationId: context.organizationId,
         service: 'unknown',
         model,
-        generationType: 'music',
+        generationType: 'text-to-speech',
         params: params as any,
         status: 'pending',
       },
@@ -93,7 +87,7 @@ const executor = async (args: any, context: AigcToolboxContext): Promise<ToolRes
 
   // waitForEvent 不应该被 try/catch 包装，让 Upstash Workflow 框架处理错误
   // 第一个参数是 step name（使用 toolCallId 确保唯一性），第二个参数是 event name
-  const waitStepName = context.toolCallId ? `generate-music-wait-${context.toolCallId}` : `generate-music-wait-${task.id}`;
+  const waitStepName = context.toolCallId ? `generate-audio-wait-${context.toolCallId}` : `generate-audio-wait-${task.id}`;
   const result = await context.workflow.waitForEvent<{ taskId: string; results?: PrismaJson.PaintboardTaskResult; error?: string }>(
     waitStepName,
     `paintboard-result-${task.id}`,
@@ -112,7 +106,7 @@ const executor = async (args: any, context: AigcToolboxContext): Promise<ToolRes
   };
 };
 
-export const generateMusicTool = {
-  toolName: 'generate_music',
+export const generateAudioTool = {
+  toolName: 'generate_audio',
   executor,
 };

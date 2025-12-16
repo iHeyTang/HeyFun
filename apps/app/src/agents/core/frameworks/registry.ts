@@ -2,15 +2,11 @@ import { IAgent } from './base';
 
 export class AgentRegistry {
   private agents: Map<string, IAgent> = new Map();
-  private defaultAgentId: string = 'coordinator';
+  private defaultAgentId: string = 'general';
 
   register(agent: IAgent): void {
     const config = agent.getConfig();
     this.agents.set(config.id, agent);
-
-    if (config.isDefault) {
-      this.defaultAgentId = config.id;
-    }
   }
 
   get(agentId?: string): IAgent {

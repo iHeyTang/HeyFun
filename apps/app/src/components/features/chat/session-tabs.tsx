@@ -9,14 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { ChatSession } from '@/lib/browser/session-manager';
+import { ChatSessions } from '@prisma/client';
 import { History, Loader2, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import type { ChatAction } from './chat-container';
 
 interface SessionTabsProps {
   /** Sessions 列表 */
-  sessions: ChatSession[];
+  sessions: ChatSessions[];
   /** 当前激活的 sessionId */
   activeSessionId: string | null;
   /** 创建新 session 的回调 */

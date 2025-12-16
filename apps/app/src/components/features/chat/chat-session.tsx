@@ -11,19 +11,19 @@ import { toast } from 'sonner';
 import { ChatInput, useChatbotModelSelector } from './chat-input';
 import type { ChatInputAttachment } from '@/components/block/chat-input/index';
 import { ChatMessage as ChatMessageComponent } from './chat-message';
-import type { ChatMessage as Message } from './types';
+import { ChatMessages } from '@prisma/client';
 
 interface ChatSessionProps {
   /** 必需的 sessionId */
   sessionId: string;
   /** 初始消息列表 */
-  initialMessages?: Message[];
+  initialMessages?: ChatMessages[];
   /** 是否禁用输入 */
   disabled?: boolean;
   /** 清空对话回调 */
   onClearChat?: () => void;
   /** 消息更新回调（用于本地存储） */
-  onMessagesChange?: (messages: Message[]) => void;
+  onMessagesChange?: (messages: ChatMessages[]) => void;
   /** API 端点前缀（可选，默认 '/api/agent'） */
   apiPrefix?: string;
   /** 标题更新回调 */
@@ -43,7 +43,7 @@ export function ChatSession({
   apiPrefix = '/api/agent',
   onTitleUpdated,
 }: ChatSessionProps) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessages[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -72,7 +72,7 @@ export function ChatSession({
 
   // 通知外部消息变化 - 使用 useCallback 优化
   const handleMessagesChange = useCallback(
-    (newMessages: Message[]) => {
+    (newMessages: ChatMessages[]) => {
       onMessagesChange?.(newMessages);
     },
     [onMessagesChange],
@@ -96,11 +96,8 @@ export function ChatSession({
         throw new Error('Failed to fetch messages');
       }
 
-      const data = await response.json();
-      const rawMessages = (data.messages || []).map((m: any) => ({
-        ...m,
-        createdAt: new Date(m.createdAt),
-      }));
+      const data: { messages: ChatMessages[]; status: string; title: string } = await response.json();
+      const rawMessages = data.messages || [];
 
       // 获取处理状态和标题
       const sessionStatus = data.status || 'idle';
@@ -111,13 +108,12 @@ export function ChatSession({
         onTitleUpdated?.(sessionTitle);
       }
 
-      // 处理消息：将 tool 消息转换为 toolResults
-      const processedMessages: Message[] = [];
-      for (let i = 0; i < rawMessages.length; i++) {
-        const msg = rawMessages[i];
+      // 处理消息：从 toolResults 读取工具结果
+      const processedMessages: ChatMessages[] = [];
+      for (const msg of rawMessages) {
         if (!msg) continue;
 
-        // 跳过 role='tool' 的消息，它们会被处理为 toolResults
+        // 跳过 role='tool' 的消息，它们已经作为 toolResults 存储在 assistant 消息中
         if (msg.role === 'tool') {
           continue;
         }
@@ -127,46 +123,33 @@ export function ChatSession({
           continue;
         }
 
-        const chatMessage: Message = {
-          id: msg.id,
-          role: msg.role as 'user' | 'assistant',
-          content: msg.content,
-          isStreaming: msg.isStreaming || false,
-          isComplete: msg.isComplete,
-          createdAt: new Date(msg.createdAt),
-          toolCalls: msg.toolCalls ? (msg.toolCalls as any[]) : undefined,
-          modelId: msg.modelId || undefined,
-        };
+        const chatMessage: ChatMessages = msg;
 
-        // 如果这是一个有 toolCalls 的 assistant 消息，查找后续的 tool 消息
-        if (msg.role === 'assistant' && msg.toolCalls) {
+        // 如果这是一个有 toolCalls 的 assistant 消息，从 toolResults 读取工具结果
+        if (msg.role === 'assistant' && msg.toolCalls && msg.toolResults) {
           const toolCalls = msg.toolCalls as any[];
-          const toolResults: any[] = [];
+          const toolResults = msg.toolResults as any[];
+          const processedToolResults: any[] = [];
 
-          // 查找所有后续的 tool 消息
-          for (let j = i + 1; j < rawMessages.length; j++) {
-            const nextMsg = rawMessages[j];
-            if (!nextMsg || nextMsg.role !== 'tool') break;
+          // 处理每个工具结果
+          for (const toolResult of toolResults) {
+            const toolCallId = toolResult.toolCallId;
+            const toolCall = toolCalls.find((tc: any) => tc.id === toolCallId);
 
-            // 解析工具结果内容
-            try {
-              const resultData = JSON.parse(nextMsg.content);
-              const toolCall = toolCalls.find((tc: any) => tc.id === nextMsg.toolCallId);
+            // 提取工具结果数据
+            const resultData = {
+              toolName: toolCall?.function?.name || 'unknown',
+              success: toolResult.success ?? true,
+              data: toolResult.data,
+              error: toolResult.error,
+              message: toolResult.message,
+            };
 
-              toolResults.push({
-                toolName: toolCall?.function?.name || 'unknown',
-                success: resultData.success ?? true,
-                data: resultData.data,
-                error: resultData.error,
-                message: resultData.message,
-              });
-            } catch (e) {
-              console.error('[ChatSession] Failed to parse tool result:', e);
-            }
+            processedToolResults.push(resultData);
           }
 
-          if (toolResults.length > 0) {
-            chatMessage.toolResults = toolResults;
+          if (processedToolResults.length > 0) {
+            chatMessage.toolResults = processedToolResults;
           }
         }
 
@@ -177,29 +160,39 @@ export function ChatSession({
       if (processedMessages.length > 0) {
         setMessages(prev => {
           // 创建消息映射，以ID为key
-          const messageMap = new Map<string, Message>();
+          const messageMap = new Map<string, ChatMessages>();
           prev.forEach(msg => messageMap.set(msg.id, msg));
 
           // 更新或添加消息
-          processedMessages.forEach((newMsg: Message) => {
+          processedMessages.forEach((newMsg: ChatMessages) => {
             const existing = messageMap.get(newMsg.id);
+            // 确保 createdAt 是 Date 对象
+            const createdAtDate = newMsg.createdAt instanceof Date ? newMsg.createdAt : new Date(newMsg.createdAt);
+
             if (existing) {
               // 更新现有消息（保留 toolResults 等前端状态）
               messageMap.set(newMsg.id, {
                 ...existing,
                 ...newMsg,
-                createdAt: new Date(newMsg.createdAt),
+                createdAt: createdAtDate,
                 // 如果新消息有 toolResults，更新它
                 toolResults: newMsg.toolResults || existing.toolResults,
               });
             } else {
               // 添加新消息
-              messageMap.set(newMsg.id, newMsg);
+              messageMap.set(newMsg.id, {
+                ...newMsg,
+                createdAt: createdAtDate,
+              });
             }
           });
 
           // 转换为数组并按时间排序
-          const sortedMessages = Array.from(messageMap.values()).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+          const sortedMessages = Array.from(messageMap.values()).sort((a, b) => {
+            const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : new Date(a.createdAt).getTime();
+            const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : new Date(b.createdAt).getTime();
+            return timeA - timeB;
+          });
 
           // 更新最后一条消息ID
           if (sortedMessages.length > 0) {
@@ -261,9 +254,6 @@ export function ChatSession({
 
   const handleSendMessage = useCallback(
     async (content: string, attachments?: ChatInputAttachment[]) => {
-      // 检查是否是本地 session（以 local_ 开头）
-      const isLocalSession = sessionId.startsWith('local_');
-
       // 构建多模态内容（文本和附件一起发送）
       let messageContent: string;
       if (attachments && attachments.length > 0) {
@@ -321,40 +311,27 @@ export function ChatSession({
         messageContent = content;
       }
 
-      if (isLocalSession) {
-        // 本地模式：不调用后端 API，直接添加消息
-        const userMessage: Message = {
-          id: `msg_${Date.now()}`,
-          role: 'user',
-          content: messageContent,
-          isComplete: true,
-          createdAt: new Date(),
-        };
-
-        const aiMessage: Message = {
-          id: `msg_ai_${Date.now()}`,
-          role: 'assistant',
-          content: '本地模式暂时不支持 AI 响应，请使用 remote 模式。',
-          isComplete: true,
-          createdAt: new Date(),
-        };
-
-        setMessages(prev => [...prev, userMessage, aiMessage]);
-        return;
-      }
-
-      // 远程模式：调用后端 API
+      // 调用后端 API
       setIsLoading(true);
       console.log('[ChatSession] 发送消息，开始加载...');
 
       try {
         // 添加临时用户消息
-        const tempUserMessage: Message = {
+        const tempUserMessage: ChatMessages = {
           id: `temp_user_${Date.now()}`,
           role: 'user',
           content: messageContent,
           isComplete: true,
           createdAt: new Date(),
+          updatedAt: new Date(),
+          sessionId,
+          organizationId: '', // 临时消息，稍后会被真实消息替换
+          isStreaming: false,
+          tokenCount: null,
+          finishReason: null,
+          modelId: null,
+          toolCalls: null,
+          toolResults: null,
         };
         setMessages(prev => [...prev, tempUserMessage]);
 
@@ -427,13 +404,13 @@ export function ChatSession({
         {messages.map(message => (
           <ChatMessageComponent
             key={message.id}
-            role={message.role}
+            role={message.role as 'user' | 'assistant'}
             content={message.content}
             isStreaming={message.isStreaming}
             timestamp={message.createdAt}
-            toolCalls={message.toolCalls}
-            toolResults={message.toolResults}
-            modelId={message.role === 'assistant' ? message.modelId : undefined}
+            toolCalls={message.toolCalls || []}
+            toolResults={message.toolResults || []}
+            modelId={message.role === 'assistant' ? (message.modelId ?? undefined) : undefined}
           />
         ))}
         <div ref={messagesEndRef} />

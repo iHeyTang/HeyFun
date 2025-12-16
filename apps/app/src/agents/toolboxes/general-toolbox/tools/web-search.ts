@@ -1,5 +1,5 @@
 import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { WebSearchToolboxContext } from '../context';
+import { GeneralToolboxContext } from '../context';
 
 /**
  * 使用 DuckDuckGo 进行网络搜索
@@ -150,7 +150,7 @@ async function searchSerpAPI(query: string, maxResults: number = 10, apiKey?: st
   }
 }
 
-const executor = async (args: any, context: WebSearchToolboxContext): Promise<ToolResult> => {
+const executor = async (args: any, context: GeneralToolboxContext): Promise<ToolResult> => {
   try {
     const { query, maxResults = 10, searchType = 'general' } = args;
 

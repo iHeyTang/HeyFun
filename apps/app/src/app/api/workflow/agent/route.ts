@@ -6,9 +6,7 @@
 import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
 import { getAgent } from '@/agents';
 import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { aigcToolbox } from '@/agents/toolboxes/aigc-toolbox';
 import { generalToolbox } from '@/agents/toolboxes/general-toolbox';
-import { webSearchToolbox } from '@/agents/toolboxes/web-search-toolbox';
 import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/server/credit';
 import { prisma } from '@/lib/server/prisma';
 import { queue } from '@/lib/server/queue';
@@ -127,16 +125,6 @@ interface AgentWorkflowConfig {
   agentId?: string | null;
 }
 
-// 客户端工具列表（需要前端上下文，无法在后端执行）
-const CLIENT_TOOLS = new Set([
-  'edit_flow_canvas',
-  'get_canvas_state',
-  'get_canvas_capabilities',
-  'get_node_type_info',
-  'auto_layout_canvas',
-  'run_canvas_workflow',
-]);
-
 /**
  * 执行工具调用（后端版本）
  * 使用 generalToolbox、webSearchToolbox 和 aigcToolbox 来执行服务端工具
@@ -158,16 +146,6 @@ async function executeTools(
       continue;
     }
 
-    // 检查是否是客户端工具
-    if (CLIENT_TOOLS.has(toolName)) {
-      results.push({
-        success: false,
-        error: `Tool "${toolName}" requires client-side context and cannot be executed on the server. Please use the web interface to interact with canvas tools.`,
-        message: `工具 "${toolName}" 需要在客户端执行，无法在后端执行。请使用 Web 界面与画布工具交互。`,
-      });
-      continue;
-    }
-
     // 尝试使用各个toolbox执行工具
     let result: ToolResult | null = null;
     if (generalToolbox.has(toolName)) {
@@ -176,28 +154,11 @@ async function executeTools(
         sessionId: context.sessionId,
         workflow: context.workflow,
       });
-    } else if (webSearchToolbox.has(toolName)) {
-      result = await webSearchToolbox.execute(toolCall, {
-        organizationId: context.organizationId,
-        sessionId: context.sessionId,
-        workflow: context.workflow,
-      });
-    } else if (aigcToolbox.has(toolName)) {
-      result = await aigcToolbox.execute(toolCall, {
-        organizationId: context.organizationId,
-        sessionId: context.sessionId,
-        workflow: context.workflow,
-        toolCallId: toolCall.id,
-      });
     } else {
       // 工具未找到
       result = {
         success: false,
-        error: `Tool "${toolName}" is not registered. Available tools: ${[
-          ...generalToolbox.getAllToolNames(),
-          ...webSearchToolbox.getAllToolNames(),
-          ...aigcToolbox.getAllToolNames(),
-        ].join(', ')}`,
+        error: `Tool "${toolName}" is not registered. Available tools: ${generalToolbox.getAllToolNames().join(', ')}`,
       };
     }
 
@@ -211,9 +172,6 @@ async function executeTools(
 
 export const { POST } = serve<AgentWorkflowConfig>(async context => {
   const { organizationId, sessionId, userMessageId, modelId, agentId } = context.requestPayload;
-  // Upstash Workflow 的 runId 可能通过 context.id 或其他方式获取
-  // 暂时使用 sessionId 和 messageId 来构造唯一标识
-  const workflowRunId = (context as any).id || (context as any).runId || `${sessionId}-${userMessageId}`;
 
   // 更新状态：pending -> processing（开始执行），并保存 workflow run ID
   await context.run('start-processing', async () => {
@@ -324,23 +282,19 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
       }
 
       // 如果是 assistant 消息且有 toolCalls，即使 isComplete=false 也要保留
-      // 但需要确保对应的 tool 消息都已创建
+      // 但需要确保对应的 toolResults 都已存在
       if (msg.role === 'assistant' && msg.toolCalls) {
-        // 检查是否有对应的 tool 消息
-        const toolCallIds = (msg.toolCalls as any[]).map((tc: any) => tc.id);
-        const toolMessages = session.messages.filter(m => m.role === 'tool' && m.toolCallId && toolCallIds.includes(m.toolCallId));
-        // 只有当所有工具调用都有对应的工具结果消息时，才包含这个 assistant 消息
+        // 检查是否有对应的 toolResults
+        const toolCallIds = (msg.toolCalls as PrismaJson.ToolCall[]).map((tc) => tc.id);
+        const toolResults = (msg.toolResults as PrismaJson.ToolResult[] | null) || [];
+        const toolResultIds = toolResults.map((tr) => tr.toolCallId).filter(Boolean);
+        // 只有当所有工具调用都有对应的工具结果时，才包含这个 assistant 消息
         // 或者如果 assistant 消息 isComplete=false，说明工具还在执行中，不应该包含
         if (!msg.isComplete) {
           // 如果 assistant 消息未完成，检查是否所有工具结果都已创建
-          return toolMessages.length === toolCallIds.length;
+          return toolResultIds.length === toolCallIds.length;
         }
         return true;
-      }
-
-      // 如果是 tool 消息，检查是否完成
-      if (msg.role === 'tool') {
-        return msg.isComplete;
       }
 
       // 其他消息只保留完成的
@@ -348,40 +302,40 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
     });
 
     // 构建消息列表，确保工具调用和工具结果配对
-    // 需要确保每个 assistant 消息的 tool_calls 都有对应的 tool 消息
+    // 需要确保每个 assistant 消息的 tool_calls 都有对应的 toolResults
     const messages: UnifiedChat.Message[] = [{ role: 'system' as const, content: agentConfig.systemPrompt }];
 
     // 按顺序处理消息，确保工具调用和工具结果配对
     for (const msg of filteredMessages) {
       if (msg.role === 'assistant' && msg.toolCalls) {
-        // 对于有 toolCalls 的 assistant 消息，需要确保所有工具结果都存在
-        const toolCallIds = (msg.toolCalls as any[]).map((tc: any) => tc.id);
-        const toolMessages = filteredMessages.filter(m => m.role === 'tool' && m.toolCallId && toolCallIds.includes(m.toolCallId));
+        // 对于有 toolCalls 的 assistant 消息，从 toolResults 读取工具结果
+        const toolCalls = msg.toolCalls as PrismaJson.ToolCall[];
+        const toolResults = (msg.toolResults as PrismaJson.ToolResult[] | null) || [];
+        const toolCallIds = toolCalls.map((tc) => tc.id);
 
         // 只有当工具结果数量等于工具调用数量时，才添加这条消息
-        if (toolMessages.length === toolCallIds.length) {
-          const baseMsg: any = {
+        if (toolResults.length === toolCallIds.length) {
+          const baseMsg: UnifiedChat.Message = {
             role: 'assistant' as const,
             content: msg.content,
-            tool_calls: msg.toolCalls,
+            tool_calls: toolCalls,
           };
           messages.push(baseMsg);
 
-          // 添加对应的 tool 消息
+          // 添加对应的 tool 消息（从 toolResults 构建）
           for (const toolCallId of toolCallIds) {
-            const toolMsg = toolMessages.find(m => m.toolCallId === toolCallId);
-            if (toolMsg) {
+            const toolResult = toolResults.find((tr) => tr.toolCallId === toolCallId);
+            if (toolResult) {
+              // 从 toolResult 中提取内容，序列化整个对象
+              const toolContent = JSON.stringify(toolResult);
               messages.push({
                 role: 'tool' as const,
-                content: toolMsg.content,
-                tool_call_id: toolMsg.toolCallId!,
+                content: toolContent,
+                tool_call_id: toolCallId,
               });
             }
           }
         }
-      } else if (msg.role === 'tool') {
-        // tool 消息已经在上面处理了，跳过
-        continue;
       } else {
         // 普通消息，需要解析多模态内容
         let messageContent: UnifiedChat.MessageContent = msg.content;
@@ -478,9 +432,10 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
                   const ossKeyText = `\n[用户上传的图片OSS key（可在工具调用中使用）: ${ossKeys.join(', ')}]`;
                   if (existingTextIndex >= 0) {
                     // 如果有文本项，追加到现有文本
+                    const textItem = processedItems[existingTextIndex] as UnifiedChat.TextContent;
                     processedItems[existingTextIndex] = {
-                      ...processedItems[existingTextIndex],
-                      text: (processedItems[existingTextIndex] as any).text + ossKeyText,
+                      ...textItem,
+                      text: textItem.text + ossKeyText,
                     };
                   } else {
                     // 如果没有文本项，创建一个新的文本项
@@ -586,22 +541,23 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
 
           if (choice.delta?.tool_calls) {
             for (const toolCall of choice.delta.tool_calls) {
-              const index = (toolCall as any).index ?? 0;
+              const toolCallWithIndex = toolCall as UnifiedChat.ToolCall & { index?: number };
+              const index = toolCallWithIndex.index ?? 0;
               if (!toolCalls[index]) {
                 toolCalls[index] = {
-                  id: (toolCall as any).id || `tool_${index}`,
-                  type: (toolCall as any).type || 'function',
+                  id: toolCallWithIndex.id || `tool_${index}`,
+                  type: toolCallWithIndex.type || 'function',
                   function: {
-                    name: (toolCall as any).function?.name || '',
-                    arguments: (toolCall as any).function?.arguments || '',
+                    name: toolCallWithIndex.function?.name || '',
+                    arguments: toolCallWithIndex.function?.arguments || '',
                   },
                 };
               } else {
-                if ((toolCall as any).function?.name) {
-                  toolCalls[index].function.name = (toolCall as any).function.name;
+                if (toolCallWithIndex.function?.name) {
+                  toolCalls[index].function.name = toolCallWithIndex.function.name;
                 }
-                if ((toolCall as any).function?.arguments) {
-                  toolCalls[index].function.arguments += (toolCall as any).function.arguments;
+                if (toolCallWithIndex.function?.arguments) {
+                  toolCalls[index].function.arguments += toolCallWithIndex.function.arguments;
                 }
               }
             }
@@ -667,7 +623,7 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
         data: {
           content: llmResponse.content,
           isComplete: llmResponse.finishReason !== 'tool_calls',
-          toolCalls: llmResponse.toolCalls.length > 0 ? llmResponse.toolCalls : null,
+          toolCalls: llmResponse.toolCalls.length > 0 ? llmResponse.toolCalls : undefined,
           finishReason: llmResponse.finishReason,
         },
       });
@@ -683,74 +639,52 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
 
     // 步骤9：如果有工具调用，执行工具
     if (llmResponse.toolCalls.length > 0) {
-      // 分离客户端工具和服务端工具
-      const clientTools: any[] = [];
-      const serverTools: any[] = [];
-
-      for (const toolCall of llmResponse.toolCalls) {
-        const toolName = toolCall.function?.name;
-        if (toolName && CLIENT_TOOLS.has(toolName)) {
-          clientTools.push(toolCall);
-        } else {
-          serverTools.push(toolCall);
-        }
-      }
-
       // 执行服务端工具
-      let serverToolResults: ToolResult[] = [];
-      if (serverTools.length > 0) {
-        serverToolResults = await executeTools(serverTools, {
-          organizationId,
-          sessionId,
-          workflow: context,
-        });
+      const serverToolResults = await executeTools(llmResponse.toolCalls, {
+        organizationId,
+        sessionId,
+        workflow: context,
+      });
 
-        // 保存服务端工具结果消息
-        await context.run(`round-${roundCount}-save-server-tool-results`, async () => {
-          for (let i = 0; i < serverTools.length; i++) {
-            const toolCall = serverTools[i];
-            const result = serverToolResults[i];
+      // 保存服务端工具结果到 assistant 消息的 toolResults 字段
+      await context.run(`round-${roundCount}-save-server-tool-results`, async () => {
+        const existingToolResults = (aiMessage.toolResults as PrismaJson.ToolResult[] | null) || [];
+        const newToolResults: PrismaJson.ToolResult[] = [...existingToolResults];
 
-            if (toolCall && result) {
-              await prisma.chatMessages.create({
-                data: {
-                  sessionId,
-                  organizationId,
-                  role: 'tool',
-                  content: JSON.stringify(result),
-                  toolCallId: toolCall.id,
-                  isComplete: true,
-                },
-              });
+        for (let i = 0; i < llmResponse.toolCalls.length; i++) {
+          const toolCall = llmResponse.toolCalls[i];
+          const result = serverToolResults[i];
+
+          if (toolCall && result) {
+            // 检查是否已经存在该toolCallId的结果
+            const existingResultIndex = newToolResults.findIndex((tr) => tr.toolCallId === toolCall.id);
+            const resultData: PrismaJson.ToolResult = {
+              toolCallId: toolCall.id,
+              toolName: toolCall.function.name,
+              success: result.success ?? true,
+              data: result.data,
+              error: result.error,
+              message: result.message,
+            };
+
+            if (existingResultIndex >= 0) {
+              // 更新已存在的结果
+              newToolResults[existingResultIndex] = resultData;
+            } else {
+              // 添加新结果
+              newToolResults.push(resultData);
             }
           }
-        });
-      }
+        }
 
-      // 如果有客户端工具，等待前端执行完成
-      if (clientTools.length > 0) {
-        // 等待客户端工具完成事件
-        const eventName = `tool-result:${sessionId}:${aiMessage.id}`;
-        await context.run(`round-${roundCount}-wait-for-client-tools`, async () => {
-          // 标记消息状态，表示正在等待客户端工具执行
-          // 同时将 workflow run ID 和 event name 存储到消息的 metadata 中（可以通过其他字段存储）
-          await prisma.chatMessages.update({
-            where: { id: aiMessage.id },
-            data: {
-              isComplete: false, // 等待工具执行
-              // 可以将 workflowRunId 和 eventName 存储到 finishReason 字段（临时使用）
-              finishReason: JSON.stringify({ workflowRunId, eventName }),
-            },
-          });
+        // 更新 assistant 消息的 toolResults
+        await prisma.chatMessages.update({
+          where: { id: aiMessage.id },
+          data: {
+            toolResults: newToolResults,
+          },
         });
-
-        // 等待事件（Upstash Workflow 的 waitForEvent）
-        await context.waitForEvent(`round-${roundCount}-wait-for-client-tools`, eventName, {
-          timeout: '5m', // 5分钟超时
-        });
-
-        // 事件触发后，继续执行（工具结果已经由 tool-result API 保存）
-      }
+      });
 
       // 继续下一轮对话（工具执行后需要继续）
       continue;
