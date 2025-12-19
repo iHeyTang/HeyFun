@@ -109,6 +109,7 @@
       "chat": "聊天",
       "tasks": "任务",
       "paintboard": "画板",
+      "notes": "笔记",
       "gateway": "AI 网关",
       "workspace": "工作空间",
       "tools": "工具",
@@ -693,6 +694,111 @@
       "pagination": "第 {current} / {total} 页，共 {count} 条记录",
       "prev": "上一页",
       "next": "下一页"
+    }
+  },
+  "notes": {
+    "title": "笔记",
+    "description": "管理你的笔记和知识",
+    "newNote": "新建笔记",
+    "untitled": "未命名笔记",
+    "defaultContent": "# 新笔记\n\n开始记录你的想法...",
+    "emptyState": {
+      "title": "还没有笔记",
+      "description": "创建你的第一个笔记，开始记录想法和知识",
+      "createFirst": "创建第一个笔记"
+    },
+    "list": {
+      "searchPlaceholder": "搜索笔记...",
+      "noNotes": "还没有笔记",
+      "pinned": "置顶",
+      "updatedAt": "更新于"
+    },
+    "detail": {
+      "titlePlaceholder": "笔记标题",
+      "back": "返回列表",
+      "save": "保存",
+      "saving": "保存中...",
+      "saved": "已保存",
+      "hasChanges": "保存",
+      "loading": "加载中...",
+      "notFound": "笔记不存在",
+      "loadError": "加载笔记失败",
+      "saveError": "保存笔记失败",
+      "saveSuccess": "笔记已保存",
+      "createSuccess": "笔记创建成功",
+      "createError": "创建笔记失败"
+    },
+    "sidebar": {
+      "folders": "文件夹",
+      "tags": "标签",
+      "allNotes": "全部笔记",
+      "noTags": "暂无标签",
+      "noNotes": "暂无笔记",
+      "newFolder": "新建文件夹",
+      "newNote": "新建笔记",
+      "moveTo": "移动到...",
+      "selectDestination": "选择目标文件夹",
+      "root": "根目录",
+      "untitled": "无标题",
+      "createFolder": "创建文件夹",
+      "createTag": "创建标签",
+      "folderNamePlaceholder": "文件夹名称",
+      "tagNamePlaceholder": "标签名称",
+      "create": "创建",
+      "cancel": "取消"
+    },
+    "folder": {
+      "createSuccess": "文件夹创建成功",
+      "createError": "创建文件夹失败",
+      "deleteSuccess": "文件夹删除成功",
+      "deleteError": "删除文件夹失败",
+      "deleteConfirm": "确定要删除文件夹 \"{name}\" 吗？文件夹内的笔记将移动到根目录。",
+      "nameExists": "文件夹名称已存在",
+      "hasChildren": "请先删除子文件夹",
+      "loadError": "加载文件夹失败"
+    },
+    "tag": {
+      "createSuccess": "标签创建成功",
+      "createError": "创建标签失败",
+      "deleteSuccess": "标签删除成功",
+      "deleteError": "删除标签失败",
+      "deleteConfirm": "确定要删除标签 \"{name}\" 吗？",
+      "nameExists": "标签已存在",
+      "loadError": "加载标签失败"
+    },
+    "attachment": {
+      "title": "附件",
+      "add": "添加附件",
+      "uploading": "上传中...",
+      "noAttachments": "暂无附件",
+      "uploadSuccess": "附件上传成功",
+      "uploadError": "上传附件失败",
+      "deleteSuccess": "附件删除成功",
+      "deleteError": "删除附件失败",
+      "deleteConfirm": "确定要删除附件 \"{name}\" 吗？",
+      "loadError": "加载附件失败",
+      "downloadError": "获取下载链接失败",
+      "fileTooLarge": "文件大小不能超过 {size}",
+      "invalidFileType": "不支持的文件类型: {type}"
+    },
+    "properties": {
+      "folder": "文件夹",
+      "tags": "标签",
+      "selectFolder": "选择文件夹",
+      "noFolder": "无文件夹",
+      "noTagsSelected": "未选择标签"
+    },
+    "toast": {
+      "loadError": "加载笔记失败",
+      "createSuccess": "笔记创建成功",
+      "createError": "创建笔记失败",
+      "saveSuccess": "笔记已保存",
+      "saveError": "保存笔记失败",
+      "deleteSuccess": "笔记删除成功",
+      "deleteError": "删除笔记失败",
+      "deleteConfirm": "确定要删除这条笔记吗？",
+      "moveSuccess": "移动成功",
+      "moveError": "移动失败"
     }
   }
 }

@@ -7,6 +7,7 @@ import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
 import { getAgent } from '@/agents';
 import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { generalToolbox } from '@/agents/toolboxes/general-toolbox';
+import { notesToolbox } from '@/agents/toolboxes/notes-toolbox';
 import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/server/credit';
 import { prisma } from '@/lib/server/prisma';
 import { queue } from '@/lib/server/queue';
@@ -154,11 +155,18 @@ async function executeTools(
         sessionId: context.sessionId,
         workflow: context.workflow,
       });
+    } else if (notesToolbox.has(toolName)) {
+      result = await notesToolbox.execute(toolCall, {
+        organizationId: context.organizationId,
+        sessionId: context.sessionId,
+        workflow: context.workflow,
+      });
     } else {
       // 工具未找到
+      const allToolNames = [...generalToolbox.getAllToolNames(), ...notesToolbox.getAllToolNames()];
       result = {
         success: false,
-        error: `Tool "${toolName}" is not registered. Available tools: ${generalToolbox.getAllToolNames().join(', ')}`,
+        error: `Tool "${toolName}" is not registered. Available tools: ${allToolNames.join(', ')}`,
       };
     }
 
@@ -225,7 +233,7 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
   });
 
   // 最大轮次限制，避免无限循环
-  const MAX_ROUNDS = 10;
+  const MAX_ROUNDS = 30;
   let roundCount = 0;
   let hasError = false;
   let errorMessage: string | null = null;
@@ -253,6 +261,14 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
       hasError = true;
       errorMessage = 'Session not found';
       throw new Error('Session not found');
+    }
+
+    // 检查会话是否已被中断（状态不再是 processing）
+    if (session.status !== 'processing') {
+      console.log(`[Workflow] Session ${sessionId} status is ${session.status}, stopping workflow`);
+      hasError = true;
+      errorMessage = 'Session was cancelled';
+      break;
     }
 
     // 步骤2：加载 Agent 配置和模型
@@ -285,9 +301,9 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
       // 但需要确保对应的 toolResults 都已存在
       if (msg.role === 'assistant' && msg.toolCalls) {
         // 检查是否有对应的 toolResults
-        const toolCallIds = (msg.toolCalls as PrismaJson.ToolCall[]).map((tc) => tc.id);
-        const toolResults = (msg.toolResults as PrismaJson.ToolResult[] | null) || [];
-        const toolResultIds = toolResults.map((tr) => tr.toolCallId).filter(Boolean);
+        const toolCallIds = msg.toolCalls.map(tc => tc.id);
+        const toolResults = msg.toolResults || [];
+        const toolResultIds = toolResults.map(tr => tr.toolCallId).filter(Boolean);
         // 只有当所有工具调用都有对应的工具结果时，才包含这个 assistant 消息
         // 或者如果 assistant 消息 isComplete=false，说明工具还在执行中，不应该包含
         if (!msg.isComplete) {
@@ -311,7 +327,7 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
         // 对于有 toolCalls 的 assistant 消息，从 toolResults 读取工具结果
         const toolCalls = msg.toolCalls as PrismaJson.ToolCall[];
         const toolResults = (msg.toolResults as PrismaJson.ToolResult[] | null) || [];
-        const toolCallIds = toolCalls.map((tc) => tc.id);
+        const toolCallIds = toolCalls.map(tc => tc.id);
 
         // 只有当工具结果数量等于工具调用数量时，才添加这条消息
         if (toolResults.length === toolCallIds.length) {
@@ -324,7 +340,7 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
 
           // 添加对应的 tool 消息（从 toolResults 构建）
           for (const toolCallId of toolCallIds) {
-            const toolResult = toolResults.find((tr) => tr.toolCallId === toolCallId);
+            const toolResult = toolResults.find(tr => tr.toolCallId === toolCallId);
             if (toolResult) {
               // 从 toolResult 中提取内容，序列化整个对象
               const toolContent = JSON.stringify(toolResult);
@@ -503,6 +519,21 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
       });
     });
 
+    // 再次检查会话是否已被中断（在 LLM 调用前）
+    const sessionCheck = await context.run(`round-${roundCount}-check-session`, async () => {
+      const currentSession = await prisma.chatSessions.findUnique({
+        where: { id: sessionId },
+      });
+      return currentSession?.status;
+    });
+
+    if (sessionCheck !== 'processing') {
+      console.log(`[Workflow] Session ${sessionId} was cancelled before LLM call, stopping`);
+      hasError = true;
+      errorMessage = 'Session was cancelled';
+      break;
+    }
+
     // 步骤6：调用 LLM（在步骤内部处理错误，避免步骤名称冲突）
     const llmResult = await context.run(`round-${roundCount}-call-llm`, async () => {
       try {
@@ -639,6 +670,21 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
 
     // 步骤9：如果有工具调用，执行工具
     if (llmResponse.toolCalls.length > 0) {
+      // 在执行工具前再次检查中断状态
+      const toolCheckSession = await context.run(`round-${roundCount}-check-before-tools`, async () => {
+        const currentSession = await prisma.chatSessions.findUnique({
+          where: { id: sessionId },
+        });
+        return currentSession?.status;
+      });
+
+      if (toolCheckSession !== 'processing') {
+        console.log(`[Workflow] Session ${sessionId} was cancelled before tool execution, stopping`);
+        hasError = true;
+        errorMessage = 'Session was cancelled';
+        break;
+      }
+
       // 执行服务端工具
       const serverToolResults = await executeTools(llmResponse.toolCalls, {
         organizationId,
@@ -657,7 +703,7 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
 
           if (toolCall && result) {
             // 检查是否已经存在该toolCallId的结果
-            const existingResultIndex = newToolResults.findIndex((tr) => tr.toolCallId === toolCall.id);
+            const existingResultIndex = newToolResults.findIndex(tr => tr.toolCallId === toolCall.id);
             const resultData: PrismaJson.ToolResult = {
               toolCallId: toolCall.id,
               toolName: toolCall.function.name,
@@ -725,7 +771,34 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
     });
   }
 
+  // 如果被中断，创建中断消息
+  if (hasError && errorMessage === 'Session was cancelled') {
+    await context.run('handle-cancellation', async () => {
+      // 查找最后一条未完成的 assistant 消息
+      const lastIncompleteMessage = await prisma.chatMessages.findFirst({
+        where: {
+          sessionId,
+          role: 'assistant',
+          isComplete: false,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (lastIncompleteMessage) {
+        await prisma.chatMessages.update({
+          where: { id: lastIncompleteMessage.id },
+          data: {
+            isComplete: true,
+            isStreaming: false,
+            content: lastIncompleteMessage.content ? `${lastIncompleteMessage.content}\n\n[已中断]` : '[已中断]',
+          },
+        });
+      }
+    });
+  }
+
   // 更新状态：processing -> idle（执行完成或失败都设为idle，避免阻塞新消息）
+  // 使用 context.run 确保即使 workflow 执行失败，状态也能被重置
   await context.run('finish-processing', async () => {
     await prisma.chatSessions.update({
       where: { id: sessionId },

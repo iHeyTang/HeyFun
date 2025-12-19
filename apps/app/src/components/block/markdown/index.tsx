@@ -7,10 +7,13 @@ import rehypeRaw from 'rehype-raw';
 import { EnhancedTable } from './EnhancedTable';
 import { MermaidEmbed } from './MermaidEmbed';
 import { rehypeMermaid } from './rehype-mermaid';
+import { rehypeNoteMention } from './rehype-note-mention';
 import { ImagePreview } from '../preview/image-preview';
 import { cn } from '@/lib/utils';
 import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import SyntaxHighlighter from 'react-syntax-highlighter';
+import { parseNoteMention, type NoteMentionData } from '../chat-input/note-mention-extension';
+import { FileText } from 'lucide-react';
 
 interface MarkdownProps {
   children: string;
@@ -227,6 +230,55 @@ const MarkdownComponent = ({ children, className = '', isStreaming = false }: Ma
         if (!mermaidCode) return null;
         return <MermaidEmbed chart={mermaidCode} />;
       },
+      // 自定义 Note Mention 组件
+      span: ({ children, ...props }: any) => {
+        // 支持两种属性命名方式：data-type 和 dataType（react-markdown 可能会转换）
+        const dataType = props['data-type'] || props['dataType'];
+        const mentionText = props['data-note-mention'] || props['dataNoteMention'];
+        const noteId = props['data-note-id'] || props['dataNoteId'];
+        const noteTitle = props['data-note-title'] || props['dataNoteTitle'];
+        const noteContent = props['data-note-content'] || props['dataNoteContent'];
+
+        // 如果是 note mention，使用自定义渲染
+        if (dataType === 'note-mention' && mentionText) {
+          const parsed = parseNoteMention(mentionText);
+          if (parsed) {
+            const { startLine, endLine, noteId: parsedNoteId, content } = parsed;
+            let positionText = `:${startLine}`;
+            if (endLine && endLine !== startLine) {
+              positionText = `:${startLine}-${endLine}`;
+            }
+            // 优先使用 noteTitle（如果有），否则显示 noteId，最后显示"笔记"
+            const displayTitle = noteTitle || parsedNoteId || '笔记';
+            const displayNoteId = noteId || parsedNoteId || '';
+
+            return (
+              <span
+                className={cn(
+                  'mention group inline-flex items-center gap-1 px-2 text-[11px] font-medium',
+                  'bg-blue-100 text-blue-800 ring-1 ring-inset ring-blue-600/20',
+                  'dark:bg-blue-900/20 dark:text-blue-300 dark:ring-blue-400/30',
+                  'hover:bg-blue-200 dark:hover:bg-blue-900/40',
+                  'cursor-pointer rounded-md',
+                  'px-[1px]',
+                )}
+                data-type="note-mention"
+                data-note-mention={mentionText}
+                data-note-id={displayNoteId}
+                data-note-title={noteTitle}
+                data-line={startLine}
+                title={content ? `内容: ${content}` : undefined}
+              >
+                <FileText className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                <span className="font-semibold">{displayTitle}</span>
+                <span className="text-blue-700 dark:text-blue-400">{positionText}</span>
+              </span>
+            );
+          }
+        }
+        // 默认渲染
+        return <span {...props}>{children}</span>;
+      },
     }),
     [],
   );
@@ -238,7 +290,7 @@ const MarkdownComponent = ({ children, className = '', isStreaming = false }: Ma
     >
       <ReactMarkdown
         remarkPlugins={[remarkCjkFriendly, remarkGfm]}
-        rehypePlugins={[rehypeRaw, rehypeMermaid, rehypeHighlight]}
+        rehypePlugins={[rehypeRaw, rehypeNoteMention, rehypeMermaid, rehypeHighlight]}
         components={components}
         urlTransform={urlTransform}
       >

@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Bot, Flower, Network, Palette, SettingsIcon } from 'lucide-react';
+import { Bot, Flower, Network, Palette, SettingsIcon, FileText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -35,6 +35,11 @@ const useNavItems = () => {
       icon: Palette,
       label: t('paintboard'),
       path: '/dashboard/paintboard',
+    },
+    {
+      icon: FileText,
+      label: t('notes'),
+      path: '/dashboard/notes',
     },
     // {
     //   icon: FolderOpen,

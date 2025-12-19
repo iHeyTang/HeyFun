@@ -285,7 +285,7 @@
   h4,
   h5,
   h6 {
-    @apply mt-4 mb-2;
+    @apply mb-2 mt-4;
   }
 
   blockquote {

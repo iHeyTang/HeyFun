@@ -64,23 +64,36 @@ export const POST = withUserAuthApi<{}, {}, ChatRequest>(async (_req, ctx) => {
       },
     });
 
-    // 触发 workflow 自动执行
-    const { workflowRunId } = await workflow.trigger({
-      url: '/api/workflow/agent',
-      body: {
-        organizationId: ctx.orgId,
-        sessionId,
-        userMessageId: userMessage.id,
-        modelId: modelId,
-        agentId: session.agentId,
-      },
-    });
+    try {
+      // 触发 workflow 自动执行
+      const { workflowRunId } = await workflow.trigger({
+        url: '/api/workflow/agent',
+        body: {
+          organizationId: ctx.orgId,
+          sessionId,
+          userMessageId: userMessage.id,
+          modelId: modelId,
+          agentId: session.agentId,
+        },
+      });
 
-    return NextResponse.json({
-      success: true,
-      userMessageId: userMessage.id,
-      workflowRunId,
-    });
+      return NextResponse.json({
+        success: true,
+        userMessageId: userMessage.id,
+        workflowRunId,
+      });
+    } catch (triggerError) {
+      // 如果 workflow.trigger() 失败，需要将状态重置为 idle，避免状态停留在 pending
+      console.error('Failed to trigger workflow:', triggerError);
+      await prisma.chatSessions.update({
+        where: { id: sessionId },
+        data: {
+          status: 'idle',
+          updatedAt: new Date(),
+        },
+      });
+      throw triggerError;
+    }
   } catch (error) {
     console.error('Chat API error:', error);
     return NextResponse.json(

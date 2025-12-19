@@ -109,6 +109,7 @@
       "chat": "チャット",
       "tasks": "タスク",
       "paintboard": "ペイントボード",
+      "notes": "ノート",
       "gateway": "AI ゲートウェイ",
       "workspace": "ワークスペース",
       "tools": "ツール",
@@ -692,6 +693,111 @@
       "pagination": "{current} / {total} ページ、合計 {count} 件",
       "prev": "前へ",
       "next": "次へ"
+    }
+  },
+  "notes": {
+    "title": "ノート",
+    "description": "ノートと知識を管理",
+    "newNote": "新しいノート",
+    "untitled": "無題のノート",
+    "defaultContent": "# 新しいノート\n\n考えを記録し始めましょう...",
+    "emptyState": {
+      "title": "ノートがありません",
+      "description": "最初のノートを作成して、アイデアや知識を記録し始めましょう",
+      "createFirst": "最初のノートを作成"
+    },
+    "list": {
+      "searchPlaceholder": "ノートを検索...",
+      "noNotes": "ノートがありません",
+      "pinned": "ピン留め",
+      "updatedAt": "更新"
+    },
+    "detail": {
+      "titlePlaceholder": "ノートタイトル",
+      "back": "リストに戻る",
+      "save": "保存",
+      "saving": "保存中...",
+      "saved": "保存済み",
+      "hasChanges": "保存",
+      "loading": "読み込み中...",
+      "notFound": "ノートが見つかりません",
+      "loadError": "ノートの読み込みに失敗しました",
+      "saveError": "ノートの保存に失敗しました",
+      "saveSuccess": "ノートを保存しました",
+      "createSuccess": "ノートを作成しました",
+      "createError": "ノートの作成に失敗しました"
+    },
+    "sidebar": {
+      "folders": "フォルダ",
+      "tags": "タグ",
+      "allNotes": "すべてのノート",
+      "noTags": "タグなし",
+      "noNotes": "ノートがありません",
+      "newFolder": "新しいフォルダ",
+      "newNote": "新しいノート",
+      "moveTo": "移動先...",
+      "selectDestination": "移動先フォルダを選択",
+      "root": "ルート",
+      "untitled": "無題",
+      "createFolder": "フォルダを作成",
+      "createTag": "タグを作成",
+      "folderNamePlaceholder": "フォルダ名",
+      "tagNamePlaceholder": "タグ名",
+      "create": "作成",
+      "cancel": "キャンセル"
+    },
+    "folder": {
+      "createSuccess": "フォルダを作成しました",
+      "createError": "フォルダの作成に失敗しました",
+      "deleteSuccess": "フォルダを削除しました",
+      "deleteError": "フォルダの削除に失敗しました",
+      "deleteConfirm": "フォルダ \"{name}\" を削除してもよろしいですか？このフォルダ内のノートはルートに移動されます。",
+      "nameExists": "フォルダ名が既に存在します",
+      "hasChildren": "まず子フォルダを削除してください",
+      "loadError": "フォルダの読み込みに失敗しました"
+    },
+    "tag": {
+      "createSuccess": "タグを作成しました",
+      "createError": "タグの作成に失敗しました",
+      "deleteSuccess": "タグを削除しました",
+      "deleteError": "タグの削除に失敗しました",
+      "deleteConfirm": "タグ \"{name}\" を削除してもよろしいですか？",
+      "nameExists": "タグが既に存在します",
+      "loadError": "タグの読み込みに失敗しました"
+    },
+    "attachment": {
+      "title": "添付ファイル",
+      "add": "添付ファイルを追加",
+      "uploading": "アップロード中...",
+      "noAttachments": "添付ファイルなし",
+      "uploadSuccess": "添付ファイルをアップロードしました",
+      "uploadError": "添付ファイルのアップロードに失敗しました",
+      "deleteSuccess": "添付ファイルを削除しました",
+      "deleteError": "添付ファイルの削除に失敗しました",
+      "deleteConfirm": "添付ファイル \"{name}\" を削除してもよろしいですか？",
+      "loadError": "添付ファイルの読み込みに失敗しました",
+      "downloadError": "ダウンロードリンクの取得に失敗しました",
+      "fileTooLarge": "ファイルサイズは {size} を超えることはできません",
+      "invalidFileType": "サポートされていないファイルタイプ: {type}"
+    },
+    "properties": {
+      "folder": "フォルダ",
+      "tags": "タグ",
+      "selectFolder": "フォルダを選択",
+      "noFolder": "フォルダなし",
+      "noTagsSelected": "タグが選択されていません"
+    },
+    "toast": {
+      "loadError": "ノートの読み込みに失敗しました",
+      "createSuccess": "ノートを作成しました",
+      "createError": "ノートの作成に失敗しました",
+      "saveSuccess": "ノートを保存しました",
+      "saveError": "ノートの保存に失敗しました",
+      "deleteSuccess": "ノートを削除しました",
+      "deleteConfirm": "このノートを削除してもよろしいですか？",
+      "moveSuccess": "移動しました",
+      "moveError": "移動に失敗しました",
+      "deleteError": "ノートの削除に失敗しました"
     }
   }
 }

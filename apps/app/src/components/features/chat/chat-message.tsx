@@ -1,13 +1,17 @@
 'use client';
 
+import { createNote } from '@/actions/notes';
+import { WysiwygRenderer } from '@/components/block/wysiwyg-editor/renderer';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLLM } from '@/hooks/use-llm';
 import { cn } from '@/lib/utils';
-import { Bot, Brain, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { BookOpen, Bot, Brain, Check, ChevronDown, ChevronUp, Copy, User } from 'lucide-react';
+import Image from 'next/image';
 import { memo, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { ModelIcon } from '../model-icon';
 import { ToolCallCard } from './tool-call-card';
-import { Markdown } from '@/components/block/markdown';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -19,9 +23,38 @@ interface ChatMessageProps {
   modelId?: string;
 }
 
+// 带 Tooltip 的消息操作按钮组件
+interface MessageActionButtonProps {
+  icon: React.ReactNode;
+  tooltip: string;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+const MessageActionButton = ({ icon, tooltip, onClick, disabled = false }: MessageActionButtonProps) => {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onClick}
+          disabled={disabled}
+          className="group-hover:text-muted-foreground hover:text-foreground cursor-pointer text-transparent transition-all disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {icon}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={4}>
+        <p>{tooltip}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
 const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, toolCalls, toolResults, modelId }: ChatMessageProps) => {
   const isUser = role === 'user';
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { availableModels } = useLLM();
 
   // 根据 modelId 获取模型信息
@@ -85,6 +118,51 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
   const hasToolCalls = useMemo(() => toolCalls && toolCalls.length > 0, [toolCalls]);
   const hasToolResults = useMemo(() => toolResults && toolResults.length > 0, [toolResults]);
 
+  // 复制到剪贴板
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(mainContent || content);
+      setCopied(true);
+      toast.success('已复制到剪贴板');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('复制失败:', error);
+      toast.error('复制失败');
+    }
+  };
+
+  // 保存到笔记
+  const handleSaveToNote = async () => {
+    if (!mainContent && !content) {
+      toast.error('没有可保存的内容');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const noteContent = mainContent || content;
+      const title = noteContent.slice(0, 50).replace(/\n/g, ' ').trim() || '来自聊天的笔记';
+
+      const result = await createNote({
+        title,
+        content: noteContent,
+      });
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      if (result.data) {
+        toast.success('已保存到笔记');
+      }
+    } catch (error: any) {
+      console.error('保存到笔记失败:', error);
+      toast.error(error.message || '保存到笔记失败');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className={cn('flex min-w-0 gap-3 px-4 py-1', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
@@ -100,9 +178,19 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
       )}
 
       <div className={cn('group flex min-w-0 flex-1 flex-col gap-1.5', isUser ? 'items-end' : 'items-start')}>
-        <div className="text-muted-foreground flex items-center gap-1 text-xs">
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
           <div>{modelInfo?.name}</div>
           <span className="group-hover:text-muted-foreground text-transparent transition-all">{timestamp.toLocaleTimeString()}</span>
+          {!isUser && (mainContent || content) && (
+            <>
+              <MessageActionButton
+                icon={copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                tooltip="复制"
+                onClick={handleCopy}
+              />
+              <MessageActionButton icon={<BookOpen className="h-3 w-3" />} tooltip="保存到笔记" onClick={handleSaveToNote} disabled={isSaving} />
+            </>
+          )}
         </div>
 
         {/* 附件预览（仅用户消息） */}
@@ -112,11 +200,13 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
               if (attachment.type === 'image') {
                 // 图片附件
                 return (
-                  <img
+                  <Image
                     key={index}
                     src={attachment.url}
                     alt={attachment.name || `Image ${index + 1}`}
                     className="max-h-48 max-w-xs rounded-lg object-cover"
+                    width={100}
+                    height={100}
                   />
                 );
               } else if (attachment.type === 'video') {
@@ -175,14 +265,14 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
                 </button>
                 {isThinkingExpanded && (
                   <div className="bg-muted/30 border-border/30 border-t px-4 py-3">
-                    <Markdown className="text-muted-foreground markdown-body text-sm opacity-80">{thinkingContent}</Markdown>
+                    <WysiwygRenderer content={thinkingContent} className="text-muted-foreground text-sm opacity-80" />
                   </div>
                 )}
               </div>
             )}
 
             {/* 主要内容 */}
-            {mainContent && <Markdown className="markdown-body">{mainContent}</Markdown>}
+            {mainContent && <WysiwygRenderer content={mainContent} isStreaming={isStreaming} />}
           </div>
         )}
 
@@ -196,7 +286,7 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
         {/* 空状态 - 正在思考 */}
         {!mainContent && !hasToolCalls && !thinkingContent && (
           <div className="bg-muted max-w-[70%] rounded-lg">
-            <Markdown className="w-full">Thinking...</Markdown>
+            <WysiwygRenderer content="Thinking..." />
           </div>
         )}
       </div>

@@ -109,6 +109,7 @@
       "chat": "聊天",
       "tasks": "任務",
       "paintboard": "畫板",
+      "notes": "筆記",
       "gateway": "AI 閘道",
       "workspace": "工作空間",
       "tools": "工具",
@@ -692,6 +693,111 @@
       "pagination": "第 {current} / {total} 頁，共 {count} 條記錄",
       "prev": "上一頁",
       "next": "下一頁"
+    }
+  },
+  "notes": {
+    "title": "筆記",
+    "description": "管理你的筆記和知識",
+    "newNote": "新建筆記",
+    "untitled": "未命名筆記",
+    "defaultContent": "# 新筆記\n\n開始記錄你的想法...",
+    "emptyState": {
+      "title": "還沒有筆記",
+      "description": "創建你的第一個筆記，開始記錄想法和知識",
+      "createFirst": "創建第一個筆記"
+    },
+    "list": {
+      "searchPlaceholder": "搜尋筆記...",
+      "noNotes": "還沒有筆記",
+      "pinned": "置頂",
+      "updatedAt": "更新於"
+    },
+    "detail": {
+      "titlePlaceholder": "筆記標題",
+      "back": "返回列表",
+      "save": "儲存",
+      "saving": "儲存中...",
+      "saved": "已儲存",
+      "hasChanges": "儲存",
+      "loading": "載入中...",
+      "notFound": "筆記不存在",
+      "loadError": "載入筆記失敗",
+      "saveError": "儲存筆記失敗",
+      "saveSuccess": "筆記已儲存",
+      "createSuccess": "筆記創建成功",
+      "createError": "創建筆記失敗"
+    },
+    "sidebar": {
+      "folders": "資料夾",
+      "tags": "標籤",
+      "allNotes": "全部筆記",
+      "noTags": "暫無標籤",
+      "noNotes": "暫無筆記",
+      "newFolder": "新建資料夾",
+      "newNote": "新建筆記",
+      "moveTo": "移動到...",
+      "selectDestination": "選擇目標資料夾",
+      "root": "根目錄",
+      "untitled": "無標題",
+      "createFolder": "創建資料夾",
+      "createTag": "創建標籤",
+      "folderNamePlaceholder": "資料夾名稱",
+      "tagNamePlaceholder": "標籤名稱",
+      "create": "創建",
+      "cancel": "取消"
+    },
+    "folder": {
+      "createSuccess": "資料夾創建成功",
+      "createError": "創建資料夾失敗",
+      "deleteSuccess": "資料夾刪除成功",
+      "deleteError": "刪除資料夾失敗",
+      "deleteConfirm": "確定要刪除資料夾 \"{name}\" 嗎？資料夾內的筆記將移動到根目錄。",
+      "nameExists": "資料夾名稱已存在",
+      "hasChildren": "請先刪除子資料夾",
+      "loadError": "載入資料夾失敗"
+    },
+    "tag": {
+      "createSuccess": "標籤創建成功",
+      "createError": "創建標籤失敗",
+      "deleteSuccess": "標籤刪除成功",
+      "deleteError": "刪除標籤失敗",
+      "deleteConfirm": "確定要刪除標籤 \"{name}\" 嗎？",
+      "nameExists": "標籤已存在",
+      "loadError": "載入標籤失敗"
+    },
+    "attachment": {
+      "title": "附件",
+      "add": "添加附件",
+      "uploading": "上傳中...",
+      "noAttachments": "暫無附件",
+      "uploadSuccess": "附件上傳成功",
+      "uploadError": "上傳附件失敗",
+      "deleteSuccess": "附件刪除成功",
+      "deleteError": "刪除附件失敗",
+      "deleteConfirm": "確定要刪除附件 \"{name}\" 嗎？",
+      "loadError": "載入附件失敗",
+      "downloadError": "獲取下載連結失敗",
+      "fileTooLarge": "檔案大小不能超過 {size}",
+      "invalidFileType": "不支援的檔案類型: {type}"
+    },
+    "properties": {
+      "folder": "資料夾",
+      "tags": "標籤",
+      "selectFolder": "選擇資料夾",
+      "noFolder": "無資料夾",
+      "noTagsSelected": "未選擇標籤"
+    },
+    "toast": {
+      "loadError": "載入筆記失敗",
+      "createSuccess": "筆記創建成功",
+      "createError": "創建筆記失敗",
+      "saveSuccess": "筆記已儲存",
+      "saveError": "儲存筆記失敗",
+      "deleteSuccess": "筆記刪除成功",
+      "deleteConfirm": "確定要刪除這條筆記嗎？",
+      "moveSuccess": "移動成功",
+      "moveError": "移動失敗",
+      "deleteError": "刪除筆記失敗"
     }
   }
 }

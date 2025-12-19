@@ -1,9 +1,14 @@
 'use client';
 
-import { Textarea } from '@/components/ui/textarea';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
 import { uploadFile, validateFile } from '@/lib/browser/file';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
+import { createNoteMentionExtension, parseNoteMention, type NoteMentionData } from './note-mention-extension';
+import { cn } from '@/lib/utils';
+import TurndownService from 'turndown';
 
 /**
  * 根据 MIME 类型判断附件类型
@@ -54,6 +59,8 @@ export interface ChatInputProps {
   placeholder?: string;
   value?: string;
   onValueChange?: (value: string) => void;
+  attachments?: ChatInputAttachment[];
+  onAttachmentsChange?: (attachments: ChatInputAttachment[]) => void;
   className?: string;
   renderHeader?: () => React.ReactNode;
   renderFooter?: (params: {
@@ -73,29 +80,142 @@ export const ChatInput = ({
   placeholder = 'Type your message...',
   value: controlledValue,
   onValueChange,
+  attachments: controlledAttachments,
+  onAttachmentsChange,
   className,
   renderHeader,
   renderFooter,
 }: ChatInputProps) => {
-  const [internalValue, setInternalValue] = useState('');
-  const [attachments, setAttachments] = useState<ChatInputAttachment[]>([]);
+  const [internalAttachments, setInternalAttachments] = useState<ChatInputAttachment[]>([]);
+  const isAttachmentsControlled = controlledAttachments !== undefined;
+  const attachments = isAttachmentsControlled ? controlledAttachments : internalAttachments;
   const [uploading, setUploading] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isControlled = controlledValue !== undefined;
-  const message = isControlled ? controlledValue : internalValue;
+
+  // 初始化 Turndown 服务（用于 HTML 转 Markdown）
+  const turndownService = useMemo(() => {
+    const service = new TurndownService();
+    // 添加自定义规则：将 note mention 转换为文本格式
+    service.addRule('noteMention', {
+      filter: (node: any) => {
+        return (
+          node.nodeName === 'SPAN' &&
+          (node.getAttribute('data-type') === 'mention' ||
+            node.getAttribute('data-type') === 'note-mention' ||
+            node.classList?.contains('note-mention'))
+        );
+      },
+      replacement: (content: string, node: any) => {
+        // 优先从 data-note-mention 获取（已经是新格式）
+        const mentionText = node.getAttribute('data-note-mention') || '';
+        if (mentionText) {
+          // 直接返回文本格式，用于发送给 AI
+          return mentionText;
+        }
+        // 如果没有 mentionText，尝试从其他属性构建
+        const noteId = node.getAttribute('data-note-id') || 'unknown';
+        const noteContent = node.getAttribute('data-note-content') || '';
+        // 尝试从文本内容解析行数（如果存在）
+        const textContent = node.textContent || '';
+        const lineMatch = textContent.match(/:(\d+)(?:-(\d+))?/);
+        if (lineMatch) {
+          const startLine = lineMatch[1];
+          const endLine = lineMatch[2];
+          const positionInfo = endLine ? `${startLine}:${endLine}` : startLine;
+          return `@note:${noteId}[${positionInfo}]${noteContent ? `[${noteContent}]` : ''}`;
+        }
+        // 如果都找不到，返回默认格式
+        return `@note:${noteId}[1]${noteContent ? `[${noteContent}]` : ''}`;
+      },
+    });
+    return service;
+  }, []);
+
+  // 创建 Tiptap 编辑器
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        // 禁用一些不需要的功能
+        heading: false,
+        blockquote: false,
+        codeBlock: false,
+        horizontalRule: false,
+      }),
+      Placeholder.configure({
+        placeholder,
+        emptyEditorClass: 'is-editor-empty',
+      }),
+      createNoteMentionExtension(),
+    ],
+    content: controlledValue || '',
+    editable: !disabled && !uploading,
+    immediatelyRender: false, // 避免 SSR hydration 错误
+    editorProps: {
+      attributes: {
+        class: cn(
+          'max-h-[200px] min-h-[80px] flex-1 resize-none overflow-y-auto',
+          'border-none bg-transparent shadow-none outline-none',
+          'focus-visible:ring-0 focus-visible:ring-offset-0',
+          'dark:bg-transparent',
+          'prose prose-sm max-w-none',
+          'px-0 py-2',
+        ),
+      },
+    },
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      if (isControlled) {
+        onValueChange?.(html);
+      }
+    },
+  });
+
+  // 同步外部 value 变化到编辑器
+  useEffect(() => {
+    if (editor && controlledValue !== undefined && controlledValue !== editor.getHTML()) {
+      // 使用 setTimeout 延迟执行，避免在 React 渲染周期中调用 flushSync
+      const timeoutId = setTimeout(() => {
+        if (editor && controlledValue !== undefined && controlledValue !== editor.getHTML()) {
+          editor.commands.setContent(controlledValue, { emitUpdate: false });
+        }
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [editor, controlledValue]);
+
+  // 同步外部附件列表变化
+  useEffect(() => {
+    if (isAttachmentsControlled && controlledAttachments !== undefined) {
+      // 附件列表由外部控制，不需要内部同步
+    }
+  }, [isAttachmentsControlled, controlledAttachments]);
+
+  // 同步 disabled 状态
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(!disabled && !uploading);
+    }
+  }, [editor, disabled, uploading]);
+
+  // 获取当前消息文本（用于发送和显示）
+  const message = editor ? editor.getText() : '';
+  const messageHTML = editor ? editor.getHTML() : '';
 
   const handleValueChange = (newValue: string) => {
+    if (editor) {
+      editor.commands.setContent(newValue, { emitUpdate: false });
+    }
     if (isControlled) {
       onValueChange?.(newValue);
-    } else {
-      setInternalValue(newValue);
     }
   };
 
-  // 处理文件粘贴（支持图片）
+  // 处理文件粘贴（支持图片）- 在 Tiptap 编辑器中处理
   useEffect(() => {
+    if (!editor) return;
+
     const handlePaste = async (e: ClipboardEvent) => {
       if (disabled || uploading) return;
 
@@ -115,14 +235,12 @@ export const ChatInput = ({
       }
     };
 
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.addEventListener('paste', handlePaste);
-      return () => {
-        textarea.removeEventListener('paste', handlePaste);
-      };
-    }
-  }, [disabled, uploading]);
+    const editorElement = editor.view.dom;
+    editorElement.addEventListener('paste', handlePaste);
+    return () => {
+      editorElement.removeEventListener('paste', handlePaste);
+    };
+  }, [editor, disabled, uploading]);
 
   // 处理文件上传（支持所有文件类型）
   const handleFileUpload = async (file: File) => {
@@ -158,18 +276,33 @@ export const ChatInput = ({
         size: file.size,
       };
 
-      setAttachments(prev => [...prev, tempAttachment]);
+      const newAttachments = [...attachments, tempAttachment];
+      if (isAttachmentsControlled) {
+        onAttachmentsChange?.(newAttachments);
+      } else {
+        setInternalAttachments(newAttachments);
+      }
 
       try {
         // 上传到OSS
         const fileKey = await uploadFile(file, 'chat');
         // 更新为OSS key
-        setAttachments(prev => prev.map(att => (att === tempAttachment ? { ...att, url: previewUrl || `/api/oss/${fileKey}`, fileKey } : att)));
+        const updatedAttachments = newAttachments.map(att => (att === tempAttachment ? { ...att, url: previewUrl || `/api/oss/${fileKey}`, fileKey } : att));
+        if (isAttachmentsControlled) {
+          onAttachmentsChange?.(updatedAttachments);
+        } else {
+          setInternalAttachments(updatedAttachments);
+        }
       } catch (error) {
         console.error('Upload error:', error);
         toast.error('文件上传失败');
         // 移除失败的文件
-        setAttachments(prev => prev.filter(att => att !== tempAttachment));
+        const filteredAttachments = newAttachments.filter(att => att !== tempAttachment);
+        if (isAttachmentsControlled) {
+          onAttachmentsChange?.(filteredAttachments);
+        } else {
+          setInternalAttachments(filteredAttachments);
+        }
       } finally {
         setUploading(false);
       }
@@ -199,30 +332,58 @@ export const ChatInput = ({
 
   // 删除附件
   const onRemoveAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index));
+    const newAttachments = attachments.filter((_, i) => i !== index);
+    if (isAttachmentsControlled) {
+      onAttachmentsChange?.(newAttachments);
+    } else {
+      setInternalAttachments(newAttachments);
+    }
   };
 
-  const handleSend = async () => {
-    const trimmedMessage = message.trim();
-    const hasContent = trimmedMessage || attachments.length > 0;
+  // 处理发送消息
+  const handleSend = useCallback(async () => {
+    if (!editor) return;
+
+    const textContent = editor.getText().trim();
+    const htmlContent = editor.getHTML();
+    const hasContent = textContent || attachments.length > 0;
 
     if (hasContent && !disabled && !uploading) {
-      await onSend(trimmedMessage, attachments.length > 0 ? attachments : undefined);
-      if (!isControlled) {
-        setInternalValue('');
-      } else {
+      const markdownContent = turndownService.turndown(htmlContent);
+      await onSend(markdownContent, attachments.length > 0 ? attachments : undefined);
+      editor.commands.clearContent();
+      if (isControlled) {
         onValueChange?.('');
       }
-      setAttachments([]);
+      if (isAttachmentsControlled) {
+        onAttachmentsChange?.([]);
+      } else {
+        setInternalAttachments([]);
+      }
     }
-  };
+  }, [editor, disabled, uploading, attachments, onSend, isControlled, onValueChange, isAttachmentsControlled, onAttachmentsChange, turndownService]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  // 处理键盘事件（Enter 发送）
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    };
+
+    const editorElement = editor.view.dom;
+    editorElement.addEventListener('keydown', handleKeyDown);
+    return () => {
+      editorElement.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [editor, handleSend]);
+
+  if (!editor) {
+    return null;
+  }
 
   return (
     <div className={`pointer-events-none p-4 ${className || ''}`}>
@@ -230,15 +391,8 @@ export const ChatInput = ({
         {renderHeader && renderHeader()}
         <div className="dark:bg-background shadow-light flex w-full flex-col rounded-lg border shadow-lg">
           <div className="flex items-end gap-2 px-4 py-3">
-            <Textarea
-              ref={textareaRef}
-              value={message}
-              onChange={e => handleValueChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              disabled={disabled || uploading}
-              className="max-h-[200px] min-h-[80px] flex-1 resize-none overflow-y-auto border-none bg-transparent shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent"
-            />
+            {/* Tiptap 编辑器 */}
+            <EditorContent editor={editor} className="flex-1" />
           </div>
           {renderFooter && (
             <div className="border-border/50 border-t">

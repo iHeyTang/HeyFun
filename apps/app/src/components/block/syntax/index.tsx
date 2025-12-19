@@ -1,9 +1,11 @@
 import { useAsync } from '@/hooks/use-async';
 import { LoaderIcon } from 'lucide-react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
-import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { a11yDark, a11yLight } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { useTheme } from 'next-themes';
 
 export const Syntax = ({ language, content, src }: { language?: string; content?: string; src?: string }) => {
+  const theme = useTheme();
   const { data, isLoading } = useAsync(
     async () => {
       if (src) {
@@ -30,12 +32,13 @@ export const Syntax = ({ language, content, src }: { language?: string; content?
     <SyntaxHighlighter
       language={data?.language}
       showLineNumbers
-      style={githubGist}
-      customStyle={{
-        fontSize: '0.875rem',
-        lineHeight: '1.5',
-        margin: 0,
-        borderRadius: 0,
+      style={theme.theme === 'dark' ? a11yDark : a11yLight}
+      customStyle={{ margin: 0 }}
+      lineNumberStyle={{
+        paddingLeft: '0.5em',
+        fontSize: '0.8125rem',
+        userSelect: 'none',
+        opacity: 0.4,
       }}
     >
       {data?.content || ''}

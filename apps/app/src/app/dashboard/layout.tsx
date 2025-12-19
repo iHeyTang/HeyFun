@@ -14,6 +14,7 @@ import { LanguageToggle } from '@/components/features/language-toggle';
 import { ThemeLogo } from '@/components/features/theme-logo';
 import { Button } from '@/components/ui/button';
 import { AppInitializer } from '@/components/features/app-initializer';
+import { NoteAgentPanelProvider } from '@/components/features/notes/note-agent-panel-context';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -59,14 +60,16 @@ export default async function RootLayout({
           <OrganizationList hidePersonal />
         </div>
       ) : (
-        <div className="flex h-full flex-col">
-          <AppInitializer />
-          <Header className="h-12" />
-          <div className="flex h-[calc(100vh-48px)] w-full">
-            <AppSidebar />
-            <div className="h-full flex-1 overflow-hidden">{children}</div>
+        <NoteAgentPanelProvider>
+          <div className="flex h-full flex-col">
+            <AppInitializer />
+            <Header className="h-12" />
+            <div className="flex h-[calc(100vh-48px)] w-full">
+              <AppSidebar />
+              <div className="h-full flex-1 overflow-hidden">{children}</div>
+            </div>
           </div>
-        </div>
+        </NoteAgentPanelProvider>
       )}
     </SignedIn>
   );

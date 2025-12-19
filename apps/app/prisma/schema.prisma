@@ -676,3 +676,171 @@ model SystemPromptSnippets {
   @@index([category])
   @@index([createdAt])
 }
+
+// ============================================
+// Notes Module - 笔记模块
+// ============================================
+
+// 笔记文件夹
+model NoteFolders {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  organizationId String
+  name           String
+  parentId       String? // 支持嵌套文件夹
+  order          Int      @default(0) // 排序顺序
+
+  // 关联关系
+  parent   NoteFolders?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children NoteFolders[] @relation("FolderHierarchy")
+  notes    Notes[]
+
+  @@index([organizationId])
+  @@index([organizationId, parentId])
+  @@index([parentId])
+  @@index([createdAt])
+}
+
+// 笔记标签
+model NoteTags {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String
+  name           String
+  color          String? // 标签颜色（hex 格式，如 #FF5733）
+  order          Int      @default(0) // 排序顺序
+
+  // 关联关系
+  noteRelations NoteTagRelations[]
+
+  @@unique([organizationId, name]) // 同一组织内标签名唯一
+  @@index([organizationId])
+  @@index([organizationId, name])
+  @@index([createdAt])
+}
+
+// 笔记核心表
+model Notes {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  organizationId String
+  title          String
+  /// [String] OSS 文件 key，存储 Markdown 内容
+  contentKey     String
+  /// [String] 内容纯文本（用于搜索），从 Markdown 提取
+  contentText    String?  @db.Text
+  /// [String] 内容哈希值（用于版本控制和去重）
+  contentHash    String?
+  folderId       String? // 所属文件夹
+  isPinned       Boolean  @default(false) // 是否置顶
+  isStarred      Boolean  @default(false) // 是否收藏
+  isArchived     Boolean  @default(false) // 是否归档
+  isDeleted      Boolean  @default(false) // 是否删除（软删除）
+  deletedAt      DateTime? // 删除时间
+  order          Int      @default(0) // 排序顺序
+
+  // 关联关系
+  folder        NoteFolders?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  tagRelations NoteTagRelations[]
+  links        NoteLinks[]      @relation("SourceNote")
+  backLinks    NoteLinks[]       @relation("TargetNote")
+  attachments  NoteAttachments[]
+  versions     NoteVersions[]
+
+  @@index([organizationId])
+  @@index([organizationId, folderId])
+  @@index([organizationId, isDeleted])
+  @@index([organizationId, isPinned])
+  @@index([organizationId, isStarred])
+  @@index([organizationId, isArchived])
+  @@index([folderId])
+  @@index([createdAt])
+  @@index([updatedAt])
+  // 注意：全文搜索索引需要在数据库迁移中单独创建
+  // 可以使用 PostgreSQL 的 tsvector 或 pg_trgm 扩展
+}
+
+// 笔记-标签关联表
+model NoteTagRelations {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  noteId         String
+  tagId          String
+
+  // 关联关系
+  note Notes    @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag  NoteTags @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, tagId]) // 防止重复关联
+  @@index([noteId])
+  @@index([tagId])
+  @@index([createdAt])
+}
+
+// 笔记双向链接
+model NoteLinks {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  organizationId String
+  sourceNoteId   String // 源笔记
+  targetNoteId   String // 目标笔记
+  linkType       String  @default("bidirectional") // bidirectional, unidirectional
+
+  // 关联关系
+  sourceNote Notes @relation("SourceNote", fields: [sourceNoteId], references: [id], onDelete: Cascade)
+  targetNote Notes @relation("TargetNote", fields: [targetNoteId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceNoteId, targetNoteId]) // 防止重复链接
+  @@index([organizationId])
+  @@index([organizationId, sourceNoteId])
+  @@index([organizationId, targetNoteId])
+  @@index([sourceNoteId])
+  @@index([targetNoteId])
+  @@index([createdAt])
+}
+
+// 笔记附件
+model NoteAttachments {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  organizationId String
+  noteId         String
+  fileKey        String // OSS 文件 key
+  fileName       String // 原始文件名
+  fileType       String // MIME 类型
+  fileSize       Int // 文件大小（字节）
+
+  // 关联关系
+  note Notes @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, noteId])
+  @@index([noteId])
+  @@index([createdAt])
+}
+
+// 笔记版本历史（Phase 3 功能）
+model NoteVersions {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  noteId         String
+  /// [String] OSS 文件 key，存储该版本的 Markdown 内容
+  contentKey     String
+  /// [String] 内容哈希值
+  contentHash    String?
+  /// [String] 版本描述（可选）
+  description    String?
+  /// [String] 创建版本的用户 ID（可选）
+  createdBy      String?
+
+  // 关联关系
+  note Notes @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([noteId])
+  @@index([noteId, createdAt])
+  @@index([createdAt])
+}

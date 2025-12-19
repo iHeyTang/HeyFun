@@ -1,23 +1,28 @@
 'use client';
 
 import { ChatInput as BaseChatInput, ChatInputAttachment } from '@/components/block/chat-input/index';
+import { ImagePreview } from '@/components/block/preview/image-preview';
 import { ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLLM } from '@/hooks/use-llm';
 import { usePreferences } from '@/hooks/use-preferences';
 import { ModelInfo } from '@repo/llm/chat';
-import { ImageIcon, Send, Trash2, X } from 'lucide-react';
+import { FileIcon, ImageIcon, Send, StopCircle, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { ModelIcon } from '../model-icon';
-import { ImagePreview } from '@/components/block/preview/image-preview';
 
 interface ChatInputProps {
   onSend: (message: string, attachments?: ChatInputAttachment[]) => void;
   disabled?: boolean;
-  onClearChat?: () => void;
-  showClearChat?: boolean;
+  inputValue?: string;
+  onInputValueChange?: (value: string) => void;
+  attachments?: ChatInputAttachment[];
+  onAttachmentsChange?: (attachments: ChatInputAttachment[]) => void;
+  isLoading?: boolean;
+  onCancel?: () => void;
 }
 
 const useChatbotModelSelectorStore = create<{
@@ -50,7 +55,16 @@ export const useChatbotModelSelector = () => {
   return { selectedModel, setSelectedModel: handleModelSelect };
 };
 
-export const ChatInput = ({ onSend, disabled = false, onClearChat, showClearChat = false }: ChatInputProps) => {
+export const ChatInput = ({
+  onSend,
+  disabled = false,
+  inputValue: controlledInputValue,
+  onInputValueChange,
+  attachments,
+  onAttachmentsChange,
+  isLoading = false,
+  onCancel,
+}: ChatInputProps) => {
   const modelSelectorRef = useRef<ModelSelectorRef>(null);
   const { selectedModel, setSelectedModel } = useChatbotModelSelector();
 
@@ -80,15 +94,24 @@ export const ChatInput = ({ onSend, disabled = false, onClearChat, showClearChat
     return (
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="flex cursor-pointer items-center gap-1" onClick={() => modelSelectorRef.current?.open()}>
-            <ModelIcon family={selectedModel?.family} className="h-4 w-4" />
-            <span>{selectedModel?.name || 'Select Model'}</span>
-          </Badge>
+          {/* 文件上传按钮 */}
+          <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} disabled={footerDisabled} />
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 flex-shrink-0"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={footerDisabled}
+            aria-label="Upload file"
+          >
+            <ImageIcon className="h-4 w-4" />
+          </Button>
           {/* 附件预览 */}
           {attachments.length > 0 && (
             <div className="flex gap-2">
               {attachments.map((attachment, index) => {
-                // 只显示图片预览，其他类型显示文件名
+                // 图片预览
                 if (attachment.type === 'image' && attachment.url) {
                   const isBase64 = attachment.url.startsWith('data:');
                   const imageUrl = isBase64 ? attachment.url : attachment.url;
@@ -116,65 +139,68 @@ export const ChatInput = ({ onSend, disabled = false, onClearChat, showClearChat
                     </div>
                   );
                 } else {
-                  // 非图片附件，显示文件名
+                  // 非图片附件，使用和图片一样的样式
                   return (
-                    <div key={index} className="group relative flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs">
-                      <span className="max-w-[100px] truncate">{attachment.name || `附件 ${index + 1}`}</span>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          onRemoveAttachment(index);
-                        }}
-                        className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center"
-                        disabled={footerDisabled}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
+                    <Tooltip key={index}>
+                      <TooltipTrigger asChild>
+                        <div className="group relative h-[22px] w-[22px] flex-shrink-0">
+                          <div className="bg-muted/50 flex h-[22px] w-[22px] items-center justify-center rounded border">
+                            <FileIcon className="text-muted-foreground h-3 w-3" />
+                          </div>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              onRemoveAttachment(index);
+                            }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 absolute -right-1 -top-1 flex h-[10px] w-[10px] cursor-pointer items-center justify-center rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+                            disabled={footerDisabled}
+                          >
+                            <X className="h-[8px] w-[8px]" />
+                          </button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>{attachment.name || `附件 ${index + 1}`}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   );
                 }
               })}
             </div>
           )}
-          {/* 文件上传按钮 */}
-          <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} disabled={footerDisabled} />
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8 flex-shrink-0"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={footerDisabled}
-            aria-label="Upload file"
-          >
-            <ImageIcon className="h-4 w-4" />
-          </Button>
         </div>
-        <div className="flex items-center gap-1">
-          {showClearChat && onClearChat && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="flex cursor-pointer items-center gap-1" onClick={() => modelSelectorRef.current?.open()}>
+            <ModelIcon family={selectedModel?.family} className="h-4 w-4" />
+            <span>{selectedModel?.name || 'Select Model'}</span>
+          </Badge>
+          {isLoading && onCancel ? (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 w-8 cursor-pointer rounded-xl"
+              onClick={onCancel}
+              disabled={false}
+              aria-label="Cancel message"
+              title="停止生成"
+            >
+              <StopCircle className="h-4 w-4" />
+            </Button>
+          ) : (
             <Button
               type="button"
               size="icon"
               variant="ghost"
               className="h-8 w-8 cursor-pointer rounded-xl"
-              onClick={onClearChat}
-              aria-label="Clear chat"
+              onClick={handleSend}
+              disabled={footerDisabled || !hasContent}
+              aria-label="Send message"
             >
-              <Trash2 className="h-4 w-4" />
+              <Send className="h-4 w-4" />
             </Button>
           )}
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8 cursor-pointer rounded-xl"
-            onClick={handleSend}
-            disabled={footerDisabled || !hasContent}
-            aria-label="Send message"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
         </div>
       </div>
     );
@@ -184,9 +210,13 @@ export const ChatInput = ({ onSend, disabled = false, onClearChat, showClearChat
     <>
       <BaseChatInput
         onSend={onSend}
-        disabled={disabled}
-        placeholder={disabled ? 'AI is responding...' : 'Type your message...'}
+        disabled={disabled || isLoading}
+        placeholder={isLoading ? '正在处理中...' : disabled ? 'AI is responding...' : 'Type your message...'}
         renderFooter={renderFooter}
+        value={controlledInputValue}
+        onValueChange={onInputValueChange}
+        attachments={attachments}
+        onAttachmentsChange={onAttachmentsChange}
       />
       <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={handleModelSelect} type="language" />
     </>

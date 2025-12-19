@@ -7,23 +7,15 @@
 
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChatSessions } from '@prisma/client';
+import { useChatSessionsStore } from '@/hooks/use-chat-sessions';
+import { cn } from '@/lib/utils';
 import { Loader2, Plus, X } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import type { ChatAction } from './chat-container';
-import { cn } from '@/lib/utils';
+import { useChatbotModelSelector } from './chat-input';
 
 interface SessionSidebarProps {
-  /** Sessions 列表 */
-  sessions: ChatSessions[];
-  /** 当前激活的 sessionId */
-  activeSessionId: string | null;
-  /** 创建新 session 的回调 */
-  onCreateSession: () => void;
-  /** 删除 session 的回调 */
-  onDeleteSession: (sessionId: string, e: React.MouseEvent) => void;
-  /** 切换 session 的回调 */
-  onSwitchSession: (sessionId: string) => void;
   /** 是否禁用操作（通常基于是否选择了模型） */
   disabled?: boolean;
   /** 外部操作按钮 */
@@ -36,26 +28,41 @@ interface SessionSidebarProps {
  * SessionSidebar 组件
  * 左侧侧边栏展示 sessions 列表
  */
-export const SessionSidebar = ({
-  sessions,
-  activeSessionId,
-  onCreateSession,
-  onDeleteSession,
-  onSwitchSession,
-  disabled = false,
-  actions = [],
-  width = '280px',
-}: SessionSidebarProps) => {
+export const SessionSidebar = ({ disabled: externalDisabled = false, actions = [], width = '280px' }: SessionSidebarProps) => {
   const [isCreating, setIsCreating] = useState(false);
+
+  // 直接从 store 获取数据和方法
+  const { sessions, activeSessionId, sessionInputValues, createSession, deleteSession, switchSession, hasRealContent } = useChatSessionsStore();
+
+  const { selectedModel } = useChatbotModelSelector();
+  const disabled = externalDisabled || !selectedModel;
 
   const handleCreateSession = async () => {
     setIsCreating(true);
     try {
-      const result = onCreateSession();
-      await Promise.resolve(result);
+      await createSession({ title: 'New Chat' });
+      toast.success('New chat created');
+    } catch (error) {
+      toast.error('Failed to create chat');
+      console.error('Create session error:', error);
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await deleteSession(sessionId);
+      toast.success('Chat deleted');
+    } catch (error) {
+      toast.error('Failed to delete chat');
+      console.error('Delete session error:', error);
+    }
+  };
+
+  const handleSwitchSession = async (sessionId: string) => {
+    await switchSession(sessionId);
   };
 
   return (
@@ -99,31 +106,46 @@ export const SessionSidebar = ({
           <div className="text-muted-foreground px-3 py-6 text-center text-xs">No chat history yet</div>
         ) : (
           <div className="space-y-0.5 p-1.5">
-            {sessions.map(session => (
-              <div
-                key={session.id}
-                className={`group flex cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 py-2 text-sm transition-all ${
-                  activeSessionId === session.id ? 'bg-primary/5 text-foreground' : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
-                }`}
-                onClick={() => onSwitchSession(session.id)}
-              >
-                <div className={cn('h-1.5 w-1.5 rounded-full', session.status === 'processing' ? 'animate-pulse bg-green-500' : '')} />
-                <div className="flex-1 truncate font-medium">{session.title || 'Untitled Chat'}</div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <span className="text-muted-foreground/60 text-xs">
-                    {new Date(session.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-destructive size-5 opacity-0 transition-all hover:bg-transparent group-hover:opacity-100"
-                    onClick={e => onDeleteSession(session.id, e)}
-                  >
-                    <X className="size-3" />
-                  </Button>
+            {sessions.map(session => {
+              const hasInput = hasRealContent(sessionInputValues[session.id]);
+              return (
+                <div
+                  key={session.id}
+                  className={`group flex cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 py-2 text-sm transition-all ${
+                    activeSessionId === session.id ? 'bg-primary/5 text-foreground' : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+                  }`}
+                  onClick={() => handleSwitchSession(session.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    {hasInput ? (
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" title="有未发送的内容" />
+                    ) : (
+                      <div
+                        className={cn(
+                          'h-1.5 w-1.5 shrink-0 rounded-full',
+                          session.status === 'processing' || session.status === 'pending' ? 'animate-pulse bg-green-500' : '',
+                        )}
+                        title={session.status === 'processing' || session.status === 'pending' ? '正在处理中' : undefined}
+                      />
+                    )}
+                    <div className="flex-1 truncate font-medium">{session.title || 'Untitled Chat'}</div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <span className="text-muted-foreground/60 text-xs">
+                      {new Date(session.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-destructive size-5 opacity-0 transition-all hover:bg-transparent group-hover:opacity-100"
+                      onClick={e => handleDeleteSession(session.id, e)}
+                    >
+                      <X className="size-3" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </ScrollArea>

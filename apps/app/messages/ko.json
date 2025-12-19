@@ -109,6 +109,7 @@
       "chat": "채팅",
       "tasks": "작업",
       "paintboard": "페인트보드",
+      "notes": "노트",
       "gateway": "AI 게이트웨이",
       "workspace": "작업 공간",
       "tools": "도구",
@@ -692,6 +693,111 @@
       "pagination": "{current} / {total} 페이지, 총 {count}개",
       "prev": "이전",
       "next": "다음"
+    }
+  },
+  "notes": {
+    "title": "노트",
+    "description": "노트와 지식을 관리",
+    "newNote": "새 노트",
+    "untitled": "제목 없는 노트",
+    "defaultContent": "# 새 노트\n\n생각을 기록하기 시작하세요...",
+    "emptyState": {
+      "title": "노트가 없습니다",
+      "description": "첫 번째 노트를 만들어 아이디어와 지식을 기록하기 시작하세요",
+      "createFirst": "첫 번째 노트 만들기"
+    },
+    "list": {
+      "searchPlaceholder": "노트 검색...",
+      "noNotes": "노트가 없습니다",
+      "pinned": "고정됨",
+      "updatedAt": "업데이트"
+    },
+    "detail": {
+      "titlePlaceholder": "노트 제목",
+      "back": "목록으로 돌아가기",
+      "save": "저장",
+      "saving": "저장 중...",
+      "saved": "저장됨",
+      "hasChanges": "저장",
+      "loading": "로딩 중...",
+      "notFound": "노트를 찾을 수 없습니다",
+      "loadError": "노트를 불러오는 데 실패했습니다",
+      "saveError": "노트를 저장하는 데 실패했습니다",
+      "saveSuccess": "노트가 저장되었습니다",
+      "createSuccess": "노트가 생성되었습니다",
+      "createError": "노트를 생성하는 데 실패했습니다"
+    },
+    "sidebar": {
+      "folders": "폴더",
+      "tags": "태그",
+      "allNotes": "모든 노트",
+      "noTags": "태그 없음",
+      "noNotes": "노트가 없습니다",
+      "newFolder": "새 폴더",
+      "newNote": "새 노트",
+      "moveTo": "이동...",
+      "selectDestination": "대상 폴더 선택",
+      "root": "루트",
+      "untitled": "제목 없음",
+      "createFolder": "폴더 만들기",
+      "createTag": "태그 만들기",
+      "folderNamePlaceholder": "폴더 이름",
+      "tagNamePlaceholder": "태그 이름",
+      "create": "만들기",
+      "cancel": "취소"
+    },
+    "folder": {
+      "createSuccess": "폴더가 생성되었습니다",
+      "createError": "폴더를 생성하는 데 실패했습니다",
+      "deleteSuccess": "폴더가 삭제되었습니다",
+      "deleteError": "폴더를 삭제하는 데 실패했습니다",
+      "deleteConfirm": "폴더 \"{name}\"을(를) 삭제하시겠습니까? 이 폴더의 노트는 루트로 이동됩니다.",
+      "nameExists": "폴더 이름이 이미 존재합니다",
+      "hasChildren": "먼저 하위 폴더를 삭제하세요",
+      "loadError": "폴더를 불러오는 데 실패했습니다"
+    },
+    "tag": {
+      "createSuccess": "태그가 생성되었습니다",
+      "createError": "태그를 생성하는 데 실패했습니다",
+      "deleteSuccess": "태그가 삭제되었습니다",
+      "deleteError": "태그를 삭제하는 데 실패했습니다",
+      "deleteConfirm": "태그 \"{name}\"을(를) 삭제하시겠습니까?",
+      "nameExists": "태그가 이미 존재합니다",
+      "loadError": "태그를 불러오는 데 실패했습니다"
+    },
+    "attachment": {
+      "title": "첨부 파일",
+      "add": "첨부 파일 추가",
+      "uploading": "업로드 중...",
+      "noAttachments": "첨부 파일 없음",
+      "uploadSuccess": "첨부 파일이 업로드되었습니다",
+      "uploadError": "첨부 파일 업로드에 실패했습니다",
+      "deleteSuccess": "첨부 파일이 삭제되었습니다",
+      "deleteError": "첨부 파일 삭제에 실패했습니다",
+      "deleteConfirm": "첨부 파일 \"{name}\"을(를) 삭제하시겠습니까?",
+      "loadError": "첨부 파일을 불러오는 데 실패했습니다",
+      "downloadError": "다운로드 링크를 가져오는 데 실패했습니다",
+      "fileTooLarge": "파일 크기는 {size}를 초과할 수 없습니다",
+      "invalidFileType": "지원되지 않는 파일 유형: {type}"
+    },
+    "properties": {
+      "folder": "폴더",
+      "tags": "태그",
+      "selectFolder": "폴더 선택",
+      "noFolder": "폴더 없음",
+      "noTagsSelected": "선택된 태그 없음"
+    },
+    "toast": {
+      "loadError": "노트를 불러오는 데 실패했습니다",
+      "createSuccess": "노트가 생성되었습니다",
+      "createError": "노트를 생성하는 데 실패했습니다",
+      "saveSuccess": "노트가 저장되었습니다",
+      "saveError": "노트를 저장하는 데 실패했습니다",
+      "deleteSuccess": "노트가 삭제되었습니다",
+      "deleteConfirm": "이 노트를 삭제하시겠습니까?",
+      "moveSuccess": "이동되었습니다",
+      "moveError": "이동에 실패했습니다",
+      "deleteError": "노트를 삭제하는 데 실패했습니다"
     }
   }
 }

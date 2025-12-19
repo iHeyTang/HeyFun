@@ -6,16 +6,15 @@
 
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { useChatSessionsStore } from '@/hooks/use-chat-sessions';
+import { ChatSessions } from '@prisma/client';
+import { useEffect } from 'react';
+import { ChatContainerSkeleton } from './chat-container-skeleton';
 import { useChatbotModelSelector } from './chat-input';
 import { ChatSession } from './chat-session';
-import { SessionTabs } from './session-tabs';
-import { SessionSidebar } from './session-sidebar';
-import { ChatContainerSkeleton } from './chat-container-skeleton';
 import { ChatSessionSkeleton } from './chat-session-skeleton';
-import { ChatMessages, ChatSessions } from '@prisma/client';
-import { createChatSession, deleteSession, getChatSession, getChatSessions } from '@/actions/chat';
+import { SessionSidebar } from './session-sidebar';
+import { SessionTabs } from './session-tabs';
 
 export interface ChatAction {
   id: string;
@@ -40,6 +39,14 @@ interface ChatContainerProps {
   layout?: ChatContainerLayout;
   /** 侧边栏宽度（仅当 layout='sidebar' 时生效，默认 '280px'） */
   sidebarWidth?: string;
+  /** 受控的输入框值（用于从外部临时设置输入框内容，如从编辑器添加 mention） */
+  inputValue?: string;
+  /** 输入框值变化回调（用于从外部临时设置输入框内容） */
+  onInputValueChange?: (value: string) => void;
+  /** 自定义 session 加载函数（可选，如果提供则使用此函数而不是默认的 getChatSessions） */
+  loadSessionsFn?: () => Promise<ChatSessions[]>;
+  /** 自定义 session 创建函数（可选，如果提供则使用此函数而不是默认的 createChatSession） */
+  createSessionFn?: () => Promise<ChatSessions>;
 }
 
 /**
@@ -53,143 +60,64 @@ export const ChatContainer = ({
   apiPrefix = '/api/agent',
   layout = 'tabs',
   sidebarWidth = '280px',
+  inputValue: controlledInputValue,
+  onInputValueChange,
+  loadSessionsFn,
+  createSessionFn,
 }: ChatContainerProps) => {
-  const [sessions, setSessions] = useState<ChatSessions[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(initialSessionId || externalSessionId || null);
-  const [sessionMessages, setSessionMessages] = useState<Record<string, ChatMessages[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [loadingMessages, setLoadingMessages] = useState<Set<string>>(new Set());
-
   const { selectedModel } = useChatbotModelSelector();
+
+  // 使用 Zustand store
+  const {
+    activeSessionId,
+    sessionMessages,
+    sessionInputValues,
+    loading,
+    loadingMessages,
+    loadSessions,
+    setSessionInputValue,
+    setActiveSessionId: setActiveSessionIdAction,
+  } = useChatSessionsStore();
+
+  // 初始化加载 sessions
+  useEffect(() => {
+    loadSessions({
+      loadSessionsFn,
+      initialSessionId,
+      externalSessionId,
+    });
+  }, [loadSessions, loadSessionsFn, initialSessionId, externalSessionId]);
 
   // 同步外部控制的 sessionId
   useEffect(() => {
-    if (externalSessionId !== undefined) {
-      setActiveSessionId(externalSessionId);
-    }
-  }, [externalSessionId]);
-
-  // 加载 session 列表
-  const loadSessions = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await getChatSessions({ page: 1, pageSize: 10 });
-      setSessions(result.data?.sessions || []);
-
-      // 如果有初始 sessionId，加载其消息
-      if (initialSessionId || externalSessionId) {
-        const sessionId = initialSessionId || externalSessionId;
-        setLoadingMessages(prev => new Set(prev).add(sessionId!));
-        try {
-          const session = await getChatSession({ sessionId: sessionId! });
-          setSessionMessages(prev => ({ ...prev, [sessionId!]: session.data?.messages || [] }));
-        } catch (error) {
-          console.error('Error loading messages:', error);
-        } finally {
-          setLoadingMessages(prev => {
-            const next = new Set(prev);
-            next.delete(sessionId!);
-            return next;
-          });
-        }
+    if (externalSessionId !== undefined && externalSessionId !== activeSessionId) {
+      setActiveSessionIdAction(externalSessionId);
+      // 切换 session 时，恢复该 session 的输入值（如果有）
+      const sessionInputValue = sessionInputValues[externalSessionId] || '';
+      if (onInputValueChange) {
+        onInputValueChange(sessionInputValue);
       }
-    } catch (error) {
-      console.error('Error loading sessions:', error);
-    } finally {
-      setLoading(false);
     }
-  }, [initialSessionId, externalSessionId]);
+  }, [externalSessionId, activeSessionId, sessionInputValues, onInputValueChange, setActiveSessionIdAction]);
 
+  // 同步外部控制的输入值到当前活动的 session（用于从编辑器添加 mention）
   useEffect(() => {
-    loadSessions();
-  }, [loadSessions]);
-
-  // 创建新 session
-  const handleCreateSession = async () => {
-    try {
-      const createSessionResult = await createChatSession({
-        title: 'New Chat',
-      });
-      if (!createSessionResult.data) {
-        throw new Error('Failed to create session');
-      }
-
-      setSessions(prev => [createSessionResult.data, ...prev]);
-      setActiveSessionId(createSessionResult.data.id);
-      setSessionMessages(prev => ({ ...prev, [createSessionResult.data.id]: [] }));
-
-      toast.success('New chat created');
-    } catch (error) {
-      toast.error('Failed to create chat');
-      console.error('Create session error:', error);
-    }
-  };
-
-  // 删除 session
-  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    try {
-      await deleteSession({ sessionId });
-
-      setSessions(prev => prev.filter(s => s.id !== sessionId));
-      setSessionMessages(prev => {
-        const newMessages = { ...prev };
-        delete newMessages[sessionId];
-        return newMessages;
-      });
-
-      // 如果删除的是当前 session，切换到第一个
-      if (activeSessionId === sessionId) {
-        const remaining = sessions.filter(s => s.id !== sessionId);
-        setActiveSessionId(remaining[0]?.id || null);
-      }
-
-      toast.success('Chat deleted');
-    } catch (error) {
-      toast.error('Failed to delete chat');
-      console.error('Delete session error:', error);
-    }
-  };
-
-  // 切换 session
-  const handleSwitchSession = async (sessionId: string) => {
-    setActiveSessionId(sessionId);
-
-    // 如果该 session 的消息还没加载，加载之
-    if (!sessionMessages[sessionId]) {
-      setLoadingMessages(prev => new Set(prev).add(sessionId));
-      try {
-        const messages = await getChatSession({ sessionId });
-        setSessionMessages(prev => ({ ...prev, [sessionId]: messages.data?.messages || [] }));
-      } catch (error) {
-        console.error('Error loading messages:', error);
-      } finally {
-        setLoadingMessages(prev => {
-          const next = new Set(prev);
-          next.delete(sessionId);
-          return next;
-        });
+    if (controlledInputValue !== undefined && activeSessionId) {
+      const currentValue = sessionInputValues[activeSessionId] || '';
+      // 只有当新值与当前值不同时才更新（避免循环更新）
+      if (controlledInputValue !== currentValue) {
+        setSessionInputValue(activeSessionId, controlledInputValue);
       }
     }
-  };
+  }, [controlledInputValue, activeSessionId, sessionInputValues, setSessionInputValue]);
 
-  // 清空当前对话
-  const handleClearChat = () => {
-    if (activeSessionId) {
-      setSessionMessages(prev => ({ ...prev, [activeSessionId]: [] }));
+  // 当 activeSessionId 变化时，通知外部输入值变化
+  useEffect(() => {
+    if (activeSessionId && onInputValueChange) {
+      const sessionInputValue = sessionInputValues[activeSessionId] || '';
+      onInputValueChange(sessionInputValue);
     }
-  };
-
-  // 标题更新回调
-  const handleTitleUpdated = useCallback(
-    (title: string) => {
-      if (activeSessionId) {
-        setSessions(prev => prev.map(s => (s.id === activeSessionId ? { ...s, title } : s)));
-      }
-    },
-    [activeSessionId],
-  );
+  }, [activeSessionId, sessionInputValues, onInputValueChange]);
 
   // 加载状态显示 Skeleton
   if (loading) {
@@ -201,15 +129,7 @@ export const ChatContainer = ({
     return (
       <div className="flex h-full flex-col">
         {/* Session Tabs */}
-        <SessionTabs
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          onCreateSession={handleCreateSession}
-          onDeleteSession={handleDeleteSession}
-          onSwitchSession={handleSwitchSession}
-          disabled={!selectedModel}
-          actions={actions}
-        />
+        <SessionTabs disabled={!selectedModel} actions={actions} />
 
         {/* Chat Content */}
         <div className="flex-1 overflow-hidden">
@@ -221,10 +141,10 @@ export const ChatContainer = ({
                 key={activeSessionId}
                 sessionId={activeSessionId}
                 initialMessages={sessionMessages[activeSessionId] || []}
-                onClearChat={handleClearChat}
                 disabled={!selectedModel}
                 apiPrefix={apiPrefix}
-                onTitleUpdated={handleTitleUpdated}
+                inputValue={controlledInputValue}
+                onInputValueChange={onInputValueChange}
               />
             )
           ) : (
@@ -239,15 +159,7 @@ export const ChatContainer = ({
   return (
     <div className="flex h-full">
       {/* Session Sidebar */}
-      <SessionSidebar
-        sessions={sessions}
-        activeSessionId={activeSessionId}
-        onCreateSession={handleCreateSession}
-        onDeleteSession={handleDeleteSession}
-        onSwitchSession={handleSwitchSession}
-        actions={actions}
-        width={sidebarWidth}
-      />
+      <SessionSidebar disabled={!selectedModel} actions={actions} width={sidebarWidth} />
 
       {/* Chat Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -259,10 +171,10 @@ export const ChatContainer = ({
               key={activeSessionId}
               sessionId={activeSessionId}
               initialMessages={sessionMessages[activeSessionId] || []}
-              onClearChat={handleClearChat}
               disabled={!selectedModel}
               apiPrefix={apiPrefix}
-              onTitleUpdated={handleTitleUpdated}
+              inputValue={controlledInputValue}
+              onInputValueChange={onInputValueChange}
             />
           )
         ) : (

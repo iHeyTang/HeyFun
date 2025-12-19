@@ -109,6 +109,7 @@
       "chat": "Chat",
       "tasks": "Tasks",
       "paintboard": "Paintboard",
+      "notes": "Notes",
       "gateway": "AI Gateway",
       "workspace": "Workspace",
       "tools": "Tools",
@@ -692,6 +693,110 @@
       "pagination": "Page {current} / {total}, {count} records total",
       "prev": "Previous",
       "next": "Next"
+    }
+  },
+  "notes": {
+    "title": "Notes",
+    "description": "Manage your notes and knowledge",
+    "newNote": "New Note",
+    "untitled": "Untitled Note",
+    "defaultContent": "# New Note\n\nStart recording your thoughts...",
+    "emptyState": {
+      "title": "No notes yet",
+      "description": "Create your first note to start recording ideas and knowledge",
+      "createFirst": "Create first note"
+    },
+    "list": {
+      "searchPlaceholder": "Search notes...",
+      "noNotes": "No notes yet",
+      "pinned": "Pinned",
+      "updatedAt": "Updated"
+    },
+    "detail": {
+      "titlePlaceholder": "Note title",
+      "back": "Back to list",
+      "save": "Save",
+      "saving": "Saving...",
+      "saved": "Saved",
+      "hasChanges": "Save",
+      "loading": "Loading...",
+      "notFound": "Note not found",
+      "loadError": "Failed to load note",
+      "saveError": "Failed to save note",
+      "saveSuccess": "Note saved",
+      "createSuccess": "Note created successfully",
+      "createError": "Failed to create note"
+    },
+    "sidebar": {
+      "folders": "Folders",
+      "tags": "Tags",
+      "allNotes": "All Notes",
+      "noTags": "No tags",
+      "noNotes": "No notes",
+      "newFolder": "New Folder",
+      "newNote": "New Note",
+      "moveTo": "Move to...",
+      "selectDestination": "Select destination folder",
+      "root": "Root",
+      "untitled": "Untitled",
+      "createFolder": "Create folder",
+      "createTag": "Create tag",
+      "folderNamePlaceholder": "Folder name",
+      "tagNamePlaceholder": "Tag name",
+      "create": "Create",
+      "cancel": "Cancel"
+    },
+    "folder": {
+      "createSuccess": "Folder created successfully",
+      "createError": "Failed to create folder",
+      "deleteSuccess": "Folder deleted successfully",
+      "deleteError": "Failed to delete folder",
+      "deleteConfirm": "Are you sure you want to delete folder \"{name}\"? Notes in this folder will be moved to root.",
+      "nameExists": "Folder name already exists",
+      "hasChildren": "Please delete child folders first",
+      "loadError": "Failed to load folders"
+    },
+    "tag": {
+      "createSuccess": "Tag created successfully",
+      "createError": "Failed to create tag",
+      "deleteSuccess": "Tag deleted successfully",
+      "deleteError": "Failed to delete tag",
+      "deleteConfirm": "Are you sure you want to delete tag \"{name}\"?",
+      "nameExists": "Tag already exists",
+      "loadError": "Failed to load tags"
+    },
+    "attachment": {
+      "title": "Attachments",
+      "add": "Add attachment",
+      "uploading": "Uploading...",
+      "noAttachments": "No attachments",
+      "uploadSuccess": "Attachment uploaded successfully",
+      "uploadError": "Failed to upload attachment",
+      "deleteSuccess": "Attachment deleted successfully",
+      "deleteError": "Failed to delete attachment",
+      "deleteConfirm": "Are you sure you want to delete attachment \"{name}\"?",
+      "loadError": "Failed to load attachments",
+      "downloadError": "Failed to get download link",
+      "fileTooLarge": "File size cannot exceed {size}",
+      "invalidFileType": "Unsupported file type: {type}"
+    },
+    "properties": {
+      "folder": "Folder",
+      "tags": "Tags",
+      "selectFolder": "Select folder",
+      "noFolder": "No folder",
+      "noTagsSelected": "No tags selected"
+    },
+    "toast": {
+      "loadError": "Failed to load notes",
+      "createSuccess": "Note created successfully",
+      "createError": "Failed to create note",
+      "saveSuccess": "Note saved",
+      "saveError": "Failed to save note",
+      "deleteSuccess": "Note deleted successfully",
+      "deleteError": "Failed to delete note",
+      "moveSuccess": "Moved successfully",
+      "moveError": "Failed to move"
     }
   }
 }
