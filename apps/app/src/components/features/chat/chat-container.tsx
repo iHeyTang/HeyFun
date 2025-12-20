@@ -15,6 +15,7 @@ import { ChatSession } from './chat-session';
 import { ChatSessionSkeleton } from './chat-session-skeleton';
 import { SessionSidebar } from './session-sidebar';
 import { SessionTabs } from './session-tabs';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 
 export interface ChatAction {
   id: string;
@@ -157,12 +158,14 @@ export const ChatContainer = ({
 
   // Sidebar 布局
   return (
-    <div className="flex h-full">
+    <ResizablePanelGroup direction="horizontal" className="flex h-full">
       {/* Session Sidebar */}
-      <SessionSidebar disabled={!selectedModel} actions={actions} width={sidebarWidth} />
-
+      <ResizablePanel defaultSize={10} minSize={10} maxSize={40} className="min-w-[240px]">
+        <SessionSidebar disabled={!selectedModel} actions={actions} />
+      </ResizablePanel>
+      <ResizableHandle />
       {/* Chat Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <ResizablePanel defaultSize={90} minSize={60} maxSize={90} className="flex flex-1 flex-col overflow-hidden">
         {activeSessionId ? (
           loadingMessages.has(activeSessionId) ? (
             <ChatSessionSkeleton />
@@ -180,7 +183,7 @@ export const ChatContainer = ({
         ) : (
           <div className="text-muted-foreground flex h-full items-center justify-center">{`Click "New" to start a chat`}</div>
         )}
-      </div>
-    </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 };

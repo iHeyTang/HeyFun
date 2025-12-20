@@ -20,15 +20,13 @@ interface SessionSidebarProps {
   disabled?: boolean;
   /** 外部操作按钮 */
   actions?: ChatAction[];
-  /** 侧边栏宽度（可选，默认 280px） */
-  width?: string;
 }
 
 /**
  * SessionSidebar 组件
  * 左侧侧边栏展示 sessions 列表
  */
-export const SessionSidebar = ({ disabled: externalDisabled = false, actions = [], width = '280px' }: SessionSidebarProps) => {
+export const SessionSidebar = ({ disabled: externalDisabled = false, actions = [] }: SessionSidebarProps) => {
   const [isCreating, setIsCreating] = useState(false);
 
   // 直接从 store 获取数据和方法
@@ -66,10 +64,10 @@ export const SessionSidebar = ({ disabled: externalDisabled = false, actions = [
   };
 
   return (
-    <div className="border-border/50 bg-background/50 flex h-full flex-col border-r" style={{ width }}>
+    <div className="border-border/50 bg-background/50 flex h-full flex-col border-r">
       {/* Header */}
-      <div className="border-border/50 flex items-center justify-between border-b px-3 py-2">
-        <div className="text-sm font-medium">Chats</div>
+      <div className="text-muted-foreground flex items-center justify-between px-4 py-1 pr-2">
+        <div className="text-xs">Chats</div>
         <div className="flex items-center gap-0.5">
           {/* 添加新 session */}
           <Button
@@ -101,7 +99,7 @@ export const SessionSidebar = ({ disabled: externalDisabled = false, actions = [
       </div>
 
       {/* Sessions List */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="h-0 flex-1">
         {sessions.length === 0 ? (
           <div className="text-muted-foreground px-3 py-6 text-center text-xs">No chat history yet</div>
         ) : (
@@ -111,12 +109,12 @@ export const SessionSidebar = ({ disabled: externalDisabled = false, actions = [
               return (
                 <div
                   key={session.id}
-                  className={`group flex cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 py-2 text-sm transition-all ${
+                  className={`group grid cursor-pointer grid-cols-[1fr_auto] items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-all ${
                     activeSessionId === session.id ? 'bg-primary/5 text-foreground' : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
                   }`}
                   onClick={() => handleSwitchSession(session.id)}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 items-center gap-2 overflow-hidden">
                     {hasInput ? (
                       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" title="有未发送的内容" />
                     ) : (
@@ -128,16 +126,16 @@ export const SessionSidebar = ({ disabled: externalDisabled = false, actions = [
                         title={session.status === 'processing' || session.status === 'pending' ? '正在处理中' : undefined}
                       />
                     )}
-                    <div className="flex-1 truncate font-medium">{session.title || 'Untitled Chat'}</div>
+                    <div className="min-w-0 truncate font-medium">{session.title || 'Untitled Chat'}</div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
-                    <span className="text-muted-foreground/60 text-xs">
+                    <span className="text-muted-foreground/60 whitespace-nowrap text-xs">
                       {new Date(session.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </span>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground hover:text-destructive size-5 opacity-0 transition-all hover:bg-transparent group-hover:opacity-100"
+                      className="text-muted-foreground hover:text-destructive size-5 shrink-0 opacity-0 transition-all hover:bg-transparent group-hover:opacity-100"
                       onClick={e => handleDeleteSession(session.id, e)}
                     >
                       <X className="size-3" />
