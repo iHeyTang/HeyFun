@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import { ChatInput, useChatbotModelSelector } from './chat-input';
 import { ChatMessage as ChatMessageComponent } from './chat-message';
+import { ThinkingMessage } from './thinking-message';
 
 interface ChatSessionProps {
   /** 必需的 sessionId */
@@ -322,6 +323,28 @@ export function ChatSession({
     onInputValueChange,
   });
 
+  // 判断是否需要显示思考中消息
+  const shouldShowThinkingMessage = useMemo(() => {
+    if (!isLoading || messages.length === 0) {
+      return false;
+    }
+    const lastMessage = messages[messages.length - 1];
+    // 最后一条消息是 user 消息，且正在加载中
+    return lastMessage && lastMessage.role === 'user';
+  }, [messages, isLoading]);
+
+  // 当显示/隐藏思考中消息时也滚动到底部
+  const shouldShowThinkingMessageRef = useRef(shouldShowThinkingMessage);
+  useEffect(() => {
+    if (shouldShowThinkingMessage !== shouldShowThinkingMessageRef.current) {
+      shouldShowThinkingMessageRef.current = shouldShowThinkingMessage;
+      if (shouldShowThinkingMessage) {
+        // 延迟一点确保 DOM 已更新
+        setTimeout(() => scrollToBottom(), 100);
+      }
+    }
+  }, [shouldShowThinkingMessage, scrollToBottom]);
+
   // 使用 useMemo 优化消息列表渲染
   const messagesList = useMemo(
     () => (
@@ -338,10 +361,11 @@ export function ChatSession({
             modelId={message.role === 'assistant' ? (message.modelId ?? undefined) : undefined}
           />
         ))}
+        {shouldShowThinkingMessage && <ThinkingMessage modelId={selectedModel?.id} />}
         <div ref={messagesEndRef} />
       </div>
     ),
-    [messages],
+    [messages, shouldShowThinkingMessage, selectedModel?.id],
   );
 
   return (

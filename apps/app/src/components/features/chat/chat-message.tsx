@@ -1,6 +1,7 @@
 'use client';
 
 import { createNote } from '@/actions/notes';
+import LoadingDots from '@/components/block/loading/loading-dots';
 import { WysiwygRenderer } from '@/components/block/wysiwyg-editor/renderer';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -283,10 +284,10 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
           </div>
         )}
 
-        {/* 空状态 - 正在思考 */}
-        {!mainContent && !hasToolCalls && !thinkingContent && (
-          <div className="bg-muted max-w-[70%] rounded-lg">
-            <WysiwygRenderer content="Thinking..." />
+        {/* 空状态 - 正在思考（仅 assistant 消息且没有内容时显示） */}
+        {!isUser && !mainContent && !hasToolCalls && !thinkingContent && (
+          <div className="bg-muted max-w-[70%] rounded-lg px-4 py-3">
+            <LoadingDots label="Thinking" />
           </div>
         )}
       </div>
