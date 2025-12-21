@@ -28,6 +28,7 @@ export interface WysiwygEditorProps {
   onChange?: (value: string) => void; // 返回 Markdown 格式的字符串（只读模式下可选）
   placeholder?: string;
   className?: string;
+  editorClassName?: string; // 编辑器内容区域类名
   autoFocus?: boolean;
   showToolbar?: boolean; // 控制工具栏显示/隐藏
   title?: WysiwygEditorTitleProps; // 标题配置对象
@@ -43,6 +44,7 @@ export function WysiwygEditor({
   onChange,
   placeholder = '开始记录你的想法...',
   className,
+  editorClassName,
   autoFocus = false,
   showToolbar = true,
   title,
@@ -333,7 +335,7 @@ export function WysiwygEditor({
       attributes: {
         class: cn(
           'prose prose-sm dark:prose-invert max-w-none',
-          'h-full w-full resize-none border-none bg-transparent p-6 text-sm outline-none',
+          'h-full w-full resize-none border-none bg-transparent text-sm outline-none',
           readOnly ? 'cursor-default' : 'focus:outline-none',
           readOnly ? '' : 'placeholder:text-muted-foreground',
           isStreaming ? 'streaming-cursor' : '',
@@ -738,7 +740,7 @@ export function WysiwygEditor({
       )}
       {/* 编辑器内容 */}
       <div ref={editorContainerRef} className="relative flex-1 overflow-y-auto">
-        <EditorContent editor={editor} className="h-full" />
+        <EditorContent editor={editor} className={cn('h-full', editorClassName)} />
       </div>
       {/* 选择工具栏 - fixed 定位，使用 transform 定位 */}
       {!readOnly && showSelectionToolbar && (

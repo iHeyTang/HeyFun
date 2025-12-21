@@ -2,7 +2,7 @@
 
 import { createNote } from '@/actions/notes';
 import LoadingDots from '@/components/block/loading/loading-dots';
-import { WysiwygRenderer } from '@/components/block/wysiwyg-editor/renderer';
+import { WysiwygEditor } from '@/components/block/wysiwyg-editor';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLLM } from '@/hooks/use-llm';
@@ -266,14 +266,30 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
                 </button>
                 {isThinkingExpanded && (
                   <div className="bg-muted/30 border-border/30 border-t px-4 py-3">
-                    <WysiwygRenderer content={thinkingContent} className="text-muted-foreground text-sm opacity-80" />
+                    <WysiwygEditor
+                      value={thinkingContent}
+                      readOnly={true}
+                      showToolbar={false}
+                      isStreaming={false}
+                      className="text-sm opacity-80"
+                      editorClassName="p-3 py-2"
+                    />
                   </div>
                 )}
               </div>
             )}
 
             {/* 主要内容 */}
-            {mainContent && <WysiwygRenderer content={mainContent} isStreaming={isStreaming} />}
+            {mainContent && (
+              <WysiwygEditor
+                value={mainContent}
+                readOnly={true}
+                showToolbar={false}
+                isStreaming={false}
+                className="text-sm opacity-80"
+                editorClassName="p-3 py-2"
+              />
+            )}
           </div>
         )}
 
