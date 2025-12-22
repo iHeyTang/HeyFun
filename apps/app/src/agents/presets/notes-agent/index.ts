@@ -8,8 +8,23 @@
 
 import { AgentConfig } from '@/agents/core/frameworks/base';
 import { ReactAgent } from '@/agents/core/frameworks/react';
-import { GENERAL_TOOLS } from '../general-agent/tools';
-import { NOTES_TOOLS } from './tools';
+import {
+  getCurrentTimeTool,
+  webSearchTool,
+  waitTool,
+  getCurrentWeatherTool,
+  getAigcModelsTool,
+  generateImageTool,
+  generateVideoTool,
+  generateAudioTool,
+  generateMusicTool,
+  imageSearchTool,
+  getCurrentNoteTool,
+  updateNoteContentTool,
+  insertNoteContentTool,
+  replaceNoteContentTool,
+  updateNoteTitleTool,
+} from '@/agents/tools';
 
 /**
  * 获取当前时间字符串（ISO 8601 格式）
@@ -141,7 +156,25 @@ export class NotesAgent extends ReactAgent {
 - **诚实透明**：如果无法完成某项任务，诚实告知用户
 
 开始工作。`,
-      tools: [...GENERAL_TOOLS, ...NOTES_TOOLS].map(definition => {
+      tools: [
+        // General tools
+        getCurrentTimeTool.schema,
+        webSearchTool.schema,
+        waitTool.schema,
+        getCurrentWeatherTool.schema,
+        getAigcModelsTool.schema,
+        generateImageTool.schema,
+        generateVideoTool.schema,
+        generateAudioTool.schema,
+        generateMusicTool.schema,
+        imageSearchTool.schema,
+        // Notes tools
+        getCurrentNoteTool.schema,
+        updateNoteContentTool.schema,
+        insertNoteContentTool.schema,
+        replaceNoteContentTool.schema,
+        updateNoteTitleTool.schema,
+      ].map(definition => {
         return {
           type: 'function',
           function: {

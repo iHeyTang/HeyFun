@@ -8,7 +8,14 @@
 
 import { AgentConfig } from '@/agents/core/frameworks/base';
 import { ReactAgent } from '@/agents/core/frameworks/react';
-import { COORDINATOR_TOOLS } from './tools';
+import {
+  editFlowCanvasTool,
+  getCanvasStateTool,
+  getCanvasCapabilitiesTool,
+  getNodeTypeInfoTool,
+  autoLayoutCanvasTool,
+  runCanvasWorkflowTool,
+} from '@/agents/tools';
 
 /**
  * 协调者 Agent 实现 - 基于 ReactAgent 框架
@@ -399,7 +406,14 @@ export class CanvasAgent extends ReactAgent {
 - 工具调用过程可见时，不需要重复说明
 
 开始工作。`,
-    tools: COORDINATOR_TOOLS.map(definition => {
+    tools: [
+      editFlowCanvasTool.schema,
+      getCanvasStateTool.schema,
+      getCanvasCapabilitiesTool.schema,
+      getNodeTypeInfoTool.schema,
+      autoLayoutCanvasTool.schema,
+      runCanvasWorkflowTool.schema,
+    ].map(definition => {
       return {
         type: 'function',
         function: {

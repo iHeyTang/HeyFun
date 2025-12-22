@@ -8,7 +8,18 @@
 
 import { AgentConfig } from '@/agents/core/frameworks/base';
 import { ReactAgent } from '@/agents/core/frameworks/react';
-import { GENERAL_TOOLS } from './tools';
+import {
+  getCurrentTimeTool,
+  webSearchTool,
+  waitTool,
+  getCurrentWeatherTool,
+  getAigcModelsTool,
+  generateImageTool,
+  generateVideoTool,
+  generateAudioTool,
+  generateMusicTool,
+  imageSearchTool,
+} from '@/agents/tools';
 
 /**
  * 获取当前时间字符串（ISO 8601 格式）
@@ -152,7 +163,18 @@ export class GeneralAgent extends ReactAgent {
 - OSS 图片：\`![示例图片](/api/oss/org_id/image.jpg)\`
 
 开始工作。`,
-      tools: GENERAL_TOOLS.map(definition => {
+      tools: [
+        getCurrentTimeTool.schema,
+        webSearchTool.schema,
+        waitTool.schema,
+        getCurrentWeatherTool.schema,
+        getAigcModelsTool.schema,
+        generateImageTool.schema,
+        generateVideoTool.schema,
+        generateAudioTool.schema,
+        generateMusicTool.schema,
+        imageSearchTool.schema,
+      ].map(definition => {
         return {
           type: 'function',
           function: {

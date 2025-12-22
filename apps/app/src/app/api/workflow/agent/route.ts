@@ -6,8 +6,7 @@
 import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
 import { getAgent } from '@/agents';
 import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { generalToolbox } from '@/agents/toolboxes/general-toolbox';
-import { notesToolbox } from '@/agents/toolboxes/notes-toolbox';
+import { toolRegistry } from '@/agents/tools';
 import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/server/credit';
 import { prisma } from '@/lib/server/prisma';
 import { queue } from '@/lib/server/queue';
@@ -128,7 +127,7 @@ interface AgentWorkflowConfig {
 
 /**
  * 执行工具调用（后端版本）
- * 使用 generalToolbox、webSearchToolbox 和 aigcToolbox 来执行服务端工具
+ * 使用统一的 toolRegistry 来执行所有工具
  */
 async function executeTools(
   toolCalls: any[],
@@ -147,23 +146,17 @@ async function executeTools(
       continue;
     }
 
-    // 尝试使用各个toolbox执行工具
+    // 使用统一的工具注册表执行工具
     let result: ToolResult | null = null;
-    if (generalToolbox.has(toolName)) {
-      result = await generalToolbox.execute(toolCall, {
-        organizationId: context.organizationId,
-        sessionId: context.sessionId,
-        workflow: context.workflow,
-      });
-    } else if (notesToolbox.has(toolName)) {
-      result = await notesToolbox.execute(toolCall, {
+    if (toolRegistry.has(toolName)) {
+      result = await toolRegistry.execute(toolCall, {
         organizationId: context.organizationId,
         sessionId: context.sessionId,
         workflow: context.workflow,
       });
     } else {
       // 工具未找到
-      const allToolNames = [...generalToolbox.getAllToolNames(), ...notesToolbox.getAllToolNames()];
+      const allToolNames = toolRegistry.getAllToolNames();
       result = {
         success: false,
         error: `Tool "${toolName}" is not registered. Available tools: ${allToolNames.join(', ')}`,

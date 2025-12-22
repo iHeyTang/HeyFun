@@ -2,7 +2,7 @@
 
 ## 概述
 
-Agents 模块采用三层架构设计，实现了 Agent 框架、预设场景和工具实现的解耦。整体架构分为三个核心模块：**core（核心层）**、**presets（预设层）** 和 **toolboxes（工具包层）**。
+Agents 模块采用三层架构设计，实现了 Agent 框架、预设场景和工具实现的解耦。整体架构分为三个核心模块：**core（核心层）**、**presets（预设层）** 和 **tools（工具层）**。
 
 ## 架构分层
 
@@ -107,40 +107,68 @@ Agents 模块采用三层架构设计，实现了 Agent 框架、预设场景和
   - `auto_layout_canvas`：自动布局
   - `run_canvas_workflow`：执行工作流
 
-### 3. Toolboxes（工具包层）
+### 3. Tools（工具层）
 
-工具包层负责实现 presets 中定义的工具，在对应环境通过注册的形式注入并启用。
+工具层负责实现 presets 中定义的工具，所有工具统一在后端执行。
 
 #### 3.1 职责
 
 - 实现 presets 层定义的工具 Schema
 - 提供工具执行逻辑
-- 在特定环境（客户端/服务端）注册工具
-- 管理工具执行上下文
+- 统一在后端环境执行
+- 使用统一的工具执行上下文
 
 #### 3.2 结构
 
-**位置**：`toolboxes/`
+**位置**：`tools/`
 
-每个工具包包含：
-- **index.ts**：工具注册表实例，注册该工具包的所有工具实现
-- **context.ts**：定义工具执行上下文类型
-- **tools/**：工具实现目录，每个工具对应一个实现文件
-- **utils.ts**：工具包共用的工具函数
+所有工具都在此目录下，每个工具都是一个独立的文件夹，包含：
+- **schema.ts**：工具定义（ToolDefinition）
+- **executor.ts**：工具执行逻辑
+- **index.ts**：工具导出
 
-#### 3.3 现有工具包
+**统一的工具上下文**：
+- 所有工具使用统一的 `ToolContext`，包含：
+  - `organizationId`：组织ID
+  - `sessionId`：会话ID
+  - `workflow`：Workflow上下文
+  - `toolCallId`：工具调用ID
 
-**Canvas Toolbox**（`toolboxes/canvas-toolbox/`）
-- 实现 Coordinator Agent 所需的画布操作工具
-- 客户端工具包，需要浏览器环境
-- 提供画布引用、状态管理等上下文
-- 实现工具：
-  - `auto_layout_canvas`：自动布局实现
-  - `edit_flow_canvas`：编辑画布实现
-  - `get_canvas_capabilities`：获取画布能力实现
-  - `get_canvas_state`：获取画布状态实现
-  - `get_node_type`：获取节点类型实现
-  - `run_canvas_workflow`：执行工作流实现
+#### 3.3 工具分类
+
+**General 工具**（通用工具）
+- `get_current_time`：获取当前时间
+- `web_search`：网络搜索
+- `wait`：等待指定时间
+- `get_current_weather`：获取天气信息
+- `get_aigc_models`：获取AIGC模型列表
+- `generate_image`：生成图片
+- `generate_video`：生成视频
+- `generate_audio`：生成音频
+- `generate_music`：生成音乐
+- `image_search`：搜索图片
+
+**Notes 工具**（笔记工具）
+- `get_current_note`：获取笔记内容（需要 noteId 参数）
+- `update_note_content`：更新笔记内容（需要 noteId 参数）
+- `insert_note_content`：插入笔记内容（需要 noteId 参数）
+- `replace_note_content`：替换笔记内容（需要 noteId 参数）
+- `update_note_title`：更新笔记标题（需要 noteId 参数）
+
+**Canvas 工具**（画布工具，全部后端执行）
+- `edit_flow_canvas`：编辑工作流画布（需要 projectId 参数，从数据库读取/更新）
+- `get_canvas_state`：获取画布状态（需要 projectId 参数）
+- `get_canvas_capabilities`：获取画布能力（可选 projectId 参数）
+- `get_node_type_info`：获取节点类型信息
+- `auto_layout_canvas`：自动布局画布（需要 projectId 参数）
+- `run_canvas_workflow`：执行工作流（需要 projectId 参数）
+
+#### 3.4 工具注册
+
+所有工具通过统一的 `toolRegistry` 注册和执行：
+- 位置：`tools/index.ts`
+- 所有工具在启动时自动注册
+- 通过 `toolRegistry.execute()` 统一执行
 
 ## 工作流程
 
@@ -148,14 +176,14 @@ Agents 模块采用三层架构设计，实现了 Agent 框架、预设场景和
 
 1. **Core 层**：提供框架和基础设施
 2. **Presets 层**：定义 Agent 类和工具 Schema
-3. **Toolboxes 层**：实现工具逻辑并注册
+3. **Tools 层**：实现工具逻辑并注册到统一的 toolRegistry
 4. **入口文件**（`index.ts`）：注册所有预设 Agent 到注册表
 
 ### 工具调用流程
 
 1. **Presets 层**：Agent 配置工具 Schema，LLM 根据 Schema 决定调用哪个工具
-2. **Toolboxes 层**：工具注册表根据工具名称找到对应的实现
-3. **执行**：在对应环境（客户端/服务端）执行工具实现
+2. **Tools 层**：统一的 toolRegistry 根据工具名称找到对应的实现
+3. **执行**：在后端环境执行工具实现（所有工具都在后端执行）
 4. **返回**：工具结果返回给 Agent，继续 ReAct 循环
 
 ## 设计原则
@@ -164,25 +192,25 @@ Agents 模块采用三层架构设计，实现了 Agent 框架、预设场景和
 
 - **Core**：框架和基础设施
 - **Presets**：业务场景和工具接口
-- **Toolboxes**：工具实现和环境适配
+- **Tools**：工具实现，统一在后端执行
 
 ### 2. 解耦设计
 
-- Presets 层不依赖 Toolboxes 层的具体实现
+- Presets 层不依赖 Tools 层的具体实现
 - 工具定义（Schema）与工具实现分离
-- 通过注册机制实现动态绑定
+- 通过统一的 toolRegistry 实现动态绑定
 
 ### 3. 可扩展性
 
 - 新增场景：在 Presets 层添加新的 Agent 预设
-- 新增工具：在 Presets 层定义 Schema，在 Toolboxes 层实现
+- 新增工具：在 Presets 层定义 Schema，在 Tools 层实现（创建工具文件夹，包含 schema.ts、executor.ts、index.ts）
 - 新增框架：在 Core 层扩展框架能力
 
-### 4. 环境适配
+### 4. 统一执行环境
 
-- 通过 `ToolRuntime` 区分客户端和服务端工具
-- 工具包根据运行环境提供不同的上下文
-- 支持跨环境工具调用
+- 所有工具统一在后端执行（`ToolRuntime.SERVER`）
+- 使用统一的 `ToolContext` 上下文
+- Canvas 工具从数据库读取/更新，Notes 工具的 noteId 下沉到参数
 
 ## 目录结构
 
@@ -202,24 +230,24 @@ agents/
 │       ├── tool-implementation.ts # 工具实现接口
 │       └── base-tool-registry.ts   # 工具注册表基类
 ├── presets/                # 预设层
-│   ├── general/           # 通用 Agent
-│   │   └── index.ts
-│   └── coordinator/       # 协调者 Agent
+│   ├── general-agent/     # 通用 Agent
+│   │   ├── index.ts
+│   │   └── tools/         # 工具定义
+│   ├── notes-agent/       # 笔记 Agent
+│   │   ├── index.ts
+│   │   └── tools/         # 工具定义
+│   └── canvas-agent/      # 画布 Agent
 │       ├── index.ts
 │       └── tools/         # 工具定义
-│           ├── index.ts
-│           ├── edit-flow-canvas.ts
-│           ├── get-canvas-state.ts
-│           └── ...
-├── toolboxes/             # 工具包层
-│   └── canvas-toolbox/    # 画布工具包
-│       ├── index.ts       # 工具注册表
-│       ├── context.ts     # 执行上下文
-│       ├── utils.ts       # 工具函数
-│       └── tools/         # 工具实现
-│           ├── edit-flow-canvas.ts
-│           ├── get-canvas-state.ts
-│           └── ...
+├── tools/                  # 工具层（统一工具实现）
+│   ├── context.ts         # 统一的工具上下文
+│   ├── index.ts           # 工具注册表
+│   ├── get-current-time/  # 工具示例
+│   │   ├── schema.ts     # 工具定义
+│   │   ├── executor.ts   # 工具执行逻辑
+│   │   └── index.ts      # 工具导出
+│   ├── web-search/        # 其他工具...
+│   └── ...
 └── index.ts               # 入口文件，注册所有 Agent
 ```
 
@@ -314,7 +342,10 @@ agents/
 
 - **Core 层**提供框架能力，不关心业务场景
 - **Presets 层**定义业务场景和工具接口，不关心实现细节
-- **Toolboxes 层**实现具体工具，适配不同运行环境
+- **Tools 层**实现具体工具，统一在后端执行
 
-这种设计使得系统具有良好的可扩展性和可维护性，新增场景或工具时只需在对应层进行扩展，无需修改其他层。
+这种设计使得系统具有良好的可扩展性和可维护性：
+- 新增场景：在 Presets 层添加新的 Agent 预设
+- 新增工具：在 Presets 层定义 Schema，在 Tools 层创建工具文件夹（包含 schema.ts、executor.ts、index.ts）
+- 所有工具使用统一的 ToolContext，通过 toolRegistry 统一注册和执行
 
