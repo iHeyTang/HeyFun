@@ -1,29 +1,18 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { ToolContext } from '../context';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
 import AIGC, { musicParamsSchema } from '@repo/llm/aigc';
 import type { z } from 'zod';
+import { generateMusicParamsSchema } from './schema';
 
-export async function generateMusicExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  const stepName = `generate-music-create-${context.toolCallId}`;
-  const { error, task } = await context.workflow.run(stepName, async () => {
-    const { model, lyrics, prompt, advanced } = args;
-
-    if (!model || typeof model !== 'string') {
-      return { error: 'Model is required and must be a string' };
-    }
+export const generateMusicExecutor = definitionToolExecutor(
+  generateMusicParamsSchema,
+  async (args, context) => {
+    const { error, task } = await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+      const { model, lyrics, prompt, advanced } = args;
 
     if (!context.organizationId) {
       return { error: 'Organization ID is required' };
-    }
-
-    // 至少需要lyrics或prompt中的一个
-    if (
-      (!lyrics || typeof lyrics !== 'string' || lyrics.trim().length === 0) &&
-      (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0)
-    ) {
-      return { error: 'At least one of lyrics or prompt is required and must be a non-empty string' };
     }
 
     // 获取模型信息
@@ -89,9 +78,9 @@ export async function generateMusicExecutor(args: any, context: ToolContext): Pr
     };
   }
 
-  const waitStepName = context.toolCallId ? `generate-music-wait-${context.toolCallId}` : `generate-music-wait-${task.id}`;
+  // waitForEvent 需要使用不同的 step name
   const result = await context.workflow.waitForEvent<{ taskId: string; results?: PrismaJson.PaintboardTaskResult; error?: string }>(
-    waitStepName,
+    `toolcall-${context.toolCallId}-wait`,
     `paintboard-result-${task.id}`,
   );
 
@@ -106,5 +95,6 @@ export async function generateMusicExecutor(args: any, context: ToolContext): Pr
     success: true,
     data: result.eventData.results,
   };
-}
+  },
+);
 

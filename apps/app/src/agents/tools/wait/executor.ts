@@ -1,37 +1,37 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { ToolContext } from '../context';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
+import { waitParamsSchema } from './schema';
 
-export async function waitExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  const { stepName, sleepSeconds, waitTimeMs } = await context.workflow.run(`wait-${context.toolCallId}`, async () => {
-    const { seconds = 1, milliseconds } = args;
+export const waitExecutor = definitionToolExecutor(waitParamsSchema, async (args, context) => {
+  const { sleepSeconds, waitTimeMs } = await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+    const { seconds, milliseconds } = args;
 
     let waitTimeMs = 0;
 
-    if (milliseconds !== undefined && typeof milliseconds === 'number') {
+    if (milliseconds !== undefined) {
       waitTimeMs = Math.max(0, Math.min(milliseconds, 60000)); // 限制在0-60秒之间
-    } else if (seconds !== undefined && typeof seconds === 'number') {
+    } else if (seconds !== undefined) {
       waitTimeMs = Math.max(0, Math.min(seconds * 1000, 60000)); // 限制在0-60秒之间
     } else {
       return {
         success: false,
-        error: 'Either seconds or milliseconds must be provided and must be a number',
+        error: 'Either seconds or milliseconds must be provided',
       };
     }
 
     // 使用 workflow 的 sleep 方法等待指定时间
     const sleepSeconds = Math.ceil(waitTimeMs / 1000);
-    const stepName = `wait-${context.toolCallId}`;
-    return { stepName, sleepSeconds, waitTimeMs };
+    return { sleepSeconds, waitTimeMs };
   });
 
-  if (!stepName || !sleepSeconds || !waitTimeMs) {
+  if (!sleepSeconds || !waitTimeMs) {
     return {
       success: false,
       error: 'Failed to wait',
     };
   }
 
-  await context.workflow.sleep(stepName, `${BigInt(sleepSeconds)}s`);
+  // sleep 需要使用不同的 step name
+  await context.workflow.sleep(`toolcall-${context.toolCallId}-sleep`, `${BigInt(sleepSeconds)}s`);
 
   return {
     success: true,
@@ -41,5 +41,4 @@ export async function waitExecutor(args: any, context: ToolContext): Promise<Too
       message: `Waited for ${waitTimeMs}ms (${(waitTimeMs / 1000).toFixed(2)}s)`,
     },
   };
-}
-
+});

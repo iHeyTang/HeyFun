@@ -144,6 +144,10 @@ export const useChatSendMessage = ({
           modelId: null,
           toolCalls: null,
           toolResults: null,
+          inputTokens: null,
+          outputTokens: null,
+          cachedInputTokens: null,
+          cachedOutputTokens: null,
         };
         addMessageToSession(sessionId, tempUserMessage);
 

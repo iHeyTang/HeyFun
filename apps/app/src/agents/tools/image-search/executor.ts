@@ -1,5 +1,6 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { ToolContext } from '../context';
+import { imageSearchParamsSchema } from './schema';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 
 interface ImageResult {
   title: string;
@@ -189,18 +190,13 @@ async function searchImagesFromMultipleSources(query: string, maxResults: number
   return uniqueResults;
 }
 
-export async function imageSearchExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  try {
-    const { query, maxResults = 10, imageType = 'all', size = 'all' } = args;
-
-    if (!query || typeof query !== 'string' || query.trim().length === 0) {
-      return {
-        success: false,
-        error: 'Search query is required and must be a non-empty string',
-      };
-    }
-
-    const max = Math.min(Math.max(1, parseInt(String(maxResults)) || 10), 50);
+export const imageSearchExecutor = definitionToolExecutor(
+  imageSearchParamsSchema,
+  async (args, context) => {
+    return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+      try {
+        const { query, maxResults = 10, imageType = 'all', size = 'all' } = args;
+    const max = maxResults;
 
     const hasAnyApiKey = process.env.UNSPLASH_ACCESS_KEY || process.env.PIXABAY_API_KEY || process.env.PEXELS_API_KEY;
 
@@ -233,12 +229,14 @@ export async function imageSearchExecutor(args: any, context: ToolContext): Prom
           size,
         },
       },
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: (error as Error).message,
-    };
-  }
-}
+      };
+      } catch (error) {
+        return {
+          success: false,
+          error: (error as Error).message,
+        };
+      }
+    });
+  },
+);
 

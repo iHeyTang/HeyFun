@@ -10,14 +10,18 @@ import { CheckCircle2, Wrench, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { WebSearchResult } from './tool-renderers/web-search-result';
 import { AigcModelsResult } from './tool-renderers/aigc-models-result';
+// import { HumanInLoopResult } from './tool-renderers/human-in-loop-result';
 
 interface ToolCallCardProps {
   toolCalls: PrismaJson.ToolCall[];
   toolResults?: PrismaJson.ToolResult[];
   className?: string;
+  messageId?: string;
+  sessionId?: string;
 }
 
-export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCardProps) => {
+export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, sessionId }: ToolCallCardProps) => {
+  // A2UI 和 human_in_loop 工具默认展开，方便用户直接使用界面
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: string) => {
@@ -49,16 +53,25 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
   const getToolRenderer = (toolName: string) => {
     const renderers: Record<
       string,
-      React.ComponentType<{ args?: Record<string, any>; result?: any; status: 'pending' | 'running' | 'success' | 'error'; error?: string }>
+      React.ComponentType<{
+        args?: Record<string, any>;
+        result?: any;
+        status: 'pending' | 'running' | 'success' | 'error';
+        error?: string;
+        messageId?: string;
+        toolCallId?: string;
+        sessionId?: string;
+      }>
     > = {
       web_search: WebSearchResult,
       get_aigc_models: AigcModelsResult,
+      // human_in_loop: HumanInLoopResult,
     };
     return renderers[toolName];
   };
 
   // 渲染工具结果（支持自定义渲染器）
-  const renderToolResult = (toolName: string, args: any, result: PrismaJson.ToolResult | undefined, isExpanded: boolean) => {
+  const renderToolResult = (toolName: string, args: any, result: PrismaJson.ToolResult | undefined, isExpanded: boolean, toolCallId?: string) => {
     if (!isExpanded || !result) return null;
 
     const CustomRenderer = getToolRenderer(toolName);
@@ -68,7 +81,15 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
       const status = result.success ? 'success' : 'error';
       return (
         <div className="min-w-0 overflow-hidden px-2.5 pb-2 pt-1.5">
-          <CustomRenderer args={args} result={result.data} status={status} error={result.error} />
+          <CustomRenderer
+            args={args}
+            result={result.data}
+            status={status}
+            error={result.error}
+            messageId={messageId}
+            toolCallId={toolCallId}
+            sessionId={sessionId}
+          />
         </div>
       );
     }
@@ -128,7 +149,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
               {result && (
                 <>
                   {!getToolRenderer(toolCall.function.name) && <div className="border-border/20 border-t" />}
-                  {renderToolResult(toolCall.function.name, args, result, true)}
+                  {renderToolResult(toolCall.function.name, args, result, true, toolCall.id)}
                 </>
               )}
             </div>
@@ -184,7 +205,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className }: ToolCallCard
                 {result && (
                   <>
                     {!getToolRenderer(toolCall.function.name) && <div className="border-border/20 border-t" />}
-                    {renderToolResult(toolCall.function.name, args, result, true)}
+                    {renderToolResult(toolCall.function.name, args, result, true, toolCall.id)}
                   </>
                 )}
               </div>

@@ -1,21 +1,15 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { ToolContext } from '../context';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
 import AIGC, { GenerationType, imageParamsSchema } from '@repo/llm/aigc';
 import type { z } from 'zod';
+import { generateImageParamsSchema } from './schema';
 
-export async function generateImageExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  const { model, prompt, referenceImage, aspectRatio, n, advanced } = args;
-  const stepName = `generate-image-create-${context.toolCallId}`;
-  const { error, task } = await context.workflow.run(stepName, async () => {
-    if (!model || typeof model !== 'string') {
-      return { error: 'Model is required and must be a string' };
-    }
-
-    if (!prompt || typeof prompt !== 'string') {
-      return { error: 'Prompt is required and must be a non-empty string' };
-    }
+export const generateImageExecutor = definitionToolExecutor(
+  generateImageParamsSchema,
+  async (args, context) => {
+    const { error, task } = await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+      const { model, prompt, referenceImage, aspectRatio, n, advanced } = args;
 
     if (!context.organizationId) {
       return { error: 'Organization ID is required' };
@@ -105,10 +99,9 @@ export async function generateImageExecutor(args: any, context: ToolContext): Pr
     };
   }
 
-  // waitForEvent 不应该被 try/catch 包装，让 Upstash Workflow 框架处理错误
-  const waitStepName = context.toolCallId ? `generate-image-wait-${context.toolCallId}` : `generate-image-wait-${task.id}`;
+  // waitForEvent 需要使用不同的 step name
   const result = await context.workflow.waitForEvent<{ taskId: string; results?: PrismaJson.PaintboardTaskResult; error?: string }>(
-    waitStepName,
+    `toolcall-${context.toolCallId}-wait`,
     `paintboard-result-${task.id}`,
   );
 
@@ -123,5 +116,6 @@ export async function generateImageExecutor(args: any, context: ToolContext): Pr
     success: true,
     data: result.eventData.results,
   };
-}
+  },
+);
 

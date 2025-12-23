@@ -1,9 +1,10 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { ToolContext } from '../context';
 import { prisma } from '@/lib/server/prisma';
 import storage from '@/lib/server/storage';
 import { createHash } from 'crypto';
 import { nanoid } from 'nanoid';
+import { replaceNoteContentParamsSchema } from './schema';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 
 function calculateContentHash(content: string): string {
   return createHash('sha256').update(content, 'utf-8').digest('hex');
@@ -26,41 +27,19 @@ function extractTextFromMarkdown(markdown: string): string {
     .trim();
 }
 
-export async function replaceNoteContentExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  try {
-    if (!context.organizationId) {
-      return {
-        success: false,
-        error: 'Organization ID is required',
-      };
-    }
+export const replaceNoteContentExecutor = definitionToolExecutor(
+  replaceNoteContentParamsSchema,
+  async (args, context) => {
+    return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+      try {
+        if (!context.organizationId) {
+        return {
+          success: false,
+          error: 'Organization ID is required',
+        };
+      }
 
-    const { noteId, startLine, endLine, content } = args;
-    if (!noteId || typeof noteId !== 'string') {
-      return {
-        success: false,
-        error: 'Note ID is required and must be a string',
-      };
-    }
-    if (typeof startLine !== 'number' || typeof endLine !== 'number') {
-      return {
-        success: false,
-        error: 'Start line and end line are required and must be numbers',
-      };
-    }
-    if (!content || typeof content !== 'string') {
-      return {
-        success: false,
-        error: 'Content is required and must be a string',
-      };
-    }
-
-    if (startLine < 1 || endLine < 1 || startLine > endLine) {
-      return {
-        success: false,
-        error: 'Invalid line range. Start line and end line must be >= 1, and start line must be <= end line',
-      };
-    }
+      const { noteId, startLine, endLine, content } = args;
 
     // 获取现有笔记内容
     const note = await prisma.notes.findUnique({
@@ -122,12 +101,14 @@ export async function replaceNoteContentExecutor(args: any, context: ToolContext
         noteId,
         replacedLines: `${startLine}-${endLine}`,
       },
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: (error as Error).message,
-    };
-  }
-}
+      };
+      } catch (error) {
+        return {
+          success: false,
+          error: (error as Error).message,
+        };
+      }
+    });
+  },
+);
 

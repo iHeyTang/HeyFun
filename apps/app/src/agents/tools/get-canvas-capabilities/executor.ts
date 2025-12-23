@@ -1,10 +1,13 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { ToolContext } from '../context';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import AIGC from '@repo/llm/aigc';
+import { getCanvasCapabilitiesParamsSchema } from './schema';
 
-export async function getCanvasCapabilitiesExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  try {
-    const { projectId } = args;
+export const getCanvasCapabilitiesExecutor = definitionToolExecutor(
+  getCanvasCapabilitiesParamsSchema,
+  async (args, context) => {
+    return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+      try {
+        const { projectId } = args;
 
     // 构建画布能力信息
     const capabilities: any = {
@@ -108,8 +111,10 @@ export async function getCanvasCapabilitiesExecutor(args: any, context: ToolCont
       message: `📋 画布能力信息：${lines.join('\n')}`,
       data: capabilities,
     };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
-}
+      } catch (error) {
+        return { success: false, error: (error as Error).message };
+      }
+    });
+  },
+);
 

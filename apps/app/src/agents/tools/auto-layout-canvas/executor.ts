@@ -1,11 +1,12 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { ToolContext } from '../context';
-import { prisma } from '@/lib/server/prisma';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import { getLayoutElements } from '@/components/block/flowcanvas/utils/layout';
+import { prisma } from '@/lib/server/prisma';
+import { autoLayoutCanvasParamsSchema } from './schema';
 
-export async function autoLayoutCanvasExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  try {
-    if (!context.organizationId) {
+export const autoLayoutCanvasExecutor = definitionToolExecutor(autoLayoutCanvasParamsSchema, async (args, context) => {
+  return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+    try {
+      if (!context.organizationId) {
       return {
         success: false,
         error: 'Organization ID is required',
@@ -13,13 +14,6 @@ export async function autoLayoutCanvasExecutor(args: any, context: ToolContext):
     }
 
     const { projectId, direction = 'LR' } = args;
-
-    if (!projectId || typeof projectId !== 'string') {
-      return {
-        success: false,
-        error: 'Project ID is required and must be a string',
-      };
-    }
 
     // 从数据库获取项目
     const project = await prisma.flowCanvasProjects.findUnique({
@@ -60,7 +54,7 @@ export async function autoLayoutCanvasExecutor(args: any, context: ToolContext):
     await prisma.flowCanvasProjects.update({
       where: { id: projectId },
       data: {
-        schema: newSchema,
+        schema: newSchema as any,
       },
     });
 
@@ -72,8 +66,8 @@ export async function autoLayoutCanvasExecutor(args: any, context: ToolContext):
         nodeCount: layoutNodes.length,
       },
     };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
-}
-
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+});

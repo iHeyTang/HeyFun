@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { ChatInput, useChatbotModelSelector } from './chat-input';
 import { ChatMessage as ChatMessageComponent } from './chat-message';
 import { ThinkingMessage } from './thinking-message';
+import { A2UIProvider } from '@/components/features/a2ui';
 
 interface ChatSessionProps {
   /** 必需的 sessionId */
@@ -345,28 +346,82 @@ export function ChatSession({
     }
   }, [shouldShowThinkingMessage, scrollToBottom]);
 
+  // A2UI 事件处理：将事件转换为用户消息发送给 Agent
+  const handleA2UIEvent = useCallback(
+    (event: { messageId: string; type: string; componentId: string; data?: Record<string, unknown> }) => {
+      // 构建发送给 Agent 的消息
+      // 注意：A2UI 事件现在通过 human_in_loop 工具处理，不再需要单独的工具
+      const eventDescription = `用户与 A2UI 界面交互：
+- 消息 ID: ${event.messageId}
+- 组件 ID: ${event.componentId}
+- 事件类型: ${event.type}
+- 事件数据: ${JSON.stringify(event.data || {}, null, 2)}
+
+此事件已自动处理，Agent 会根据事件数据继续执行后续逻辑。`;
+
+      handleSendMessage(eventDescription);
+    },
+    [handleSendMessage],
+  );
+
+  // 计算总 token 数
+  const totalTokenCount = useMemo(() => {
+    return messages.reduce((sum, msg) => {
+      return sum + (msg.tokenCount ?? 0);
+    }, 0);
+  }, [messages]);
+
   // 使用 useMemo 优化消息列表渲染
   const messagesList = useMemo(
     () => (
-      <div className="min-w-0 space-y-0">
-        {messages.map(message => (
-          <ChatMessageComponent
-            key={message.id}
-            role={message.role as 'user' | 'assistant'}
-            content={message.content}
-            isStreaming={message.isStreaming}
-            timestamp={message.createdAt}
-            toolCalls={message.toolCalls || []}
-            toolResults={message.toolResults || []}
-            modelId={message.role === 'assistant' ? (message.modelId ?? undefined) : undefined}
-          />
-        ))}
-        {shouldShowThinkingMessage && <ThinkingMessage modelId={selectedModel?.id} />}
-        <div ref={messagesEndRef} />
-      </div>
+      <A2UIProvider sessionId={sessionId} apiPrefix={apiPrefix} onEvent={handleA2UIEvent}>
+        <div className="min-w-0 space-y-0">
+          {messages.map(message => (
+            <ChatMessageComponent
+              key={message.id}
+              role={message.role as 'user' | 'assistant'}
+              content={message.content}
+              isStreaming={message.isStreaming}
+              timestamp={message.createdAt}
+              toolCalls={message.toolCalls || []}
+              toolResults={message.toolResults || []}
+              modelId={message.role === 'assistant' ? (message.modelId ?? undefined) : undefined}
+              messageId={message.id}
+              sessionId={sessionId}
+              tokenCount={message.tokenCount ?? undefined}
+              inputTokens={message.inputTokens ?? undefined}
+              outputTokens={message.outputTokens ?? undefined}
+              cachedInputTokens={message.cachedInputTokens ?? undefined}
+              cachedOutputTokens={message.cachedOutputTokens ?? undefined}
+            />
+          ))}
+          {shouldShowThinkingMessage && <ThinkingMessage modelId={selectedModel?.id} />}
+          <div ref={messagesEndRef} />
+        </div>
+      </A2UIProvider>
     ),
-    [messages, shouldShowThinkingMessage, selectedModel?.id],
+    [messages, shouldShowThinkingMessage, selectedModel?.id, sessionId, apiPrefix, handleA2UIEvent],
   );
+
+  const usage = useMemo(() => {
+    if (messages.length === 0) {
+      return undefined;
+    }
+    return {
+      inputTokens: messages.reduce((sum, msg) => {
+        return sum + (msg.inputTokens ?? 0);
+      }, 0),
+      outputTokens: messages.reduce((sum, msg) => {
+        return sum + (msg.outputTokens ?? 0);
+      }, 0),
+      cachedInputTokens: messages.reduce((sum, msg) => {
+        return sum + (msg.cachedInputTokens ?? 0);
+      }, 0),
+      cachedOutputTokens: messages.reduce((sum, msg) => {
+        return sum + (msg.cachedOutputTokens ?? 0);
+      }, 0),
+    };
+  }, [messages]);
 
   return (
     <div className="flex h-full flex-col">
@@ -387,6 +442,7 @@ export function ChatSession({
 
       {/* Input */}
       <ChatInput
+        usage={usage}
         onSend={handleSendMessage}
         disabled={isLoading || disabled}
         inputValue={inputValue}

@@ -19,6 +19,7 @@ import {
   generateAudioTool,
   generateMusicTool,
   imageSearchTool,
+  humanInLoopTool,
 } from '@/agents/tools';
 
 /**
@@ -102,6 +103,139 @@ export class GeneralAgent extends ReactAgent {
 
 # 工具使用指南
 
+## Human-in-Loop 工具（human_in_loop）
+
+当需要用户填写表单、确认操作或提供信息时，使用 human_in_loop 工具。这是一个**一次性交互**工具，用户提交后工具完成。
+
+### 使用流程
+
+1. **构造 A2UI 消息对象**：直接构造包含 UI 组件的 A2UI 消息对象
+2. **等待用户交互**：使用 human_in_loop 工具，传入 A2UI 消息对象和标题描述，界面会显示给用户
+3. **用户提交**：用户填写/确认后，工具完成，返回用户提交的数据
+4. **继续执行**：Agent 根据用户提交的数据继续执行后续逻辑
+
+### 工具说明
+
+#### human_in_loop
+
+**作用**：显示界面供用户填写/确认，等待用户提交后完成。
+
+**参数**：
+- title：界面标题
+- description：界面描述（可选）
+- a2uiMessage：A2UI 消息对象，需要直接构造，包含以下字段：
+  - type：消息类型，通常为 "ui/init"
+  - id：消息 ID（可选）
+  - component：单个 UI 组件对象（与 components 二选一）
+  - components：多个 UI 组件数组（与 component 二选一）
+- required：是否必须提交（默认 true，false 时用户可以取消）
+
+**返回**：
+- submitted：用户是否提交（false 表示取消）
+- formData：用户提交的表单数据，键为组件的 id，值为用户输入的值
+
+**重要**：这是一个阻塞性工具，会等待用户提交后才继续执行。
+
+### A2UI 消息对象构造
+
+A2UI 消息对象需要包含以下结构：
+
+- type: "ui/init"（消息类型）
+- id: "unique-message-id"（可选，消息 ID）
+- component: 单个 UI 组件对象，包含：
+  - id: 组件唯一标识符
+  - type: 组件类型（如 "form"、"input"、"button" 等）
+  - children: 子组件数组（对于容器组件）
+  - label: 组件标签（对于输入框、按钮等）
+  - placeholder: 占位符文本（对于输入框）
+  - variant: 样式变体（对于按钮、文本等）
+
+示例结构：
+- type: "ui/init"
+- component: { id: "form-container", type: "form", children: [...] }
+
+### 样式约束
+
+当构造 A2UI 消息对象时，必须遵循以下样式约束：
+
+1. **禁止硬编码颜色**：
+   - ❌ 不要在 style 中使用 backgroundColor、color、border、borderColor 等颜色属性
+   - ❌ 不要使用十六进制颜色值（如 #007bff、#ddd）
+   - ✅ 系统会自动应用项目的设计系统颜色，组件会自动匹配项目的视觉风格
+
+2. **只使用布局和尺寸属性**：
+   - ✅ 允许使用：width, height, padding, margin, gap, flex, maxWidth, minWidth, maxHeight, minHeight
+   - ✅ 这些属性用于控制布局和尺寸，不会影响颜色
+
+3. **使用组件内置样式属性**：
+   - **按钮**：使用 variant 属性（primary、secondary、outline、ghost、danger），不要用 style 设置颜色
+   - **文本**：使用 variant 属性（heading、body、caption、label），不要用 style 设置颜色
+   - **输入框、文本域、选择框**：使用默认样式，系统会自动应用项目的设计系统
+
+4. **布局建议**：
+   - 表单使用合适的间距（通过 children 的 margin 实现）
+   - 容器使用 flex 布局
+   - 卡片使用合适的 padding
+
+### 示例
+
+**场景：收集用户信息**
+
+步骤1：构造 A2UI 消息对象，包含表单组件（输入框、按钮等）
+
+步骤2：使用 human_in_loop，传入 A2UI 消息对象和标题描述
+
+步骤3：用户填写并提交
+
+步骤4：工具返回用户数据：{ submitted: true, formData: { "input-field": "用户输入的值" } }
+
+## 图片生成工具（generate_image）与 Human-in-Loop 结合使用
+
+当用户请求生成图片时，如果缺少关键信息（如提示词、模型选择、宽高比等），可以使用 human_in_loop 工具创建一个简单的表单界面，让用户填写这些信息。
+
+### 使用场景
+
+1. **用户请求不明确**：用户只说"帮我生成一张图片"或"画个图"，但没有提供具体的提示词
+2. **需要选择模型**：用户没有指定使用哪个模型，需要让用户从可用模型中选择
+3. **需要确认参数**：用户提供了部分信息，但还需要确认其他参数（如宽高比、生成数量等）
+
+### 使用流程
+
+1. **构造 A2UI 表单消息对象**：直接构造包含表单组件的 A2UI 消息对象，包含：
+   - 提示词输入框（必填）
+   - 模型选择下拉框（可选，如果用户未指定）
+   - 宽高比选择（可选）
+   - 生成数量输入（可选）
+   - 提交按钮
+
+2. **显示表单并等待用户输入**：使用 human_in_loop 工具，传入 A2UI 消息对象和标题描述，等待用户填写并提交
+
+3. **获取用户输入**：human_in_loop 工具返回用户提交的数据（formData）
+
+4. **调用生成工具**：使用用户提交的数据调用 generate_image 工具生成图片
+
+### 示例
+
+**场景：用户请求"帮我生成一张图片"**
+
+步骤1：构造 A2UI 消息对象，包含表单组件（提示词输入框、模型选择、宽高比选择等）
+
+步骤2：使用 human_in_loop 显示表单，传入 A2UI 消息对象和标题描述，等待用户填写并提交
+
+步骤3：human_in_loop 返回用户提交的数据，例如：
+- prompt-input: "一只可爱的小猫在花园里"
+- model-select: "wan/stable-diffusion-xl"
+- aspect-ratio-select: "1:1"
+
+步骤4：使用用户提交的数据调用 generate_image 工具，传入 prompt、model、aspectRatio 等参数
+
+### 最佳实践
+
+1. **表单要简洁**：只收集必要的信息，不要创建过于复杂的表单
+2. **提供默认值**：对于可选参数，可以在表单中提供合理的默认值
+3. **验证输入**：在调用 generate_image 前，验证用户输入是否完整（特别是提示词）
+4. **友好提示**：在 human_in_loop 的 title 和 description 中清晰说明需要用户做什么
+
 ## 搜索工具使用规则（适用于所有搜索工具）
 
 当使用搜索工具（\`web_search\`、\`image_search\` 等）时：
@@ -174,6 +308,7 @@ export class GeneralAgent extends ReactAgent {
         generateAudioTool.schema,
         generateMusicTool.schema,
         imageSearchTool.schema,
+        // humanInLoopTool.schema,
       ].map(definition => {
         return {
           type: 'function',

@@ -1,24 +1,21 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { ToolContext } from '../context';
 import { prisma } from '@/lib/server/prisma';
+import { runCanvasWorkflowParamsSchema } from './schema';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 
-export async function runCanvasWorkflowExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  try {
-    if (!context.organizationId) {
-      return {
-        success: false,
-        error: 'Organization ID is required',
-      };
-    }
+export const runCanvasWorkflowExecutor = definitionToolExecutor(
+  runCanvasWorkflowParamsSchema,
+  async (args, context) => {
+    return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+      try {
+        if (!context.organizationId) {
+        return {
+          success: false,
+          error: 'Organization ID is required',
+        };
+      }
 
-    const { projectId } = args;
-
-    if (!projectId || typeof projectId !== 'string') {
-      return {
-        success: false,
-        error: 'Project ID is required and must be a string',
-      };
-    }
+      const { projectId } = args;
 
     // 从数据库获取项目
     const project = await prisma.flowCanvasProjects.findUnique({
@@ -67,8 +64,10 @@ export async function runCanvasWorkflowExecutor(args: any, context: ToolContext)
         message: '工作流执行需要在前端环境中进行',
       },
     };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
-}
+      } catch (error) {
+        return { success: false, error: (error as Error).message };
+      }
+    });
+  },
+);
 

@@ -1,29 +1,36 @@
 import { ToolDefinition, ToolRuntime } from '@/agents/core/tools/tool-definition';
+import { z } from 'zod';
+import zodToJsonSchema from 'zod-to-json-schema';
+
+/**
+ * 获取AIGC模型的参数 Schema
+ */
+export const getAigcModelsParamsSchema = z.object({
+  generationType: z
+    .enum([
+      'text-to-image',
+      'image-to-image',
+      'text-to-video',
+      'image-to-video',
+      'video-to-video',
+      'keyframe-to-video',
+      'text-to-speech',
+      'lip-sync',
+      'music',
+    ])
+    .optional()
+    .describe('生成类型（可选），用于过滤模型。如果不提供，返回所有模型'),
+});
+
+export type GetAigcModelsParams = z.infer<typeof getAigcModelsParamsSchema>;
 
 export const getAigcModelsSchema: ToolDefinition = {
   name: 'get_aigc_models',
   description: '获取所有可用的AIGC模型列表及其参数信息。可以按生成类型（如text-to-image、text-to-video等）过滤模型。',
-  parameters: {
-    type: 'object',
-    properties: {
-      generationType: {
-        type: 'string',
-        enum: [
-          'text-to-image',
-          'image-to-image',
-          'text-to-video',
-          'image-to-video',
-          'video-to-video',
-          'keyframe-to-video',
-          'text-to-speech',
-          'lip-sync',
-          'music',
-        ],
-        description: '生成类型（可选），用于过滤模型。如果不提供，返回所有模型',
-      },
-    },
-    required: [],
-  },
+  parameters: zodToJsonSchema(getAigcModelsParamsSchema, {
+    target: 'openApi3',
+    $refStrategy: 'none',
+  }) as any,
   runtime: ToolRuntime.SERVER,
   category: 'aigc',
   returnSchema: {

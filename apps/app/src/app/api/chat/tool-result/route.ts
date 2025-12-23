@@ -91,17 +91,29 @@ export const POST = withUserAuthApi<{}, {}, ToolResultRequest>(async (_req, ctx)
     });
 
     // 触发 workflow 事件，让 workflow 继续执行
-    // 从消息的 finishReason 字段中获取 workflow run ID 和 event name
+    // 从消息的 finishReason 字段中获取 event name
     if (messageWithTools.finishReason) {
       try {
         const metadata = JSON.parse(messageWithTools.finishReason);
         if (metadata.eventName) {
-          await workflow.notify(metadata.eventName, {
-            messageId: messageWithTools.id,
-            toolResults: newToolResults.map(tr => ({
-              toolCallId: tr.toolCallId,
-            })),
+          // 从 toolResults 中提取用户提交的数据
+          const userSubmittedData = newToolResults.find(tr => {
+            const toolCall = existingToolCalls.find(tc => tc.id === tr.toolCallId);
+            return toolCall?.function.name === 'human_in_loop';
           });
+
+          // 构建事件数据：包含用户提交的表单数据
+          const eventData = userSubmittedData?.data
+            ? {
+                submitted: userSubmittedData.data.submitted ?? true,
+                formData: userSubmittedData.data.formData ?? {},
+              }
+            : {
+                submitted: false,
+                formData: {},
+              };
+
+          await workflow.notify(metadata.eventName, eventData);
         }
       } catch (error) {
         console.error('[Tool Result] Failed to parse workflow metadata or trigger event:', error);

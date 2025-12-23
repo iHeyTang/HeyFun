@@ -13,6 +13,7 @@ import { memo, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { ModelIcon } from '../model-icon';
 import { ToolCallCard } from './tool-call-card';
+import { ImagePreview } from '@/components/block/preview/image-preview';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -22,6 +23,13 @@ interface ChatMessageProps {
   toolCalls?: PrismaJson.ToolCall[];
   toolResults?: PrismaJson.ToolResult[];
   modelId?: string;
+  messageId?: string;
+  sessionId?: string;
+  tokenCount?: number | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  cachedInputTokens?: number | null;
+  cachedOutputTokens?: number | null;
 }
 
 // 带 Tooltip 的消息操作按钮组件
@@ -51,7 +59,22 @@ const MessageActionButton = ({ icon, tooltip, onClick, disabled = false }: Messa
   );
 };
 
-const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, toolCalls, toolResults, modelId }: ChatMessageProps) => {
+const ChatMessageComponent = ({
+  role,
+  content,
+  isStreaming = false,
+  timestamp,
+  toolCalls,
+  toolResults,
+  modelId,
+  messageId,
+  sessionId,
+  tokenCount,
+  inputTokens,
+  outputTokens,
+  cachedInputTokens,
+  cachedOutputTokens,
+}: ChatMessageProps) => {
   const isUser = role === 'user';
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -194,60 +217,6 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
           )}
         </div>
 
-        {/* 附件预览（仅用户消息） */}
-        {isUser && attachments.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {attachments.map((attachment, index) => {
-              if (attachment.type === 'image') {
-                // 图片附件
-                return (
-                  <Image
-                    key={index}
-                    src={attachment.url}
-                    alt={attachment.name || `Image ${index + 1}`}
-                    className="max-h-48 max-w-xs rounded-lg object-cover"
-                    width={100}
-                    height={100}
-                  />
-                );
-              } else if (attachment.type === 'video') {
-                // 视频附件
-                return (
-                  <video key={index} src={attachment.url} controls className="max-h-48 max-w-xs rounded-lg" preload="metadata">
-                    Your browser does not support the video tag.
-                  </video>
-                );
-              } else if (attachment.type === 'audio') {
-                // 音频附件
-                return (
-                  <div key={index} className="max-w-xs rounded-lg border p-2">
-                    <audio src={attachment.url} controls className="w-full">
-                      Your browser does not support the audio tag.
-                    </audio>
-                    {attachment.name && <div className="text-muted-foreground mt-1 text-xs">{attachment.name}</div>}
-                  </div>
-                );
-              } else {
-                // 文档或其他文件
-                return (
-                  <a
-                    key={index}
-                    href={attachment.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:bg-muted flex items-center gap-2 rounded-lg border p-2"
-                  >
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{attachment.name || `附件 ${index + 1}`}</div>
-                      {attachment.mimeType && <div className="text-muted-foreground text-xs">{attachment.mimeType}</div>}
-                    </div>
-                  </a>
-                );
-              }
-            })}
-          </div>
-        )}
-
         {/* 消息内容（包含思考过程和主要内容） */}
         {(mainContent || thinkingContent) && (
           <div className={cn('bg-muted max-w-[70%] rounded-lg')}>
@@ -293,10 +262,64 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
           </div>
         )}
 
+        {/* 附件预览（仅用户消息） */}
+        {isUser && attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {attachments.map((attachment, index) => {
+              if (attachment.type === 'image') {
+                // 图片附件
+                return (
+                  <ImagePreview
+                    key={index}
+                    src={attachment.url}
+                    alt={attachment.name || `Image ${index + 1}`}
+                    className="h-12 w-12 rounded-lg object-cover"
+                    width={100}
+                    height={100}
+                  />
+                );
+              } else if (attachment.type === 'video') {
+                // 视频附件
+                return (
+                  <video key={index} src={attachment.url} controls className="max-h-48 max-w-xs rounded-lg" preload="metadata">
+                    Your browser does not support the video tag.
+                  </video>
+                );
+              } else if (attachment.type === 'audio') {
+                // 音频附件
+                return (
+                  <div key={index} className="max-w-xs rounded-lg border p-2">
+                    <audio src={attachment.url} controls className="w-full">
+                      Your browser does not support the audio tag.
+                    </audio>
+                    {attachment.name && <div className="text-muted-foreground mt-1 text-xs">{attachment.name}</div>}
+                  </div>
+                );
+              } else {
+                // 文档或其他文件
+                return (
+                  <a
+                    key={index}
+                    href={attachment.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:bg-muted flex items-center gap-2 rounded-lg border p-2"
+                  >
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">{attachment.name || `附件 ${index + 1}`}</div>
+                      {attachment.mimeType && <div className="text-muted-foreground text-xs">{attachment.mimeType}</div>}
+                    </div>
+                  </a>
+                );
+              }
+            })}
+          </div>
+        )}
+
         {/* 工具调用卡片（包含结果）- 更小的宽度 */}
         {hasToolCalls && toolCalls && (
           <div className="min-w-0 max-w-[50%]">
-            <ToolCallCard toolCalls={toolCalls} toolResults={toolResults} />
+            <ToolCallCard toolCalls={toolCalls} toolResults={toolResults} messageId={messageId} sessionId={sessionId} />
           </div>
         )}
 
@@ -304,6 +327,38 @@ const ChatMessageComponent = ({ role, content, isStreaming = false, timestamp, t
         {!isUser && !mainContent && !hasToolCalls && !thinkingContent && (
           <div className="bg-muted max-w-[70%] rounded-lg px-4 py-3">
             <LoadingDots label="Thinking" />
+          </div>
+        )}
+
+        {/* Token 数量显示 - 在消息/工具下方，只在 hover 时显示 */}
+        {((inputTokens !== null && inputTokens !== undefined) ||
+          (outputTokens !== null && outputTokens !== undefined) ||
+          (cachedInputTokens !== null && cachedInputTokens !== undefined) ||
+          (cachedOutputTokens !== null && cachedOutputTokens !== undefined) ||
+          (tokenCount !== null && tokenCount !== undefined)) && (
+          <div className="group-hover:text-muted-foreground/70 text-xs text-transparent transition-all">
+            {(() => {
+              const parts: string[] = [];
+              if (inputTokens !== null && inputTokens !== undefined) {
+                parts.push(`输入: ${inputTokens.toLocaleString()}`);
+              }
+              if (outputTokens !== null && outputTokens !== undefined) {
+                parts.push(`输出: ${outputTokens.toLocaleString()}`);
+              }
+              if (cachedInputTokens !== null && cachedInputTokens !== undefined && cachedInputTokens > 0) {
+                parts.push(`缓存输入: ${cachedInputTokens.toLocaleString()}`);
+              }
+              if (cachedOutputTokens !== null && cachedOutputTokens !== undefined && cachedOutputTokens > 0) {
+                parts.push(`缓存输出: ${cachedOutputTokens.toLocaleString()}`);
+              }
+              if (parts.length > 0) {
+                return parts.join(' · ');
+              }
+              if (tokenCount !== null && tokenCount !== undefined) {
+                return `${tokenCount.toLocaleString()} tokens`;
+              }
+              return '';
+            })()}
           </div>
         )}
       </div>
@@ -328,6 +383,11 @@ export const ChatMessage = memo(ChatMessageComponent, (prevProps, nextProps) => 
     prevProps.isStreaming === nextProps.isStreaming &&
     prevProps.timestamp.getTime() === nextProps.timestamp.getTime() &&
     prevProps.modelId === nextProps.modelId &&
+    prevProps.tokenCount === nextProps.tokenCount &&
+    prevProps.inputTokens === nextProps.inputTokens &&
+    prevProps.outputTokens === nextProps.outputTokens &&
+    prevProps.cachedInputTokens === nextProps.cachedInputTokens &&
+    prevProps.cachedOutputTokens === nextProps.cachedOutputTokens &&
     JSON.stringify(prevProps.toolCalls) === JSON.stringify(nextProps.toolCalls) &&
     JSON.stringify(prevProps.toolResults) === JSON.stringify(nextProps.toolResults)
   );

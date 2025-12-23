@@ -1,9 +1,10 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { ToolContext } from '../context';
 import { prisma } from '@/lib/server/prisma';
 import storage from '@/lib/server/storage';
 import { createHash } from 'crypto';
 import { nanoid } from 'nanoid';
+import { updateNoteContentParamsSchema } from './schema';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 
 function calculateContentHash(content: string): string {
   return createHash('sha256').update(content, 'utf-8').digest('hex');
@@ -26,28 +27,19 @@ function extractTextFromMarkdown(markdown: string): string {
     .trim();
 }
 
-export async function updateNoteContentExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  try {
-    if (!context.organizationId) {
-      return {
-        success: false,
-        error: 'Organization ID is required',
-      };
-    }
+export const updateNoteContentExecutor = definitionToolExecutor(
+  updateNoteContentParamsSchema,
+  async (args, context) => {
+    return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+      try {
+        if (!context.organizationId) {
+        return {
+          success: false,
+          error: 'Organization ID is required',
+        };
+      }
 
-    const { noteId, content } = args;
-    if (!noteId || typeof noteId !== 'string') {
-      return {
-        success: false,
-        error: 'Note ID is required and must be a string',
-      };
-    }
-    if (!content || typeof content !== 'string') {
-      return {
-        success: false,
-        error: 'Content is required and must be a string',
-      };
-    }
+      const { noteId, content } = args;
 
     // 获取现有笔记
     const existingNote = await prisma.notes.findUnique({
@@ -104,12 +96,14 @@ export async function updateNoteContentExecutor(args: any, context: ToolContext)
         message: 'Note content updated successfully',
         noteId,
       },
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: (error as Error).message,
-    };
-  }
-}
+      };
+      } catch (error) {
+        return {
+          success: false,
+          error: (error as Error).message,
+        };
+      }
+    });
+  },
+);
 

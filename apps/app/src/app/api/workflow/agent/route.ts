@@ -131,7 +131,7 @@ interface AgentWorkflowConfig {
  */
 async function executeTools(
   toolCalls: any[],
-  context: { organizationId: string; sessionId: string; workflow: WorkflowContext },
+  context: { organizationId: string; sessionId: string; workflow: WorkflowContext; messageId: string },
 ): Promise<ToolResult[]> {
   const results: ToolResult[] = [];
 
@@ -153,6 +153,8 @@ async function executeTools(
         organizationId: context.organizationId,
         sessionId: context.sessionId,
         workflow: context.workflow,
+        toolCallId: toolCall.id,
+        messageId: context.messageId,
       });
     } else {
       // 工具未找到
@@ -544,6 +546,8 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
 
         let inputTokens = 0;
         let outputTokens = 0;
+        let cachedInputTokens = 0;
+        let cachedOutputTokens = 0;
         let fullContent = '';
         const toolCalls: any[] = [];
         let finishReason: string | null = null;
@@ -554,6 +558,8 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
           if (chunk.usage) {
             inputTokens += chunk.usage.prompt_tokens || 0;
             outputTokens += chunk.usage.completion_tokens || 0;
+            cachedInputTokens += chunk.usage.cached_prompt_tokens || 0;
+            cachedOutputTokens += chunk.usage.cached_completion_tokens || 0;
           }
 
           const choice = chunk.choices?.[0];
@@ -602,6 +608,8 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
           },
           inputTokens,
           outputTokens,
+          cachedInputTokens,
+          cachedOutputTokens,
         };
       } catch (error) {
         // 在步骤内部捕获错误，返回错误信息而不是抛出异常
@@ -613,6 +621,8 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
           data: null,
           inputTokens: 0,
           outputTokens: 0,
+          cachedInputTokens: 0,
+          cachedOutputTokens: 0,
         };
       }
     });
@@ -639,6 +649,8 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
     const llmResponse = llmResult.data;
     const inputTokens = llmResult.inputTokens;
     const outputTokens = llmResult.outputTokens;
+    const cachedInputTokens = llmResult.cachedInputTokens || 0;
+    const cachedOutputTokens = llmResult.cachedOutputTokens || 0;
 
     // 步骤7：更新 AI 消息
     await context.run(`round-${roundCount}-update-ai-message`, async () => {
@@ -649,6 +661,11 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
           isComplete: llmResponse.finishReason !== 'tool_calls',
           toolCalls: llmResponse.toolCalls.length > 0 ? llmResponse.toolCalls : undefined,
           finishReason: llmResponse.finishReason,
+          tokenCount: inputTokens + outputTokens,
+          inputTokens: inputTokens,
+          outputTokens: outputTokens,
+          cachedInputTokens: cachedInputTokens > 0 ? cachedInputTokens : null,
+          cachedOutputTokens: cachedOutputTokens > 0 ? cachedOutputTokens : null,
         },
       });
     });
@@ -679,13 +696,16 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
       }
 
       // 执行服务端工具
+      // 注意：如果工具调用了 waitForEvent（如 human_in_loop），workflow 会在这里暂停，直到事件被触发
       const serverToolResults = await executeTools(llmResponse.toolCalls, {
         organizationId,
         sessionId,
         workflow: context,
+        messageId: aiMessage.id,
       });
 
       // 保存服务端工具结果到 assistant 消息的 toolResults 字段
+      // 注意：human_in_loop 工具已经在 executor 中保存了初始数据，这里只需要更新最终结果
       await context.run(`round-${roundCount}-save-server-tool-results`, async () => {
         const existingToolResults = (aiMessage.toolResults as PrismaJson.ToolResult[] | null) || [];
         const newToolResults: PrismaJson.ToolResult[] = [...existingToolResults];
@@ -721,6 +741,7 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
           where: { id: aiMessage.id },
           data: {
             toolResults: newToolResults,
+            isComplete: true, // 工具执行完成后标记为完成
           },
         });
       });

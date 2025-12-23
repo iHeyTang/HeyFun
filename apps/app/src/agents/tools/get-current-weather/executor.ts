@@ -1,16 +1,12 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { ToolContext } from '../context';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
+import { getCurrentWeatherParamsSchema } from './schema';
 
-export async function getCurrentWeatherExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  try {
-    const { city, unit = 'celsius' } = args;
-
-    if (!city) {
-      return {
-        success: false,
-        error: 'City name is required',
-      };
-    }
+export const getCurrentWeatherExecutor = definitionToolExecutor(
+  getCurrentWeatherParamsSchema,
+  async (args, context) => {
+    return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+      try {
+        const { city, unit = 'celsius' } = args;
 
     // TODO: 集成真实的天气 API（如 OpenWeatherMap、WeatherAPI 等）
     // 这里返回模拟数据作为示例
@@ -35,11 +31,13 @@ export async function getCurrentWeatherExecutor(args: any, context: ToolContext)
       data: mockWeather,
       message: `已获取 ${city} 的天气信息`,
     };
-  } catch (error) {
-    return {
-      success: false,
-      error: (error as Error).message,
-    };
-  }
-}
+      } catch (error) {
+        return {
+          success: false,
+          error: (error as Error).message,
+        };
+      }
+    });
+  },
+);
 

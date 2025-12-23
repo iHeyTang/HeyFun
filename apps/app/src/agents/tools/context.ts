@@ -13,5 +13,7 @@ export interface ToolContext {
   workflow: WorkflowContext;
   /** 工具调用ID，用于生成唯一的 step name */
   toolCallId?: string;
+  /** 消息ID，用于保存 toolResults */
+  messageId?: string;
 }
 

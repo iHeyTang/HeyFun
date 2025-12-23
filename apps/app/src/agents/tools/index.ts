@@ -102,6 +102,8 @@ const allTools: Tool[] = [
   getNodeTypeInfoTool,
   autoLayoutCanvasTool,
   runCanvasWorkflowTool,
+  // UI tools
+  // humanInLoopTool,
 ];
 
 toolRegistry.registerTools(allTools);
@@ -134,4 +136,5 @@ export { getCanvasCapabilitiesTool } from './get-canvas-capabilities';
 export { getNodeTypeInfoTool } from './get-node-type-info';
 export { autoLayoutCanvasTool } from './auto-layout-canvas';
 export { runCanvasWorkflowTool } from './run-canvas-workflow';
+export { humanInLoopTool } from './human-in-loop';
 

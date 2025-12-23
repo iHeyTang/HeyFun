@@ -330,9 +330,13 @@ model ChatMessages {
   isComplete  Boolean @default(false) // 是否完成输出
 
   // 元数据
-  tokenCount   Int? // token数量
-  finishReason String? // 完成原因
-  modelId      String? // 模型ID（仅用于assistant消息，标识该消息由哪个模型生成）
+  tokenCount         Int? // token数量（总数，向后兼容）
+  inputTokens        Int? // 输入token数量
+  outputTokens       Int? // 输出token数量
+  cachedInputTokens  Int? // 缓存的输入token数量
+  cachedOutputTokens Int? // 缓存的输出token数量
+  finishReason       String? // 完成原因
+  modelId            String? // 模型ID（仅用于assistant消息，标识该消息由哪个模型生成）
 
   // 工具调用相关
   /// [ToolCall[]]
@@ -685,7 +689,7 @@ model SystemPromptSnippets {
 model NoteFolders {
   id             String   @id @default(cuid())
   createdAt      DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  updatedAt      DateTime @updatedAt
   organizationId String
   name           String
   parentId       String? // 支持嵌套文件夹
@@ -723,32 +727,34 @@ model NoteTags {
 
 // 笔记核心表
 model Notes {
-  id             String   @id @default(cuid())
-  createdAt      DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String    @id @default(cuid())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   organizationId String
   title          String
   /// [String] OSS 文件 key，存储 Markdown 内容
   contentKey     String
   /// [String] 内容纯文本（用于搜索），从 Markdown 提取
-  contentText    String?  @db.Text
+  contentText    String?   @db.Text
   /// [String] 内容哈希值（用于版本控制和去重）
   contentHash    String?
   folderId       String? // 所属文件夹
-  isPinned       Boolean  @default(false) // 是否置顶
-  isStarred      Boolean  @default(false) // 是否收藏
-  isArchived     Boolean  @default(false) // 是否归档
-  isDeleted      Boolean  @default(false) // 是否删除（软删除）
+  isPinned       Boolean   @default(false) // 是否置顶
+  isStarred      Boolean   @default(false) // 是否收藏
+  isArchived     Boolean   @default(false) // 是否归档
+  isDeleted      Boolean   @default(false) // 是否删除（软删除）
   deletedAt      DateTime? // 删除时间
-  order          Int      @default(0) // 排序顺序
+  order          Int       @default(0) // 排序顺序
 
   // 关联关系
-  folder        NoteFolders?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  folder       NoteFolders?       @relation(fields: [folderId], references: [id], onDelete: SetNull)
   tagRelations NoteTagRelations[]
-  links        NoteLinks[]      @relation("SourceNote")
-  backLinks    NoteLinks[]       @relation("TargetNote")
+  links        NoteLinks[]        @relation("SourceNote")
+  backLinks    NoteLinks[]        @relation("TargetNote")
   attachments  NoteAttachments[]
   versions     NoteVersions[]
+  // 注意：全文搜索索引需要在数据库迁移中单独创建
+  // 可以使用 PostgreSQL 的 tsvector 或 pg_trgm 扩展
 
   @@index([organizationId])
   @@index([organizationId, folderId])
@@ -759,16 +765,14 @@ model Notes {
   @@index([folderId])
   @@index([createdAt])
   @@index([updatedAt])
-  // 注意：全文搜索索引需要在数据库迁移中单独创建
-  // 可以使用 PostgreSQL 的 tsvector 或 pg_trgm 扩展
 }
 
 // 笔记-标签关联表
 model NoteTagRelations {
-  id             String   @id @default(cuid())
-  createdAt      DateTime @default(now())
-  noteId         String
-  tagId          String
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  noteId    String
+  tagId     String
 
   // 关联关系
   note Notes    @relation(fields: [noteId], references: [id], onDelete: Cascade)
@@ -787,7 +791,7 @@ model NoteLinks {
   organizationId String
   sourceNoteId   String // 源笔记
   targetNoteId   String // 目标笔记
-  linkType       String  @default("bidirectional") // bidirectional, unidirectional
+  linkType       String   @default("bidirectional") // bidirectional, unidirectional
 
   // 关联关系
   sourceNote Notes @relation("SourceNote", fields: [sourceNoteId], references: [id], onDelete: Cascade)
@@ -806,7 +810,7 @@ model NoteLinks {
 model NoteAttachments {
   id             String   @id @default(cuid())
   createdAt      DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  updatedAt      DateTime @updatedAt
   organizationId String
   noteId         String
   fileKey        String // OSS 文件 key
@@ -825,17 +829,17 @@ model NoteAttachments {
 
 // 笔记版本历史（Phase 3 功能）
 model NoteVersions {
-  id             String   @id @default(cuid())
-  createdAt      DateTime @default(now())
-  noteId         String
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  noteId      String
   /// [String] OSS 文件 key，存储该版本的 Markdown 内容
-  contentKey     String
+  contentKey  String
   /// [String] 内容哈希值
-  contentHash    String?
+  contentHash String?
   /// [String] 版本描述（可选）
-  description    String?
+  description String?
   /// [String] 创建版本的用户 ID（可选）
-  createdBy      String?
+  createdBy   String?
 
   // 关联关系
   note Notes @relation(fields: [noteId], references: [id], onDelete: Cascade)

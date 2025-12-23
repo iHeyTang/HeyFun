@@ -9,12 +9,18 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useLLM } from '@/hooks/use-llm';
 import { usePreferences } from '@/hooks/use-preferences';
 import { ModelInfo } from '@repo/llm/chat';
-import { FileIcon, ImageIcon, Send, StopCircle, X } from 'lucide-react';
+import { FileIcon, ImageIcon, Plus, Send, StopCircle, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { ModelIcon } from '../model-icon';
 
 interface ChatInputProps {
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    cachedInputTokens: number;
+    cachedOutputTokens: number;
+  };
   onSend: (message: string, attachments?: ChatInputAttachment[]) => void;
   disabled?: boolean;
   inputValue?: string;
@@ -56,6 +62,7 @@ export const useChatbotModelSelector = () => {
 };
 
 export const ChatInput = ({
+  usage,
   onSend,
   disabled = false,
   inputValue: controlledInputValue,
@@ -70,6 +77,20 @@ export const ChatInput = ({
 
   const handleModelSelect = (model: ModelInfo) => {
     setSelectedModel(model);
+  };
+
+  const renderHeader = () => {
+    if (!usage) {
+      return null;
+    }
+    return (
+      <div className="text-muted-foreground/60 flex items-center gap-2 px-2 text-xs">
+        <span>输入: {usage.inputTokens.toLocaleString()} tokens</span>
+        <span>输出: {usage.outputTokens.toLocaleString()} tokens</span>
+        <span>缓存输入: {usage.cachedInputTokens.toLocaleString()} tokens</span>
+        <span>缓存输出: {usage.cachedOutputTokens.toLocaleString()} tokens</span>
+      </div>
+    );
   };
 
   const renderFooter = ({
@@ -105,7 +126,7 @@ export const ChatInput = ({
             disabled={footerDisabled}
             aria-label="Upload file"
           >
-            <ImageIcon className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
           </Button>
           {/* 附件预览 */}
           {attachments.length > 0 && (
@@ -212,6 +233,7 @@ export const ChatInput = ({
         onSend={onSend}
         disabled={disabled || isLoading}
         placeholder={isLoading ? '正在处理中...' : disabled ? 'AI is responding...' : 'Type your message...'}
+        renderHeader={renderHeader}
         renderFooter={renderFooter}
         value={controlledInputValue}
         onValueChange={onInputValueChange}

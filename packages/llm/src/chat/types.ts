@@ -73,6 +73,8 @@ export namespace UnifiedChat {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
+    cached_prompt_tokens?: number; // 缓存的输入token数量
+    cached_completion_tokens?: number; // 缓存的输出token数量
   }
 
   export interface Choice {

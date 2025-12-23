@@ -1,22 +1,16 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { ToolContext } from '../context';
 import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
 import AIGC, { t2aParamsSchema } from '@repo/llm/aigc';
 import type { z } from 'zod';
+import { generateAudioParamsSchema } from './schema';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 
-export async function generateAudioExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  const stepName = `generate-audio-create-${context.toolCallId}`;
-  const { error, task } = await context.workflow.run(stepName, async () => {
-    const { model, text, voiceId, advanced } = args;
-
-    if (!model || typeof model !== 'string') {
-      return { error: 'Model is required and must be a string' };
-    }
-
-    if (!text || typeof text !== 'string' || text.trim().length === 0) {
-      return { error: 'Text is required and must be a non-empty string' };
-    }
+export const generateAudioExecutor = definitionToolExecutor(
+  generateAudioParamsSchema,
+  async (args, context) => {
+    const { error, task } = await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+      const { model, text, voiceId, advanced } = args;
 
     if (!context.organizationId) {
       return { error: 'Organization ID is required' };
@@ -83,9 +77,9 @@ export async function generateAudioExecutor(args: any, context: ToolContext): Pr
     };
   }
 
-  const waitStepName = context.toolCallId ? `generate-audio-wait-${context.toolCallId}` : `generate-audio-wait-${task.id}`;
+  // waitForEvent 需要使用不同的 step name
   const result = await context.workflow.waitForEvent<{ taskId: string; results?: PrismaJson.PaintboardTaskResult; error?: string }>(
-    waitStepName,
+    `toolcall-${context.toolCallId}-wait`,
     `paintboard-result-${task.id}`,
   );
 
@@ -100,5 +94,6 @@ export async function generateAudioExecutor(args: any, context: ToolContext): Pr
     success: true,
     data: result.eventData.results,
   };
-}
+  },
+);
 

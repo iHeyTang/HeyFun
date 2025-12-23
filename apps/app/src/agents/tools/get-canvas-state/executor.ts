@@ -1,23 +1,20 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { ToolContext } from '../context';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import { prisma } from '@/lib/server/prisma';
+import { getCanvasStateParamsSchema } from './schema';
 
-export async function getCanvasStateExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  try {
-    if (!context.organizationId) {
-      return {
-        success: false,
-        error: 'Organization ID is required',
-      };
-    }
+export const getCanvasStateExecutor = definitionToolExecutor(
+  getCanvasStateParamsSchema,
+  async (args, context) => {
+    return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+      try {
+        if (!context.organizationId) {
+        return {
+          success: false,
+          error: 'Organization ID is required',
+        };
+      }
 
-    const { projectId } = args;
-    if (!projectId || typeof projectId !== 'string') {
-      return {
-        success: false,
-        error: 'Project ID is required and must be a string',
-      };
-    }
+      const { projectId, includeNodeDetails = true } = args;
 
     // 从数据库获取项目
     const project = await prisma.flowCanvasProjects.findUnique({
@@ -49,8 +46,10 @@ export async function getCanvasStateExecutor(args: any, context: ToolContext): P
         edgeCount: schema.edges?.length || 0,
       },
     };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
-}
+      } catch (error) {
+        return { success: false, error: (error as Error).message };
+      }
+    });
+  },
+);
 

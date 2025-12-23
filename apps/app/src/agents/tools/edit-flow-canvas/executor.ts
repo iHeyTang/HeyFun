@@ -1,6 +1,6 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { ToolContext } from '../context';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import { prisma } from '@/lib/server/prisma';
+import { editFlowCanvasParamsSchema } from './schema';
 
 function generateNodeId(): string {
   return `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -60,9 +60,10 @@ function buildNodeActionData(nodeType: string, data: any = {}) {
   }
 }
 
-export async function editFlowCanvasExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  try {
-    if (!context.organizationId) {
+export const editFlowCanvasExecutor = definitionToolExecutor(editFlowCanvasParamsSchema, async (args, context) => {
+  return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+    try {
+      if (!context.organizationId) {
       return {
         success: false,
         error: 'Organization ID is required',
@@ -70,13 +71,6 @@ export async function editFlowCanvasExecutor(args: any, context: ToolContext): P
     }
 
     const { projectId, mode = 'merge', nodes = [], edges = [], deleteNodes = [], deleteEdges = [] } = args;
-
-    if (!projectId || typeof projectId !== 'string') {
-      return {
-        success: false,
-        error: 'Project ID is required and must be a string',
-      };
-    }
 
     // 从数据库获取当前项目
     const project = await prisma.flowCanvasProjects.findUnique({
@@ -150,9 +144,7 @@ export async function editFlowCanvasExecutor(args: any, context: ToolContext): P
       if (deleteNodes.length > 0) {
         newState.nodes = newState.nodes.filter((node: any) => !deleteNodes.includes(node.id));
         // 同时删除相关的连接
-        newState.edges = newState.edges.filter(
-          (edge: any) => !deleteNodes.includes(edge.source) && !deleteNodes.includes(edge.target),
-        );
+        newState.edges = newState.edges.filter((edge: any) => !deleteNodes.includes(edge.source) && !deleteNodes.includes(edge.target));
       }
 
       // 删除连接
@@ -286,8 +278,8 @@ export async function editFlowCanvasExecutor(args: any, context: ToolContext): P
         deletedEdges: deletedEdgesCount,
       },
     };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
-}
-
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+});

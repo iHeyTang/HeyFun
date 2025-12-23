@@ -1,9 +1,9 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
-import { ToolContext } from '../context';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
 import AIGC, { GenerationType, videoParamsSchema } from '@repo/llm/aigc';
 import type { z } from 'zod';
+import { generateVideoParamsSchema } from './schema';
 
 /**
  * 根据参数推断视频生成类型
@@ -21,14 +21,11 @@ function inferVideoGenerationType(params: z.infer<typeof videoParamsSchema>): Ge
   return 'text-to-video';
 }
 
-export async function generateVideoExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  const stepName = `generate-video-create-${context.toolCallId}`;
-  const { error, task } = await context.workflow.run(stepName, async () => {
-    const { model, prompt, firstFrame, lastFrame, referenceImage, video, audio, aspectRatio, resolution, duration, advanced } = args;
-
-    if (!model || typeof model !== 'string') {
-      return { error: 'Model is required and must be a string' };
-    }
+export const generateVideoExecutor = definitionToolExecutor(
+  generateVideoParamsSchema,
+  async (args, context) => {
+    const { error, task } = await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+      const { model, prompt, firstFrame, lastFrame, referenceImage, video, audio, aspectRatio, resolution, duration, advanced } = args;
 
     if (!context.organizationId) {
       return { error: 'Organization ID is required' };
@@ -94,10 +91,6 @@ export async function generateVideoExecutor(args: any, context: ToolContext): Pr
       params.advanced = advanced;
     }
 
-    // 至少需要prompt、firstFrame、lastFrame、referenceImage或video中的一个
-    if (!params.prompt && !params.firstFrame && !params.lastFrame && !params.referenceImage && !params.video) {
-      return { error: 'At least one of prompt, firstFrame, lastFrame, referenceImage, or video is required' };
-    }
 
     // 推断生成类型
     const generationType = inferVideoGenerationType(params);
@@ -138,9 +131,9 @@ export async function generateVideoExecutor(args: any, context: ToolContext): Pr
     };
   }
 
-  const waitStepName = context.toolCallId ? `generate-video-wait-${context.toolCallId}` : `generate-video-wait-${task.id}`;
+  // waitForEvent 需要使用不同的 step name
   const result = await context.workflow.waitForEvent<{ taskId: string; results?: PrismaJson.PaintboardTaskResult; error?: string }>(
-    waitStepName,
+    `toolcall-${context.toolCallId}-wait`,
     `paintboard-result-${task.id}`,
   );
 
@@ -155,5 +148,6 @@ export async function generateVideoExecutor(args: any, context: ToolContext): Pr
     success: true,
     data: result.eventData.results,
   };
-}
+  },
+);
 

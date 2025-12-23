@@ -1,30 +1,26 @@
 import { ToolDefinition, ToolRuntime } from '@/agents/core/tools/tool-definition';
+import { z } from 'zod';
+import zodToJsonSchema from 'zod-to-json-schema';
+
+/**
+ * 生成音频的参数 Schema
+ */
+export const generateAudioParamsSchema = z.object({
+  model: z.string().min(1).describe('要使用的AI模型名称。使用get_aigc_models工具查看可用模型列表。'),
+  text: z.string().min(1).describe('要转换为语音的文本内容'),
+  voiceId: z.string().optional().describe('语音ID（可选），指定要使用的语音风格'),
+  advanced: z.record(z.any()).optional().describe('高级参数（可选），模型特定的额外参数'),
+});
+
+export type GenerateAudioParams = z.infer<typeof generateAudioParamsSchema>;
 
 export const generateAudioSchema: ToolDefinition = {
   name: 'generate_audio',
   description: '使用AI模型生成音频（文本转语音，TTS）。将文本转换为自然语音。生成的音频会保存在paintboard中。',
-  parameters: {
-    type: 'object',
-    properties: {
-      model: {
-        type: 'string',
-        description: '要使用的AI模型名称。使用get_aigc_models工具查看可用模型列表。',
-      },
-      text: {
-        type: 'string',
-        description: '要转换为语音的文本内容',
-      },
-      voiceId: {
-        type: 'string',
-        description: '语音ID（可选），指定要使用的语音风格',
-      },
-      advanced: {
-        type: 'object',
-        description: '高级参数（可选），模型特定的额外参数',
-      },
-    },
-    required: ['model', 'text'],
-  },
+  parameters: zodToJsonSchema(generateAudioParamsSchema, {
+    target: 'openApi3',
+    $refStrategy: 'none',
+  }) as any,
   runtime: ToolRuntime.SERVER,
   category: 'aigc',
   returnSchema: {

@@ -76,7 +76,7 @@ export function NoteEditorPanel({ note, onNoteUpdate }: NoteEditorPanelProps) {
         <div className="h-full">
           <WysiwygEditor
             value={content}
-            editorClassName="pl-6 pb-6"
+            editorClassName="pl-6 pt-2 pb-6"
             onChange={value => {
               setContent(value);
             }}

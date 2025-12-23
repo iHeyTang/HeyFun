@@ -1,13 +1,14 @@
-import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { ToolContext } from '../context';
 import AIGC from '@repo/llm/aigc';
+import { getNodeTypeInfoParamsSchema } from './schema';
+import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 
-export async function getNodeTypeInfoExecutor(args: any, context: ToolContext): Promise<ToolResult> {
-  try {
-    const { nodeType } = args;
-    if (!nodeType) {
-      return { success: false, error: 'nodeType is required' };
-    }
+export const getNodeTypeInfoExecutor = definitionToolExecutor(
+  getNodeTypeInfoParamsSchema,
+  async (args, context) => {
+    return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+      try {
+        const { nodeType } = args;
 
     // 获取模型列表
     let aigcModels: any[] = [];
@@ -74,8 +75,10 @@ export async function getNodeTypeInfoExecutor(args: any, context: ToolContext): 
         availableModels,
       },
     };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
-}
+      } catch (error) {
+        return { success: false, error: (error as Error).message };
+      }
+    });
+  },
+);
 

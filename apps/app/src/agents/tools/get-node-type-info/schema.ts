@@ -1,19 +1,23 @@
 import { ToolDefinition, ToolRuntime } from '@/agents/core/tools/tool-definition';
+import { z } from 'zod';
+import zodToJsonSchema from 'zod-to-json-schema';
+
+/**
+ * 获取节点类型信息的参数 Schema
+ */
+export const getNodeTypeInfoParamsSchema = z.object({
+  nodeType: z.enum(['text', 'image', 'video', 'audio', 'music', 'group']).describe('节点类型'),
+});
+
+export type GetNodeTypeInfoParams = z.infer<typeof getNodeTypeInfoParamsSchema>;
 
 export const getNodeTypeInfoSchema: ToolDefinition = {
   name: 'get_node_type_info',
   description: '获取指定节点类型的详细信息，包括可用模型和参数配置',
-  parameters: {
-    type: 'object',
-    properties: {
-      nodeType: {
-        type: 'string',
-        enum: ['text', 'image', 'video', 'audio', 'music', 'group'],
-        description: '节点类型',
-      },
-    },
-    required: ['nodeType'],
-  },
+  parameters: zodToJsonSchema(getNodeTypeInfoParamsSchema, {
+    target: 'openApi3',
+    $refStrategy: 'none',
+  }) as any,
   runtime: ToolRuntime.SERVER,
   category: 'canvas',
   returnSchema: {
