@@ -91,6 +91,7 @@ export const ChatInput = ({
   const attachments = isAttachmentsControlled ? controlledAttachments : internalAttachments;
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [messageText, setMessageText] = useState('');
 
   const isControlled = controlledValue !== undefined;
 
@@ -166,6 +167,8 @@ export const ChatInput = ({
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
+      const text = editor.getText();
+      setMessageText(text);
       if (isControlled) {
         onValueChange?.(html);
       }
@@ -174,14 +177,29 @@ export const ChatInput = ({
 
   // 同步外部 value 变化到编辑器
   useEffect(() => {
-    if (editor && controlledValue !== undefined && controlledValue !== editor.getHTML()) {
-      // 使用 setTimeout 延迟执行，避免在 React 渲染周期中调用 flushSync
-      const timeoutId = setTimeout(() => {
-        if (editor && controlledValue !== undefined && controlledValue !== editor.getHTML()) {
-          editor.commands.setContent(controlledValue, { emitUpdate: false });
-        }
-      }, 0);
-      return () => clearTimeout(timeoutId);
+    if (editor && controlledValue !== undefined) {
+      const currentHTML = editor.getHTML();
+      const currentText = editor.getText();
+      // 比较 HTML 和纯文本，确保内容真正变化时才更新
+      const valueChanged = controlledValue !== currentHTML && controlledValue !== currentText;
+
+      if (valueChanged) {
+        // 使用 setTimeout 延迟执行，避免在 React 渲染周期中调用 flushSync
+        const timeoutId = setTimeout(() => {
+          if (editor && controlledValue !== undefined) {
+            const newCurrentHTML = editor.getHTML();
+            const newCurrentText = editor.getText();
+            // 再次检查，避免重复更新
+            if (controlledValue !== newCurrentHTML && controlledValue !== newCurrentText) {
+              editor.commands.setContent(controlledValue, { emitUpdate: false });
+              // 立即更新消息文本状态，确保发送按钮状态正确
+              const updatedText = editor.getText();
+              setMessageText(updatedText);
+            }
+          }
+        }, 0);
+        return () => clearTimeout(timeoutId);
+      }
     }
   }, [editor, controlledValue]);
 
@@ -200,8 +218,16 @@ export const ChatInput = ({
   }, [editor, disabled, uploading]);
 
   // 获取当前消息文本（用于发送和显示）
-  const message = editor ? editor.getText() : '';
+  // 使用状态中的 messageText，确保在快速填入后能立即反映
+  const message = messageText;
   const messageHTML = editor ? editor.getHTML() : '';
+
+  // 初始化 messageText
+  useEffect(() => {
+    if (editor) {
+      setMessageText(editor.getText());
+    }
+  }, [editor]);
 
   const handleValueChange = (newValue: string) => {
     if (editor) {
@@ -212,38 +238,8 @@ export const ChatInput = ({
     }
   };
 
-  // 处理文件粘贴（支持图片）- 在 Tiptap 编辑器中处理
-  useEffect(() => {
-    if (!editor) return;
-
-    const handlePaste = async (e: ClipboardEvent) => {
-      if (disabled || uploading) return;
-
-      const items = e.clipboardData?.items;
-      if (!items) return;
-
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item && item.kind === 'file') {
-          e.preventDefault();
-          const file = item.getAsFile();
-          if (file) {
-            await handleFileUpload(file);
-          }
-          break;
-        }
-      }
-    };
-
-    const editorElement = editor.view.dom;
-    editorElement.addEventListener('paste', handlePaste);
-    return () => {
-      editorElement.removeEventListener('paste', handlePaste);
-    };
-  }, [editor, disabled, uploading]);
-
   // 处理文件上传（支持所有文件类型）
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = useCallback(async (file: File) => {
     const maxSize = 50 * 1024 * 1024; // 50MB
     const error = validateFile(file, undefined, maxSize);
     if (error) {
@@ -313,7 +309,37 @@ export const ChatInput = ({
       toast.error('文件处理失败');
       setUploading(false);
     }
-  };
+  }, [attachments, isAttachmentsControlled, onAttachmentsChange]);
+
+  // 处理文件粘贴（支持图片）- 在 Tiptap 编辑器中处理
+  useEffect(() => {
+    if (!editor) return;
+
+    const handlePaste = async (e: ClipboardEvent) => {
+      if (disabled || uploading) return;
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item && item.kind === 'file') {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            await handleFileUpload(file);
+          }
+          break;
+        }
+      }
+    };
+
+    const editorElement = editor.view.dom;
+    editorElement.addEventListener('paste', handlePaste);
+    return () => {
+      editorElement.removeEventListener('paste', handlePaste);
+    };
+  }, [editor, disabled, uploading, handleFileUpload]);
 
   // 处理文件选择
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
