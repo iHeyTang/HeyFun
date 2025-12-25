@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useChatSessionsStore } from '@/hooks/use-chat-sessions';
+import { useChatSessionsStore, useChatSessionsListStore } from '@/hooks/use-chat-sessions';
 import { cn } from '@/lib/utils';
 import { History, Loader2, Plus, X } from 'lucide-react';
 import { useState } from 'react';

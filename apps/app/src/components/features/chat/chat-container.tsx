@@ -6,9 +6,9 @@
 
 'use client';
 
-import { useChatSessionsStore } from '@/hooks/use-chat-sessions';
+import { useChatSessionsStore, useChatSessionsListStore } from '@/hooks/use-chat-sessions';
 import { ChatSessions } from '@prisma/client';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { ChatContainerSkeleton } from './chat-container-skeleton';
 import { useChatbotModelSelector } from './chat-input';
 import { ChatSession } from './chat-session';
@@ -81,28 +81,55 @@ export const ChatContainer = ({
     loadSessions,
     setSessionInputValue,
     setActiveSessionId: setActiveSessionIdAction,
+    fetchAndUpdateMessages,
   } = useChatSessionsStore();
 
-  // 初始化加载 sessions
-  useEffect(() => {
-    loadSessions({
-      loadSessionsFn,
-      initialSessionId,
-      externalSessionId,
-    });
-  }, [loadSessions, loadSessionsFn, initialSessionId, externalSessionId]);
+  // 获取 setLoadingMessage 方法
+  const { setLoadingMessage } = useChatSessionsListStore();
 
-  // 同步外部控制的 sessionId
+  // 初始化加载 sessions（使用 useRef 跟踪上一次的 externalSessionId）
+  const prevExternalSessionIdRef = React.useRef<string | undefined>(externalSessionId);
+  const isInitialMountRef = React.useRef(true);
+
   useEffect(() => {
-    if (externalSessionId !== undefined && externalSessionId !== activeSessionId) {
-      setActiveSessionIdAction(externalSessionId);
-      // 切换 session 时，恢复该 session 的输入值（如果有）
-      const sessionInputValue = sessionInputValues[externalSessionId] || '';
-      if (onInputValueChange) {
-        onInputValueChange(sessionInputValue);
+    // 只在首次加载或 externalSessionId 真正变化时重新加载
+    const hasChanged = prevExternalSessionIdRef.current !== externalSessionId;
+    if (isInitialMountRef.current || hasChanged) {
+      loadSessions({
+        loadSessionsFn,
+        initialSessionId,
+        externalSessionId,
+      });
+      prevExternalSessionIdRef.current = externalSessionId;
+      isInitialMountRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalSessionId]); // 只监听 externalSessionId，避免不必要的重新加载
+
+  // 当 activeSessionId 变化时，如果该 session 没有消息，主动获取一次
+  // 使用 useRef 跟踪已经获取过的 session，避免重复获取
+  const fetchedSessionsRef = React.useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (activeSessionId) {
+      const hasMessages = (sessionMessages[activeSessionId]?.length ?? 0) > 0;
+      const isLoading = loadingMessages.has(activeSessionId);
+      const hasFetched = fetchedSessionsRef.current.has(activeSessionId);
+
+      // 如果没有消息且不在加载中且未获取过，主动获取一次
+      if (!hasMessages && !isLoading && !hasFetched) {
+        // 标记为已获取
+        fetchedSessionsRef.current.add(activeSessionId);
+        // 设置加载状态
+        setLoadingMessage(activeSessionId, true);
+        fetchAndUpdateMessages({ sessionId: activeSessionId, apiPrefix })
+          .finally(() => {
+            // 获取完成后清除加载状态
+            setLoadingMessage(activeSessionId, false);
+          });
       }
     }
-  }, [externalSessionId, activeSessionId, sessionInputValues, onInputValueChange, setActiveSessionIdAction]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSessionId]); // 只监听 activeSessionId 变化，避免死循环
 
   // 同步外部控制的输入值到当前活动的 session（用于从编辑器添加 mention）
   useEffect(() => {
@@ -137,10 +164,10 @@ export const ChatContainer = ({
 
         {/* Chat Content */}
         <div className="flex-1 overflow-hidden">
-          {activeSessionId && (sessionMessages[activeSessionId]?.length ?? 0) > 0 ? (
+          {activeSessionId ? (
             loadingMessages.has(activeSessionId) ? (
               <ChatSessionSkeleton />
-            ) : (
+            ) : (sessionMessages[activeSessionId]?.length ?? 0) > 0 ? (
               <ChatSession
                 key={activeSessionId}
                 sessionId={activeSessionId}
@@ -150,6 +177,8 @@ export const ChatContainer = ({
                 inputValue={controlledInputValue}
                 onInputValueChange={onInputValueChange}
               />
+            ) : (
+              homeComponent || <div className="text-muted-foreground flex h-full items-center justify-center">{`Click "New" to start a chat`}</div>
             )
           ) : (
             homeComponent || <div className="text-muted-foreground flex h-full items-center justify-center">{`Click "New" to start a chat`}</div>
@@ -169,10 +198,10 @@ export const ChatContainer = ({
       <ResizableHandle />
       {/* Chat Content */}
       <ResizablePanel defaultSize={90} minSize={60} maxSize={90} className="flex flex-1 flex-col overflow-hidden">
-        {activeSessionId && (sessionMessages[activeSessionId]?.length ?? 0) > 0 ? (
+        {activeSessionId ? (
           loadingMessages.has(activeSessionId) ? (
             <ChatSessionSkeleton />
-          ) : (
+          ) : (sessionMessages[activeSessionId]?.length ?? 0) > 0 ? (
             <ChatSession
               key={activeSessionId}
               sessionId={activeSessionId}
@@ -182,6 +211,8 @@ export const ChatContainer = ({
               inputValue={controlledInputValue}
               onInputValueChange={onInputValueChange}
             />
+          ) : (
+            homeComponent || <div className="text-muted-foreground flex h-full items-center justify-center">{`Click "New" to start a chat`}</div>
           )
         ) : (
           homeComponent || <div className="text-muted-foreground flex h-full items-center justify-center">{`Click "New" to start a chat`}</div>

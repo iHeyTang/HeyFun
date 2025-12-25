@@ -52,6 +52,7 @@ export const useChatSessionsListStore = create<ChatSessionsListStore>()((set, ge
   // 加载 session 列表
   loadSessions: async options => {
     const { loadSessionsFn, initialSessionId, externalSessionId } = options || {};
+    const state = get();
     set({ loading: true });
 
     try {
@@ -65,10 +66,22 @@ export const useChatSessionsListStore = create<ChatSessionsListStore>()((set, ge
 
       set({ sessions });
 
-      // 如果有初始 sessionId，设置为活动 session
-      const sessionId = initialSessionId || externalSessionId;
-      if (sessionId) {
-        set({ activeSessionId: sessionId });
+      // 只有在以下情况才设置 activeSessionId：
+      // 1. 当前没有 activeSessionId（初始化）
+      // 2. 有 initialSessionId（首次加载时指定）
+      // 3. 有 externalSessionId 且与当前 activeSessionId 不同（外部路由变化）
+      // 注意：如果用户已经主动切换了 session，不要因为 externalSessionId 存在就覆盖
+      if (initialSessionId) {
+        // 如果有 initialSessionId，优先使用它（首次加载时指定）
+        if (!state.activeSessionId || state.activeSessionId !== initialSessionId) {
+          set({ activeSessionId: initialSessionId });
+        }
+      } else if (externalSessionId) {
+        // 如果有 externalSessionId，只有在初始化或与当前不同时才设置
+        // 这样可以避免在用户主动切换后，因为 externalSessionId 存在就覆盖
+        if (!state.activeSessionId || state.activeSessionId !== externalSessionId) {
+          set({ activeSessionId: externalSessionId });
+        }
       }
     } catch (error) {
       console.error('Error loading sessions:', error);

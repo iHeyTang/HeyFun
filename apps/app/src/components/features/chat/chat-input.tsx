@@ -9,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useLLM } from '@/hooks/use-llm';
 import { usePreferences } from '@/hooks/use-preferences';
 import { ModelInfo } from '@repo/llm/chat';
-import { ArrowUp, FileIcon, Plus, StopCircle, X } from 'lucide-react';
+import { ArrowUp, FileIcon, Loader2, Plus, StopCircle, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { ModelIcon } from '../model-icon';
@@ -198,30 +198,28 @@ export const ChatInput = ({
             <ModelIcon family={selectedModel?.family} className="h-4 w-4" />
             <span>{selectedModel?.name || 'Select Model'}</span>
           </Badge>
-          {isLoading && onCancel ? (
+          {isLoading ? (
             <Button
               type="button"
               size="icon"
-              variant="ghost"
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 w-8 cursor-pointer rounded-xl"
+              className="h-6 w-6 cursor-pointer rounded-full"
               onClick={onCancel}
               disabled={false}
               aria-label="Cancel message"
               title="停止生成"
             >
-              <StopCircle className="h-4 w-4" />
+              <div className="bg-background h-2 w-2 rounded-[2px]" />
             </Button>
           ) : (
             <Button
               type="button"
               size="icon"
-              variant="ghost"
-              className="h-8 w-8 cursor-pointer rounded-xl"
+              className="h-6 w-6 cursor-pointer rounded-full"
               onClick={handleSend}
-              disabled={footerDisabled || !hasContent}
+              disabled={footerDisabled || !hasContent || isLoading}
               aria-label="Send message"
             >
-              <ArrowUp className="h-4 w-4" />
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
             </Button>
           )}
         </div>
