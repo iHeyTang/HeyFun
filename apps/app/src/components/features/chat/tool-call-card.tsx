@@ -6,7 +6,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Wrench, XCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, Wrench, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { WebSearchResult } from './tool-renderers/web-search-result';
 import { AigcModelsResult } from './tool-renderers/aigc-models-result';
@@ -72,12 +72,29 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
 
   // 渲染工具结果（支持自定义渲染器）
   const renderToolResult = (toolName: string, args: any, result: PrismaJson.ToolResult | undefined, isExpanded: boolean, toolCallId?: string) => {
-    if (!isExpanded || !result) return null;
+    if (!isExpanded) return null;
 
     const CustomRenderer = getToolRenderer(toolName);
 
     // 如果有自定义渲染器，使用自定义渲染
     if (CustomRenderer) {
+      // 如果没有结果，显示loading状态
+      if (!result) {
+        return (
+          <div className="min-w-0 overflow-hidden px-2.5 pb-2 pt-1.5">
+            <CustomRenderer
+              args={args}
+              result={undefined}
+              status="running"
+              error={undefined}
+              messageId={messageId}
+              toolCallId={toolCallId}
+              sessionId={sessionId}
+            />
+          </div>
+        );
+      }
+
       const status = result.success ? 'success' : 'error';
       return (
         <div className="min-w-0 overflow-hidden px-2.5 pb-2 pt-1.5">
@@ -94,7 +111,9 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
       );
     }
 
-    // 否则使用默认的 JSON 显示
+    // 否则使用默认的 JSON 显示（必须有结果才能显示）
+    if (!result) return null;
+
     return (
       <div className="min-w-0 overflow-hidden px-2.5 pb-2 pt-1.5">
         <div className="text-muted-foreground mb-1 text-[9px] font-medium uppercase opacity-50">Output</div>
@@ -124,12 +143,15 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
             <span className="text-muted-foreground flex-1 opacity-80">{toolCall.function.name}</span>
 
             {/* 结果状态图标 */}
-            {result &&
-              (result.success ? (
+            {result ? (
+              result.success ? (
                 <CheckCircle2 className="h-3 w-3 text-green-600/60 dark:text-green-500/60" />
               ) : (
                 <XCircle className="h-3 w-3 text-red-600/60 dark:text-red-500/60" />
-              ))}
+              )
+            ) : (
+              <Loader2 className="text-muted-foreground/60 h-3 w-3 animate-spin" />
+            )}
           </div>
 
           {/* 展开内容：输入参数 + 输出结果 */}
@@ -146,10 +168,22 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
               )}
 
               {/* 分割线 + 输出结果 */}
-              {result && (
+              {(result || getToolRenderer(toolCall.function.name)) && (
                 <>
                   {!getToolRenderer(toolCall.function.name) && <div className="border-border/20 border-t" />}
                   {renderToolResult(toolCall.function.name, args, result, true, toolCall.id)}
+                </>
+              )}
+              {/* 没有自定义渲染器且没有结果时，显示loading提示 */}
+              {!result && !getToolRenderer(toolCall.function.name) && (
+                <>
+                  <div className="border-border/20 border-t" />
+                  <div className="min-w-0 overflow-hidden px-2.5 pb-2 pt-1.5">
+                    <div className="text-muted-foreground/70 flex items-center gap-1.5 text-xs">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>正在执行中...</span>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
@@ -180,12 +214,15 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
               </span>
 
               {/* 结果状态图标 */}
-              {result &&
-                (result.success ? (
+              {result ? (
+                result.success ? (
                   <CheckCircle2 className="h-3 w-3 text-green-600/60 dark:text-green-500/60" />
                 ) : (
                   <XCircle className="h-3 w-3 text-red-600/60 dark:text-red-500/60" />
-                ))}
+                )
+              ) : (
+                <Loader2 className="text-muted-foreground/60 h-3 w-3 animate-spin" />
+              )}
             </div>
 
             {/* 展开内容：输入参数 + 输出结果 */}
@@ -202,10 +239,22 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
                 )}
 
                 {/* 分割线 + 输出结果 */}
-                {result && (
+                {(result || getToolRenderer(toolCall.function.name)) && (
                   <>
                     {!getToolRenderer(toolCall.function.name) && <div className="border-border/20 border-t" />}
                     {renderToolResult(toolCall.function.name, args, result, true, toolCall.id)}
+                  </>
+                )}
+                {/* 没有自定义渲染器且没有结果时，显示loading提示 */}
+                {!result && !getToolRenderer(toolCall.function.name) && (
+                  <>
+                    <div className="border-border/20 border-t" />
+                    <div className="min-w-0 overflow-hidden px-2.5 pb-2 pt-1.5">
+                      <div className="text-muted-foreground/70 flex items-center gap-1.5 text-xs">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <span>正在执行中...</span>
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
