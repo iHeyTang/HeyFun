@@ -1,4 +1,5 @@
 import { Client } from '@upstash/workflow';
+import { resolveUrl, getAppBaseUrl } from '../shared/url';
 
 type Unit = 's' | 'm' | 'h' | 'd';
 type Duration = `${bigint}${Unit}`;
@@ -17,25 +18,14 @@ class Workflow {
     delay?: Duration;
     flowControl?: { key: string; parallelism: number };
   }): Promise<{ workflowRunId: string }> {
-    let url = params.url;
-    if (!url.startsWith('http')) {
-      // 构建完整URL
-      let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-      if (!baseUrl) {
-        // 如果没有设置NEXT_PUBLIC_APP_URL，尝试使用VERCEL_URL
-        if (process.env.VERCEL_URL) {
-          baseUrl = `https://${process.env.VERCEL_URL}`;
-        } else {
-          // 开发环境：需要设置NEXT_PUBLIC_APP_URL环境变量
-          // 如果使用本地开发，可以配置ngrok等工具提供公网可访问的URL
-          // 例如：NEXT_PUBLIC_APP_URL=https://your-ngrok-url.ngrok.io
-          baseUrl = 'http://localhost:3000';
-          console.warn(
-            '[Workflow] NEXT_PUBLIC_APP_URL is not set. Using localhost, which may not be accessible by QStash. Please set NEXT_PUBLIC_APP_URL environment variable or use a tunneling service like ngrok for development.',
-          );
-        }
-      }
-      url = `${baseUrl}${params.url}`;
+    // 使用通用的 URL 解析函数
+    const url = resolveUrl(params.url);
+
+    // 如果是开发环境且使用的是 localhost，给出警告
+    if (!process.env.NEXT_PUBLIC_APP_URL && !process.env.VERCEL_URL) {
+      console.warn(
+        '[Workflow] NEXT_PUBLIC_APP_URL is not set. Using localhost, which may not be accessible by QStash. Please set NEXT_PUBLIC_APP_URL environment variable or use a tunneling service like ngrok for development.',
+      );
     }
 
     try {

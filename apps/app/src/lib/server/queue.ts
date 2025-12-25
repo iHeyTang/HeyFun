@@ -1,4 +1,5 @@
 import { Client } from '@upstash/qstash';
+import { resolveUrl } from '../shared/url';
 
 type Unit = 's' | 'm' | 'h' | 'd';
 type Duration = `${bigint}${Unit}`;
@@ -37,7 +38,8 @@ class Queue {
     delay?: Duration;
     flowControl?: { key: string; parallelism: number };
   }) {
-    const url = String(params.url).startsWith('http') ? String(params.url) : `${process.env.NEXT_PUBLIC_APP_URL}${String(params.url)}`;
+    // 使用通用的 URL 解析函数
+    const url = resolveUrl(String(params.url));
     const res = await this.qstash.publishJSON({ url, body: params.body, delay: params.delay, flowControl: params.flowControl });
     return {
       deduplicated: 'deduplicated' in res ? res.deduplicated : undefined,
