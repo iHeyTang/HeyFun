@@ -48,6 +48,8 @@ interface ChatContainerProps {
   loadSessionsFn?: () => Promise<ChatSessions[]>;
   /** 自定义 session 创建函数（可选，如果提供则使用此函数而不是默认的 createChatSession） */
   createSessionFn?: () => Promise<ChatSessions>;
+  /** 自定义 Home 页面组件（当没有活动 session 时显示） */
+  homeComponent?: React.ReactNode;
 }
 
 /**
@@ -65,6 +67,7 @@ export const ChatContainer = ({
   onInputValueChange,
   loadSessionsFn,
   createSessionFn,
+  homeComponent,
 }: ChatContainerProps) => {
   const { selectedModel } = useChatbotModelSelector();
 
@@ -134,7 +137,7 @@ export const ChatContainer = ({
 
         {/* Chat Content */}
         <div className="flex-1 overflow-hidden">
-          {activeSessionId ? (
+          {activeSessionId && (sessionMessages[activeSessionId]?.length ?? 0) > 0 ? (
             loadingMessages.has(activeSessionId) ? (
               <ChatSessionSkeleton />
             ) : (
@@ -149,7 +152,7 @@ export const ChatContainer = ({
               />
             )
           ) : (
-            <div className="text-muted-foreground flex h-full items-center justify-center">{`Click "New" to start a chat`}</div>
+            homeComponent || <div className="text-muted-foreground flex h-full items-center justify-center">{`Click "New" to start a chat`}</div>
           )}
         </div>
       </div>
@@ -166,7 +169,7 @@ export const ChatContainer = ({
       <ResizableHandle />
       {/* Chat Content */}
       <ResizablePanel defaultSize={90} minSize={60} maxSize={90} className="flex flex-1 flex-col overflow-hidden">
-        {activeSessionId ? (
+        {activeSessionId && (sessionMessages[activeSessionId]?.length ?? 0) > 0 ? (
           loadingMessages.has(activeSessionId) ? (
             <ChatSessionSkeleton />
           ) : (
@@ -181,7 +184,7 @@ export const ChatContainer = ({
             />
           )
         ) : (
-          <div className="text-muted-foreground flex h-full items-center justify-center">{`Click "New" to start a chat`}</div>
+          homeComponent || <div className="text-muted-foreground flex h-full items-center justify-center">{`Click "New" to start a chat`}</div>
         )}
       </ResizablePanel>
     </ResizablePanelGroup>

@@ -6,3 +6,4 @@
 export * from './tool-execution';
 export * from './llm-call';
 export * from './message-conversion';
+export * from '../../components/features/chat/build-message-content';

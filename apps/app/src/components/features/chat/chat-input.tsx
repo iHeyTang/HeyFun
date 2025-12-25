@@ -9,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useLLM } from '@/hooks/use-llm';
 import { usePreferences } from '@/hooks/use-preferences';
 import { ModelInfo } from '@repo/llm/chat';
-import { FileIcon, ImageIcon, Plus, Send, StopCircle, X } from 'lucide-react';
+import { ArrowUp, FileIcon, Plus, StopCircle, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { ModelIcon } from '../model-icon';
@@ -28,6 +28,7 @@ interface ChatInputProps {
   attachments?: ChatInputAttachment[];
   onAttachmentsChange?: (attachments: ChatInputAttachment[]) => void;
   isLoading?: boolean;
+  className?: string;
   onCancel?: () => void;
 }
 
@@ -70,6 +71,7 @@ export const ChatInput = ({
   attachments,
   onAttachmentsChange,
   isLoading = false,
+  className,
   onCancel,
 }: ChatInputProps) => {
   const modelSelectorRef = useRef<ModelSelectorRef>(null);
@@ -219,7 +221,7 @@ export const ChatInput = ({
               disabled={footerDisabled || !hasContent}
               aria-label="Send message"
             >
-              <Send className="h-4 w-4" />
+              <ArrowUp className="h-4 w-4" />
             </Button>
           )}
         </div>
@@ -239,6 +241,7 @@ export const ChatInput = ({
         onValueChange={onInputValueChange}
         attachments={attachments}
         onAttachmentsChange={onAttachmentsChange}
+        className={className}
       />
       <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={handleModelSelect} type="language" />
     </>
