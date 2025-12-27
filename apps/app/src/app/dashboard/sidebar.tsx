@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Bot, Flower, Network, Palette, SettingsIcon, FileText } from 'lucide-react';
+import { Bot, Flower, Network, Palette, SettingsIcon, FileText, Code } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -40,6 +40,11 @@ const useNavItems = () => {
       icon: FileText,
       label: t('notes'),
       path: '/dashboard/notes',
+    },
+    {
+      icon: Code,
+      label: '提示词片段',
+      path: '/dashboard/system-prompt-snippets',
     },
     // {
     //   icon: FolderOpen,

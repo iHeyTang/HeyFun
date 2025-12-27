@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { formatTime } from '@/lib/shared/time';
+import { formatTimeFromNow } from '@/lib/shared/time';
 import { cn } from '@/lib/utils';
 import { Trash2, Clock, FileText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -39,7 +39,7 @@ export default function ProjectCard({ project, onDelete }: ProjectCardProps) {
             <div className="text-muted-foreground flex items-center text-[11px]">
               <Clock className="mr-1 h-3 w-3" />
               <span>
-                {t('updatedAt')} {formatTime(project.updatedAt.getTime())}
+                {t('updatedAt')} {formatTimeFromNow(project.updatedAt.getTime())}
               </span>
             </div>
           </div>

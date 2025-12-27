@@ -10,7 +10,6 @@ import { CheckCircle2, Loader2, Wrench, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { WebSearchResult } from './tool-renderers/web-search-result';
 import { AigcModelsResult } from './tool-renderers/aigc-models-result';
-// import { HumanInLoopResult } from './tool-renderers/human-in-loop-result';
 
 interface ToolCallCardProps {
   toolCalls: PrismaJson.ToolCall[];
@@ -21,7 +20,6 @@ interface ToolCallCardProps {
 }
 
 export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, sessionId }: ToolCallCardProps) => {
-  // A2UI 和 human_in_loop 工具默认展开，方便用户直接使用界面
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: string) => {
@@ -65,7 +63,6 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
     > = {
       web_search: WebSearchResult,
       get_aigc_models: AigcModelsResult,
-      // human_in_loop: HumanInLoopResult,
     };
     return renderers[toolName];
   };

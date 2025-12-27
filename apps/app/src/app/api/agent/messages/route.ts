@@ -92,6 +92,7 @@ export const GET = withUserAuthApi<{}, { sessionId: string; cursor?: string; lim
         outputTokens: msg.outputTokens,
         cachedInputTokens: msg.cachedInputTokens,
         cachedOutputTokens: msg.cachedOutputTokens,
+        microAgentExecutions: msg.microAgentExecutions, // 包含微代理执行详情
       })),
       nextCursor,
       hasMore: nextCursor !== null,

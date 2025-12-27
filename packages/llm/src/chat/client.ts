@@ -98,6 +98,13 @@ export class ChatClient {
     return { ...this.modelDef.pricing };
   }
 
+  /**
+   * 获取 Provider 实例（用于 embedding 等操作）
+   */
+  getProvider(): BaseProvider {
+    return this.provider;
+  }
+
   updateConfig(config: Partial<ChatClientConfig>): void {
     Object.assign(this.config, config);
     if (config.apiKey || config.timeout || config.maxRetries) {

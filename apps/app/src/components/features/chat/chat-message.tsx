@@ -14,6 +14,44 @@ import { toast } from 'sonner';
 import { ModelIcon } from '../model-icon';
 import { ToolCallCard } from './tool-call-card';
 import { ImagePreview } from '@/components/block/preview/image-preview';
+import { MicroAgentExecution } from './micro-agent-execution';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+/**
+ * 微代理执行链路列表组件
+ * 过滤掉跳过的微代理，样式与 ToolCallCard 保持一致
+ */
+const MicroAgentExecutionsList = memo(function MicroAgentExecutionsList({
+  executions,
+}: {
+  executions: any[];
+}) {
+  // 过滤掉跳过的微代理
+  const filteredExecutions = executions.filter((execution) => execution.status !== 'skipped');
+
+  // 如果没有有效的微代理，不显示
+  if (filteredExecutions.length === 0) {
+    return null;
+  }
+
+  // 如果只有一个微代理，显示精简版
+  if (filteredExecutions.length === 1) {
+    return (
+      <div className="min-w-0 space-y-0">
+        <MicroAgentExecution detail={filteredExecutions[0] as any} />
+      </div>
+    );
+  }
+
+  // 多个微代理时，显示紧凑列表
+  return (
+    <div className="min-w-0 space-y-1">
+      {filteredExecutions.map((execution, index) => (
+        <MicroAgentExecution key={`${execution.agentId}-${index}`} detail={execution as any} />
+      ))}
+    </div>
+  );
+});
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -30,6 +68,17 @@ interface ChatMessageProps {
   outputTokens?: number | null;
   cachedInputTokens?: number | null;
   cachedOutputTokens?: number | null;
+  microAgentExecutions?: Array<{
+    agentId: string;
+    agentName: string;
+    trigger: string;
+    status: 'executing' | 'success' | 'skipped' | 'failed';
+    startTime?: number;
+    endTime?: number;
+    duration?: number;
+    result?: any;
+    message?: string;
+  }>;
 }
 
 // 带 Tooltip 的消息操作按钮组件
@@ -74,8 +123,20 @@ const ChatMessageComponent = ({
   outputTokens,
   cachedInputTokens,
   cachedOutputTokens,
+  microAgentExecutions,
 }: ChatMessageProps) => {
   const isUser = role === 'user';
+
+  // 调试：检查微代理执行详情
+  if (!isUser && microAgentExecutions) {
+    console.log('[ChatMessageComponent] 微代理执行详情:', {
+      messageId,
+      hasExecutions: !!microAgentExecutions,
+      count: Array.isArray(microAgentExecutions) ? microAgentExecutions.length : 0,
+      executions: microAgentExecutions,
+    });
+  }
+
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -317,6 +378,13 @@ const ChatMessageComponent = ({
         )}
 
         {/* 工具调用卡片（包含结果）- 更小的宽度 */}
+        {/* 微代理执行详情 - 默认折叠，紧凑展示 */}
+        {!isUser && microAgentExecutions && microAgentExecutions.length > 0 && (
+          <div className="min-w-0 max-w-[50%]">
+            <MicroAgentExecutionsList executions={microAgentExecutions} />
+          </div>
+        )}
+
         {hasToolCalls && toolCalls && (
           <div className="min-w-0 max-w-[50%]">
             <ToolCallCard toolCalls={toolCalls} toolResults={toolResults} messageId={messageId} sessionId={sessionId} />

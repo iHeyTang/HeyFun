@@ -14,4 +14,8 @@ export class OpenRouterProvider extends BaseProvider {
   protected getExtraHeaders(): Record<string, string> {
     return { 'HTTP-Referer': 'https://heyfun.ai', 'X-Title': 'HeyFun AI' };
   }
+
+  protected getDefaultEmbeddingModel(): string {
+    return 'text-embedding-3-small';
+  }
 }

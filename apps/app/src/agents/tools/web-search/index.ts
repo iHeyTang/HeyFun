@@ -1,14 +1,7 @@
-import { ToolDefinition } from '@/agents/core/tools/tool-definition';
-import { ToolContext } from '../context';
-import { ToolExecutor } from '@/agents/core/tools/base-tool-registry';
-import { webSearchSchema } from './schema';
-import { webSearchExecutor } from './executor';
+import { webSearchTool } from './web-search';
+import { imageSearchTool } from './image-search';
 
-export const webSearchTool: {
-  schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
-} = {
-  schema: webSearchSchema,
-  executor: webSearchExecutor,
-};
+export * from './web-search';
+export * from './image-search';
 
+export const webSearchToolboxes = [webSearchTool, imageSearchTool];

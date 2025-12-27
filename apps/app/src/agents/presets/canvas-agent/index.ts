@@ -8,14 +8,7 @@
 
 import { AgentConfig } from '@/agents/core/frameworks/base';
 import { ReactAgent } from '@/agents/core/frameworks/react';
-import {
-  editFlowCanvasTool,
-  getCanvasStateTool,
-  getCanvasCapabilitiesTool,
-  getNodeTypeInfoTool,
-  autoLayoutCanvasTool,
-  runCanvasWorkflowTool,
-} from '@/agents/tools';
+import { flowcanvasToolboxes } from '@/agents/tools';
 
 /**
  * 协调者 Agent 实现 - 基于 ReactAgent 框架
@@ -406,23 +399,18 @@ export class CanvasAgent extends ReactAgent {
 - 工具调用过程可见时，不需要重复说明
 
 开始工作。`,
-    tools: [
-      editFlowCanvasTool.schema,
-      getCanvasStateTool.schema,
-      getCanvasCapabilitiesTool.schema,
-      getNodeTypeInfoTool.schema,
-      autoLayoutCanvasTool.schema,
-      runCanvasWorkflowTool.schema,
-    ].map(definition => {
-      return {
-        type: 'function',
-        function: {
-          name: definition.name,
-          description: definition.description,
-          parameters: definition.parameters,
-        },
-      };
-    }),
+    tools: flowcanvasToolboxes
+      .flatMap(tool => tool.schema)
+      .map(definition => {
+        return {
+          type: 'function',
+          function: {
+            name: definition.name,
+            description: definition.description,
+            parameters: definition.parameters,
+          },
+        };
+      }),
     observationPrompt: `工具执行完成。请继续：
 1. 分析当前任务状态，判断是否完成
 2. 如果未完成，立即调用下一个工具

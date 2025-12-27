@@ -1,4 +1,62 @@
 import { WorkflowContext } from '@upstash/workflow';
+import type { UnifiedChat, ChatClient } from '@repo/llm/chat';
+
+/**
+ * 动态系统提示词管理器
+ * 用于工具更新动态系统提示词片段
+ */
+export interface DynamicSystemPromptManager {
+  /**
+   * 设置动态系统提示词片段
+   * 这个片段会被添加到基础系统提示词后面
+   * @param fragments 动态系统提示词片段内容
+   */
+  setDynamicSystemPrompt(fragments: string): void;
+
+  /**
+   * 获取当前动态系统提示词片段
+   * @returns 动态系统提示词片段内容，如果未设置则返回 undefined
+   */
+  getDynamicSystemPrompt(): string | undefined;
+
+  /**
+   * 清除动态系统提示词片段
+   */
+  clearDynamicSystemPrompt(): void;
+}
+
+/**
+ * 全局动态系统提示词片段存储
+ * key: sessionId, value: 动态系统提示词片段内容
+ */
+const dynamicSystemPromptStore = new Map<string, string>();
+
+/**
+ * 创建动态系统提示词管理器实现
+ * 使用内存存储，在同一进程内共享
+ */
+export function createDynamicSystemPromptManager(sessionId: string): DynamicSystemPromptManager {
+  return {
+    setDynamicSystemPrompt(fragments: string): void {
+      dynamicSystemPromptStore.set(sessionId, fragments);
+    },
+
+    getDynamicSystemPrompt(): string | undefined {
+      return dynamicSystemPromptStore.get(sessionId);
+    },
+
+    clearDynamicSystemPrompt(): void {
+      dynamicSystemPromptStore.delete(sessionId);
+    },
+  };
+}
+
+/**
+ * 获取会话的动态系统提示词片段（全局函数，供外部使用）
+ */
+export function getSessionDynamicSystemPrompt(sessionId: string): string | undefined {
+  return dynamicSystemPromptStore.get(sessionId);
+}
 
 /**
  * 通用工具执行上下文
@@ -15,5 +73,10 @@ export interface ToolContext {
   toolCallId?: string;
   /** 消息ID，用于保存 toolResults */
   messageId?: string;
+  /** LLM 客户端，用于工具内部调用模型能力 */
+  llmClient?: ChatClient;
+  /** 当前消息历史，用于需要访问对话上下文的工具 */
+  messages?: UnifiedChat.Message[];
+  /** 动态系统提示词管理器，用于工具更新动态系统提示词片段 */
+  dynamicSystemPrompt?: DynamicSystemPromptManager;
 }
-

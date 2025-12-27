@@ -10,4 +10,8 @@ export class VercelProvider extends BaseProvider {
     if (!key) throw new Error('Vercel API key is required');
     return { Authorization: `Bearer ${key}` };
   }
+
+  protected getDefaultEmbeddingModel(): string {
+    return 'text-embedding-3-small';
+  }
 }

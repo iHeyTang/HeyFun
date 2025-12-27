@@ -1,4 +1,4 @@
-export const formatTime = (timestamp: number): string => {
+export const formatTimeFromNow = (timestamp: number): string => {
   const now = Date.now();
   const diff = now - timestamp;
 
@@ -22,4 +22,20 @@ export const formatTime = (timestamp: number): string => {
   }
 
   return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+/**
+ * 获取当前时间的本地化字符串
+ */
+export const formatTime = (date: Date = new Date()): string => {
+  return date.toLocaleString('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
 };

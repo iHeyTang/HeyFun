@@ -57,6 +57,26 @@ export interface MicroAgentResult {
   success: boolean;
 
   /**
+   * 微代理 ID（由 MicroAgentManager 自动添加）
+   */
+  agentId?: string;
+
+  /**
+   * 开始时间戳（由 MicroAgentManager 自动添加）
+   */
+  startTime?: number;
+
+  /**
+   * 结束时间戳（由 MicroAgentManager 自动添加）
+   */
+  endTime?: number;
+
+  /**
+   * 执行时长（毫秒，由 MicroAgentManager 自动添加）
+   */
+  duration?: number;
+
+  /**
    * 结果数据（微代理可以返回任意数据）
    */
   data?: any;
@@ -224,5 +244,29 @@ export interface MicroAgentRegistration {
    * 最后执行时间
    */
   lastExecutedAt?: number;
+}
+
+/**
+ * 上下文窗口管理结果
+ * 用于上下文持久化微代理
+ */
+export interface ContextWindowResult {
+  originalMessageCount?: number;
+  managedMessageCount?: number;
+  strategy?: string;
+  preservedMessages?: number;
+  compressedMessages?: number;
+  summary?: string;
+  keyPoints?: string[];
+  preservedContext?: string;
+  importantDecisions?: string[];
+  originalTokenCount?: number;
+  compressedTokenCount?: number;
+  tokenUsage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+    cost?: number;
+  };
 }
 

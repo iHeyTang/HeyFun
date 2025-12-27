@@ -63,6 +63,7 @@
         "@types/ws": "^8.18.0",
         "@upstash/qstash": "^2.8.2",
         "@upstash/redis": "^1.35.3",
+        "@upstash/vector": "^1.2.2",
         "@upstash/workflow": "^0.2.19",
         "@vercel/analytics": "^1.5.0",
         "@vercel/speed-insights": "^1.2.0",
@@ -1230,6 +1231,8 @@
     "@upstash/qstash": ["@upstash/qstash@2.8.2", "", { "dependencies": { "crypto-js": ">=4.2.0", "jose": "^5.2.3", "neverthrow": "^7.0.1" } }, "sha512-gQMCs2YXmRJWGh28t3fsWuPTzGgVFVRBd4o5QeWM9l3HW8TMNwt1qzv5wtzzSlG7hv1ylEy/PQCznkxGcAwTfw=="],
 
     "@upstash/redis": ["@upstash/redis@1.35.3", "", { "dependencies": { "uncrypto": "^0.1.3" } }, "sha512-hSjv66NOuahW3MisRGlSgoszU2uONAY2l5Qo3Sae8OT3/Tng9K+2/cBRuyPBX8egwEGcNNCF9+r0V6grNnhL+w=="],
+
+    "@upstash/vector": ["@upstash/vector@1.2.2", "", {}, "sha512-ptQ9xnxtKqmpNK52PCcHCszlPOLxIBfjsv7ty8RoF95pkjctS9rSjTQ3Pl9bx5VFbpDj+0dMXw88WLt6swDkgQ=="],
 
     "@upstash/workflow": ["@upstash/workflow@0.2.19", "", { "dependencies": { "@ai-sdk/openai": "^1.2.1", "@upstash/qstash": "^2.8.2", "ai": "^4.1.54", "zod": "^3.24.1" } }, "sha512-i3MoVV4XVaE1dhYBrSDGDlRGkB7gWuTjVcU4c/nnDIUzJWIfZdtjsH8FprfDG/RMS9PK51MtLg7SsUXxWtjD5g=="],
 

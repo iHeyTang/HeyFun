@@ -96,22 +96,8 @@ export const POST = withUserAuthApi<{}, {}, ToolResultRequest>(async (_req, ctx)
       try {
         const metadata = JSON.parse(messageWithTools.finishReason);
         if (metadata.eventName) {
-          // 从 toolResults 中提取用户提交的数据
-          const userSubmittedData = newToolResults.find(tr => {
-            const toolCall = existingToolCalls.find(tc => tc.id === tr.toolCallId);
-            return toolCall?.function.name === 'human_in_loop';
-          });
-
-          // 构建事件数据：包含用户提交的表单数据
-          const eventData = userSubmittedData?.data
-            ? {
-                submitted: userSubmittedData.data.submitted ?? true,
-                formData: userSubmittedData.data.formData ?? {},
-              }
-            : {
-                submitted: false,
-                formData: {},
-              };
+          // 构建事件数据
+          const eventData = {};
 
           await workflow.notify(metadata.eventName, eventData);
         }

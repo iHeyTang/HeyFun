@@ -350,7 +350,6 @@ export function ChatSession({
   const handleA2UIEvent = useCallback(
     (event: { messageId: string; type: string; componentId: string; data?: Record<string, unknown> }) => {
       // 构建发送给 Agent 的消息
-      // 注意：A2UI 事件现在通过 human_in_loop 工具处理，不再需要单独的工具
       const eventDescription = `用户与 A2UI 界面交互：
 - 消息 ID: ${event.messageId}
 - 组件 ID: ${event.componentId}
@@ -376,25 +375,38 @@ export function ChatSession({
     () => (
       <A2UIProvider sessionId={sessionId} apiPrefix={apiPrefix} onEvent={handleA2UIEvent}>
         <div className="min-w-0 space-y-0">
-          {messages.map(message => (
-            <ChatMessageComponent
-              key={message.id}
-              role={message.role as 'user' | 'assistant'}
-              content={message.content}
-              isStreaming={message.isStreaming}
-              timestamp={message.createdAt}
-              toolCalls={message.toolCalls || []}
-              toolResults={message.toolResults || []}
-              modelId={message.role === 'assistant' ? (message.modelId ?? undefined) : undefined}
-              messageId={message.id}
-              sessionId={sessionId}
-              tokenCount={message.tokenCount ?? undefined}
-              inputTokens={message.inputTokens ?? undefined}
-              outputTokens={message.outputTokens ?? undefined}
-              cachedInputTokens={message.cachedInputTokens ?? undefined}
-              cachedOutputTokens={message.cachedOutputTokens ?? undefined}
-            />
-          ))}
+          {messages.map(message => {
+            const microAgentExecutions = (message as any).microAgentExecutions;
+            // 调试：检查消息中的微代理执行详情
+            if (message.role === 'assistant' && microAgentExecutions) {
+              console.log('[ChatSession] 消息微代理执行详情:', {
+                messageId: message.id,
+                hasExecutions: !!microAgentExecutions,
+                count: Array.isArray(microAgentExecutions) ? microAgentExecutions.length : 0,
+                executions: microAgentExecutions,
+              });
+            }
+            return (
+              <ChatMessageComponent
+                key={message.id}
+                role={message.role as 'user' | 'assistant'}
+                content={message.content}
+                isStreaming={message.isStreaming}
+                timestamp={message.createdAt}
+                toolCalls={message.toolCalls || []}
+                toolResults={message.toolResults || []}
+                modelId={message.role === 'assistant' ? (message.modelId ?? undefined) : undefined}
+                messageId={message.id}
+                sessionId={sessionId}
+                tokenCount={message.tokenCount ?? undefined}
+                inputTokens={message.inputTokens ?? undefined}
+                outputTokens={message.outputTokens ?? undefined}
+                cachedInputTokens={message.cachedInputTokens ?? undefined}
+                cachedOutputTokens={message.cachedOutputTokens ?? undefined}
+                microAgentExecutions={microAgentExecutions}
+              />
+            );
+          })}
           {shouldShowThinkingMessage && <ThinkingMessage modelId={selectedModel?.id} />}
           <div ref={messagesEndRef} />
         </div>

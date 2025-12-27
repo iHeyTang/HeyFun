@@ -306,6 +306,10 @@ model ChatSessions {
   // 关联的消息
   messages ChatMessages[]
 
+  // 上下文管理相关
+  contextSnapshots       ContextSnapshots[]
+  contextManagementState ContextManagementStates?
+
   @@index([organizationId])
   @@index([organizationId, status])
   @@index([organizationId, deletedAt])
@@ -343,6 +347,10 @@ model ChatMessages {
   toolCalls   Json? // AI返回的工具调用
   /// [ToolResult[]]
   toolResults Json? // AI返回的工具结果
+
+  // 微代理执行详情
+  /// [MicroAgentExecutionDetail[]]
+  microAgentExecutions Json? // 微代理执行详情列表
 
   // 关联的会话
   session ChatSessions @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -661,24 +669,108 @@ model SystemModelDefinitions {
 // 用于动态组装 Agent 的系统提示词
 // 系统级别，不属于任何租户
 model SystemPromptSnippets {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String    @id @default(cuid())
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
   // 基本信息
-  name        String
-  description String
-  enabled     Boolean  @default(true)
-  content     String   @db.Text
+  name               String
+  description        String
+  enabled            Boolean   @default(true)
+  content            String    @db.Text
   // 元数据
-  version     String?
-  author      String?
-  category    String? // syntax, guideline, rule, example, knowledge, format, other
-  priority    Int      @default(0)
-  section     String? // 所属章节
+  version            String?
+  author             String?
+  category           String? // syntax, guideline, rule, example, knowledge, format, other
+  section            String? // 所属章节
+  /// [String[]]
+  tags               Json      @default("[]") // 标签数组，用于检索匹配
+  contentUpdatedAt   DateTime? // 内容最后更新时间（仅当 name, description, content, category, tags 更新时更新）
+  // Embedding 状态
+  embeddingStatus    String    @default("pending") // pending: 待处理, processing: 处理中, completed: 已完成, failed: 失败
+  embeddingVersion   String? // 当前 embedding 对应的版本号
+  embeddingError     String?   @db.Text // 如果失败，存储错误信息
+  embeddingUpdatedAt DateTime? // embedding 最后更新时间
 
   @@index([enabled])
   @@index([category])
   @@index([createdAt])
+  @@index([embeddingStatus])
+  @@index([embeddingStatus, enabled])
+}
+
+// ============================================
+// Context Management Module - 上下文管理模块
+// ============================================
+
+// 上下文快照表：存储压缩后的上下文摘要
+model ContextSnapshots {
+  id             String   @id @default(cuid())
+  sessionId      String
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // 快照信息
+  version      Int    @default(1) // 快照版本号
+  snapshotType String @default("compression") // 快照类型：compression, summary, key_points
+  strategy     String @default("hybrid") // 使用的策略：sliding_window, summary_compression, hybrid
+
+  // 压缩信息
+  originalMessageCount   Int // 原始消息数量
+  compressedMessageCount Int // 压缩后消息数量
+  originalTokenCount     Int? // 原始 token 数量
+  compressedTokenCount   Int? // 压缩后 token 数量
+
+  // 内容
+  summary            String? @db.Text // 对话摘要
+  /// [String[]]
+  keyPoints          Json    @default("[]") // 关键信息点列表
+  preservedContext   String? @db.Text // 保留的上下文信息
+  /// [String[]]
+  importantDecisions Json    @default("[]") // 重要决策列表
+
+  // 元数据
+  /// [JSONSchema]
+  metadata Json @default("{}") // 其他元数据
+
+  // 关联的会话
+  session ChatSessions @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([organizationId])
+  @@index([createdAt])
+  @@index([sessionId, version])
+}
+
+// 上下文管理状态表：存储会话的上下文管理状态
+model ContextManagementStates {
+  id             String   @id @default(cuid())
+  sessionId      String   @unique
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // 当前上下文状态
+  currentMessageCount Int     @default(0) // 当前消息数量
+  currentTokenCount   Int     @default(0) // 当前 token 数量
+  lastSnapshotId      String? // 最后一次快照的 ID
+  lastSnapshotVersion Int     @default(1) // 最后一次快照的版本
+
+  // 管理配置
+  maxMessages       Int    @default(30) // 最大消息数量
+  maxTokens         Int    @default(8000) // 最大 token 数量
+  slidingWindowSize Int    @default(10) // 滑动窗口大小
+  strategy          String @default("hybrid") // 使用的策略
+
+  // 统计信息
+  totalCompressions Int @default(0) // 总压缩次数
+  totalTokensSaved  Int @default(0) // 总共节省的 token 数
+
+  // 关联的会话
+  session ChatSessions @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([organizationId])
 }
 
 // ============================================

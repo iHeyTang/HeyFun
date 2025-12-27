@@ -86,14 +86,14 @@ export class MicroAgentManager {
    * 获取所有微代理
    */
   getAllAgents(): IMicroAgent[] {
-    return Array.from(this.agents.values()).map((reg) => reg.agent);
+    return Array.from(this.agents.values()).map(reg => reg.agent);
   }
 
   /**
    * 获取指定触发时机的微代理列表
    */
   getAgentsByTrigger(trigger: MicroAgentTrigger): IMicroAgent[] {
-    return this.triggerMap.get(trigger)?.filter((agent) => agent.config.enabled !== false) ?? [];
+    return this.triggerMap.get(trigger)?.filter(agent => agent.config.enabled !== false) ?? [];
   }
 
   /**
@@ -118,12 +118,34 @@ export class MicroAgentManager {
         // 检查是否应该执行
         if (agent.shouldExecute && !(await agent.shouldExecute(context))) {
           console.log(`[MicroAgentManager] ⏭️ 微代理 ${agent.config.id} 跳过执行`);
+          // 为跳过的微代理也生成结果（状态为 skipped）
+          const skipTime = Date.now();
+          results.push({
+            success: true,
+            agentId: agent.config.id,
+            startTime: skipTime,
+            endTime: skipTime,
+            duration: 0,
+            data: { skipped: true },
+          });
           continue;
         }
 
         // 执行微代理
+        const startTime = Date.now();
         const result = await agent.execute(context);
-        results.push(result);
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+
+        // 添加 agentId 和时间信息到结果中
+        const resultWithMetadata = {
+          ...result,
+          agentId: agent.config.id,
+          startTime,
+          endTime,
+          duration,
+        };
+        results.push(resultWithMetadata);
 
         // 更新统计信息
         const registration = this.agents.get(agent.config.id);
@@ -140,8 +162,14 @@ export class MicroAgentManager {
         }
       } catch (error) {
         console.error(`[MicroAgentManager] ❌ 微代理 ${agent.config.id} 执行异常:`, error);
+        const errorStartTime = Date.now();
+        const errorEndTime = Date.now();
         results.push({
           success: false,
+          agentId: agent.config.id,
+          startTime: errorStartTime,
+          endTime: errorEndTime,
+          duration: errorEndTime - errorStartTime,
           error: error instanceof Error ? error.message : String(error),
         });
       }
@@ -225,4 +253,3 @@ export class MicroAgentManager {
 
 // 导出单例
 export const microAgentManager = new MicroAgentManager();
-

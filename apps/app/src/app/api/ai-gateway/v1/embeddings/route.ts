@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyGatewayAuth, recordGatewayUsage, getModels } from '@/lib/server/gateway';
 import { calculateLLMCost, deductCredits, checkCreditsBalance } from '@/lib/server/credit';
-import { createProvider } from '@repo/llm/chat';
+import CHAT from '@repo/llm/chat';
 
 /**
  * POST /api/ai-gateway/v1/embeddings
@@ -141,57 +141,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 创建 provider
-    const providerId = (modelInfo.metadata?.providerId as string) || modelInfo.provider;
-
-    // 从环境变量获取 API key（与 chat/completions 保持一致）
-    let apiKey: string | undefined;
-    switch (providerId) {
-      case 'openai':
-        apiKey = process.env.OPENAI_API_KEY;
-        break;
-      case 'anthropic':
-        apiKey = process.env.ANTHROPIC_API_KEY;
-        break;
-      case 'openrouter':
-        apiKey = process.env.OPENROUTER_API_KEY;
-        break;
-      case 'deepseek':
-        apiKey = process.env.DEEPSEEK_API_KEY;
-        break;
-      case 'vercel':
-        apiKey = process.env.VERCEL_AI_GATEWAY_API_KEY;
-        break;
-      default:
-        // 尝试通用格式的环境变量
-        apiKey = process.env[`${providerId.toUpperCase()}_API_KEY`] || process.env.OPENAI_API_KEY;
+    // 使用统一的 LLM 接口创建 ChatClient
+    // modelId 已经验证过，不会是 null
+    if (!modelId) {
+      statusCode = 400;
+      return NextResponse.json(
+        {
+          error: {
+            message: 'Model ID is required',
+            type: 'invalid_request_error',
+            code: 'missing_parameter',
+          },
+        },
+        { status: 400 },
+      );
     }
 
-    const provider = createProvider(providerId, {
-      apiKey,
-      baseURL: modelInfo.metadata?.baseURL as string | undefined,
-    });
+    CHAT.setModels(availableModels);
+    const chatClient = CHAT.createClient(modelId);
 
-    // 构建 embedding 请求
-    const providerModelId = (modelInfo.metadata?.providerModelId as string) || modelId;
-    const embeddingRequest = {
-      model: providerModelId,
-      input: body.input,
-      encoding_format: body.encoding_format || 'float',
-    };
+    // 从 ChatClient 获取 Provider
+    const provider = chatClient.getProvider();
 
-    // 调用 embedding API
-    let response;
+    // 使用 Provider 的 embedding 接口（与 LangChain 兼容）
+    const providerModelId = (modelInfo.metadata?.providerModelId as string) || modelId || undefined;
+    const inputArray = Array.isArray(body.input) ? body.input : [body.input];
+
+    let embeddings: number[][];
+    let response: any;
     try {
+      const providerId = (modelInfo.metadata?.providerId as string) || modelInfo.provider;
       console.log(`[Gateway] Calling embedding API for model ${modelId}, provider: ${providerId}, organization: ${organizationId}`);
-      const httpRequest = provider.buildRequest('/embeddings', embeddingRequest);
-      const httpResponse = await provider.sendRequest(httpRequest);
 
-      if (httpResponse.status !== 200) {
-        throw new Error(`API error (${httpResponse.status}): ${JSON.stringify(httpResponse.body)}`);
-      }
+      // 使用 Provider 的 embedDocuments 方法（支持批量，可以使用 LangChain）
+      embeddings = await provider.embedDocuments(inputArray, providerModelId);
 
-      response = httpResponse.body;
+      // 构建 OpenAI 兼容的响应格式
+      response = {
+        object: 'list',
+        data: embeddings.map((embedding, index) => ({
+          object: 'embedding',
+          embedding,
+          index,
+        })),
+        model: modelId,
+        usage: {
+          prompt_tokens: inputTokens,
+          total_tokens: inputTokens,
+        },
+      };
     } catch (error) {
       // 处理外部API返回的错误
       if (error instanceof Error && error.message.includes('API error (402)')) {
@@ -218,7 +216,7 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    // 获取实际使用的 tokens
+    // 获取实际使用的 tokens（从响应中获取，如果没有则使用估算值）
     inputTokens = response.usage?.prompt_tokens || response.usage?.total_tokens || estimatedInputTokens;
 
     // 计算并扣除credits

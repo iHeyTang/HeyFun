@@ -71,8 +71,12 @@ export abstract class BaseProvider {
    */
   async sendRequest(request: HTTPRequest): Promise<HTTPResponse> {
     try {
-      console.log(`[${this.name}] Sending request to: ${request.url}`);
-      const response = await fetch(request.url, {
+    console.log(`[${this.name}] Sending request to: ${request.url}`);
+    if (request.body) {
+      const bodyStr = typeof request.body === 'string' ? request.body : JSON.stringify(request.body);
+      console.log(`[${this.name}] Request body (first 500 chars):`, bodyStr.substring(0, 500));
+    }
+    const response = await fetch(request.url, {
         method: request.method,
         headers: request.headers,
         body: request.body ? JSON.stringify(request.body) : undefined,
@@ -165,5 +169,71 @@ export abstract class BaseProvider {
    */
   getConfig(): ProviderConfig {
     return { ...this.config };
+  }
+
+  /**
+   * Embedding 接口（与 LangChain 兼容）
+   * 子类可以覆盖此方法以使用 LangChain 或其他实现
+   */
+
+  /**
+   * 嵌入文档（批量）
+   * 与 LangChain Embeddings.embedDocuments 接口兼容
+   * @param texts 文本数组
+   * @param model 可选的模型名称
+   * @returns 向量嵌入数组
+   */
+  async embedDocuments(texts: string[], model?: string): Promise<number[][]> {
+    // 默认实现：逐个调用 embedQuery
+    // 子类可以覆盖以使用批量 API 或 LangChain
+    const embeddings: number[][] = [];
+    for (const text of texts) {
+      const embedding = await this.embedQuery(text, model);
+      embeddings.push(embedding);
+    }
+    return embeddings;
+  }
+
+  /**
+   * 嵌入查询（单个）
+   * 与 LangChain Embeddings.embedQuery 接口兼容
+   * @param text 查询文本
+   * @param model 可选的模型名称
+   * @returns 向量嵌入
+   */
+  async embedQuery(text: string, model?: string): Promise<number[]> {
+    // 默认实现：使用 HTTP 请求调用 embedding API
+    // 子类可以覆盖以使用 LangChain 或其他实现
+    const embeddingRequest = {
+      model: model || this.getDefaultEmbeddingModel(),
+      input: text,
+      encoding_format: 'float' as const,
+    };
+
+    const request = this.buildRequest('/embeddings', embeddingRequest);
+    const response = await this.sendRequest(request);
+
+    if (response.status !== 200) {
+      throw new Error(`Embedding API error (${response.status}): ${JSON.stringify(response.body)}`);
+    }
+
+    // 解析响应（OpenAI 兼容格式）
+    const body = response.body;
+    if (body.data && Array.isArray(body.data) && body.data.length > 0) {
+      const embedding = body.data[0].embedding;
+      if (Array.isArray(embedding)) {
+        return embedding as number[];
+      }
+    }
+
+    throw new Error('Invalid embedding response format');
+  }
+
+  /**
+   * 获取默认的 embedding 模型名称
+   * 子类可以覆盖以提供 provider 特定的默认模型
+   */
+  protected getDefaultEmbeddingModel(): string {
+    return 'text-embedding-3-small';
   }
 }

@@ -4,11 +4,21 @@
  */
 
 import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
-import { getAgent } from '@/agents';
-import { callLLMWithStream, convertPrismaMessagesToUnifiedChat, executeTools, filterReadyChatMessages, saveToolResultsToMessage } from '@/agents/utils';
+import { getAgent, getAgentInstance } from '@/agents';
+import {
+  callLLMWithStream,
+  convertPrismaMessagesToUnifiedChat,
+  executeTools,
+  filterReadyChatMessages,
+  saveToolResultsToMessage,
+  type LLMCallResult,
+} from '@/agents/utils';
+import { ReactAgent, type IterationProvider } from '@/agents/core/frameworks/react';
+import CHAT from '@repo/llm/chat';
 import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/server/credit';
 import { prisma } from '@/lib/server/prisma';
 import { queue } from '@/lib/server/queue';
+import { redis } from '@/lib/server/redis';
 import { serve } from '@upstash/workflow/nextjs';
 
 interface AgentWorkflowConfig {
@@ -73,11 +83,44 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
     }
   });
 
+  // ============================================================================
+  // 循环说明：
+  // 1. Workflow 循环 (roundCount): 处理多轮对话流程
+  //    - 每次循环 = 一轮完整对话（加载会话 -> 调用 LLM -> 执行工具 -> 继续）
+  //    - 限制：最多 30 轮 (MAX_ROUNDS)
+  //
+  // 2. ReactAgent 循环 (iteration): ReAct 框架内部的 Think-Act-Observe 迭代
+  //    - 在单次 ReactAgent.stream() 调用中，可进行多次迭代
+  //    - 遇到工具调用时会 return，退出当前 stream，等待工具结果
+  //    - 工具执行后，workflow 继续下一轮循环，再次调用 ReactAgent.stream()
+  //    - 限制：最多 100 次迭代 (maxIterations)
+  //
+  // 关键：ReactAgent 的 iteration 需要跨 workflow 的 roundCount 循环保持！
+  // 因为它们是同一个 ReAct 推理过程的延续：
+  //   Round 1: iteration 1 (Think) -> iteration 2 (Act: 工具) -> return
+  //   工具执行...
+  //   Round 2: iteration 3 (Observe + Think) -> iteration 4 (Act) -> return
+  //   工具执行...
+  //   Round 3: iteration 5 (Observe + Think) -> iteration 6 (Final Answer)
+  // ============================================================================
+
   // 最大轮次限制，避免无限循环
   const MAX_ROUNDS = 30;
   let roundCount = 0;
   let hasError = false;
   let errorMessage: string | null = null;
+
+  // 迭代次数存储键（用于跨 workflow 步骤保持 ReactAgent 的迭代次数）
+  const iterationKey = `agent-iteration:${sessionId}`;
+
+  // 初始化迭代次数（如果不存在）
+  // 注意：这个迭代次数是 ReactAgent 内部的 ReAct 循环迭代次数，不是 workflow 的 roundCount
+  await context.run('init-iteration', async () => {
+    const current = await redis.get<number>(iterationKey);
+    if (current === null) {
+      await redis.set(iterationKey, 0, { ex: 3600 }); // 1小时过期
+    }
+  });
 
   // 主循环：处理多轮次对话
   while (roundCount < MAX_ROUNDS) {
@@ -194,13 +237,125 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
     }
 
     // 步骤6：调用 LLM（在步骤内部处理错误，避免步骤名称冲突）
+    // 尝试使用 ReactAgent.stream（如果 agent 是 ReactAgent 实例）
+    const agentInstance = getAgentInstance(agentId || undefined);
+    const isReactAgent = agentInstance instanceof ReactAgent;
+
     const llmResult = await context.run(`round-${roundCount}-call-llm`, async () => {
-      return await callLLMWithStream(modelId, allModels, messages, agentConfig.tools);
+      if (isReactAgent) {
+        // 使用 ReactAgent.stream（支持微代理）
+        CHAT.setModels(allModels);
+        const llmClient = CHAT.createClient(modelId);
+
+        const microAgentExecutions: any[] = [];
+        let fullContent = '';
+        const toolCalls: any[] = [];
+        let finishReason: string | null = null;
+        let inputTokens = 0;
+        let outputTokens = 0;
+        const cachedInputTokens = 0;
+        const cachedOutputTokens = 0;
+
+        // 从 Redis 读取当前迭代次数，并创建同步的迭代次数提供者
+        // 使用内存变量在本次调用中维护迭代次数，并在每次递增时同步更新 Redis
+        let currentIteration = (await redis.get<number>(iterationKey)) ?? 0;
+        const iterationProvider: IterationProvider = {
+          getIteration: () => currentIteration,
+          incrementIteration: () => {
+            currentIteration++;
+            // 异步更新 Redis（不阻塞）
+            redis.set(iterationKey, currentIteration, { ex: 3600 }).catch(err => {
+              console.error(`[Workflow] Failed to update iteration count in Redis:`, err);
+            });
+            return currentIteration;
+          },
+          resetIteration: () => {
+            currentIteration = 0;
+            redis.del(iterationKey).catch(err => {
+              console.error(`[Workflow] Failed to reset iteration count in Redis:`, err);
+            });
+          },
+        };
+
+        const stream = (agentInstance as ReactAgent).stream(llmClient, messages, [], {
+          modelId,
+          enableMicroAgents: true,
+          sessionId, // 传递 sessionId，用于获取动态系统提示词片段
+          iterationProvider, // 传递迭代次数提供者
+        });
+
+        for await (const chunk of stream) {
+          // 收集微代理执行详情
+          if (chunk.type === 'micro_agent' && chunk.microAgent) {
+            microAgentExecutions.push(chunk.microAgent);
+          }
+
+          // 累积 token 使用
+          if (chunk.tokenUsage) {
+            inputTokens += chunk.tokenUsage.promptTokens || 0;
+            outputTokens += chunk.tokenUsage.completionTokens || 0;
+          }
+
+          // 处理最终答案
+          if (chunk.type === 'final_answer') {
+            fullContent += chunk.content;
+          }
+
+          // 处理工具调用（ReactAgent 会在 action 类型中输出工具调用信息）
+          if (chunk.type === 'action' && chunk.toolName) {
+            // 从 action chunk 中提取工具调用信息
+            if (!toolCalls.find(tc => tc.function.name === chunk.toolName)) {
+              toolCalls.push({
+                id: `tool_${toolCalls.length}`,
+                type: 'function',
+                function: {
+                  name: chunk.toolName,
+                  arguments: JSON.stringify(chunk.toolArgs || {}),
+                },
+              });
+            }
+            finishReason = 'tool_calls';
+          }
+        }
+
+        // 如果没有工具调用，说明是最终答案
+        if (toolCalls.length === 0 && fullContent) {
+          finishReason = 'stop';
+        } else if (toolCalls.length > 0) {
+          finishReason = 'tool_calls';
+        }
+
+        // 保存微代理执行详情到消息
+        if (microAgentExecutions.length > 0) {
+          await prisma.chatMessages.update({
+            where: { id: aiMessage.id },
+            data: {
+              microAgentExecutions: microAgentExecutions as any,
+            },
+          });
+        }
+
+        return {
+          success: true,
+          data: {
+            content: fullContent,
+            toolCalls: finishReason === 'tool_calls' ? toolCalls : [],
+            finishReason,
+          },
+          inputTokens,
+          outputTokens,
+          cachedInputTokens,
+          cachedOutputTokens,
+        } as LLMCallResult;
+      } else {
+        // 使用传统的 callLLMWithStream
+        return await callLLMWithStream(modelId, allModels, messages, agentConfig.tools);
+      }
     });
 
     // 如果LLM调用失败，处理错误
     if (!llmResult.success || !llmResult.data) {
-      const llmErrorMessage = llmResult.error || 'Unknown error';
+      const llmErrorMessage = ('error' in llmResult ? llmResult.error : undefined) || 'Unknown error';
       await context.run(`round-${roundCount}-update-ai-message`, async () => {
         await prisma.chatMessages.update({
           where: { id: aiMessage.id },
@@ -267,16 +422,20 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
       }
 
       // 执行服务端工具
-      // 注意：如果工具调用了 waitForEvent（如 human_in_loop），workflow 会在这里暂停，直到事件被触发
+      // 创建 LLM 客户端供工具使用
+      CHAT.setModels(allModels);
+      const llmClient = CHAT.createClient(modelId);
+
       const serverToolResults = await executeTools(llmResponse.toolCalls, {
         organizationId,
         sessionId,
         workflow: context,
         messageId: aiMessage.id,
+        llmClient,
+        messages,
       });
 
       // 保存服务端工具结果到 assistant 消息的 toolResults 字段
-      // 注意：human_in_loop 工具已经在 executor 中保存了初始数据，这里只需要更新最终结果
       await context.run(`round-${roundCount}-save-server-tool-results`, async () => {
         await saveToolResultsToMessage(aiMessage.id, llmResponse.toolCalls, serverToolResults);
       });
@@ -355,6 +514,11 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
         status: 'idle', // 无论成功还是失败，都设为idle，避免阻塞新消息
         updatedAt: new Date(),
       },
+    });
+
+    // 清理迭代次数（对话完成）
+    await redis.del(iterationKey).catch(err => {
+      console.error(`[Workflow] Failed to cleanup iteration count:`, err);
     });
   });
 });

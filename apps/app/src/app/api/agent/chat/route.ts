@@ -44,6 +44,26 @@ export const POST = withUserAuthApi<{}, {}, ChatRequest>(async (_req, ctx) => {
       return NextResponse.json({ error: 'Session is already processing, please wait for the current request to complete' }, { status: 409 });
     }
 
+    // 使用原子操作更新状态：只有当前状态是 idle 时才更新为 pending
+    // 这样可以防止竞态条件：如果两个请求几乎同时到达，只有一个能成功更新状态
+    const statusUpdateResult = await prisma.chatSessions.updateMany({
+      where: {
+        id: sessionId,
+        organizationId: ctx.orgId,
+        status: 'idle', // 只有状态是 idle 时才更新
+      },
+      data: {
+        updatedAt: new Date(),
+        status: 'pending',
+      },
+    });
+
+    // 如果更新失败（0 行被更新），说明状态已被其他请求修改，拒绝请求
+    if (statusUpdateResult.count === 0) {
+      console.warn(`[Chat API] 会话 ${sessionId} 状态已被其他请求修改，拒绝重复请求`);
+      return NextResponse.json({ error: 'Session is already processing, please wait for the current request to complete' }, { status: 409 });
+    }
+
     // 创建用户消息
     const userMessage = await prisma.chatMessages.create({
       data: {
@@ -55,17 +75,9 @@ export const POST = withUserAuthApi<{}, {}, ChatRequest>(async (_req, ctx) => {
       },
     });
 
-    // 更新会话状态：idle -> pending（准备执行）
-    await prisma.chatSessions.update({
-      where: { id: sessionId },
-      data: {
-        updatedAt: new Date(),
-        status: 'pending',
-      },
-    });
-
     try {
       // 触发 workflow 自动执行
+      console.log(`[Chat API] 触发 workflow，sessionId: ${sessionId}, userMessageId: ${userMessage.id}`);
       const { workflowRunId } = await workflow.trigger({
         url: '/api/workflow/agent',
         body: {
@@ -76,6 +88,7 @@ export const POST = withUserAuthApi<{}, {}, ChatRequest>(async (_req, ctx) => {
           agentId: session.agentId,
         },
       });
+      console.log(`[Chat API] Workflow 触发成功，workflowRunId: ${workflowRunId}, sessionId: ${sessionId}`);
 
       return NextResponse.json({
         success: true,
