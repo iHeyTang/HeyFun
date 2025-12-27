@@ -5,7 +5,7 @@ import { prisma } from '@/lib/server/prisma';
 import { vectorManager, isVectorIndexAvailable, extractSnippetIdFromVectorId } from '@/lib/server/vector';
 import type { VectorProvider } from '@/lib/server/vector/types';
 import { generateEmbedding } from '@/lib/server/embeddings';
-import CHAT from '@repo/llm/chat';
+import type { ChatClient } from '@repo/llm/chat';
 
 /**
  * 获取用于片段检索的向量库提供者
@@ -123,9 +123,71 @@ async function searchByKeywords(keywords: string[]): Promise<string[]> {
 }
 
 /**
+ * 使用 LLM 扩展查询文本，提取语义相关的词汇
+ */
+async function expandQueryText(queryText: string, llmClient?: ChatClient): Promise<string> {
+  // 如果没有提供 llmClient，直接使用原始查询文本
+  if (!llmClient) {
+    return queryText;
+  }
+
+  try {
+    const prompt = `分析以下用户查询，提取所有相关的概念和关键词，生成一个包含语义相关词汇的扩展查询文本，用于向量搜索。
+
+用户查询：${queryText}
+
+要求：
+1. **保留原始查询文本**：必须完整保留用户查询的原始内容
+2. **提取关键概念**：识别并添加所有相关的语义概念，包括：
+   - 同义词和相关词汇
+   - 上位词和下位词（如"水果"→"苹果"，"交通工具"→"汽车"）
+   - 相关领域概念（如"旅游"→"行程"、"住宿"、"景点"）
+   - 关键词的多种表达方式
+3. **识别重要信息维度**：从查询中识别关键信息，包括但不限于：
+   - 时间相关：日期、时间段、时间概念
+   - 地点相关：国家、城市、地区、位置
+   - 对象相关：人物、物品、实体、概念
+   - 动作相关：行为、操作、活动
+   - 主题相关：领域、类别、话题
+   - 其他：数量、特征、关系等
+4. **确保完整性**：优先保证不遗漏重要的相关概念，即使词汇较多也要包含
+5. **保持相关性**：只添加与查询主题相关的词汇，避免添加无关内容
+6. 用空格分隔各个词汇
+7. 只输出扩展后的查询文本，不要添加任何说明或解释
+
+直接输出扩展后的查询文本：`;
+
+    const response = await llmClient.chat({
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.1,
+      max_tokens: 300,
+    });
+
+    const choice = response.choices?.[0];
+    const content = choice?.message?.content || '';
+    const expandedText = typeof content === 'string' ? content.trim() : String(content).trim();
+
+    // 如果扩展后的文本为空或太短，使用原始文本
+    if (!expandedText || expandedText.length < queryText.length) {
+      return queryText;
+    }
+
+    return expandedText;
+  } catch (error) {
+    console.error('[RetrievePromptFragmentsTool] ❌ 查询扩展失败，使用原始查询:', error);
+    return queryText;
+  }
+}
+
+/**
  * 向量搜索
  */
-async function searchByVector(queryText: string, topK: number = 20): Promise<string[]> {
+async function searchByVector(queryText: string, topK: number = 20, llmClient?: ChatClient): Promise<string[]> {
   const provider = getSnippetVectorProvider();
 
   if (!provider || !provider.isAvailable()) {
@@ -133,7 +195,9 @@ async function searchByVector(queryText: string, topK: number = 20): Promise<str
   }
 
   try {
-    const queryEmbedding = await generateEmbedding(queryText);
+    // 使用 LLM 扩展查询文本以提高语义匹配准确性
+    const expandedQueryText = await expandQueryText(queryText, llmClient);
+    const queryEmbedding = await generateEmbedding(expandedQueryText);
     const results = await provider.query(queryEmbedding, Math.min(topK, 50));
 
     const snippetResults = results
@@ -177,6 +241,7 @@ async function selectFragmentsWithLLM(
   intent: { primaryGoal?: string; taskType?: string; complexity?: string } | undefined,
   candidateFragmentIds: string[],
   maxFragments: number,
+  llmClient?: ChatClient,
 ): Promise<{ fragmentIds: string[]; confidence: number; reasons: string[] }> {
   if (candidateFragmentIds.length === 0) {
     return {
@@ -247,11 +312,16 @@ ${fragmentsInfo}
 }
 \`\`\``;
 
-  try {
-    const modelId = 'gpt-4o-mini';
-    CHAT.setModels(await import('@/actions/llm').then(m => m.loadModelDefinitionsFromDatabase()));
-    const llmClient = CHAT.createClient(modelId);
+  // 如果没有提供 llmClient，直接返回前 maxFragments 个候选片段
+  if (!llmClient) {
+    return {
+      fragmentIds: candidateFragmentIds.slice(0, maxFragments),
+      confidence: 0.5,
+      reasons: ['未提供 LLM 客户端，直接返回前几个候选片段'],
+    };
+  }
 
+  try {
     const response = await llmClient.chat({
       messages: [
         {
@@ -293,85 +363,79 @@ ${fragmentsInfo}
   }
 }
 
-export const retrievePromptFragmentsExecutor = definitionToolExecutor(
-  retrievePromptFragmentsParamsSchema,
-  async (args, context) => {
-    return await context.workflow.run(`toolcall-${context.toolCallId || 'retrieve-fragments'}`, async () => {
-      try {
-        const { userMessage, intent, maxFragments = 5 } = args;
+export const retrievePromptFragmentsExecutor = definitionToolExecutor(retrievePromptFragmentsParamsSchema, async (args, context) => {
+  return await context.workflow.run(`toolcall-${context.toolCallId || 'retrieve-fragments'}`, async () => {
+    try {
+      const { userMessage, intent, maxFragments = 5 } = args;
 
-        // 提取关键词
-        const keywords = extractKeywords(intent, userMessage);
+      // 提取关键词
+      const keywords = extractKeywords(intent, userMessage);
 
-        // 构建向量搜索查询文本
-        const vectorQueryText = intent
-          ? `${userMessage} ${intent.primaryGoal || ''} ${intent.taskType || ''}`.trim()
-          : userMessage;
+      // 构建向量搜索查询文本
+      const vectorQueryText = intent ? `${userMessage} ${intent.primaryGoal || ''} ${intent.taskType || ''}`.trim() : userMessage;
 
-        // 并行执行多种检索策略
-        const provider = getSnippetVectorProvider();
-        const vectorIndexAvailable = provider?.isAvailable() ?? false;
+      // 并行执行多种检索策略
+      const provider = getSnippetVectorProvider();
+      const vectorIndexAvailable = provider?.isAvailable() ?? false;
 
-        const [tagResults, keywordResults, vectorResults] = await Promise.all([
-          searchByTags(keywords),
-          searchByKeywords(keywords),
-          vectorIndexAvailable ? searchByVector(vectorQueryText, 20) : Promise.resolve([]),
-        ]);
+      const [tagResults, keywordResults, vectorResults] = await Promise.all([
+        searchByTags(keywords),
+        searchByKeywords(keywords),
+        vectorIndexAvailable ? searchByVector(vectorQueryText, 20, context.llmClient) : Promise.resolve([]),
+      ]);
 
-        // 合并去重
-        const candidateFragmentIds = [...new Set([...tagResults, ...keywordResults, ...vectorResults])];
+      // 合并去重
+      const candidateFragmentIds = [...new Set([...tagResults, ...keywordResults, ...vectorResults])];
 
-        if (candidateFragmentIds.length === 0) {
-          return {
-            success: true,
-            data: {
-              fragments: [],
-              fragmentIds: [],
-              confidence: 0,
-              reasons: ['没有找到相关片段'],
-            },
-          };
-        }
-
-        // 选择最相关的片段
-        const selectionResult = await selectFragmentsWithLLM(userMessage, intent, candidateFragmentIds, maxFragments);
-
-        // 获取片段的完整信息
-        const fragments = await prisma.systemPromptSnippets.findMany({
-          where: {
-            id: { in: selectionResult.fragmentIds },
-            enabled: true,
-          },
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            content: true,
-          },
-        });
-
+      if (candidateFragmentIds.length === 0) {
         return {
           success: true,
           data: {
-            fragments: fragments.map(f => ({
-              id: f.id,
-              name: f.name,
-              description: f.description,
-              content: f.content,
-            })),
-            fragmentIds: selectionResult.fragmentIds,
-            confidence: selectionResult.confidence,
-            reasons: selectionResult.reasons,
+            fragments: [],
+            fragmentIds: [],
+            confidence: 0,
+            reasons: ['没有找到相关片段'],
           },
         };
-      } catch (error) {
-        console.error('[RetrievePromptFragmentsTool] ❌ 片段检索失败:', error);
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : String(error),
-        };
       }
-    });
-  },
-);
 
+      // 选择最相关的片段
+      const selectionResult = await selectFragmentsWithLLM(userMessage, intent, candidateFragmentIds, maxFragments, context.llmClient);
+
+      // 获取片段的完整信息
+      const fragments = await prisma.systemPromptSnippets.findMany({
+        where: {
+          id: { in: selectionResult.fragmentIds },
+          enabled: true,
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          content: true,
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          fragments: fragments.map(f => ({
+            id: f.id,
+            name: f.name,
+            description: f.description,
+            content: f.content,
+          })),
+          fragmentIds: selectionResult.fragmentIds,
+          confidence: selectionResult.confidence,
+          reasons: selectionResult.reasons,
+        },
+      };
+    } catch (error) {
+      console.error('[RetrievePromptFragmentsTool] ❌ 片段检索失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  });
+});

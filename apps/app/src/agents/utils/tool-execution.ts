@@ -20,14 +20,35 @@ export interface ToolExecutionContext {
 }
 
 /**
+ * 工具执行结果，包含 token 使用情况
+ */
+export interface ToolExecutionResult {
+  results: ToolResult[];
+  tokenUsage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+
+/**
  * 执行工具调用
  * 使用统一的 toolRegistry 来执行所有工具
+ * 如果工具使用了 llmClient，会跟踪并返回 token 使用情况
  */
-export async function executeTools(toolCalls: UnifiedChat.ToolCall[], context: ToolExecutionContext): Promise<ToolResult[]> {
+export async function executeTools(toolCalls: UnifiedChat.ToolCall[], context: ToolExecutionContext): Promise<ToolExecutionResult> {
   const results: ToolResult[] = [];
 
   // 为工具创建动态系统提示词管理器
   const dynamicSystemPrompt = createDynamicSystemPromptManager(context.sessionId);
+
+  // 记录工具执行前的 token 计数（如果提供了 llmClient）
+  let beforeInputTokens = 0;
+  let beforeCompletionTokens = 0;
+  if (context.llmClient) {
+    beforeInputTokens = context.llmClient.totalInputTokens;
+    beforeCompletionTokens = context.llmClient.totalCompletionTokens;
+  }
 
   for (const toolCall of toolCalls) {
     const toolName = toolCall.function?.name;
@@ -67,5 +88,25 @@ export async function executeTools(toolCalls: UnifiedChat.ToolCall[], context: T
     }
   }
 
-  return results;
+  // 计算工具执行期间的 token 使用情况（如果提供了 llmClient）
+  let tokenUsage: ToolExecutionResult['tokenUsage'] | undefined;
+  if (context.llmClient) {
+    const afterInputTokens = context.llmClient.totalInputTokens;
+    const afterCompletionTokens = context.llmClient.totalCompletionTokens;
+    const promptTokens = afterInputTokens - beforeInputTokens;
+    const completionTokens = afterCompletionTokens - beforeCompletionTokens;
+
+    if (promptTokens > 0 || completionTokens > 0) {
+      tokenUsage = {
+        promptTokens,
+        completionTokens,
+        totalTokens: promptTokens + completionTokens,
+      };
+    }
+  }
+
+  return {
+    results,
+    tokenUsage,
+  };
 }

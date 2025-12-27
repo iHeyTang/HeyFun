@@ -10,6 +10,7 @@ import { CheckCircle2, Loader2, Wrench, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { WebSearchResult } from './tool-renderers/web-search-result';
 import { AigcModelsResult } from './tool-renderers/aigc-models-result';
+import { BuildSystemPromptResult } from './tool-renderers/build-system-prompt-result';
 
 interface ToolCallCardProps {
   toolCalls: PrismaJson.ToolCall[];
@@ -63,6 +64,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
     > = {
       web_search: WebSearchResult,
       get_aigc_models: AigcModelsResult,
+      build_system_prompt: BuildSystemPromptResult,
     };
     return renderers[toolName];
   };

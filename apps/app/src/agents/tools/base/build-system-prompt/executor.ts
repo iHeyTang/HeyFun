@@ -15,13 +15,77 @@ function getSnippetVectorProvider(): VectorProvider | undefined {
 }
 
 /**
+ * 使用 LLM 扩展查询文本，提取语义相关的词汇
+ */
+async function expandQueryText(queryText: string, llmClient?: ChatClient): Promise<string> {
+  // 如果没有提供 llmClient，直接使用原始查询文本
+  if (!llmClient) {
+    return queryText;
+  }
+
+  try {
+    const prompt = `分析以下用户查询，提取所有相关的概念和关键词，生成一个包含语义相关词汇的扩展查询文本，用于向量搜索。
+
+用户查询：${queryText}
+
+要求：
+1. **保留原始查询文本**：必须完整保留用户查询的原始内容
+2. **提取关键概念**：识别并添加所有相关的语义概念，包括：
+   - 同义词和相关词汇
+   - 上位词和下位词（如"水果"→"苹果"，"交通工具"→"汽车"）
+   - 相关领域概念（如"旅游"→"行程"、"住宿"、"景点"）
+   - 关键词的多种表达方式
+3. **识别重要信息维度**：从查询中识别关键信息，包括但不限于：
+   - 时间相关：日期、时间段、时间概念
+   - 地点相关：国家、城市、地区、位置
+   - 对象相关：人物、物品、实体、概念
+   - 动作相关：行为、操作、活动
+   - 主题相关：领域、类别、话题
+   - 其他：数量、特征、关系等
+4. **确保完整性**：优先保证不遗漏重要的相关概念，即使词汇较多也要包含
+5. **保持相关性**：只添加与查询主题相关的词汇，避免添加无关内容
+6. 用空格分隔各个词汇
+7. 只输出扩展后的查询文本，不要添加任何说明或解释
+
+直接输出扩展后的查询文本：`;
+
+    const response = await llmClient.chat({
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.1,
+      max_tokens: 300,
+    });
+
+    const choice = response.choices?.[0];
+    const content = choice?.message?.content || '';
+    const expandedText = typeof content === 'string' ? content.trim() : String(content).trim();
+
+    // 如果扩展后的文本为空或太短，使用原始文本
+    if (!expandedText || expandedText.length < queryText.length) {
+      return queryText;
+    }
+
+    return expandedText;
+  } catch (error) {
+    console.error('[BuildSystemPromptTool] ❌ 查询扩展失败，使用原始查询:', error);
+    return queryText;
+  }
+}
+
+/**
  * 向量搜索
  */
-async function searchByVector(queryText: string, topK: number = 20): Promise<string[]> {
+async function searchByVector(queryText: string, topK: number = 20, llmClient?: ChatClient): Promise<string[]> {
   const provider = getSnippetVectorProvider();
   if (!provider || !provider.isAvailable()) return [];
   try {
-    const queryEmbedding = await generateEmbedding(queryText);
+    // 使用 LLM 扩展查询文本以提高语义匹配准确性
+    const expandedQueryText = await expandQueryText(queryText, llmClient);
+    const queryEmbedding = await generateEmbedding(expandedQueryText);
     const results = await provider.query(queryEmbedding, Math.min(topK, 50));
     const snippetResults = results
       .map(result => {
@@ -155,12 +219,17 @@ ${fragmentsInfo}
         },
       ],
       temperature: 0.3,
-      max_tokens: 2000,
+      max_tokens: 20000,
     });
 
     const choice = response.choices?.[0];
     const content = choice?.message?.content || '';
     const generatedPrompt = typeof content === 'string' ? content.trim() : String(content).trim();
+
+    // 检查是否因为 token 限制而被截断
+    if (choice?.finish_reason === 'length') {
+      console.warn('[BuildSystemPromptTool] ⚠️ 生成的系统提示词可能因为 token 限制而被截断，建议增加 max_tokens');
+    }
 
     return generatedPrompt;
   } catch (error) {
@@ -188,7 +257,7 @@ export const buildSystemPromptExecutor = definitionToolExecutor(buildSystemPromp
       const vectorQueryText = intent ? `${userMessage} ${intent.primaryGoal || ''} ${intent.taskType || ''}`.trim() : userMessage;
 
       // 从向量库检索片段（向量结果已按相似度排序，直接取前 maxFragments 个）
-      const allFragmentIds = await searchByVector(vectorQueryText, maxFragments * 2); // 多检索一些，以防有被禁用的片段
+      const allFragmentIds = await searchByVector(vectorQueryText, maxFragments * 2, context.llmClient); // 多检索一些，以防有被禁用的片段
       const fragmentIds = allFragmentIds.slice(0, maxFragments);
 
       if (fragmentIds.length === 0) {

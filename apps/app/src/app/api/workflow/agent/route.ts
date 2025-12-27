@@ -426,7 +426,7 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
       CHAT.setModels(allModels);
       const llmClient = CHAT.createClient(modelId);
 
-      const serverToolResults = await executeTools(llmResponse.toolCalls, {
+      const toolExecutionResult = await executeTools(llmResponse.toolCalls, {
         organizationId,
         sessionId,
         workflow: context,
@@ -435,9 +435,48 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
         messages,
       });
 
+      // 如果工具执行期间使用了 token，将其计入总使用量
+      let toolInputTokens = 0;
+      let toolOutputTokens = 0;
+      if (toolExecutionResult.tokenUsage) {
+        toolInputTokens = toolExecutionResult.tokenUsage.promptTokens;
+        toolOutputTokens = toolExecutionResult.tokenUsage.completionTokens;
+
+        // 更新消息的 token 计数，包含工具执行的 token
+        await context.run(`round-${roundCount}-update-tool-tokens`, async () => {
+          const currentMessage = await prisma.chatMessages.findUnique({
+            where: { id: aiMessage.id },
+            select: { inputTokens: true, outputTokens: true, tokenCount: true },
+          });
+
+          if (currentMessage) {
+            const totalInputTokens = (currentMessage.inputTokens || 0) + toolInputTokens;
+            const totalOutputTokens = (currentMessage.outputTokens || 0) + toolOutputTokens;
+            const totalTokenCount = (currentMessage.tokenCount || 0) + toolInputTokens + toolOutputTokens;
+
+            await prisma.chatMessages.update({
+              where: { id: aiMessage.id },
+              data: {
+                inputTokens: totalInputTokens,
+                outputTokens: totalOutputTokens,
+                tokenCount: totalTokenCount,
+              },
+            });
+          }
+        });
+
+        // 扣除工具执行产生的费用
+        const toolCost = calculateLLMCost(modelInfo, toolInputTokens, toolOutputTokens);
+        if (toolCost > 0) {
+          await context.run(`round-${roundCount}-deduct-tool-credits`, async () => {
+            await deductCredits(organizationId, toolCost);
+          });
+        }
+      }
+
       // 保存服务端工具结果到 assistant 消息的 toolResults 字段
       await context.run(`round-${roundCount}-save-server-tool-results`, async () => {
-        await saveToolResultsToMessage(aiMessage.id, llmResponse.toolCalls, serverToolResults);
+        await saveToolResultsToMessage(aiMessage.id, llmResponse.toolCalls, toolExecutionResult.results);
       });
 
       // 继续下一轮对话（工具执行后需要继续）
