@@ -11,8 +11,9 @@ import { marked } from 'marked';
 import { WysiwygEditorToolbar } from './toolbar';
 import { uploadFile, validateFile } from '@/lib/browser/file';
 import { toast } from 'sonner';
-import { ResizableImage } from './image-extension';
-import { CodeBlockWithSyntax } from './code-block-extension';
+import { ResizableImage, imageTurndownRule } from './image';
+import { CodeBlockWithSyntax, codeBlockTurndownRule } from './code-block';
+import { MapEmbedExtension, mapEmbedTurndownRule, processMapCommentsInHTML } from './map-embed';
 import { SelectionToolbar, type SelectionInfo } from './selection-toolbar';
 import { type NoteMentionData, parseNoteMention } from '@/components/block/chat-input/note-mention-extension';
 import { useNoteAgentPanel } from '@/components/features/notes/note-agent-panel-context';
@@ -76,37 +77,12 @@ export function WysiwygEditor({
       headingStyle: 'atx',
       codeBlockStyle: 'fenced',
     });
-    // 添加图片规则，将 <img> 转换为 Markdown 格式
-    service.addRule('image', {
-      filter: 'img',
-      replacement: (content, node) => {
-        const img = node as HTMLImageElement;
-        const src = img.getAttribute('src') || '';
-        const alt = img.getAttribute('alt') || '';
-        const title = img.getAttribute('title') || '';
-        const width = img.getAttribute('width');
-        const height = img.getAttribute('height');
-        // 如果图片有尺寸信息，在 Markdown 中保留（使用 HTML 格式）
-        if (width || height) {
-          return `<img src="${src}" alt="${alt}"${width ? ` width="${width}"` : ''}${height ? ` height="${height}"` : ''}${title ? ` title="${title}"` : ''} />`;
-        }
-        return title ? `![${alt}](${src} "${title}")` : `![${alt}](${src})`;
-      },
-    });
-    // 优化代码块转换，保留语言信息
-    service.addRule('codeBlock', {
-      filter: (node: any) => {
-        return node.nodeName === 'PRE' && node.querySelector('code');
-      },
-      replacement: (content: string, node: any) => {
-        const code = node.querySelector('code');
-        const className = code?.getAttribute('class') || '';
-        const languageMatch = className.match(/language-(\w+)/);
-        const language = languageMatch ? languageMatch[1] : '';
-        const codeContent = code?.textContent || content;
-        return `\n\n\`\`\`${language}\n${codeContent}\n\`\`\`\n\n`;
-      },
-    });
+    // 添加图片规则（从扩展模块导入）
+    service.addRule('image', imageTurndownRule());
+    // 添加代码块规则（从扩展模块导入）
+    service.addRule('codeBlock', codeBlockTurndownRule());
+    // 添加地图嵌入规则（从扩展模块导入）
+    service.addRule('mapEmbed', mapEmbedTurndownRule());
     return service;
   }, []);
 
@@ -285,6 +261,9 @@ export function WysiwygEditor({
         return match;
       });
 
+      // 处理地图注释（从扩展模块导入）
+      html = processMapCommentsInHTML(html);
+
       return html;
     } catch {
       // 如果解析失败，可能是纯 HTML 或格式错误
@@ -319,6 +298,7 @@ export function WysiwygEditor({
       }),
       CodeBlockWithSyntax,
       ResizableImage,
+      MapEmbedExtension,
     ],
     content: htmlContent, // 使用 HTML 内容
     immediatelyRender: false, // 避免 SSR 水合不匹配
