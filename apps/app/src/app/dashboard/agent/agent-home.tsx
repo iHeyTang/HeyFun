@@ -182,7 +182,7 @@ export const AgentHome = ({ apiPrefix = '/api/agent', onCreateSession }: AgentHo
             isLoading={isSending}
             className="pb-0"
           />
-          <div className="flex flex-wrap gap-2.5 px-6">
+          <div className="flex flex-wrap justify-center gap-2.5 px-6">
             {examplePrompts.map((example, index) => (
               <Badge
                 key={index}
