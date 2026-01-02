@@ -239,77 +239,80 @@ export const ChatInput = ({
   };
 
   // 处理文件上传（支持所有文件类型）
-  const handleFileUpload = useCallback(async (file: File) => {
-    const maxSize = 50 * 1024 * 1024; // 50MB
-    const error = validateFile(file, undefined, maxSize);
-    if (error) {
-      toast.error(error);
-      return;
-    }
-
-    const attachmentType = getAttachmentType(file.type, file.name);
-    setUploading(true);
-    try {
-      // 对于图片，先显示预览（使用base64）
-      let previewUrl: string;
-      if (attachmentType === 'image') {
-        const reader = new FileReader();
-        previewUrl = await new Promise<string>((resolve, reject) => {
-          reader.onload = e => resolve(e.target?.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      } else {
-        // 非图片文件，使用占位符
-        previewUrl = '';
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      const error = validateFile(file, undefined, maxSize);
+      if (error) {
+        toast.error(error);
+        return;
       }
 
-      const tempAttachment: ChatInputAttachment = {
-        url: previewUrl,
-        type: attachmentType,
-        name: file.name,
-        mimeType: file.type,
-        size: file.size,
-      };
-
-      const newAttachments = [...attachments, tempAttachment];
-      if (isAttachmentsControlled) {
-        onAttachmentsChange?.(newAttachments);
-      } else {
-        setInternalAttachments(newAttachments);
-      }
-
+      const attachmentType = getAttachmentType(file.type, file.name);
+      setUploading(true);
       try {
-        // 上传到OSS
-        const fileKey = await uploadFile(file, 'chat');
-        // 更新为OSS key
-        const updatedAttachments = newAttachments.map(att =>
-          att === tempAttachment ? { ...att, url: previewUrl || `/api/oss/${fileKey}`, fileKey } : att,
-        );
-        if (isAttachmentsControlled) {
-          onAttachmentsChange?.(updatedAttachments);
+        // 对于图片，先显示预览（使用base64）
+        let previewUrl: string;
+        if (attachmentType === 'image') {
+          const reader = new FileReader();
+          previewUrl = await new Promise<string>((resolve, reject) => {
+            reader.onload = e => resolve(e.target?.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
         } else {
-          setInternalAttachments(updatedAttachments);
+          // 非图片文件，使用占位符
+          previewUrl = '';
+        }
+
+        const tempAttachment: ChatInputAttachment = {
+          url: previewUrl,
+          type: attachmentType,
+          name: file.name,
+          mimeType: file.type,
+          size: file.size,
+        };
+
+        const newAttachments = [...attachments, tempAttachment];
+        if (isAttachmentsControlled) {
+          onAttachmentsChange?.(newAttachments);
+        } else {
+          setInternalAttachments(newAttachments);
+        }
+
+        try {
+          // 上传到OSS
+          const fileKey = await uploadFile(file, 'chat');
+          // 更新为OSS key
+          const updatedAttachments = newAttachments.map(att =>
+            att === tempAttachment ? { ...att, url: previewUrl || `/api/oss/${fileKey}`, fileKey } : att,
+          );
+          if (isAttachmentsControlled) {
+            onAttachmentsChange?.(updatedAttachments);
+          } else {
+            setInternalAttachments(updatedAttachments);
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          toast.error('文件上传失败');
+          // 移除失败的文件
+          const filteredAttachments = newAttachments.filter(att => att !== tempAttachment);
+          if (isAttachmentsControlled) {
+            onAttachmentsChange?.(filteredAttachments);
+          } else {
+            setInternalAttachments(filteredAttachments);
+          }
+        } finally {
+          setUploading(false);
         }
       } catch (error) {
-        console.error('Upload error:', error);
-        toast.error('文件上传失败');
-        // 移除失败的文件
-        const filteredAttachments = newAttachments.filter(att => att !== tempAttachment);
-        if (isAttachmentsControlled) {
-          onAttachmentsChange?.(filteredAttachments);
-        } else {
-          setInternalAttachments(filteredAttachments);
-        }
-      } finally {
+        console.error('File upload error:', error);
+        toast.error('文件处理失败');
         setUploading(false);
       }
-    } catch (error) {
-      console.error('File upload error:', error);
-      toast.error('文件处理失败');
-      setUploading(false);
-    }
-  }, [attachments, isAttachmentsControlled, onAttachmentsChange]);
+    },
+    [attachments, isAttachmentsControlled, onAttachmentsChange],
+  );
 
   // 处理文件粘贴（支持图片）- 在 Tiptap 编辑器中处理
   useEffect(() => {
@@ -391,12 +394,14 @@ export const ChatInput = ({
     }
   }, [editor, disabled, uploading, attachments, onSend, isControlled, onValueChange, isAttachmentsControlled, onAttachmentsChange, turndownService]);
 
-  // 处理键盘事件（Enter 发送）
+  // 处理键盘事件（Command+Enter 或 Ctrl+Enter 发送）
   useEffect(() => {
     if (!editor) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      // 检查是否为 Command+Enter (Mac) 或 Ctrl+Enter (Windows/Linux)
+      const isModifierPressed = e.metaKey || e.ctrlKey;
+      if (e.key === 'Enter' && isModifierPressed) {
         e.preventDefault();
         handleSend();
       }
