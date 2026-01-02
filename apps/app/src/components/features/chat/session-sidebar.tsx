@@ -7,30 +7,29 @@
 
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useChatSessionsStore } from '@/hooks/use-chat-sessions';
+import { useChatSessionsStore, useChatSessionsListStore } from '@/hooks/use-chat-sessions';
+import { useAgentRouter } from '@/hooks/use-agent-router';
 import { cn } from '@/lib/utils';
 import { Loader2, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import type { ChatAction } from './chat-container';
 import { useChatbotModelSelector } from './chat-input';
 
 interface SessionSidebarProps {
   /** 是否禁用操作（通常基于是否选择了模型） */
   disabled?: boolean;
-  /** 外部操作按钮 */
-  actions?: ChatAction[];
 }
 
 /**
  * SessionSidebar 组件
  * 左侧侧边栏展示 sessions 列表
  */
-export const SessionSidebar = ({ disabled: externalDisabled = false, actions = [] }: SessionSidebarProps) => {
+export const SessionSidebar = ({ disabled: externalDisabled = false }: SessionSidebarProps) => {
   const [isCreating, setIsCreating] = useState(false);
 
   // 直接从 store 获取数据和方法
   const { sessions, activeSessionId, sessionInputValues, createSession, deleteSession, switchSession, hasRealContent } = useChatSessionsStore();
+  const { navigateToSession, isAgentPage } = useAgentRouter();
 
   const { selectedModel } = useChatbotModelSelector();
   const disabled = externalDisabled || !selectedModel;
@@ -38,7 +37,10 @@ export const SessionSidebar = ({ disabled: externalDisabled = false, actions = [
   const handleCreateSession = async () => {
     setIsCreating(true);
     try {
-      await createSession({ title: 'New Chat' });
+      const newSession = await createSession({ title: 'New Chat' });
+      if (newSession && isAgentPage()) {
+        navigateToSession(newSession.id);
+      }
       toast.success('New chat created');
     } catch (error) {
       toast.error('Failed to create chat');
@@ -51,7 +53,16 @@ export const SessionSidebar = ({ disabled: externalDisabled = false, actions = [
   const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
+      const state = useChatSessionsListStore.getState();
+      const wasActive = state.activeSessionId === sessionId;
       await deleteSession(sessionId);
+
+      // 如果删除的是当前活动的session，需要更新路由
+      if (wasActive && isAgentPage()) {
+        const newState = useChatSessionsListStore.getState();
+        navigateToSession(newState.activeSessionId);
+      }
+
       toast.success('Chat deleted');
     } catch (error) {
       toast.error('Failed to delete chat');
@@ -61,6 +72,9 @@ export const SessionSidebar = ({ disabled: externalDisabled = false, actions = [
 
   const handleSwitchSession = async (sessionId: string) => {
     await switchSession(sessionId);
+    if (isAgentPage()) {
+      navigateToSession(sessionId);
+    }
   };
 
   return (
@@ -80,21 +94,6 @@ export const SessionSidebar = ({ disabled: externalDisabled = false, actions = [
           >
             {isCreating ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
           </Button>
-
-          {/* 外部操作按钮 */}
-          {actions.map((action: ChatAction) => (
-            <Button
-              key={action.id}
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-foreground size-7 hover:bg-transparent"
-              onClick={action.onClick}
-              disabled={action.disabled}
-              title={action.label}
-            >
-              {action.icon}
-            </Button>
-          ))}
         </div>
       </div>
 

@@ -24,8 +24,6 @@ interface ChatSessionProps {
   initialMessages?: ChatMessages[];
   /** 是否禁用输入 */
   disabled?: boolean;
-  /** API 端点前缀（可选，默认 '/api/agent'） */
-  apiPrefix?: string;
   /** 受控的输入框值（用于从外部临时设置输入框内容，如从编辑器添加 mention） */
   inputValue?: string;
   /** 输入框值变化回调（用于从外部临时设置输入框内容） */
@@ -40,10 +38,10 @@ export function ChatSession({
   sessionId,
   initialMessages = [],
   disabled = false,
-  apiPrefix = '/api/agent',
   inputValue: controlledInputValue,
   onInputValueChange,
 }: ChatSessionProps) {
+  const apiPrefix = '/api/agent';
   // 直接从 store 获取所有数据和方法
   const {
     sessionInputValues,

@@ -5,11 +5,11 @@ import { buildMessageContent } from '@/components/features/chat/build-message-co
 import { ChatInput, useChatbotModelSelector } from '@/components/features/chat/chat-input';
 import { Badge } from '@/components/ui/badge';
 import { useChatSessionsStore } from '@/hooks/use-chat-sessions';
+import { useAgentRouter } from '@/hooks/use-agent-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 interface AgentHomeProps {
-  apiPrefix?: string;
   onCreateSession?: () => void;
 }
 
@@ -76,8 +76,9 @@ const examplePrompts = [
   },
 ];
 
-export const AgentHome = ({ apiPrefix = '/api/agent', onCreateSession }: AgentHomeProps) => {
+export const AgentHome = ({ onCreateSession }: AgentHomeProps) => {
   const { createSession, setActiveSessionId, activeSessionId, fetchAndUpdateMessages } = useChatSessionsStore();
+  const { navigateToSession } = useAgentRouter();
   const { selectedModel } = useChatbotModelSelector();
   const [inputValue, setInputValue] = useState('');
   const [attachments, setAttachments] = useState<ChatInputAttachment[]>([]);
@@ -112,6 +113,8 @@ export const AgentHome = ({ apiPrefix = '/api/agent', onCreateSession }: AgentHo
         sessionId = session.id;
         // 设置活动 session
         setActiveSessionId(session.id);
+        // 导航到新session的路由
+        navigateToSession(session.id);
       }
 
       // 使用传入的 attachments 或当前的 attachments
@@ -120,7 +123,7 @@ export const AgentHome = ({ apiPrefix = '/api/agent', onCreateSession }: AgentHo
       const messageContent = buildMessageContent(trimmedMessage, finalAttachments.length > 0 ? finalAttachments : undefined);
 
       // 发送消息到后端
-      const response = await fetch(`${apiPrefix}/chat`, {
+      const response = await fetch('/api/agent/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -139,7 +142,7 @@ export const AgentHome = ({ apiPrefix = '/api/agent', onCreateSession }: AgentHo
 
       // 发送成功后，立即获取消息，以便界面切换到 ChatSession
       try {
-        await fetchAndUpdateMessages({ sessionId, apiPrefix });
+        await fetchAndUpdateMessages({ sessionId, apiPrefix: '/api/agent' });
       } catch (error) {
         console.error('Failed to fetch messages after sending:', error);
         // 不阻止流程，继续执行

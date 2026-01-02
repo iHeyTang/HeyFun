@@ -60,7 +60,7 @@ export const useChatSessionsListStore = create<ChatSessionsListStore>()((set, ge
       if (loadSessionsFn) {
         sessions = await loadSessionsFn();
       } else {
-        const result = await getChatSessions({ page: 1, pageSize: 10 });
+        const result = await getChatSessions({ page: 1, pageSize: 50 });
         sessions = result.data?.sessions || [];
       }
 

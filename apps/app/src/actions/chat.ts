@@ -46,12 +46,6 @@ export const getChatSessions = withUserAuth(
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { updatedAt: 'desc' },
-        include: {
-          messages: {
-            orderBy: { createdAt: 'asc' },
-            take: 1, // 只取第一条消息用于显示预览
-          },
-        },
       });
 
       const total = await prisma.chatSessions.count({

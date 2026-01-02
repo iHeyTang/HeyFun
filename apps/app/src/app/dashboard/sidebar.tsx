@@ -16,11 +16,11 @@ const useNavItems = () => {
       label: t('agent'),
       path: '/dashboard/agent',
     },
-    {
-      icon: Flower,
-      label: t('flowcanvas'),
-      path: '/dashboard/flowcanvas',
-    },
+    // {
+    //   icon: Flower,
+    //   label: t('flowcanvas'),
+    //   path: '/dashboard/flowcanvas',
+    // },
     // {
     //   icon: MessageSquare,
     //   label: t('chat'),
@@ -36,11 +36,11 @@ const useNavItems = () => {
       label: t('paintboard'),
       path: '/dashboard/paintboard',
     },
-    {
-      icon: FileText,
-      label: t('notes'),
-      path: '/dashboard/notes',
-    },
+    // {
+    //   icon: FileText,
+    //   label: t('notes'),
+    //   path: '/dashboard/notes',
+    // },
     {
       icon: Code,
       label: '提示词片段',
