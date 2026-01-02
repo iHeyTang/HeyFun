@@ -9,16 +9,14 @@
 import { AgentConfig } from '@/agents/core/frameworks/base';
 import { ReactAgent } from '@/agents/core/frameworks/react';
 import { flowcanvasToolboxes } from '@/agents/tools';
+import { createPresetBlock } from '@/agents/core/system-prompt';
 
-/**
- * 协调者 Agent 实现 - 基于 ReactAgent 框架
- */
-export class CanvasAgent extends ReactAgent {
-  protected config: AgentConfig = {
-    id: 'canvas',
-    name: 'Canvas',
-    description: '基于 ReAct 框架的智能画布协调者，支持自主推理和行动',
-    systemPrompt: `# 角色定位
+// ============================================================================
+// Canvas Agent 系统提示词模板
+// ============================================================================
+
+const CANVAS_SYSTEM_PROMPT = `
+# 角色定位
 你是画布协调者，负责理解用户需求并创建、编辑和管理画布。
 
 # 一、需求理解与规划
@@ -398,7 +396,23 @@ export class CanvasAgent extends ReactAgent {
 - 每个输出段落之间用空行分隔
 - 工具调用过程可见时，不需要重复说明
 
-开始工作。`,
+开始工作。
+`.trim();
+
+/**
+ * 协调者 Agent 实现 - 基于 ReactAgent 框架
+ */
+export class CanvasAgent extends ReactAgent {
+  protected config: AgentConfig = {
+    id: 'canvas',
+    name: 'Canvas',
+    description: '基于 ReAct 框架的智能画布协调者，支持自主推理和行动',
+    promptBlocks: [
+      createPresetBlock('canvas-agent', CANVAS_SYSTEM_PROMPT, {
+        title: 'Canvas Agent 系统提示词',
+        priority: 10,
+      }),
+    ],
     tools: flowcanvasToolboxes
       .flatMap(tool => tool.schema)
       .map(definition => {

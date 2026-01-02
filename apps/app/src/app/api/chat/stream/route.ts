@@ -1,5 +1,6 @@
 import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
 import { getAgent } from '@/agents';
+import { buildSystemPrompt } from '@/agents/core/system-prompt';
 import { withUserAuthApi } from '@/lib/server/auth-wrapper';
 import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/server/credit';
 import { recordGatewayUsage } from '@/lib/server/gateway';
@@ -107,7 +108,8 @@ async function getAIResponse({
     const llmClient = CHAT.createClient(modelId);
 
     // 构建消息历史（包括新的用户消息）
-    const messages: UnifiedChat.Message[] = [{ role: 'system' as const, content: agentConfig.systemPrompt }];
+    const systemPrompt = buildSystemPrompt({ preset: agentConfig.promptBlocks, framework: [], dynamic: [] });
+    const messages: UnifiedChat.Message[] = [{ role: 'system' as const, content: systemPrompt }];
 
     // 按顺序处理消息，确保工具调用和工具结果配对
     for (const msg of session.messages) {

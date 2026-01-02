@@ -89,6 +89,7 @@ export const useChatSendMessage = ({
           outputTokens: null,
           cachedInputTokens: null,
           cachedOutputTokens: null,
+          microAgentExecutions: null, // Prisma schema field, kept for type compatibility
         };
         addMessageToSession(sessionId, tempUserMessage);
 

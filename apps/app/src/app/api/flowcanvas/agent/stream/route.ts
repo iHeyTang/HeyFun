@@ -8,6 +8,7 @@ import { prisma } from '@/lib/server/prisma';
 import CHAT, { UnifiedChat } from '@repo/llm/chat';
 import { NextResponse } from 'next/server';
 import { getAgent } from '@/agents';
+import { buildSystemPrompt } from '@/agents/core/system-prompt';
 import { calculateLLMCost, deductCredits, checkCreditsBalance } from '@/lib/server/credit';
 import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
 
@@ -177,8 +178,9 @@ async function getAIResponse({
     const llmClient = CHAT.createClient(modelId);
 
     // 构建消息历史（包括新的用户消息）
+    const systemPrompt = buildSystemPrompt({ preset: agentConfig.promptBlocks, framework: [], dynamic: [] });
     const messages: UnifiedChat.Message[] = [
-      { role: 'system' as const, content: agentConfig.systemPrompt },
+      { role: 'system' as const, content: systemPrompt },
     ];
 
     // 按顺序处理消息，确保工具调用和工具结果配对

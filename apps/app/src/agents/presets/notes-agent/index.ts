@@ -9,6 +9,7 @@
 import { AgentConfig } from '@/agents/core/frameworks/base';
 import { ReactAgent } from '@/agents/core/frameworks/react';
 import { notesToolboxes } from '@/agents/tools';
+import { createPresetBlock } from '@/agents/core/system-prompt';
 
 /**
  * 获取当前时间字符串（ISO 8601 格式）
@@ -35,19 +36,16 @@ function getCurrentTimeLocaleString(): string {
   });
 }
 
-/**
- * 笔记写作助手 Agent 实现 - 基于 ReactAgent 框架
- */
-export class NotesAgent extends ReactAgent {
-  protected get config(): AgentConfig {
-    const currentTimeISO = getCurrentTimeString();
-    const currentTimeLocale = getCurrentTimeLocaleString();
+// ============================================================================
+// Notes Agent 系统提示词模板
+// ============================================================================
 
-    return {
-      id: 'notes',
-      name: 'Notes Assistant',
-      description: '笔记写作助手，基于 General Agent 扩展，专门用于笔记编辑和写作辅助',
-      systemPrompt: `# 角色定位
+function getNotesSystemPrompt(): string {
+  const currentTimeISO = getCurrentTimeString();
+  const currentTimeLocale = getCurrentTimeLocaleString();
+
+  return `
+# 角色定位
 你是一个专业的笔记写作助手，专门帮助用户创作、优化和改进笔记内容。你基于 ReAct（Reasoning + Acting）框架工作，具备 General Agent 的所有能力，同时还有针对笔记编辑的专门功能。
 
 # 核心职责
@@ -139,7 +137,25 @@ export class NotesAgent extends ReactAgent {
 - **主动帮助**：主动提供有用的信息和建议
 - **诚实透明**：如果无法完成某项任务，诚实告知用户
 
-开始工作。`,
+开始工作。
+`.trim();
+}
+
+/**
+ * 笔记写作助手 Agent 实现 - 基于 ReactAgent 框架
+ */
+export class NotesAgent extends ReactAgent {
+  protected get config(): AgentConfig {
+    return {
+      id: 'notes',
+      name: 'Notes Assistant',
+      description: '笔记写作助手，基于 General Agent 扩展，专门用于笔记编辑和写作辅助',
+      promptBlocks: [
+        createPresetBlock('notes-agent', getNotesSystemPrompt(), {
+          title: 'Notes Agent 系统提示词',
+          priority: 10,
+        }),
+      ],
       tools: notesToolboxes
         .flatMap(tool => tool.schema)
         .map(definition => {

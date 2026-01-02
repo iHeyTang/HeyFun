@@ -15,6 +15,7 @@ import {
 } from '@/agents/utils';
 import { ReactAgent, type IterationProvider } from '@/agents/core/frameworks/react';
 import { getBuiltinToolNames } from '@/agents/core/frameworks/base';
+import { buildSystemPrompt } from '@/agents/core/system-prompt';
 import CHAT from '@repo/llm/chat';
 import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/server/credit';
 import { prisma } from '@/lib/server/prisma';
@@ -179,8 +180,9 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
 
     // 构建消息列表，确保工具调用和工具结果配对
     // 在 workflow 步骤中处理附件（转换图片URL为base64，处理其他附件）
+    const systemPrompt = buildSystemPrompt({ preset: agentConfig.promptBlocks, framework: [], dynamic: [] });
     const messages = await context.run(`round-${roundCount}-build-messages`, async () => {
-      return await convertPrismaMessagesToUnifiedChat(readyMessages, organizationId, agentConfig.systemPrompt);
+      return await convertPrismaMessagesToUnifiedChat(readyMessages, organizationId, systemPrompt);
     });
 
     // 步骤4：检查余额
