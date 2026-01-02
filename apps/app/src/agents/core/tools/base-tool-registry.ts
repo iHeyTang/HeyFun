@@ -4,17 +4,19 @@
  */
 
 import { ToolResult } from './tool-definition';
+import { ToolContext } from '@/agents/tools/context';
+import { z } from 'zod';
 
 /**
  * 工具执行器类型
  */
-export type ToolExecutor<TContext = any> = (args: any, context: TContext) => Promise<ToolResult>;
+export type ToolExecutor<Args extends z.ZodTypeAny = any> = (args: z.infer<Args>, context: ToolContext) => Promise<ToolResult>;
 
 /**
  * 工具注册表基类
  */
-export abstract class BaseToolbox<TExecutor extends ToolExecutor<TContext>, TContext = any> {
-  protected executors = new Map<string, TExecutor>();
+export abstract class BaseToolbox {
+  protected executors = new Map<string, ToolExecutor>();
   protected abstract registryName: string;
   protected abstract toolTypeName: string;
 
@@ -23,7 +25,7 @@ export abstract class BaseToolbox<TExecutor extends ToolExecutor<TContext>, TCon
    * @param toolName 工具名称（必须与工具定义中的名称一致）
    * @param executor 工具执行函数
    */
-  register(toolName: string, executor: TExecutor): void {
+  register(toolName: string, executor: ToolExecutor): void {
     if (this.executors.has(toolName)) {
       console.warn(`[${this.registryName}] Tool "${toolName}" is already registered, overwriting...`);
     }
@@ -33,7 +35,7 @@ export abstract class BaseToolbox<TExecutor extends ToolExecutor<TContext>, TCon
   /**
    * 批量注册工具执行器
    */
-  registerMany(registrations: Array<{ toolName: string; executor: TExecutor }>): void {
+  registerMany(registrations: Array<{ toolName: string; executor: ToolExecutor }>): void {
     for (const { toolName, executor } of registrations) {
       this.register(toolName, executor);
     }
@@ -49,7 +51,7 @@ export abstract class BaseToolbox<TExecutor extends ToolExecutor<TContext>, TCon
   /**
    * 获取工具执行器
    */
-  get(toolName: string): TExecutor | undefined {
+  get(toolName: string): ToolExecutor | undefined {
     return this.executors.get(toolName);
   }
 
@@ -62,11 +64,11 @@ export abstract class BaseToolbox<TExecutor extends ToolExecutor<TContext>, TCon
   async execute(
     toolNameOrCall: string | { function: { name: string; arguments: string | object } },
     argsOrContext: any,
-    context?: TContext,
+    context?: ToolContext,
   ): Promise<ToolResult> {
     let toolName: string;
     let args: any;
-    let execContext: TContext;
+    let execContext: ToolContext;
 
     // 判断是 ToolCall 格式还是直接调用格式
     if (typeof toolNameOrCall === 'string') {
@@ -78,7 +80,7 @@ export abstract class BaseToolbox<TExecutor extends ToolExecutor<TContext>, TCon
       // ToolCall 格式：execute(toolCall, context)
       const toolCall = toolNameOrCall;
       toolName = toolCall.function.name;
-      execContext = argsOrContext as TContext;
+      execContext = argsOrContext as ToolContext;
 
       // 解析 arguments
       const argsStr = toolCall.function.arguments;
@@ -115,7 +117,7 @@ export abstract class BaseToolbox<TExecutor extends ToolExecutor<TContext>, TCon
   /**
    * 批量执行工具调用（顺序执行）
    */
-  async executeMany(toolCalls: Array<{ function: { name: string; arguments: string | object } }>, context: TContext): Promise<ToolResult[]> {
+  async executeMany(toolCalls: Array<{ function: { name: string; arguments: string | object } }>, context: ToolContext): Promise<ToolResult[]> {
     console.log(`[${this.registryName}] Executing ${toolCalls.length} tool call(s) sequentially...`);
     const results: ToolResult[] = [];
 

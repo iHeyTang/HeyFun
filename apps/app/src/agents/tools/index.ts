@@ -24,6 +24,7 @@ const allTools: Tool[] = [
   ...amapToolboxes,
 ].flat();
 
+// 注册所有工具（会自动同步到工具库）
 toolRegistry.registerTools(allTools);
 
 export { toolRegistry, ToolRegistry };

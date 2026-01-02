@@ -26,6 +26,24 @@ export interface DynamicSystemPromptManager {
 }
 
 /**
+ * 工具管理器
+ * 用于工具动态添加其他工具到 agent 的工具列表
+ */
+export interface ToolManager {
+  /**
+   * 根据工具名称列表添加工具到 agent 的工具列表
+   * @param toolNames 工具名称数组
+   */
+  addToolsByName(toolNames: string[]): void;
+
+  /**
+   * 获取已添加的工具名称列表
+   * @returns 已添加的工具名称数组
+   */
+  getAddedTools(): string[];
+}
+
+/**
  * 全局动态系统提示词片段存储
  * key: sessionId, value: 动态系统提示词片段内容
  */
@@ -59,6 +77,51 @@ export function getSessionDynamicSystemPrompt(sessionId: string): string | undef
 }
 
 /**
+ * 全局工具管理器存储
+ * key: sessionId, value: ToolManager 实例
+ */
+const toolManagerStore = new Map<string, ToolManager>();
+
+/**
+ * 创建工具管理器实现
+ * 接收当前 ReactAgent 实例，用于动态添加工具
+ */
+export function createToolManager(sessionId: string, reactAgent?: { addToolsByName: (toolNames: string[]) => void }): ToolManager | undefined {
+  if (!reactAgent) {
+    return undefined;
+  }
+
+  const addedTools: string[] = [];
+
+  const manager: ToolManager = {
+    addToolsByName(toolNames: string[]): void {
+      // 去重并过滤已添加的工具
+      const newTools = toolNames.filter(name => !addedTools.includes(name));
+      if (newTools.length > 0) {
+        addedTools.push(...newTools);
+        reactAgent.addToolsByName(newTools);
+      }
+    },
+
+    getAddedTools(): string[] {
+      return [...addedTools];
+    },
+  };
+
+  // 存储到全局存储中
+  toolManagerStore.set(sessionId, manager);
+
+  return manager;
+}
+
+/**
+ * 获取会话的工具管理器（全局函数，供外部使用）
+ */
+export function getSessionToolManager(sessionId: string): ToolManager | undefined {
+  return toolManagerStore.get(sessionId);
+}
+
+/**
  * 通用工具执行上下文
  * 所有工具都使用这个统一的上下文
  */
@@ -79,4 +142,8 @@ export interface ToolContext {
   messages?: UnifiedChat.Message[];
   /** 动态系统提示词管理器，用于工具更新动态系统提示词片段 */
   dynamicSystemPrompt?: DynamicSystemPromptManager;
+  /** 工具管理器，用于工具动态添加其他工具到 agent 的工具列表 */
+  toolManager?: ToolManager;
+  /** 内置工具名称列表（不参与动态检索） */
+  builtinToolNames?: string[];
 }

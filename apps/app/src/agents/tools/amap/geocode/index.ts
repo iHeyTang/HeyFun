@@ -6,7 +6,7 @@ import { geocodeExecutor } from './executor';
 
 export const geocodeTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: geocodeSchema,
   executor: geocodeExecutor,

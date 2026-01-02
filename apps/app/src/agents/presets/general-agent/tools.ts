@@ -1,13 +1,21 @@
-import { aigcToolboxes, baseToolboxes, amapToolboxes, webSearchToolboxes } from '@/agents/tools';
+import { baseToolboxes } from '@/agents/tools';
 import { UnifiedChat } from '@repo/llm/chat';
 
+/**
+ * 基础工具列表
+ * Agent启动时只依赖这些基础工具，其他工具通过search_tools检索获取
+ */
+const CORE_TOOLS = [
+  'search_tools', // 工具检索工具（必须）
+  'initialize_agent', // Agent 初始化工具（必须）
+  'get_current_time', // 获取当前时间（基础工具）
+];
+
 export default function getTools() {
-  const tools: UnifiedChat.Tool[] = [
-    ...baseToolboxes.map(tool => tool.schema),
-    ...aigcToolboxes.map(tool => tool.schema),
-    ...webSearchToolboxes.map(tool => tool.schema),
-    ...amapToolboxes.map(tool => tool.schema),
-  ].flatMap(definition => {
+  // 只加载核心基础工具
+  const coreTools = baseToolboxes.filter(tool => CORE_TOOLS.includes(tool.schema.name));
+
+  const tools: UnifiedChat.Tool[] = coreTools.map(tool => tool.schema).flatMap(definition => {
     return {
       type: 'function',
       function: {

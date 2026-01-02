@@ -6,7 +6,7 @@ import { getCanvasStateExecutor } from './executor';
 
 export const getCanvasStateTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: getCanvasStateSchema,
   executor: getCanvasStateExecutor,

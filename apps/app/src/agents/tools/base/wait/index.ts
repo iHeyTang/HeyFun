@@ -6,7 +6,7 @@ import { waitExecutor } from './executor';
 
 export const waitTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: waitSchema,
   executor: waitExecutor,

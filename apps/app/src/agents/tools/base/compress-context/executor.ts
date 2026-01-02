@@ -131,71 +131,22 @@ export const compressContextExecutor = definitionToolExecutor(compressContextPar
   };
 
   try {
-    let jsonText: string | null = null;
+    // 使用工具函数提取 JSON 对象
+    const { extractJsonFromText } = await import('@/lib/shared/json');
+    const extracted = extractJsonFromText<{
+      shouldCompress: boolean;
+      summary: string;
+      keyPoints: string[];
+      preservedContext?: string;
+    }>(responseText, true);
 
-    // 尝试直接解析
-    try {
-      const trimmed = responseText.trim();
-      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-        JSON.parse(trimmed);
-        jsonText = trimmed;
-      }
-    } catch (e) {
-      // Not a direct JSON
-    }
-
-    // 使用括号计数匹配嵌套的 JSON 对象
-    if (!jsonText) {
-      let braceCount = 0;
-      let jsonStartIndex = -1;
-      for (let i = 0; i < responseText.length; i++) {
-        if (responseText[i] === '{') {
-          if (jsonStartIndex === -1) {
-            jsonStartIndex = i;
-          }
-          braceCount++;
-        } else if (responseText[i] === '}') {
-          braceCount--;
-          if (braceCount === 0 && jsonStartIndex !== -1) {
-            jsonText = responseText.substring(jsonStartIndex, i + 1);
-            break;
-          }
-        }
-      }
-    }
-
-    // 尝试查找代码块中的 JSON
-    if (!jsonText) {
-      const codeBlockStart = responseText.indexOf('```json');
-      const codeBlockStartAlt = responseText.indexOf('```');
-      const codeBlockStartIndex = codeBlockStart !== -1 ? codeBlockStart : codeBlockStartAlt;
-
-      if (codeBlockStartIndex !== -1) {
-        const codeBlockEnd = responseText.indexOf('```', codeBlockStartIndex + 3);
-        const codeBlockContent = responseText.substring(codeBlockStartIndex + 3, codeBlockEnd !== -1 ? codeBlockEnd : responseText.length).trim();
-        const jsonContent = codeBlockContent.replace(/^json\s*/i, '').trim();
-
-        let braceCount = 0;
-        let jsonStartIndex = -1;
-        for (let i = 0; i < jsonContent.length; i++) {
-          if (jsonContent[i] === '{') {
-            if (jsonStartIndex === -1) {
-              jsonStartIndex = i;
-            }
-            braceCount++;
-          } else if (jsonContent[i] === '}') {
-            braceCount--;
-            if (braceCount === 0 && jsonStartIndex !== -1) {
-              jsonText = jsonContent.substring(jsonStartIndex, i + 1);
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    if (jsonText) {
-      parsedResponse = JSON.parse(jsonText);
+    if (extracted && typeof extracted === 'object' && !Array.isArray(extracted)) {
+      parsedResponse = {
+        shouldCompress: extracted.shouldCompress,
+        summary: extracted.summary || '',
+        keyPoints: extracted.keyPoints || [],
+        preservedContext: extracted.preservedContext || '',
+      };
     } else {
       throw new Error('未找到 JSON 格式');
     }

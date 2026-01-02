@@ -6,7 +6,7 @@ import { getNodeTypeInfoExecutor } from './executor';
 
 export const getNodeTypeInfoTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: getNodeTypeInfoSchema,
   executor: getNodeTypeInfoExecutor,

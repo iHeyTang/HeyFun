@@ -6,7 +6,7 @@ import { autoLayoutCanvasExecutor } from './executor';
 
 export const autoLayoutCanvasTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: autoLayoutCanvasSchema,
   executor: autoLayoutCanvasExecutor,

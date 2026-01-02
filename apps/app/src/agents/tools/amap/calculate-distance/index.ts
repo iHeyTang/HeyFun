@@ -6,7 +6,7 @@ import { calculateDistanceExecutor } from './executor';
 
 export const calculateDistanceTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: calculateDistanceSchema,
   executor: calculateDistanceExecutor,

@@ -6,7 +6,7 @@ import { runCanvasWorkflowExecutor } from './executor';
 
 export const runCanvasWorkflowTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: runCanvasWorkflowSchema,
   executor: runCanvasWorkflowExecutor,

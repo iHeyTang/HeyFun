@@ -6,7 +6,7 @@ import { generateAudioExecutor } from './executor';
 
 export const generateAudioTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: generateAudioSchema,
   executor: generateAudioExecutor,

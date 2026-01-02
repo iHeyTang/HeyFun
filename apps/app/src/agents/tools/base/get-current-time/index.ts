@@ -6,7 +6,7 @@ import { getCurrentTimeExecutor } from './executor';
 
 export const getCurrentTimeTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: getCurrentTimeSchema,
   executor: getCurrentTimeExecutor,

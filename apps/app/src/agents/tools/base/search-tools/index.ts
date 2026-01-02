@@ -1,13 +1,14 @@
 import { ToolDefinition } from '@/agents/core/tools/tool-definition';
 import { ToolContext } from '../../context';
 import { ToolExecutor } from '@/agents/core/tools/base-tool-registry';
-import { routePlanningSchema } from './schema';
-import { routePlanningExecutor } from './executor';
+import { searchToolsSchema } from './schema';
+import { searchToolsExecutor } from './executor';
 
-export const routePlanningTool: {
+export const searchToolsTool: {
   schema: ToolDefinition;
   executor: ToolExecutor;
 } = {
-  schema: routePlanningSchema,
-  executor: routePlanningExecutor,
+  schema: searchToolsSchema,
+  executor: searchToolsExecutor,
 };
+

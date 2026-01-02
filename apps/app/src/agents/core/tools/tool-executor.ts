@@ -30,7 +30,7 @@ import { ToolContext } from '@/agents/tools/context';
 export function definitionToolExecutor<Args extends z.ZodTypeAny>(
   paramsSchema: Args,
   executor: (args: z.infer<Args>, context: ToolContext) => Promise<ToolResult>,
-): ToolExecutor<any> {
+): ToolExecutor {
   return async (args: any, context: any): Promise<ToolResult> => {
     // 使用 Zod schema 进行参数校验
     const parseResult = paramsSchema.safeParse(args);
@@ -45,4 +45,3 @@ export function definitionToolExecutor<Args extends z.ZodTypeAny>(
     return await executor(parseResult.data, context);
   };
 }
-

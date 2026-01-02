@@ -375,38 +375,25 @@ export function ChatSession({
     () => (
       <A2UIProvider sessionId={sessionId} apiPrefix={apiPrefix} onEvent={handleA2UIEvent}>
         <div className="min-w-0 space-y-0">
-          {messages.map(message => {
-            const microAgentExecutions = (message as any).microAgentExecutions;
-            // 调试：检查消息中的微代理执行详情
-            if (message.role === 'assistant' && microAgentExecutions) {
-              console.log('[ChatSession] 消息微代理执行详情:', {
-                messageId: message.id,
-                hasExecutions: !!microAgentExecutions,
-                count: Array.isArray(microAgentExecutions) ? microAgentExecutions.length : 0,
-                executions: microAgentExecutions,
-              });
-            }
-            return (
-              <ChatMessageComponent
-                key={message.id}
-                role={message.role as 'user' | 'assistant'}
-                content={message.content}
-                isStreaming={message.isStreaming}
-                timestamp={message.createdAt}
-                toolCalls={message.toolCalls || []}
-                toolResults={message.toolResults || []}
-                modelId={message.role === 'assistant' ? (message.modelId ?? undefined) : undefined}
-                messageId={message.id}
-                sessionId={sessionId}
-                tokenCount={message.tokenCount ?? undefined}
-                inputTokens={message.inputTokens ?? undefined}
-                outputTokens={message.outputTokens ?? undefined}
-                cachedInputTokens={message.cachedInputTokens ?? undefined}
-                cachedOutputTokens={message.cachedOutputTokens ?? undefined}
-                microAgentExecutions={microAgentExecutions}
-              />
-            );
-          })}
+          {messages.map(message => (
+            <ChatMessageComponent
+              key={message.id}
+              role={message.role as 'user' | 'assistant'}
+              content={message.content}
+              isStreaming={message.isStreaming}
+              timestamp={message.createdAt}
+              toolCalls={message.toolCalls || []}
+              toolResults={message.toolResults || []}
+              modelId={message.role === 'assistant' ? (message.modelId ?? undefined) : undefined}
+              messageId={message.id}
+              sessionId={sessionId}
+              tokenCount={message.tokenCount ?? undefined}
+              inputTokens={message.inputTokens ?? undefined}
+              outputTokens={message.outputTokens ?? undefined}
+              cachedInputTokens={message.cachedInputTokens ?? undefined}
+              cachedOutputTokens={message.cachedOutputTokens ?? undefined}
+            />
+          ))}
           {shouldShowThinkingMessage && <ThinkingMessage modelId={selectedModel?.id} />}
           <div ref={messagesEndRef} />
         </div>

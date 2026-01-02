@@ -6,7 +6,7 @@ import { generateVideoExecutor } from './executor';
 
 export const generateVideoTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: generateVideoSchema,
   executor: generateVideoExecutor,

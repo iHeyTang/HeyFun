@@ -142,8 +142,6 @@ export const useChatMessagesStore = create<ChatMessagesStore>()((set, get) => ({
               createdAt: createdAtDate,
               // 如果新消息有 toolResults，更新它
               toolResults: newMsg.toolResults || existing.toolResults,
-              // 保留 microAgentExecutions 字段
-              microAgentExecutions: (newMsg as any).microAgentExecutions || (existing as any).microAgentExecutions,
               // 如果新消息的 token 字段为 null/undefined，保留现有的 token 值
               // 这样可以避免在 token 还未更新时，用 null 覆盖已有的 token 值
               inputTokens: newMsg.inputTokens ?? existing.inputTokens,

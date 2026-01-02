@@ -14,6 +14,7 @@ import {
   type LLMCallResult,
 } from '@/agents/utils';
 import { ReactAgent, type IterationProvider } from '@/agents/core/frameworks/react';
+import { getBuiltinToolNames } from '@/agents/core/frameworks/base';
 import CHAT from '@repo/llm/chat';
 import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/server/credit';
 import { prisma } from '@/lib/server/prisma';
@@ -247,7 +248,6 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
         CHAT.setModels(allModels);
         const llmClient = CHAT.createClient(modelId);
 
-        const microAgentExecutions: any[] = [];
         let fullContent = '';
         const toolCalls: any[] = [];
         let finishReason: string | null = null;
@@ -279,17 +279,11 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
 
         const stream = (agentInstance as ReactAgent).stream(llmClient, messages, [], {
           modelId,
-          enableMicroAgents: true,
           sessionId, // 传递 sessionId，用于获取动态系统提示词片段
           iterationProvider, // 传递迭代次数提供者
         });
 
         for await (const chunk of stream) {
-          // 收集微代理执行详情
-          if (chunk.type === 'micro_agent' && chunk.microAgent) {
-            microAgentExecutions.push(chunk.microAgent);
-          }
-
           // 累积 token 使用
           if (chunk.tokenUsage) {
             inputTokens += chunk.tokenUsage.promptTokens || 0;
@@ -323,16 +317,6 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
           finishReason = 'stop';
         } else if (toolCalls.length > 0) {
           finishReason = 'tool_calls';
-        }
-
-        // 保存微代理执行详情到消息
-        if (microAgentExecutions.length > 0) {
-          await prisma.chatMessages.update({
-            where: { id: aiMessage.id },
-            data: {
-              microAgentExecutions: microAgentExecutions as any,
-            },
-          });
         }
 
         return {
@@ -433,6 +417,8 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
         messageId: aiMessage.id,
         llmClient,
         messages,
+        reactAgent: isReactAgent ? (agentInstance as ReactAgent) : undefined,
+        builtinToolNames: getBuiltinToolNames(agentConfig),
       });
 
       // 如果工具执行期间使用了 token，将其计入总使用量

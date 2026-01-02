@@ -6,7 +6,7 @@ import { manageContextWindowExecutor } from './executor';
 
 export const manageContextWindowTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: manageContextWindowSchema,
   executor: manageContextWindowExecutor,

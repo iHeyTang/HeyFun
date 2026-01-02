@@ -6,7 +6,7 @@ import { compressContextExecutor } from './executor';
 
 export const compressContextTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: compressContextSchema,
   executor: compressContextExecutor,

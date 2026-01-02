@@ -6,7 +6,7 @@ import { getAigcModelsExecutor } from './executor';
 
 export const getAigcModelsTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: getAigcModelsSchema,
   executor: getAigcModelsExecutor,

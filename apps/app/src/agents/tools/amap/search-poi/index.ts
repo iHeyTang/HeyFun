@@ -6,7 +6,7 @@ import { searchPoiExecutor } from './executor';
 
 export const searchPoiTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: searchPoiSchema,
   executor: searchPoiExecutor,

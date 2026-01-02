@@ -6,7 +6,7 @@ import { retrieveContextExecutor } from './executor';
 
 export const retrieveContextTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: retrieveContextSchema,
   executor: retrieveContextExecutor,

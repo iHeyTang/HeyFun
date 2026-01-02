@@ -6,7 +6,7 @@ import { retrievePromptFragmentsExecutor } from './executor';
 
 export const retrievePromptFragmentsTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: retrievePromptFragmentsSchema,
   executor: retrievePromptFragmentsExecutor,

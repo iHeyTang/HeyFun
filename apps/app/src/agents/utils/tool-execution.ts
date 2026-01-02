@@ -2,7 +2,8 @@ import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { toolRegistry } from '@/agents/tools';
 import { WorkflowContext } from '@upstash/workflow';
 import { UnifiedChat, ChatClient } from '@repo/llm/chat';
-import { createDynamicSystemPromptManager } from '@/agents/tools/context';
+import { createDynamicSystemPromptManager, createToolManager } from '@/agents/tools/context';
+import { ReactAgent } from '@/agents/core/frameworks/react';
 
 /**
  * 工具执行上下文
@@ -17,6 +18,10 @@ export interface ToolExecutionContext {
   llmClient?: ChatClient;
   /** 当前消息历史，用于需要访问对话上下文的工具 */
   messages?: UnifiedChat.Message[];
+  /** 当前 ReactAgent 实例，用于动态添加工具 */
+  reactAgent?: ReactAgent;
+  /** 内置工具名称列表（不参与动态检索） */
+  builtinToolNames?: string[];
 }
 
 /**
@@ -41,6 +46,9 @@ export async function executeTools(toolCalls: UnifiedChat.ToolCall[], context: T
 
   // 为工具创建动态系统提示词管理器
   const dynamicSystemPrompt = createDynamicSystemPromptManager(context.sessionId);
+
+  // 为工具创建工具管理器（传入当前 ReactAgent 实例）
+  const toolManager = createToolManager(context.sessionId, context.reactAgent);
 
   // 记录工具执行前的 token 计数（如果提供了 llmClient）
   let beforeInputTokens = 0;
@@ -73,6 +81,8 @@ export async function executeTools(toolCalls: UnifiedChat.ToolCall[], context: T
         llmClient: context.llmClient,
         messages: context.messages,
         dynamicSystemPrompt,
+        toolManager,
+        builtinToolNames: context.builtinToolNames,
       });
     } else {
       // 工具未找到

@@ -89,7 +89,6 @@ export const useChatSendMessage = ({
           outputTokens: null,
           cachedInputTokens: null,
           cachedOutputTokens: null,
-          microAgentExecutions: null,
         };
         addMessageToSession(sessionId, tempUserMessage);
 

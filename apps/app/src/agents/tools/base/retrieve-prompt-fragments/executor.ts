@@ -363,10 +363,171 @@ ${fragmentsInfo}
   }
 }
 
+/**
+ * 使用 LLM 根据检索到的片段和用户意图生成动态系统提示词
+ * 与 initialize_agent 中的 generateDynamicSystemPrompt 共享逻辑
+ */
+async function generateDynamicSystemPrompt(
+  userMessage: string,
+  intent: { primaryGoal?: string; taskType?: string; complexity?: string } | undefined,
+  fragmentIds: string[],
+  llmClient?: ChatClient,
+): Promise<string> {
+  if (fragmentIds.length === 0) {
+    return '';
+  }
+
+  // 获取片段的完整信息
+  const fragments = await prisma.systemPromptSnippets.findMany({
+    where: {
+      id: { in: fragmentIds },
+      enabled: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      content: true,
+      category: true,
+      section: true,
+    },
+  });
+
+  if (fragments.length === 0) {
+    return '';
+  }
+
+  // 按照 fragmentIds 的顺序排序，保持向量搜索的相似度顺序
+  const fragmentsMap = new Map(fragments.map(f => [f.id, f]));
+  const orderedFragments = fragmentIds.map(id => fragmentsMap.get(id)).filter((f): f is NonNullable<typeof f> => f !== undefined);
+
+  // 构建片段信息文本（供 LLM 参考）
+  const fragmentsInfo = orderedFragments
+    .map((f, idx) => {
+      const section = (f.section as string) || f.category || '其他';
+      return `[片段${idx + 1}] ${f.name}（分类：${section}）
+描述：${f.description || '无'}
+内容：
+${f.content.trim()}`;
+    })
+    .join('\n\n---\n\n');
+
+  const intentInfo = intent
+    ? `用户意图：
+- 主要目标：${intent.primaryGoal || '未指定'}
+- 任务类型：${intent.taskType || '未指定'}
+- 复杂度：${intent.complexity || '未指定'}`
+    : '未提供明确的意图信息';
+
+  // 构建 LLM 提示词
+  const prompt = `你是一个系统提示词生成专家。根据用户的问题和检索到的相关片段，生成一段针对当前任务的系统提示词。
+
+**用户问题**：
+${userMessage}
+
+**用户意图**：
+${intentInfo}
+
+**检索到的参考提示词片段**：
+${fragmentsInfo}
+
+**核心任务**：
+请深入分析上述参考片段的模板结构、表达方式和组织逻辑，然后生成一段针对用户当前任务的系统提示词。
+
+**生成要求**：
+
+1. **学习模板结构**：
+   - 仔细分析参考片段使用的章节划分方式（如 ##、###、<section> 等）
+   - 学习其列表结构（有序列表、无序列表、嵌套列表等）
+   - 参考其使用的强调方式（加粗、引用、代码块等）
+
+2. **模仿表达风格**：
+   - 观察参考片段的语气和措辞（指令式、描述式、对话式等）
+   - 学习其细节程度和解释深度
+   - 参考其使用的示例和例证方式
+
+3. **保持内容丰富**：
+   - 生成的提示词应该详尽具体，不要过于简略
+   - 包含必要的规则、约束、流程步骤等
+   - 如果参考片段包含示例，生成的内容也应包含针对性的示例
+
+4. **定制化适配**：
+   - 将参考片段中的通用原则转化为针对用户具体任务的指导
+   - 根据用户任务的特点，调整重点和详略
+   - 保留与任务高度相关的细节，适度简化低相关性内容
+
+5. **输出要求**：
+   - 直接输出生成的系统提示词内容
+   - 不要添加"以下是生成的提示词"等前言
+   - 不要使用代码块包裹
+   - 不要在末尾添加解释或说明
+
+**输出**：
+`;
+
+  // 如果没有 LLM 客户端，回退到简单拼接方式
+  if (!llmClient) {
+    console.warn('[RetrievePromptFragmentsTool] LLM 客户端不可用，使用简单拼接方式');
+    // 简单拼接作为回退
+    let fragmentsPrompt = '';
+    orderedFragments.forEach(fragment => {
+      fragmentsPrompt += `\n\n### ${fragment.name}\n\n`;
+      if (fragment.description) {
+        fragmentsPrompt += `${fragment.description}\n\n`;
+      }
+      fragmentsPrompt += fragment.content.trim();
+      fragmentsPrompt += '\n\n';
+    });
+    return fragmentsPrompt.trim();
+  }
+
+  try {
+    const response = await llmClient.chat({
+      messages: [
+        {
+          role: 'system',
+          content:
+            '你是一个专业的系统提示词生成专家。你擅长分析优质提示词的模板结构、表达风格和组织方式，并能基于这些参考生成同等质量的定制化提示词。你生成的提示词既保持了参考片段的专业水准和细节程度，又能精准适配用户的具体任务需求。',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 20000,
+    });
+
+    const choice = response.choices?.[0];
+    const content = choice?.message?.content || '';
+    const generatedPrompt = typeof content === 'string' ? content.trim() : String(content).trim();
+
+    // 检查是否因为 token 限制而被截断
+    if (choice?.finish_reason === 'length') {
+      console.warn('[RetrievePromptFragmentsTool] ⚠️ 生成的系统提示词可能因为 token 限制而被截断，建议增加 max_tokens');
+    }
+
+    return generatedPrompt;
+  } catch (error) {
+    console.error('[RetrievePromptFragmentsTool] ❌ LLM 生成失败，使用简单拼接方式:', error);
+    // 回退到简单拼接
+    let fragmentsPrompt = '';
+    orderedFragments.forEach(fragment => {
+      fragmentsPrompt += `\n\n### ${fragment.name}\n\n`;
+      if (fragment.description) {
+        fragmentsPrompt += `${fragment.description}\n\n`;
+      }
+      fragmentsPrompt += fragment.content.trim();
+      fragmentsPrompt += '\n\n';
+    });
+    return fragmentsPrompt.trim();
+  }
+}
+
 export const retrievePromptFragmentsExecutor = definitionToolExecutor(retrievePromptFragmentsParamsSchema, async (args, context) => {
   return await context.workflow.run(`toolcall-${context.toolCallId || 'retrieve-fragments'}`, async () => {
     try {
-      const { userMessage, intent, maxFragments = 5 } = args;
+      const { userMessage, intent, maxFragments = 5, updateSystemPrompt = false, retrievalReason } = args;
 
       // 提取关键词
       const keywords = extractKeywords(intent, userMessage);
@@ -416,6 +577,21 @@ export const retrievePromptFragmentsExecutor = definitionToolExecutor(retrievePr
         },
       });
 
+      // 如果启用了动态系统提示词更新，生成并更新提示词
+      let dynamicSystemPrompt: string | undefined = undefined;
+      if (updateSystemPrompt && selectionResult.fragmentIds.length > 0) {
+        dynamicSystemPrompt = await generateDynamicSystemPrompt(userMessage, intent, selectionResult.fragmentIds, context.llmClient);
+        if (dynamicSystemPrompt && context.dynamicSystemPrompt) {
+          context.dynamicSystemPrompt.setDynamicSystemPrompt(dynamicSystemPrompt);
+        }
+      }
+
+      // 构建检索原因
+      const finalReasons = [...selectionResult.reasons];
+      if (retrievalReason) {
+        finalReasons.unshift(retrievalReason);
+      }
+
       return {
         success: true,
         data: {
@@ -427,7 +603,9 @@ export const retrievePromptFragmentsExecutor = definitionToolExecutor(retrievePr
           })),
           fragmentIds: selectionResult.fragmentIds,
           confidence: selectionResult.confidence,
-          reasons: selectionResult.reasons,
+          reasons: finalReasons,
+          retrievalReason: retrievalReason || (selectionResult.reasons.length > 0 ? selectionResult.reasons[0] : undefined),
+          dynamicSystemPrompt: dynamicSystemPrompt || undefined,
         },
       };
     } catch (error) {

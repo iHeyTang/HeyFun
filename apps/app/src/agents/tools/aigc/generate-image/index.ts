@@ -6,7 +6,7 @@ import { generateImageExecutor } from './executor';
 
 export const generateImageTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: generateImageSchema,
   executor: generateImageExecutor,

@@ -6,7 +6,7 @@ import { reverseGeocodeExecutor } from './executor';
 
 export const reverseGeocodeTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: reverseGeocodeSchema,
   executor: reverseGeocodeExecutor,

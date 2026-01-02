@@ -6,7 +6,7 @@ import { editFlowCanvasExecutor } from './executor';
 
 export const editFlowCanvasTool: {
   schema: ToolDefinition;
-  executor: ToolExecutor<ToolContext>;
+  executor: ToolExecutor;
 } = {
   schema: editFlowCanvasSchema,
   executor: editFlowCanvasExecutor,

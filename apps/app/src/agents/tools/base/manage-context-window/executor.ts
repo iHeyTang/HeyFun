@@ -187,9 +187,14 @@ export const manageContextWindowExecutor = definitionToolExecutor(manageContextW
         const responseText = typeof content === 'string' ? content : JSON.stringify(content);
 
         try {
-          const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsedResponse = JSON.parse(jsonMatch[0]);
+          const { extractJsonFromText } = await import('@/lib/shared/json');
+          const parsedResponse = extractJsonFromText<{
+            summary: string;
+            keyPoints: string[];
+            preservedContext?: string;
+          }>(responseText, true);
+
+          if (parsedResponse && typeof parsedResponse === 'object' && !Array.isArray(parsedResponse)) {
 
             summary = parsedResponse.summary;
             keyPoints = parsedResponse.keyPoints;
@@ -239,9 +244,14 @@ export const manageContextWindowExecutor = definitionToolExecutor(manageContextW
       const responseText = typeof content === 'string' ? content : JSON.stringify(content);
 
       try {
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsedResponse = JSON.parse(jsonMatch[0]);
+        const { extractJsonFromText } = await import('@/lib/shared/json');
+        const parsedResponse = extractJsonFromText<{
+          summary: string;
+          keyPoints: string[];
+          preservedContext?: string;
+        }>(responseText, true);
+
+        if (parsedResponse && typeof parsedResponse === 'object' && !Array.isArray(parsedResponse)) {
 
           summary = parsedResponse.summary;
           keyPoints = parsedResponse.keyPoints;
