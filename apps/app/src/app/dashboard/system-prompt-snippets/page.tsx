@@ -362,7 +362,7 @@ export default function SystemPromptSnippetsPage() {
 
       {/* 详情模态框 */}
       <Dialog open={!!selectedSnippet} onOpenChange={open => !open && setSelectedSnippet(null)}>
-        <DialogContent className="max-h-[85vh] max-w-5xl">
+        <DialogContent className="max-w-[90vw]! w-7xl max-h-[85vh]">
           {selectedSnippet && (
             <>
               <DialogHeader className="pr-8">
