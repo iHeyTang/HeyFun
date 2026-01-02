@@ -17,6 +17,13 @@ export type ImageSearchParams = z.infer<typeof imageSearchParamsSchema>;
 export const imageSearchSchema: ToolDefinition = {
   name: 'image_search',
   description: '在互联网上搜索图片。可以搜索特定主题的图片，返回图片链接、缩略图和相关信息。',
+  displayName: {
+    en: 'Image Search',
+    'zh-CN': '图片搜索',
+    'zh-TW': '圖片搜尋',
+    ja: '画像検索',
+    ko: '이미지 검색',
+  },
   parameters: zodToJsonSchema(imageSearchParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

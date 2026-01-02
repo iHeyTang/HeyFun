@@ -23,6 +23,8 @@ export interface ToolDefinition {
   name: string;
   /** 工具描述 */
   description: string;
+  /** 工具显示名称（多语言支持），格式如 {en: 'xxx', 'zh-CN': 'xxx'} */
+  displayName?: Record<string, string>;
   /** 工具参数 Schema（JSON Schema） */
   parameters: Record<string, any>;
   /** 工具返回值 Schema（可选，用于类型检查） */

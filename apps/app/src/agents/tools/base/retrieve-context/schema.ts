@@ -14,6 +14,13 @@ export type RetrieveContextParams = z.infer<typeof retrieveContextParamsSchema>;
 export const retrieveContextSchema: ToolDefinition = {
   name: 'retrieve_context',
   description: '从数据库检索相关的上下文快照，整合长期记忆。当需要访问历史对话信息、用户偏好或重要决策时，可以使用此工具。建议在会话开始时调用此工具来加载历史上下文。',
+  displayName: {
+    en: 'Retrieve Context',
+    'zh-CN': '检索上下文',
+    'zh-TW': '檢索上下文',
+    ja: 'コンテキストを取得',
+    ko: '컨텍스트 검색',
+  },
   parameters: zodToJsonSchema(retrieveContextParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

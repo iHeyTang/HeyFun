@@ -24,6 +24,13 @@ export const manageContextWindowSchema: ToolDefinition = {
   name: 'manage_context_window',
   description:
     '检查和管理对话上下文窗口，确保不超过模型限制。当检测到上下文可能超过限制时，可以使用此工具来管理上下文。工具可以：1) 检查当前上下文状态；2) 返回管理建议；3) 如果需要，执行上下文管理（压缩、截断等）。建议在开始处理任务前，如果上下文较长，先调用此工具检查状态。',
+  displayName: {
+    en: 'Manage Context Window',
+    'zh-CN': '管理上下文窗口',
+    'zh-TW': '管理上下文視窗',
+    ja: 'コンテキストウィンドウを管理',
+    ko: '컨텍스트 창 관리',
+  },
   parameters: zodToJsonSchema(manageContextWindowParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

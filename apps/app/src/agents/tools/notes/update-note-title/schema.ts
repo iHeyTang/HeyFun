@@ -15,6 +15,13 @@ export type UpdateNoteTitleParams = z.infer<typeof updateNoteTitleParamsSchema>;
 export const updateNoteTitleSchema: ToolDefinition = {
   name: 'update_note_title',
   description: '更新笔记的标题。当用户要求修改标题时使用此工具。',
+  displayName: {
+    en: 'Update Note Title',
+    'zh-CN': '更新笔记标题',
+    'zh-TW': '更新筆記標題',
+    ja: 'ノートタイトルを更新',
+    ko: '노트 제목 업데이트',
+  },
   parameters: zodToJsonSchema(updateNoteTitleParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

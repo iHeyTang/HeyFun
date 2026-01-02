@@ -31,6 +31,13 @@ export type RetrievePromptFragmentsParams = z.infer<typeof retrievePromptFragmen
 export const retrievePromptFragmentsSchema: ToolDefinition = {
   name: 'retrieve_prompt_fragments',
   description: '根据用户消息和意图检索相关的提示词片段。这些片段包含了针对特定任务类型或场景的能力说明和指导，帮助你更好地理解任务、扮演相应角色、遵循特定规范。在开始处理用户请求前，如果任务需要特定能力，应该调用此工具来获取相关的提示词片段。你可以将你在思考阶段分析的意图信息（primaryGoal、taskType、complexity）作为可选参数传递，以帮助工具更精准地检索相关片段。',
+  displayName: {
+    en: 'Retrieve Prompt Fragments',
+    'zh-CN': '检索提示词片段',
+    'zh-TW': '檢索提示詞片段',
+    ja: 'プロンプトフラグメントを取得',
+    ko: '프롬프트 조각 검색',
+  },
   parameters: zodToJsonSchema(retrievePromptFragmentsParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

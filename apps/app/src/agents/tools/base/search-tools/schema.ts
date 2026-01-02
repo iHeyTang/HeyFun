@@ -17,6 +17,13 @@ export const searchToolsSchema: ToolDefinition = {
   name: 'search_tools',
   description:
     '在工具库中检索可用的工具。根据关键词、分类等条件搜索工具，返回匹配的工具列表及其使用手册。这是agent获取可用工具的主要方式。',
+  displayName: {
+    en: 'Search Tools',
+    'zh-CN': '搜索工具',
+    'zh-TW': '搜尋工具',
+    ja: 'ツールを検索',
+    ko: '도구 검색',
+  },
   parameters: zodToJsonSchema(searchToolsParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

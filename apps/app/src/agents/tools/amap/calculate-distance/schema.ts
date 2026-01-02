@@ -26,6 +26,13 @@ export type CalculateDistanceParams = z.infer<typeof calculateDistanceParamsSche
 export const calculateDistanceSchema: ToolDefinition = {
   name: 'calculate_distance',
   description: '计算两点之间的距离。支持直线距离和驾车距离两种计算方式。',
+  displayName: {
+    en: 'Calculate Distance',
+    'zh-CN': '计算距离',
+    'zh-TW': '計算距離',
+    ja: '距離を計算',
+    ko: '거리 계산',
+  },
   parameters: zodToJsonSchema(calculateDistanceParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

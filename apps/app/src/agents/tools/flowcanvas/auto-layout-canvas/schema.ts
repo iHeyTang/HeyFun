@@ -15,6 +15,13 @@ export type AutoLayoutCanvasParams = z.infer<typeof autoLayoutCanvasParamsSchema
 export const autoLayoutCanvasSchema: ToolDefinition = {
   name: 'auto_layout_canvas',
   description: '自动优化画布布局，重新排列节点位置',
+  displayName: {
+    en: 'Auto Layout Canvas',
+    'zh-CN': '自动布局画布',
+    'zh-TW': '自動佈局畫布',
+    ja: 'キャンバスを自動レイアウト',
+    ko: '캔버스 자동 레이아웃',
+  },
   parameters: zodToJsonSchema(autoLayoutCanvasParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

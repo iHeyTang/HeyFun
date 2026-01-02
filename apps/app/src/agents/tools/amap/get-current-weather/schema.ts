@@ -15,6 +15,13 @@ export type GetCurrentWeatherParams = z.infer<typeof getCurrentWeatherParamsSche
 export const getCurrentWeatherSchema: ToolDefinition = {
   name: 'get_current_weather',
   description: '获取指定城市的当前天气信息，包括温度、湿度、天气状况等。',
+  displayName: {
+    en: 'Get Current Weather',
+    'zh-CN': '获取当前天气',
+    'zh-TW': '獲取當前天氣',
+    ja: '現在の天気を取得',
+    ko: '현재 날씨 가져오기',
+  },
   parameters: zodToJsonSchema(getCurrentWeatherParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

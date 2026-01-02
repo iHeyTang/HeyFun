@@ -6,6 +6,7 @@
 
 import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { useBuiltinTools } from '@/hooks/use-builtin-tools';
 
 interface InitializeAgentResultProps {
   args?: Record<string, any>;
@@ -42,6 +43,7 @@ interface InitializeAgentData {
 
 export function InitializeAgentResult({ args, result, status, error }: InitializeAgentResultProps) {
   const [isPromptExpanded, setIsPromptExpanded] = useState(false);
+  const { getToolDisplayName } = useBuiltinTools();
 
   const data: InitializeAgentData | null = result && status === 'success' ? result : null;
   const userMessage = args?.userMessage;
@@ -139,7 +141,7 @@ export function InitializeAgentResult({ args, result, status, error }: Initializ
                 className="bg-muted/30 hover:bg-muted/40 max-w-[200px] rounded px-2 py-1 transition-colors"
                 title={tool.description}
               >
-                <p className="text-foreground/90 truncate text-[11px] font-medium">{tool.name}</p>
+                <p className="text-foreground/90 truncate text-[11px] font-medium">{getToolDisplayName(tool.name)}</p>
                 {tool.category && <p className="text-muted-foreground/50 truncate text-[9px]">{tool.category}</p>}
               </div>
             ))}

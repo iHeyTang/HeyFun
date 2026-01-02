@@ -24,6 +24,13 @@ export type GenerateImageParams = z.infer<typeof generateImageParamsSchema>;
 export const generateImageSchema: ToolDefinition = {
   name: 'generate_image',
   description: '使用AI模型生成图片。支持文本生成图片（text-to-image）和图片转图片（image-to-image）。生成的图片会保存在paintboard中。',
+  displayName: {
+    en: 'Generate Image',
+    'zh-CN': '生成图片',
+    'zh-TW': '生成圖片',
+    ja: '画像を生成',
+    ko: '이미지 생성',
+  },
   parameters: zodToJsonSchema(generateImageParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

@@ -56,6 +56,13 @@ export const editFlowCanvasSchema: ToolDefinition = {
   name: 'edit_flow_canvas',
   description:
     '编辑工作流画布。支持创建新工作流、修改现有节点和连接、删除节点和连接。每次调用应尽可能完成所有需要的修改，而不是分次调用。例如：创建完整工作流时传入完整的 nodes 和 edges；修改时传入所有需要修改的节点和边。',
+  displayName: {
+    en: 'Edit Flow Canvas',
+    'zh-CN': '编辑工作流画布',
+    'zh-TW': '編輯工作流程畫布',
+    ja: 'フローキャンバスを編集',
+    ko: '플로우 캔버스 편집',
+  },
   parameters: zodToJsonSchema(editFlowCanvasParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

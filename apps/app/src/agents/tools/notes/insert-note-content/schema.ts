@@ -16,6 +16,13 @@ export type InsertNoteContentParams = z.infer<typeof insertNoteContentParamsSche
 export const insertNoteContentSchema: ToolDefinition = {
   name: 'insert_note_content',
   description: '在笔记的指定位置插入内容。需要指定插入位置（行号），适用于在特定位置添加内容。',
+  displayName: {
+    en: 'Insert Note Content',
+    'zh-CN': '插入笔记内容',
+    'zh-TW': '插入筆記內容',
+    ja: 'ノート内容を挿入',
+    ko: '노트 내용 삽입',
+  },
   parameters: zodToJsonSchema(insertNoteContentParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

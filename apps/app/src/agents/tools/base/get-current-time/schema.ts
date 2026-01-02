@@ -15,6 +15,13 @@ export type GetCurrentTimeParams = z.infer<typeof getCurrentTimeParamsSchema>;
 export const getCurrentTimeSchema: ToolDefinition = {
   name: 'get_current_time',
   description: '获取当前时间和日期。可以获取指定时区的时间，如果不指定时区则返回服务器本地时间。',
+  displayName: {
+    en: 'Get Current Time',
+    'zh-CN': '获取当前时间',
+    'zh-TW': '獲取當前時間',
+    ja: '現在時刻を取得',
+    ko: '현재 시간 가져오기',
+  },
   parameters: zodToJsonSchema(getCurrentTimeParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

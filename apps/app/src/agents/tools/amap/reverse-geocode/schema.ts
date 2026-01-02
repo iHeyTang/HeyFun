@@ -16,6 +16,13 @@ export type ReverseGeocodeParams = z.infer<typeof reverseGeocodeParamsSchema>;
 export const reverseGeocodeSchema: ToolDefinition = {
   name: 'reverse_geocode',
   description: '将地理坐标（经纬度）转换为地址。输入经纬度坐标，返回对应的地址信息。',
+  displayName: {
+    en: 'Reverse Geocode',
+    'zh-CN': '逆地理编码',
+    'zh-TW': '逆地理編碼',
+    ja: '逆ジオコーディング',
+    ko: '역 지오코딩',
+  },
   parameters: zodToJsonSchema(reverseGeocodeParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

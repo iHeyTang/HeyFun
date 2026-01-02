@@ -53,6 +53,13 @@ export type RoutePlanningParams = z.infer<typeof routePlanningParamsSchema>;
 export const routePlanningSchema: ToolDefinition = {
   name: 'route_planning',
   description: '规划两点之间的路径，支持多种策略（速度优先、距离优先、躲避拥堵等）。支持起点和终点使用地址或坐标。',
+  displayName: {
+    en: 'Route Planning',
+    'zh-CN': '路径规划',
+    'zh-TW': '路徑規劃',
+    ja: 'ルート計画',
+    ko: '경로 계획',
+  },
   parameters: zodToJsonSchema(routePlanningParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

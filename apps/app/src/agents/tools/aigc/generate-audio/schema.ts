@@ -17,6 +17,13 @@ export type GenerateAudioParams = z.infer<typeof generateAudioParamsSchema>;
 export const generateAudioSchema: ToolDefinition = {
   name: 'generate_audio',
   description: '使用AI模型生成音频（文本转语音，TTS）。将文本转换为自然语音。生成的音频会保存在paintboard中。',
+  displayName: {
+    en: 'Generate Audio',
+    'zh-CN': '生成音频',
+    'zh-TW': '生成音訊',
+    ja: '音声を生成',
+    ko: '오디오 생성',
+  },
   parameters: zodToJsonSchema(generateAudioParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

@@ -17,6 +17,13 @@ export type WebSearchParams = z.infer<typeof webSearchParamsSchema>;
 export const webSearchSchema: ToolDefinition = {
   name: 'web_search',
   description: '在互联网上搜索信息。可以搜索各种主题的内容，返回相关的网页链接和摘要。支持配置 SerpAPI 以获得更好的搜索结果。',
+  displayName: {
+    en: 'Web Search',
+    'zh-CN': '网络搜索',
+    'zh-TW': '網路搜尋',
+    ja: 'ウェブ検索',
+    ko: '웹 검색',
+  },
   parameters: zodToJsonSchema(webSearchParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

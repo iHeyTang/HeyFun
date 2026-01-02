@@ -19,6 +19,13 @@ export type WaitParams = z.infer<typeof waitParamsSchema>;
 export const waitSchema: ToolDefinition = {
   name: 'wait',
   description: '等待指定的时间。用于在异步任务（如AIGC生成）后等待一段时间，然后再查询结果。可以按秒或毫秒指定等待时间。',
+  displayName: {
+    en: 'Wait',
+    'zh-CN': '等待',
+    'zh-TW': '等待',
+    ja: '待機',
+    ko: '대기',
+  },
   parameters: zodToJsonSchema(waitParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

@@ -22,6 +22,13 @@ export type ReplaceNoteContentParams = z.infer<typeof replaceNoteContentParamsSc
 export const replaceNoteContentSchema: ToolDefinition = {
   name: 'replace_note_content',
   description: '替换笔记中指定范围的内容（按行号）。需要指定替换的起始和结束行号，适用于精确修改特定段落。',
+  displayName: {
+    en: 'Replace Note Content',
+    'zh-CN': '替换笔记内容',
+    'zh-TW': '替換筆記內容',
+    ja: 'ノート内容を置換',
+    ko: '노트 내용 교체',
+  },
   parameters: zodToJsonSchema(replaceNoteContentParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { WebSearchResult } from './tool-renderers/web-search-result';
 import { AigcModelsResult } from './tool-renderers/aigc-models-result';
 import { InitializeAgentResult } from './tool-renderers/initialize-agent-result';
+import { useBuiltinTools } from '@/hooks/use-builtin-tools';
 
 interface ToolCallCardProps {
   toolCalls: PrismaJson.ToolCall[];
@@ -22,6 +23,7 @@ interface ToolCallCardProps {
 
 export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, sessionId }: ToolCallCardProps) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const { getToolDisplayName } = useBuiltinTools();
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
@@ -139,7 +141,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
         <div className="border-border/20 bg-muted/30 hover:border-border/40 hover:bg-muted/50 group w-full min-w-0 rounded-md border transition-all">
           <div className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-xs" onClick={() => toggleExpand(toolCall.id)}>
             <Wrench className="text-muted-foreground h-3 w-3 opacity-60" />
-            <span className="text-muted-foreground flex-1 opacity-80">{toolCall.function.name}</span>
+            <span className="text-muted-foreground flex-1 opacity-80">{getToolDisplayName(toolCall.function.name)}</span>
 
             {/* 结果状态图标 */}
             {result ? (
@@ -208,7 +210,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
             <div className="group flex cursor-pointer items-center gap-2 px-2.5 py-1.5" onClick={() => toggleExpand(toolCall.id)}>
               <Wrench className="text-muted-foreground h-3 w-3 opacity-60" />
               <span className="text-muted-foreground flex-1 text-xs opacity-80">
-                {toolCall.function.name}
+                {getToolDisplayName(toolCall.function.name)}
                 <span className="text-muted-foreground/50 ml-1.5">#{index + 1}</span>
               </span>
 

@@ -32,6 +32,13 @@ export const generateVideoSchema: ToolDefinition = {
   name: 'generate_video',
   description:
     '使用AI模型生成视频。支持文本生成视频（text-to-video）、图片生成视频（image-to-video）、视频转视频（video-to-video）和关键帧生成视频（keyframe-to-video）。生成的视频会保存在paintboard中。',
+  displayName: {
+    en: 'Generate Video',
+    'zh-CN': '生成视频',
+    'zh-TW': '生成影片',
+    ja: '動画を生成',
+    ko: '비디오 생성',
+  },
   parameters: zodToJsonSchema(generateVideoParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

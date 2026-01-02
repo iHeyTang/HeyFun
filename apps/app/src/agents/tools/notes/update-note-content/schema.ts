@@ -15,6 +15,13 @@ export type UpdateNoteContentParams = z.infer<typeof updateNoteContentParamsSche
 export const updateNoteContentSchema: ToolDefinition = {
   name: 'update_note_content',
   description: '更新笔记的正文内容。用于整体替换笔记内容，适用于大幅修改或重写场景。',
+  displayName: {
+    en: 'Update Note Content',
+    'zh-CN': '更新笔记内容',
+    'zh-TW': '更新筆記內容',
+    ja: 'ノート内容を更新',
+    ko: '노트 내용 업데이트',
+  },
   parameters: zodToJsonSchema(updateNoteContentParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

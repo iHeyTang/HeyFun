@@ -27,6 +27,13 @@ export type GetAigcModelsParams = z.infer<typeof getAigcModelsParamsSchema>;
 export const getAigcModelsSchema: ToolDefinition = {
   name: 'get_aigc_models',
   description: '获取所有可用的AIGC模型列表及其参数信息。可以按生成类型（如text-to-image、text-to-video等）过滤模型。',
+  displayName: {
+    en: 'Get AIGC Models',
+    'zh-CN': '获取AIGC模型',
+    'zh-TW': '獲取AIGC模型',
+    ja: 'AIGCモデルを取得',
+    ko: 'AIGC 모델 가져오기',
+  },
   parameters: zodToJsonSchema(getAigcModelsParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

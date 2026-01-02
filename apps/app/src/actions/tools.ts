@@ -8,6 +8,7 @@ import { mcpServerSchema } from '@/lib/shared/tools';
 import Ajv from 'ajv';
 import { JSONSchema } from 'json-schema-to-ts';
 import { z } from 'zod';
+import { toolRegistry } from '@/agents/tools';
 
 const ajv = new Ajv();
 
@@ -220,3 +221,54 @@ export const refreshToolMetadata = withUserAuth('tools/refreshToolMetadata', asy
 
   return updatedTool;
 });
+
+/**
+ * 获取所有内置工具信息
+ * @param locale 语言代码，用于返回对应语言的工具显示名称
+ */
+export const getBuiltinTools = withUserAuth(
+  'tools/getBuiltinTools',
+  async ({ args }: AuthWrapperContext<{ locale?: string }>) => {
+    const { locale = 'en' } = args || {};
+    const allSchemas = toolRegistry.getAllToolSchemas();
+
+    return allSchemas.map(schema => ({
+      name: schema.name,
+      displayName: schema.displayName?.[locale] || schema.displayName?.['en'] || schema.name,
+      description: schema.description,
+      category: schema.category,
+      parameters: schema.parameters,
+      returnSchema: schema.returnSchema,
+      manual: schema.manual,
+      displayNameMap: schema.displayName || {},
+    }));
+  },
+);
+
+/**
+ * 获取指定内置工具信息
+ * @param toolName 工具名称
+ * @param locale 语言代码，用于返回对应语言的工具显示名称
+ */
+export const getBuiltinTool = withUserAuth(
+  'tools/getBuiltinTool',
+  async ({ args }: AuthWrapperContext<{ toolName: string; locale?: string }>) => {
+    const { toolName, locale = 'en' } = args;
+    const schema = toolRegistry.getToolDefinition(toolName);
+
+    if (!schema) {
+      throw new Error(`Tool not found: ${toolName}`);
+    }
+
+    return {
+      name: schema.name,
+      displayName: schema.displayName?.[locale] || schema.displayName?.['en'] || schema.name,
+      description: schema.description,
+      category: schema.category,
+      parameters: schema.parameters,
+      returnSchema: schema.returnSchema,
+      manual: schema.manual,
+      displayNameMap: schema.displayName || {},
+    };
+  },
+);

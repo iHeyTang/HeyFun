@@ -21,6 +21,13 @@ export type GenerateMusicParams = z.infer<typeof generateMusicParamsSchema>;
 export const generateMusicSchema: ToolDefinition = {
   name: 'generate_music',
   description: '使用AI模型生成音乐。可以基于歌词或提示词生成音乐。生成的音乐会保存在paintboard中。',
+  displayName: {
+    en: 'Generate Music',
+    'zh-CN': '生成音乐',
+    'zh-TW': '生成音樂',
+    ja: '音楽を生成',
+    ko: '음악 생성',
+  },
   parameters: zodToJsonSchema(generateMusicParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

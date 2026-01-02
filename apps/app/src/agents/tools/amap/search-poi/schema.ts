@@ -26,6 +26,13 @@ export type SearchPoiParams = z.infer<typeof searchPoiParamsSchema>;
 export const searchPoiSchema: ToolDefinition = {
   name: 'search_poi',
   description: '搜索兴趣点（POI），例如餐厅、酒店、加油站、景点等。支持按关键词、城市、坐标范围搜索。',
+  displayName: {
+    en: 'Search POI',
+    'zh-CN': '搜索兴趣点',
+    'zh-TW': '搜尋興趣點',
+    ja: 'POIを検索',
+    ko: 'POI 검색',
+  },
   parameters: zodToJsonSchema(searchPoiParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

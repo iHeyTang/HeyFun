@@ -17,6 +17,13 @@ export const initializeAgentSchema: ToolDefinition = {
   name: 'initialize_agent',
   description:
     'Agent 初始化工具 - 仅在需要特定领域知识或新工具时调用。功能：1) 检索与任务相关的提示词片段；2) 生成针对性的动态系统提示词；3) 检索并激活相关工具。**注意：这是开销较大的工具，不要频繁调用。简单任务（搜索、对话、通用问答等）直接使用现有工具即可，无需调用此工具。同一会话中任务类型没有重大变化时，不需要重复调用。**',
+  displayName: {
+    en: 'Initialize Agent',
+    'zh-CN': '初始化智能体',
+    'zh-TW': '初始化智能體',
+    ja: 'エージェントを初期化',
+    ko: '에이전트 초기화',
+  },
   parameters: zodToJsonSchema(initializeAgentParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',

@@ -9,6 +9,7 @@ import { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useTranslations } from 'next-intl';
+import { useBuiltinTools } from '@/hooks/use-builtin-tools';
 
 export interface AgentInfo {
   id: string;
@@ -52,6 +53,7 @@ export const AgentSelectorDialog = forwardRef<AgentSelectorRef, AgentSelectorDia
   ({ availableAgents, selectedAgent, onAgentSelect, storageKey }, ref) => {
     const [isOpen, setIsOpen] = useState(false);
     const t = useTranslations('common.agentSelector');
+    const { getToolDisplayName } = useBuiltinTools();
 
     useImperativeHandle(ref, () => ({
       open: () => setIsOpen(true),
@@ -115,7 +117,7 @@ export const AgentSelectorDialog = forwardRef<AgentSelectorRef, AgentSelectorDia
                       <div className="mt-1 flex flex-wrap gap-1">
                         {agent.tools.slice(0, 3).map(tool => (
                           <Badge key={tool} variant="outline" className="text-xs">
-                            {tool}
+                            {getToolDisplayName(tool)}
                           </Badge>
                         ))}
                         {agent.tools.length > 3 && (

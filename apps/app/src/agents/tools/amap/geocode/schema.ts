@@ -15,6 +15,13 @@ export type GeocodeParams = z.infer<typeof geocodeParamsSchema>;
 export const geocodeSchema: ToolDefinition = {
   name: 'geocode',
   description: '将地址转换为地理坐标（经纬度）。支持中文地址，例如 "北京市朝阳区"、"上海市浦东新区" 等。',
+  displayName: {
+    en: 'Geocode',
+    'zh-CN': '地理编码',
+    'zh-TW': '地理編碼',
+    ja: 'ジオコーディング',
+    ko: '지오코딩',
+  },
   parameters: zodToJsonSchema(geocodeParamsSchema, {
     target: 'openApi3',
     $refStrategy: 'none',
