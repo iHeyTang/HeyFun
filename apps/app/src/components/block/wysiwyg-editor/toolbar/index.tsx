@@ -4,7 +4,7 @@ import { Editor } from '@tiptap/react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Bold, Italic, Link, List, ListOrdered, Heading1, Heading2, Heading3, Quote, Code, Undo, Redo, Image, Loader2, Sparkles } from 'lucide-react';
+import { Bold, Italic, Link, List, ListOrdered, Heading1, Heading2, Heading3, Quote, Code, Undo, Redo, Image, Loader2, Sparkles, Table2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useNoteAgentPanel } from '@/components/features/notes/note-agent-panel-context';
@@ -182,6 +182,21 @@ export function WysiwygEditorToolbar({ editor, rightSlot, onImageUploadClick, up
           className="h-8 w-8 p-0"
         >
           <Code className="h-4 w-4" />
+        </Button>
+        <Button
+          size="sm"
+          variant={editor.isActive('table') ? 'default' : 'ghost'}
+          onClick={() => {
+            if (editor.isActive('table')) {
+              editor.chain().focus().deleteTable().run();
+            } else {
+              editor.chain().focus().insertTable({ rows: 2, cols: 3, withHeaderRow: true }).run();
+            }
+          }}
+          className="h-8 w-8 p-0"
+          title={editor.isActive('table') ? '删除表格' : '插入表格'}
+        >
+          <Table2 className="h-4 w-4" />
         </Button>
         <div className="bg-border/40 mx-1 h-6 w-px" />
         <Button size="sm" variant="ghost" onClick={onImageUploadClick} disabled={uploading} className="h-8 w-8 p-0" title="上传图片">

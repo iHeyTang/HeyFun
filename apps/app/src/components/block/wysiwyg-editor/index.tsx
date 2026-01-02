@@ -4,9 +4,15 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import TurndownService from 'turndown';
+// @ts-expect-error - turndown-plugin-gfm 没有类型定义
+import { gfm } from 'turndown-plugin-gfm';
 import { marked } from 'marked';
 import { WysiwygEditorToolbar } from './toolbar';
 import { uploadFile, validateFile } from '@/lib/browser/file';
@@ -77,6 +83,8 @@ export function WysiwygEditor({
       headingStyle: 'atx',
       codeBlockStyle: 'fenced',
     });
+    // 添加 GFM 插件支持（包括表格）
+    service.use(gfm);
     // 添加图片规则（从扩展模块导入）
     service.addRule('image', imageTurndownRule());
     // 添加代码块规则（从扩展模块导入）
@@ -296,6 +304,27 @@ export function WysiwygEditor({
           class: 'text-primary underline',
         },
       }),
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: {
+          class: 'border-collapse border border-border',
+        },
+      }),
+      TableRow.configure({
+        HTMLAttributes: {
+          class: 'border-b border-border',
+        },
+      }),
+      TableHeader.configure({
+        HTMLAttributes: {
+          class: 'border border-border bg-muted/50 font-semibold px-4 py-2 text-left',
+        },
+      }),
+      TableCell.configure({
+        HTMLAttributes: {
+          class: 'border border-border px-4 py-2',
+        },
+      }),
       CodeBlockWithSyntax,
       ResizableImage,
       MapEmbedExtension,
@@ -338,6 +367,12 @@ export function WysiwygEditor({
           '[&_hr]:my-6 [&_hr]:border-t [&_hr]:border-border',
           '[&_img]:max-w-full [&_img]:rounded [&_img]:object-contain',
           '[&_.image-wrapper]:inline-block [&_.image-wrapper]:max-w-full [&_.image-wrapper]:relative',
+          // 表格样式
+          '[&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:border [&_table]:border-border',
+          '[&_thead]:bg-muted/50',
+          '[&_th]:border [&_th]:border-border [&_th]:bg-muted/50 [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold',
+          '[&_td]:border [&_td]:border-border [&_td]:px-4 [&_td]:py-2',
+          '[&_tr]:border-b [&_tr]:border-border',
         ),
       },
       handlePaste: readOnly ? undefined : handlePaste,
