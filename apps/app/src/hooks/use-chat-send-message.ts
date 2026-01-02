@@ -42,33 +42,35 @@ export const useChatSendMessage = ({
    */
   const sendMessage = useCallback(
     async (content: string, attachments?: ChatInputAttachment[]) => {
-      // 如果当前正在加载，不允许发送新消息
-      if (isLoading) {
-        toast.error('正在处理中，请先中断当前请求');
-        return;
-      }
-
-      // 发送前先检查 session 状态，确保不在处理中
-      try {
-        const fetchFn = fetchMessagesRef.current;
-        const statusCheck = fetchFn ? await fetchFn() : { status: 'idle', shouldContinue: false };
-        if (statusCheck.status === 'pending' || statusCheck.status === 'processing') {
-          toast.error('会话正在处理中，请稍候或先中断当前请求');
-          return;
-        }
-      } catch (error) {
-        console.error('[useSendMessage] 检查状态失败:', error);
-        // 如果检查失败，继续发送，让后端处理（后端会再次检查）
-      }
-
-      // 构建消息内容
-      const messageContent = buildMessageContent(content, attachments);
-
-      // 调用后端 API
+      // 立即设置 loading 状态，提供即时反馈
       setSessionLoading(sessionId, true);
       console.log('[useSendMessage] 发送消息，开始加载...');
 
       try {
+        // 如果当前正在加载，不允许发送新消息
+        if (isLoading) {
+          toast.error('正在处理中，请先中断当前请求');
+          setSessionLoading(sessionId, false);
+          return;
+        }
+
+        // 发送前先检查 session 状态，确保不在处理中
+        try {
+          const fetchFn = fetchMessagesRef.current;
+          const statusCheck = fetchFn ? await fetchFn() : { status: 'idle', shouldContinue: false };
+          if (statusCheck.status === 'pending' || statusCheck.status === 'processing') {
+            toast.error('会话正在处理中，请稍候或先中断当前请求');
+            setSessionLoading(sessionId, false);
+            return;
+          }
+        } catch (error) {
+          console.error('[useSendMessage] 检查状态失败:', error);
+          // 如果检查失败，继续发送，让后端处理（后端会再次检查）
+        }
+
+        // 构建消息内容
+        const messageContent = buildMessageContent(content, attachments);
+
         // 添加临时用户消息
         const tempUserMessage: ChatMessages = {
           id: `temp_user_${Date.now()}`,
