@@ -92,6 +92,7 @@ export const ChatInput = ({
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [messageText, setMessageText] = useState('');
+  const handleSendRef = useRef<(() => Promise<void>) | null>(null);
 
   const isControlled = controlledValue !== undefined;
 
@@ -163,6 +164,16 @@ export const ChatInput = ({
           'prose prose-sm max-w-none',
           'px-0 py-2',
         ),
+      },
+      handleKeyDown: (view, event) => {
+        // 检查是否为 Command+Enter (Mac) 或 Ctrl+Enter (Windows/Linux)
+        const isModifierPressed = event.metaKey || event.ctrlKey;
+        if (event.key === 'Enter' && isModifierPressed) {
+          event.preventDefault();
+          handleSendRef.current?.();
+          return true; // 阻止默认行为
+        }
+        return false; // 允许其他按键的默认行为
       },
     },
     onUpdate: ({ editor }) => {
@@ -394,25 +405,10 @@ export const ChatInput = ({
     }
   }, [editor, disabled, uploading, attachments, onSend, isControlled, onValueChange, isAttachmentsControlled, onAttachmentsChange, turndownService]);
 
-  // 处理键盘事件（Command+Enter 或 Ctrl+Enter 发送）
+  // 更新 ref，使 handleKeyDown 可以访问最新的 handleSend
   useEffect(() => {
-    if (!editor) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // 检查是否为 Command+Enter (Mac) 或 Ctrl+Enter (Windows/Linux)
-      const isModifierPressed = e.metaKey || e.ctrlKey;
-      if (e.key === 'Enter' && isModifierPressed) {
-        e.preventDefault();
-        handleSend();
-      }
-    };
-
-    const editorElement = editor.view.dom;
-    editorElement.addEventListener('keydown', handleKeyDown);
-    return () => {
-      editorElement.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [editor, handleSend]);
+    handleSendRef.current = handleSend;
+  }, [handleSend]);
 
   if (!editor) {
     return null;
