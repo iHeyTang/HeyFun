@@ -7,6 +7,7 @@ export type GenerationType =
   | 'video-to-video'
   | 'keyframe-to-video'
   | 'text-to-speech'
+  | 'speech-to-text'
   | 'lip-sync'
   | 'music';
 

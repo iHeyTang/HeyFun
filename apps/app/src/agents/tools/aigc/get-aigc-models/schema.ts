@@ -15,6 +15,7 @@ export const getAigcModelsParamsSchema = z.object({
       'video-to-video',
       'keyframe-to-video',
       'text-to-speech',
+      'speech-to-text',
       'lip-sync',
       'music',
     ])

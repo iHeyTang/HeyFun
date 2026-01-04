@@ -7,6 +7,7 @@ import { formatDate } from 'date-fns';
 import { Check, Clock, Copy, Download } from 'lucide-react';
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { usePaintboardTasks, type PaintboardTask } from './use-paintboard-tasks';
+import { AudioPlayer } from '@/components/block/audio-player';
 
 export interface TaskHistoryRef {
   triggerRefresh: () => Promise<void>;
@@ -179,7 +180,7 @@ function TaskCard({ task }: TaskCardProps) {
       ) : task.results && task.results.length > 0 ? (
         <div className="flex gap-4">
           {task.results.map((result: any) => (
-            <ResultCard key={result.key} result={result} />
+            <ResultCard key={result.key} result={result} task={task} />
           ))}
         </div>
       ) : (
@@ -224,17 +225,100 @@ function LoadingPlaceholder({ task }: LoadingPlaceholderProps) {
 
 interface ResultCardProps {
   result: PaintboardTask['results'][number];
+  task: PaintboardTask;
 }
 
-function ResultCard({ result }: ResultCardProps) {
+function ResultCard({ result, task }: ResultCardProps) {
   const isVideo = isVideoExtension(result.key);
   const isImage = isImageExtension(result.key);
   const isAudio = isAudioExtension(result.key);
+  const isJson = result.key.toLowerCase().endsWith('.json');
+  // 检查是否是语音识别任务：通过 generationType 或 model 名称
+  const isSpeechToText = task.generationType === 'speech-to-text' || task.model?.includes('openspeech') || task.model?.includes('stt');
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [subtitleData, setSubtitleData] = useState<any>(null);
+  const [loadingSubtitle, setLoadingSubtitle] = useState(false);
 
   const url = useMemo(() => {
     return `/api/oss/${result.key}`;
   }, [result.key]);
+
+  // 如果是 JSON 文件，尝试加载并检查是否是字幕数据
+  useEffect(() => {
+    if (!isJson) return;
+    if (subtitleData) {
+      console.log('[ResultCard] Already have subtitleData, skipping load');
+      return;
+    }
+    if (loadingSubtitle) {
+      console.log('[ResultCard] Already loading, skipping duplicate load');
+      return;
+    }
+
+    // 对于所有 JSON 文件，都尝试加载并检查是否是字幕数据
+    // 这样可以处理 generationType 未正确设置的情况
+    console.log('[ResultCard] Loading JSON data to check if subtitle:', result.key, 'task generationType:', task.generationType, 'model:', task.model);
+
+    let cancelled = false;
+
+    // 使用 setTimeout 避免同步 setState
+    const timeoutId = setTimeout(() => {
+      if (cancelled) return;
+      setLoadingSubtitle(true);
+    }, 0);
+
+    fetch(url)
+      .then(res => {
+        if (cancelled) return null;
+        if (!res.ok) {
+          throw new Error(`Failed to fetch: ${res.statusText}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (cancelled) {
+          console.log('[ResultCard] Request cancelled, skipping data processing');
+          return;
+        }
+        if (!data) {
+          console.log('[ResultCard] No data received');
+          return;
+        }
+        console.log('[ResultCard] Loaded JSON data:', data);
+        console.log('[ResultCard] Data keys:', Object.keys(data));
+        console.log('[ResultCard] Has text:', !!data.text);
+        console.log('[ResultCard] Has segments:', !!data.segments);
+        console.log('[ResultCard] Has utterances:', !!data.utterances);
+        // 检查数据是否包含字幕相关字段
+        if (data && (data.text || data.segments || data.utterances)) {
+          console.log('[ResultCard] Detected subtitle data, setting subtitleData');
+          setSubtitleData(data);
+          console.log('[ResultCard] subtitleData set, should render AudioPlayer');
+        } else {
+          console.log('[ResultCard] JSON data does not contain subtitle fields, will show as regular file');
+        }
+      })
+      .catch(err => {
+        if (cancelled) {
+          console.log('[ResultCard] Request cancelled, skipping error handling');
+          return;
+        }
+        console.error('[ResultCard] Failed to load JSON data:', err);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          console.log('[ResultCard] Setting loadingSubtitle to false');
+          clearTimeout(timeoutId);
+          setLoadingSubtitle(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isJson, url, result.key]); // 移除 subtitleData 和 loadingSubtitle 避免循环依赖
 
   const handleMouseEnter = () => {
     if (videoRef.current && url) {
@@ -289,6 +373,69 @@ function ResultCard({ result }: ResultCardProps) {
     return (
       <div className="overflow-hidden rounded-lg">
         <audio src={url} controls />
+      </div>
+    );
+  }
+
+  // 如果是包含字幕数据的 JSON 文件，显示音频播放器（带字幕）
+  if (isJson && subtitleData && (subtitleData.text || subtitleData.segments || subtitleData.utterances)) {
+    console.log('[ResultCard] Rendering audio player with subtitle data');
+
+    // 优先从任务参数中获取原始音频文件
+    let audioUrl: string | undefined;
+    if ('audio' in task.params && task.params.audio) {
+      const audioParam = task.params.audio;
+      if (typeof audioParam === 'string') {
+        // 如果是 OSS 路径（oss:// 开头），转换为 API 路径
+        if (audioParam.startsWith('oss://')) {
+          audioUrl = `/api/oss/${audioParam.replace('oss://', '')}`;
+        } else if (audioParam.startsWith('http://') || audioParam.startsWith('https://')) {
+          // 如果是完整的 HTTP URL，直接使用
+          audioUrl = audioParam;
+        } else {
+          // 否则假设是 OSS key，转换为 API 路径
+          audioUrl = `/api/oss/${audioParam}`;
+        }
+        console.log('[ResultCard] Found audio in task.params.audio:', audioParam, 'converted to:', audioUrl);
+      }
+    }
+
+    // 如果参数中没有音频，尝试从结果中查找
+    if (!audioUrl) {
+      const audioResult = task.results?.find((r: any) => isAudioExtension(r.key));
+      if (audioResult) {
+        audioUrl = `/api/oss/${audioResult.key}`;
+        console.log('[ResultCard] Found audio in task.results:', audioResult.key);
+      }
+    }
+
+    // 如果有音频文件，使用 AudioPlayer 播放音频并显示字幕
+    if (audioUrl) {
+      return <AudioPlayer src={audioUrl} subtitle={subtitleData} className="w-full" />;
+    }
+
+    // 如果没有音频文件，只显示字幕数据
+    // 使用一个 data URL 作为占位音频源（不会实际播放）
+    const placeholderAudio = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+    return (
+      <div className="flex flex-col gap-4 rounded-lg border p-4">
+        <div className="text-sm text-muted-foreground mb-2">音频文件未找到，仅显示字幕：</div>
+        <AudioPlayer src={placeholderAudio} subtitle={subtitleData} className="w-full" />
+      </div>
+    );
+  }
+
+  // 如果正在加载字幕数据
+  if (isJson && loadingSubtitle) {
+    console.log('[ResultCard] Showing loading state, loadingSubtitle:', loadingSubtitle, 'hasSubtitleData:', !!subtitleData);
+    return (
+      <div className="flex h-48 w-full items-center justify-center rounded-lg border">
+        <div className="text-sm text-muted-foreground">加载字幕中...</div>
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-2 text-xs text-muted-foreground">
+            Debug: loadingSubtitle={loadingSubtitle.toString()}, hasData={subtitleData ? 'yes' : 'no'}
+          </div>
+        )}
       </div>
     );
   }

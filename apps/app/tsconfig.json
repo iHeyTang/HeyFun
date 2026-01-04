@@ -5,8 +5,7 @@
       "@/*": ["./src/*"],
       "@repo/llm/chat": ["../../packages/llm/src/chat/index.ts"],
       "@repo/llm/aigc": ["../../packages/llm/src/aigc/index.ts"],
-      "@repo/llm": ["../../packages/llm/src"],
-      "@repo/agent": ["../../packages/agent/src/index.ts"]
+      "@repo/llm": ["../../packages/llm/src"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "prisma/typings.d.ts"],

@@ -54,7 +54,8 @@
         "textToVideo": "文本生成视频",
         "imageToVideo": "图片生成视频",
         "keyframeToVideo": "关键帧生成视频",
-        "textToSpeech": "语音合成"
+        "textToSpeech": "语音合成",
+        "speechToText": "语音转文本"
       },
       "noModels": "暂无可用模型",
       "noMatch": "未找到匹配的模型",
@@ -363,7 +364,8 @@
         "video": "视频",
         "audio": "音频",
         "lyrics": "歌词",
-        "n": "生成数量"
+        "n": "生成数量",
+        "language": "语言"
       }
     }
   },

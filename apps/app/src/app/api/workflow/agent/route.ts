@@ -301,12 +301,38 @@ export const { POST } = serve<AgentWorkflowConfig>(async context => {
           if (chunk.type === 'action' && chunk.toolName) {
             // 从 action chunk 中提取工具调用信息
             if (!toolCalls.find(tc => tc.function.name === chunk.toolName)) {
+              // toolArgs 应该已经是解析后的对象，直接序列化
+              let argumentsStr: string;
+              if (typeof chunk.toolArgs === 'string') {
+                // 如果已经是字符串，检查是否是 "[object Object]" 这种错误转换
+                if (chunk.toolArgs === '[object Object]') {
+                  console.error(`[Workflow] Tool ${chunk.toolName} has invalid toolArgs: "[object Object]"`);
+                  argumentsStr = JSON.stringify({});
+                } else {
+                  // 检查是否是有效的 JSON
+                  try {
+                    JSON.parse(chunk.toolArgs);
+                    argumentsStr = chunk.toolArgs;
+                  } catch {
+                    // 如果不是有效的 JSON，当作空对象处理
+                    console.error(`[Workflow] Tool ${chunk.toolName} has invalid JSON string in toolArgs:`, chunk.toolArgs);
+                    argumentsStr = JSON.stringify({});
+                  }
+                }
+              } else if (typeof chunk.toolArgs === 'object' && chunk.toolArgs !== null) {
+                // 如果是对象，序列化为 JSON 字符串
+                argumentsStr = JSON.stringify(chunk.toolArgs);
+              } else {
+                // 其他情况（null、undefined 等），使用空对象
+                argumentsStr = JSON.stringify({});
+              }
+
               toolCalls.push({
                 id: `tool_${toolCalls.length}`,
                 type: 'function',
                 function: {
                   name: chunk.toolName,
-                  arguments: JSON.stringify(chunk.toolArgs || {}),
+                  arguments: argumentsStr,
                 },
               });
             }

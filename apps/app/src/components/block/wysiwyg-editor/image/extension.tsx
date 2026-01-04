@@ -3,7 +3,7 @@
 import Image from '@tiptap/extension-image';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { NodeViewWrapper } from '@tiptap/react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ImagePreview } from '@/components/block/preview/image-preview';
 import { cn } from '@/lib/utils';
 
@@ -20,10 +20,19 @@ const ImageNodeView = ({ node, updateAttributes, getPos, editor }: any) => {
   const startWidthRef = useRef(0);
   const startHeightRef = useRef(0);
 
-  const src = node.attrs.src || '';
+  const rawSrc = node.attrs.src || '';
   const width = node.attrs.width;
   const height = node.attrs.height ?? 200;
   const isPlaceholder = node.attrs['data-placeholder-id'];
+
+  // 处理 oss:// 协议，转换为 /api/oss/ 路径
+  const src = useMemo(() => {
+    if (rawSrc.startsWith('oss://')) {
+      const fileKey = rawSrc.replace('oss://', '');
+      return `/api/oss/${fileKey}`;
+    }
+    return rawSrc;
+  }, [rawSrc]);
 
   // 获取内部的 img 元素
   const getImgElement = useCallback(() => {

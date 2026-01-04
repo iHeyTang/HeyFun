@@ -30,6 +30,7 @@ const generationTypeIcons = {
   'image-to-video': Video,
   'keyframe-to-video': Video,
   'text-to-speech': Mic,
+  'speech-to-text': Mic,
 };
 
 export function AigcModelSelector({ models, selectedModel, onModelSelect, placeholder }: ModelSelectorProps) {
@@ -49,6 +50,7 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
       'image-to-video': tTypes('imageToVideo'),
       'keyframe-to-video': tTypes('keyframeToVideo'),
       'text-to-speech': tTypes('textToSpeech'),
+      'speech-to-text': tTypes('speechToText') || '语音转文本',
     }),
     [tTypes],
   );
@@ -88,7 +90,7 @@ export function AigcModelSelector({ models, selectedModel, onModelSelect, placeh
           model.generationTypes.some(type => ['text-to-video', 'image-to-video', 'keyframe-to-video'].includes(type)),
         );
       } else if (activeCategory === 'speech') {
-        filtered = filtered.filter(model => model.generationTypes.some(type => ['text-to-speech'].includes(type)));
+        filtered = filtered.filter(model => model.generationTypes.some(type => ['text-to-speech', 'speech-to-text'].includes(type)));
       } else {
         filtered = filtered.filter(model => model.generationTypes.includes(activeCategory as GenerationType));
       }

@@ -29,7 +29,7 @@ export const getNodeTypeInfoExecutor = definitionToolExecutor(
     const typeMapping: Record<string, string[]> = {
       image: ['text-to-image', 'image-to-image'],
       video: ['text-to-video', 'image-to-video', 'video-to-video'],
-      audio: ['text-to-speech'],
+      audio: ['text-to-speech', 'speech-to-text'],
       music: ['music'],
     };
 

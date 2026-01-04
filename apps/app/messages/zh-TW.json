@@ -54,7 +54,8 @@
         "textToVideo": "文字生成影片",
         "imageToVideo": "圖片生成影片",
         "keyframeToVideo": "關鍵幀生成影片",
-        "textToSpeech": "語音合成"
+        "textToSpeech": "語音合成",
+        "speechToText": "語音轉文本"
       },
       "noModels": "暫無可用模型",
       "noMatch": "未找到符合的模型",
@@ -362,7 +363,8 @@
         "video": "影片",
         "audio": "音訊",
         "lyrics": "歌詞",
-        "n": "生成數量"
+        "n": "生成數量",
+        "language": "語言"
       }
     }
   },

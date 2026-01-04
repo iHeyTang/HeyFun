@@ -17,9 +17,11 @@ import * as React from 'react';
 import { useState, useMemo } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import {
+  InputRenderer,
   TextareaRenderer,
   RatioRenderer,
   VoiceRenderer,
+  LanguageRenderer,
   SliderRenderer,
   MultiImageRenderer,
   ImageRenderer,
@@ -111,6 +113,16 @@ const buildRenderMapByGenerationType = (generationType: string, provider?: strin
       });
       break;
 
+    case 'speech-to-text':
+      // 语音识别相关字段
+      map.set('audio', (renderProps: CustomFieldRendererProps) => {
+        return <AudioRenderer {...renderProps} label={t?.('audio') || 'audio'} />;
+      });
+      map.set('language', (renderProps: CustomFieldRendererProps) => {
+        return <LanguageRenderer {...renderProps} label={t?.('language') || 'language'} modelName={modelName} />;
+      });
+      break;
+
     case 'music':
       // 音乐生成相关字段
       map.set('prompt', (renderProps: CustomFieldRendererProps) => {
@@ -148,6 +160,9 @@ const inferGenerationType = (schema: Exclude<JSONSchema, boolean>): string => {
   }
   if (fieldNames.includes('text') && fieldNames.includes('voice_id')) {
     return 'text-to-speech';
+  }
+  if (fieldNames.includes('audio') && fieldNames.includes('language')) {
+    return 'speech-to-text';
   }
   if (fieldNames.includes('firstFrame') || fieldNames.includes('duration') || fieldNames.includes('resolution')) {
     return 'text-to-video';

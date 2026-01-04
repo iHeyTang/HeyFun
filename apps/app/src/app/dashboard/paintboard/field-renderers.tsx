@@ -11,12 +11,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { RatioIcon } from '@/components/block/ratio-icon';
-import { getAigcVoiceList } from '@/actions/llm';
+import { getAigcVoiceList, getAigcSupportedLanguages } from '@/actions/llm';
 import { CustomFieldRendererProps } from '@/components/block/jsonchema-form';
 import { useState, useEffect } from 'react';
 
 // Voice 类型定义
 type Voice = NonNullable<Awaited<ReturnType<typeof getAigcVoiceList>>['data']>[number];
+
+// Language 类型定义
+type Language = NonNullable<Awaited<ReturnType<typeof getAigcSupportedLanguages>>['data']>[number];
+
+// ==================== Input 渲染器 ====================
+export const InputRenderer = (props: CustomFieldRendererProps & { label: string }) => {
+  const { form, formFieldPath, label, hideLabel } = props;
+
+  return (
+    <FormField
+      control={form.control}
+      name={formFieldPath}
+      render={({ field: formField }) => (
+        <FormItem>
+          {!hideLabel && <FormLabel>{label}</FormLabel>}
+          <FormControl>
+            <Input placeholder={`输入${label}`} {...formField} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+};
 
 // ==================== Textarea 渲染器 ====================
 export const TextareaRenderer = (props: CustomFieldRendererProps & { label: string }) => {
@@ -320,6 +344,105 @@ export const AudioRenderer = (props: CustomFieldRendererProps & { label: string 
               showPreview={true}
             />
           </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+};
+
+// ==================== 语言选择渲染器 ====================
+export const LanguageRenderer = (props: CustomFieldRendererProps & { label: string; modelName?: string }) => {
+  const { form, formFieldPath, label, hideLabel, modelName } = props;
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadLanguages = async () => {
+      if (!modelName) {
+        // 如果没有模型名称，使用默认语言列表
+        setLanguages([
+          { code: 'auto', name: '自动检测' },
+          { code: 'zh', name: '中文' },
+          { code: 'en', name: 'English' },
+          { code: 'ja', name: '日本語' },
+          { code: 'ko', name: '한국어' },
+        ]);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await getAigcSupportedLanguages({ modelName });
+        if (result.error) {
+          setError(result.error);
+          // 如果获取失败，使用默认语言列表
+          setLanguages([
+            { code: 'auto', name: '自动检测' },
+            { code: 'zh', name: '中文' },
+            { code: 'en', name: 'English' },
+            { code: 'ja', name: '日本語' },
+            { code: 'ko', name: '한국어' },
+          ]);
+        } else {
+          const langList = result.data || [];
+          if (langList.length > 0) {
+            // 添加"自动检测"选项
+            setLanguages([{ code: 'auto', name: '自动检测' }, ...langList]);
+          } else {
+            // 如果没有返回语言列表，使用默认列表
+            setLanguages([
+              { code: 'auto', name: '自动检测' },
+              { code: 'zh', name: '中文' },
+              { code: 'en', name: 'English' },
+              { code: 'ja', name: '日本語' },
+              { code: 'ko', name: '한국어' },
+            ]);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load languages:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load languages');
+        // 使用默认语言列表
+        setLanguages([
+          { code: 'auto', name: '自动检测' },
+          { code: 'zh', name: '中文' },
+          { code: 'en', name: 'English' },
+          { code: 'ja', name: '日本語' },
+          { code: 'ko', name: '한국어' },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLanguages();
+  }, [modelName]);
+
+  return (
+    <FormField
+      control={form.control}
+      name={formFieldPath}
+      render={({ field: formField }) => (
+        <FormItem className="space-y-1">
+          {!hideLabel && <FormLabel>{label}</FormLabel>}
+          <Select onValueChange={formField.onChange} value={formField.value || 'auto'}>
+            <FormControl>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={loading ? '加载中...' : error ? '加载失败' : `选择${label}`} />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              {languages.map(lang => (
+                <SelectItem key={lang.code} value={lang.code}>
+                  {lang.name} ({lang.code})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <FormMessage />
         </FormItem>
       )}

@@ -164,11 +164,11 @@ export default async function RootLayout({
 
   return (
     <ClerkProvider>
-      <html lang={locale} suppressHydrationWarning>
-        <body className={`h-screen w-screen overflow-hidden antialiased`}>
+      <html lang={locale} suppressHydrationWarning style={{ height: '100vh', width: '100vw', overflow: 'hidden', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+        <body style={{ height: '100vh', width: '100vw', overflow: 'hidden', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, margin: 0, padding: 0 }} className="antialiased">
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <NextIntlClientProvider>
-              <div className="h-full flex-1 overflow-hidden">{children}</div>
+              <div style={{ height: '100vh', width: '100vw', overflow: 'hidden', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>{children}</div>
               <Toaster />
             </NextIntlClientProvider>
           </ThemeProvider>

@@ -111,3 +111,34 @@ export const getAigcVoiceList = withUserAuth(
     }
   },
 );
+
+/**
+ * Get supported languages of a speech-to-text model
+ */
+export const getAigcSupportedLanguages = withUserAuth(
+  'llm/getAigcSupportedLanguages',
+  async ({ args }: AuthWrapperContext<{ modelName: string }>) => {
+    const { modelName } = args;
+
+    try {
+      const model = AIGC.getModel(modelName);
+
+      if (!model) {
+        throw new Error('Model not found');
+      }
+
+      // 检查模型是否有 getSupportedLanguages 方法
+      if (typeof model.getSupportedLanguages !== 'function') {
+        // 如果不支持，返回空数组或默认语言列表
+        return [];
+      }
+
+      // 获取支持的语言列表
+      const languages = await model.getSupportedLanguages();
+      return languages;
+    } catch (error) {
+      console.error('Error getting supported languages:', error);
+      throw new Error((error as Error).message);
+    }
+  },
+);

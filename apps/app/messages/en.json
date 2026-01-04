@@ -54,7 +54,8 @@
         "textToVideo": "Text to Video",
         "imageToVideo": "Image to Video",
         "keyframeToVideo": "Keyframe to Video",
-        "textToSpeech": "Speech"
+        "textToSpeech": "Speech",
+        "speechToText": "Speech to Text"
       },
       "noModels": "No models available",
       "noMatch": "No matching models found",
@@ -362,7 +363,8 @@
         "video": "Video",
         "audio": "Audio",
         "lyrics": "Lyrics",
-        "n": "Number of generations"
+        "n": "Number of generations",
+        "language": "Language"
       }
     }
   },

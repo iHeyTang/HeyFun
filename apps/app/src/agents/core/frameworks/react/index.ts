@@ -237,9 +237,22 @@ export abstract class ReactAgent extends BaseAgent {
               for (const toolCall of validToolCalls) {
                 let toolArgs: Record<string, any> = {};
                 try {
-                  toolArgs = JSON.parse(toolCall.function.arguments || '{}');
+                  const args = toolCall.function.arguments;
+                  if (typeof args === 'string') {
+                    // 检查是否是 "[object Object]" 这种错误转换的字符串
+                    if (args === '[object Object]') {
+                      console.error(`[ReactAgent] Tool ${toolCall.function.name} has invalid arguments: "[object Object]"`);
+                      toolArgs = {};
+                    } else {
+                      toolArgs = JSON.parse(args || '{}');
+                    }
+                  } else if (typeof args === 'object' && args !== null) {
+                    toolArgs = args;
+                  }
                 } catch (e) {
-                  console.error(`[ReactAgent] 解析工具参数失败:`, e);
+                  console.error(`[ReactAgent] 解析工具参数失败 (tool: ${toolCall.function.name}):`, e);
+                  // 解析失败时使用空对象，避免工具执行时出错
+                  toolArgs = {};
                 }
 
                 yield {

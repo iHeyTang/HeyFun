@@ -1,4 +1,4 @@
-import { baseToolboxes } from '@/agents/tools';
+import { baseToolboxes, sandboxToolboxes } from '@/agents/tools';
 import { UnifiedChat } from '@repo/llm/chat';
 
 /**
@@ -12,19 +12,24 @@ const CORE_TOOLS = [
 ];
 
 export default function getTools() {
-  // 只加载核心基础工具
+  // 加载核心基础工具
   const coreTools = baseToolboxes.filter(tool => CORE_TOOLS.includes(tool.schema.name));
 
-  const tools: UnifiedChat.Tool[] = coreTools.map(tool => tool.schema).flatMap(definition => {
-    return {
-      type: 'function',
-      function: {
-        name: definition.name,
-        description: definition.description,
-        parameters: definition.parameters,
-      },
-    };
-  });
+  // 合并核心工具和 sandbox 工具
+  const allTools = [...coreTools, ...sandboxToolboxes];
+
+  const tools: UnifiedChat.Tool[] = allTools
+    .map(tool => tool.schema)
+    .flatMap(definition => {
+      return {
+        type: 'function',
+        function: {
+          name: definition.name,
+          description: definition.description,
+          parameters: definition.parameters,
+        },
+      };
+    });
 
   return tools;
 }

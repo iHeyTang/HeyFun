@@ -39,6 +39,7 @@ const generationTypeIcons: Record<string, React.ReactNode> = {
   'video-to-video': <Video className="h-3 w-3" />,
   'keyframe-to-video': <Video className="h-3 w-3" />,
   'text-to-speech': <Volume2 className="h-3 w-3" />,
+  'speech-to-text': <Volume2 className="h-3 w-3" />,
   'lip-sync': <Video className="h-3 w-3" />,
   music: <Music className="h-3 w-3" />,
 };
@@ -52,6 +53,7 @@ const generationTypeLabels: Record<string, string> = {
   'video-to-video': '视频生视频',
   'keyframe-to-video': '关键帧生视频',
   'text-to-speech': '文本转语音',
+  'speech-to-text': '语音转文本',
   'lip-sync': '唇形同步',
   music: '音乐生成',
 };

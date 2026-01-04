@@ -7,18 +7,20 @@ import {
   t2aParamsSchema,
   videoParamsSchema,
   musicParamsSchema,
+  speechToTextParamsSchema,
   type ImageJsonSchema,
   type SubmitTaskParamsJsonSchema,
   type T2aJsonSchema,
   type VideoJsonSchema,
   type MusicJsonSchema,
+  type SpeechToTextJsonSchema,
   type Voice,
   type VoiceCloneParams,
   type VoiceCloneResult,
 } from './core/base-model';
 
 import { GenerationTaskResult, GenerationType } from './types';
-export { imageParamsSchema, submitTaskParamsSchema, t2aParamsSchema, videoParamsSchema, musicParamsSchema };
+export { imageParamsSchema, submitTaskParamsSchema, t2aParamsSchema, videoParamsSchema, musicParamsSchema, speechToTextParamsSchema };
 export type {
   BaseAigcModel,
   GenerationTaskResult,
@@ -29,6 +31,7 @@ export type {
   T2aJsonSchema,
   VideoJsonSchema,
   MusicJsonSchema,
+  SpeechToTextJsonSchema,
   Voice,
   VoiceCloneParams,
   VoiceCloneResult,
@@ -41,6 +44,7 @@ import { MinimaxProvider, minimaxServiceConfigSchema } from './providers/minimax
 import { VolcengineArkProvider, volcengineArkServiceConfigSchema } from './providers/volcengine-ark';
 import { VolcengineJimengProvider, volcengineJimengServiceConfigSchema } from './providers/volcengine-jimeng';
 import { MurekaProvider, murekaServiceConfigSchema } from './providers/mureka';
+import { BytedanceOpenspeechProvider, bytedanceOpenspeechServiceConfigSchema } from './providers/bytedance-openspeech';
 
 // 豆包模型
 import { DoubaoSeedance10LiteVideo } from './models/doubao-seedance-1-0-lite-video';
@@ -64,6 +68,7 @@ import { MurekaInstrumental } from './models/mureka-instrumental';
 import { TopzlabsVideo } from './models/topzlabs-video';
 import { JimengOmnihuman } from './models/jimeng-omnihuman';
 import { Gemini30ProImage } from './models/gemini-3-0-pro-image';
+import { BytedanceOpenspeechStt } from './models/bytedance-openspeech-stt';
 
 const aigcProviderConfigSchema = z.object({
   doubao: volcengineArkServiceConfigSchema.optional(),
@@ -72,6 +77,7 @@ const aigcProviderConfigSchema = z.object({
   minimax: minimaxServiceConfigSchema.optional(),
   '302ai': a302aiServiceConfigSchema.optional(),
   mureka: murekaServiceConfigSchema.optional(),
+  'bytedance-openspeech': bytedanceOpenspeechServiceConfigSchema.optional(),
 });
 
 class AIGCHost {
@@ -83,6 +89,7 @@ class AIGCHost {
     minimax?: MinimaxProvider;
     '302ai'?: A302aiProvider;
     mureka?: MurekaProvider;
+    'bytedance-openspeech'?: BytedanceOpenspeechProvider;
   } = {};
 
   constructor(config: z.infer<typeof aigcProviderConfigSchema>) {
@@ -109,6 +116,10 @@ class AIGCHost {
     if (config.mureka) {
       const provider = new MurekaProvider(config.mureka);
       this.providers['mureka'] = provider;
+    }
+    if (config['bytedance-openspeech']) {
+      const provider = new BytedanceOpenspeechProvider(config['bytedance-openspeech']);
+      this.providers['bytedance-openspeech'] = provider;
     }
   }
 
@@ -171,6 +182,10 @@ const AIGC = new AIGCHost({
   mureka: {
     apiKey: process.env.MUREKA_API_KEY || '',
   },
+  'bytedance-openspeech': {
+    appid: process.env.BYTEDANCE_OPENSPEECH_APPID || '',
+    token: process.env.BYTEDANCE_OPENSPEECH_TOKEN || '',
+  },
 });
 
 // 豆包模型注册
@@ -214,5 +229,8 @@ AIGC.registerModel(providers => (providers['mureka'] ? new MurekaInstrumental(pr
 
 // Topzlabs Video模型注册
 AIGC.registerModel(providers => (providers['302ai'] ? new TopzlabsVideo(providers['302ai']) : null));
+
+// Bytedance OpenSpeech 语音识别模型注册
+AIGC.registerModel(providers => (providers['bytedance-openspeech'] ? new BytedanceOpenspeechStt(providers['bytedance-openspeech']) : null));
 
 export default AIGC;

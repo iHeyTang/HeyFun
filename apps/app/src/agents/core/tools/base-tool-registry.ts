@@ -87,12 +87,27 @@ export abstract class BaseToolbox {
       if (typeof argsStr === 'object' && argsStr !== null) {
         args = argsStr;
       } else if (typeof argsStr === 'string') {
+        // 检查是否是 "[object Object]" 这种错误转换的字符串
+        if (argsStr === '[object Object]') {
+          return {
+            success: false,
+            error: `Invalid arguments for ${toolName}: arguments was incorrectly converted to string "[object Object]". Please ensure arguments are properly serialized as JSON.`,
+          };
+        }
         try {
           args = JSON.parse(argsStr);
         } catch (parseError) {
+          const errorMessage = (parseError as Error).message;
+          // 如果错误信息就是 "[object Object]" is not valid JSON，提供更友好的错误信息
+          if (errorMessage.includes('[object Object]')) {
+            return {
+              success: false,
+              error: `Invalid arguments for ${toolName}: arguments contains "[object Object]" which indicates an object was incorrectly converted to string. Original error: ${errorMessage}`,
+            };
+          }
           return {
             success: false,
-            error: `Invalid JSON arguments for ${toolName}: ${(parseError as Error).message}`,
+            error: `Invalid JSON arguments for ${toolName}: ${errorMessage}`,
           };
         }
       } else {

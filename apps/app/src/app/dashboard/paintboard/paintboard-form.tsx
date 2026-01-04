@@ -12,7 +12,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { DynamicForm, extractDefaultValuesFromSchema } from './dynamic-form';
-import { imageParamsSchema, videoParamsSchema, t2aParamsSchema, musicParamsSchema } from '@repo/llm/aigc';
+import { imageParamsSchema, videoParamsSchema, t2aParamsSchema, musicParamsSchema, speechToTextParamsSchema } from '@repo/llm/aigc';
 import { useTranslations } from 'next-intl';
 
 /**
@@ -43,6 +43,9 @@ const getParamsSchemaByGenerationType = (generationTypes: string[]) => {
   }
   if (generationTypes.includes('text-to-speech')) {
     return t2aParamsSchema;
+  }
+  if (generationTypes.includes('speech-to-text')) {
+    return speechToTextParamsSchema;
   }
   if (generationTypes.includes('music')) {
     return musicParamsSchema;
@@ -108,6 +111,9 @@ export function PaintBoardForm({ onSubmitSuccess }: PaintBoardFormProps) {
     }
     if (types.includes('text-to-speech')) {
       return 'text-to-speech';
+    }
+    if (types.includes('speech-to-text')) {
+      return 'speech-to-text';
     }
     if (types.includes('music')) {
       return 'music';
@@ -180,7 +186,13 @@ export function PaintBoardForm({ onSubmitSuccess }: PaintBoardFormProps) {
         return;
       }
 
-      const result = await submitGenerationTask({ model, params: data.params });
+      // 清理 params：如果 language 是 'auto'，则移除该字段
+      const cleanedParams = { ...data.params };
+      if (cleanedParams.language === 'auto') {
+        delete cleanedParams.language;
+      }
+
+      const result = await submitGenerationTask({ model, params: cleanedParams });
       if (result.error) {
         toast.error(`${t('taskSubmitFailed')}: ${result?.error || 'Unknown error'}`);
         return;
