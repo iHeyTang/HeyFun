@@ -42,17 +42,53 @@ export const GET = withUserAuthApi<{ path: string[] }, {}, {}, ArrayBuffer>(asyn
     // 将 Uint8Array 转换为 Buffer
     const fileBuffer = Buffer.from(fileData);
 
-    // 识别文件类型
-    const mimeType = identifyFileTypeFromBuffer(fileBuffer);
+    // 识别文件类型（优先根据文件扩展名）
+    let mimeType = identifyFileTypeFromBuffer(fileBuffer);
+
+    // 如果无法识别，根据文件扩展名判断
+    if (mimeType === 'application/octet-stream') {
+      const extension = fileKey.split('.').pop()?.toLowerCase();
+      switch (extension) {
+        case 'html':
+        case 'htm':
+          mimeType = 'text/html';
+          break;
+        case 'css':
+          mimeType = 'text/css';
+          break;
+        case 'js':
+          mimeType = 'application/javascript';
+          break;
+        case 'json':
+          mimeType = 'application/json';
+          break;
+        case 'txt':
+          mimeType = 'text/plain';
+          break;
+        case 'pdf':
+          mimeType = 'application/pdf';
+          break;
+      }
+    }
+
+    // 构建响应头
+    const headers: HeadersInit = {
+      'Content-Type': mimeType,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Content-Disposition': 'inline',
+    };
+
+    // 对于HTML文件，允许iframe嵌入（同源），并确保不被下载
+    if (mimeType === 'text/html') {
+      headers['X-Frame-Options'] = 'SAMEORIGIN';
+      // 移除Content-Disposition，让浏览器直接显示而不是下载
+      delete headers['Content-Disposition'];
+    }
 
     // 返回文件内容，设置正确的 Content-Type
     return new NextResponse(fileBuffer, {
       status: 200,
-      headers: {
-        'Content-Type': mimeType,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-        'Content-Disposition': 'inline',
-      },
+      headers,
     });
   } catch (error) {
     console.error('Failed to fetch file from storage:', error);

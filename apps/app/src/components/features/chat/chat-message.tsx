@@ -2,19 +2,18 @@
 
 import { createNote } from '@/actions/notes';
 import LoadingDots from '@/components/block/loading/loading-dots';
+import { ImagePreview } from '@/components/block/preview/image-preview';
 import { WysiwygEditor } from '@/components/block/wysiwyg-editor';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLLM } from '@/hooks/use-llm';
 import { cn } from '@/lib/utils';
-import { BookOpen, Bot, Brain, Check, ChevronDown, ChevronUp, Copy, User } from 'lucide-react';
-import Image from 'next/image';
+import { ArrowRight, BookOpen, Bot, Brain, Check, ChevronDown, ChevronUp, Copy, MessageSquareIcon, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { memo, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { ModelIcon } from '../model-icon';
 import { ToolCallCard } from './tool-call-card';
-import { ImagePreview } from '@/components/block/preview/image-preview';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -31,6 +30,8 @@ interface ChatMessageProps {
   outputTokens?: number | null;
   cachedInputTokens?: number | null;
   cachedOutputTokens?: number | null;
+  onSendMessage?: (content: string) => void;
+  isLastMessage?: boolean;
 }
 
 // 带 Tooltip 的消息操作按钮组件
@@ -75,6 +76,8 @@ const ChatMessageComponent = ({
   outputTokens,
   cachedInputTokens,
   cachedOutputTokens,
+  onSendMessage,
+  isLastMessage = false,
 }: ChatMessageProps) => {
   const isUser = role === 'user';
 
@@ -82,6 +85,7 @@ const ChatMessageComponent = ({
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const { availableModels } = useLLM();
+  const t = useTranslations('chat.messages');
 
   // 根据 modelId 获取模型信息
   const modelInfo = useMemo(() => {
@@ -89,8 +93,27 @@ const ChatMessageComponent = ({
     return availableModels.find(m => m.id === modelId) || null;
   }, [modelId, availableModels]);
 
+  // 解析建议追问
+  const suggestedQuestions = useMemo(() => {
+    if (isUser || !content) return null;
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed.type === 'suggested_questions' && Array.isArray(parsed.questions)) {
+        return parsed.questions as string[];
+      }
+    } catch (e) {
+      // 不是JSON格式，继续正常解析
+    }
+    return null;
+  }, [content, isUser]);
+
   // 解析多模态内容（支持文本、图片和附件）
   const { thinkingContent, mainContent, attachments } = useMemo(() => {
+    // 如果是建议追问消息，不显示原始内容
+    if (suggestedQuestions) {
+      return { thinkingContent: null, mainContent: '', attachments: [] };
+    }
+
     // 提取 thinking 内容
     const thinkingMatch = content.match(/<thinking[\s\S]*?>([\s\S]*?)<\/thinking>/);
     const thinking = thinkingMatch?.[1]?.trim() || null;
@@ -138,7 +161,7 @@ const ChatMessageComponent = ({
       .trim();
 
     return { thinkingContent: thinking, mainContent: main, attachments: parsedAttachments };
-  }, [content, isUser]);
+  }, [content, isUser, suggestedQuestions]);
 
   // 判断是否有特殊内容需要渲染
   const hasToolCalls = useMemo(() => toolCalls && toolCalls.length > 0, [toolCalls]);
@@ -189,6 +212,52 @@ const ChatMessageComponent = ({
     }
   };
 
+  // 如果是建议追问消息，使用特殊布局（对齐消息气泡，但无头像）
+  // 只有当是最后一条消息时才显示继续追问
+  if (suggestedQuestions && suggestedQuestions.length > 0) {
+    // 如果不是最后一条消息，则不渲染这条消息
+    if (!isLastMessage) {
+      return null;
+    }
+    // 是最后一条消息，渲染继续追问
+    return (
+      <div className={cn('flex min-w-0 gap-3 px-4', isUser ? 'justify-end' : 'justify-start')}>
+        {/* 占位，保持与assistant消息对齐 */}
+        <div className="h-8 w-8 flex-shrink-0" />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="border-border/20 bg-muted/20 max-w-[70%] rounded-lg border px-4 py-3">
+            <div className="text-muted-foreground mb-2 ml-3 text-xs font-medium">{t('suggestedQuestions')}</div>
+            {suggestedQuestions.map((question, index) => (
+              <div
+                key={index}
+                onClick={() => {
+                  if (onSendMessage) {
+                    onSendMessage(question);
+                  }
+                }}
+                className="hover:bg-muted-foreground/10 flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <MessageSquareIcon className="text-muted-foreground h-3 w-3" />
+                  {question}
+                </div>
+                <ArrowRight className="h-3 w-3" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 检查是否有任何可显示的内容
+  const hasAnyContent = mainContent || thinkingContent || attachments.length > 0 || hasToolCalls;
+
+  // 如果没有任何可显示的内容，则不渲染这条消息
+  if (!hasAnyContent && !isStreaming) {
+    return null;
+  }
+
   return (
     <div className={cn('flex min-w-0 gap-3 px-4 py-1', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
@@ -203,10 +272,10 @@ const ChatMessageComponent = ({
         </Avatar>
       )}
 
-      <div className={cn('group flex min-w-0 flex-1 flex-col gap-1.5', isUser ? 'items-end' : 'items-start')}>
+      <div className={cn('group/message flex min-w-0 flex-1 flex-col gap-1.5', isUser ? 'items-end' : 'items-start')}>
         <div className="text-muted-foreground flex items-center gap-2 text-xs">
           <div>{modelInfo?.name}</div>
-          <span className="group-hover:text-muted-foreground text-transparent transition-all">{timestamp.toLocaleTimeString()}</span>
+          <span className="group-hover/message:text-muted-foreground text-transparent transition-all">{timestamp.toLocaleTimeString()}</span>
           {!isUser && (mainContent || content) && (
             <>
               <MessageActionButton
@@ -326,7 +395,7 @@ const ChatMessageComponent = ({
         )}
 
         {/* 空状态 - 正在思考（仅 assistant 消息且没有内容时显示） */}
-        {!isUser && !mainContent && !hasToolCalls && !thinkingContent && (
+        {!isUser && !mainContent && !hasToolCalls && !thinkingContent && !suggestedQuestions && (
           <div className="bg-muted max-w-[70%] rounded-lg px-4 py-3">
             <LoadingDots label="Thinking" />
           </div>
@@ -338,7 +407,7 @@ const ChatMessageComponent = ({
           (cachedInputTokens !== null && cachedInputTokens !== undefined) ||
           (cachedOutputTokens !== null && cachedOutputTokens !== undefined) ||
           (tokenCount !== null && tokenCount !== undefined)) && (
-          <div className="group-hover:text-muted-foreground/70 text-xs text-transparent transition-all">
+          <div className="group-hover/message:text-muted-foreground/70 text-xs text-transparent transition-all">
             {(() => {
               const parts: string[] = [];
               if (inputTokens !== null && inputTokens !== undefined) {
@@ -390,6 +459,8 @@ export const ChatMessage = memo(ChatMessageComponent, (prevProps, nextProps) => 
     prevProps.outputTokens === nextProps.outputTokens &&
     prevProps.cachedInputTokens === nextProps.cachedInputTokens &&
     prevProps.cachedOutputTokens === nextProps.cachedOutputTokens &&
+    prevProps.onSendMessage === nextProps.onSendMessage &&
+    prevProps.isLastMessage === nextProps.isLastMessage &&
     JSON.stringify(prevProps.toolCalls) === JSON.stringify(nextProps.toolCalls) &&
     JSON.stringify(prevProps.toolResults) === JSON.stringify(nextProps.toolResults)
   );

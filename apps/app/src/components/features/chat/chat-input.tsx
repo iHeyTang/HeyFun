@@ -9,10 +9,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useLLM } from '@/hooks/use-llm';
 import { usePreferences } from '@/hooks/use-preferences';
 import { ModelInfo } from '@repo/llm/chat';
-import { ArrowUp, FileIcon, Loader2, Plus, StopCircle, X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { ArrowUp, FileIcon, Loader2, Plus, StopCircle, X, FolderOpen } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { ModelIcon } from '../model-icon';
+import { AssetsDialog } from './assets-dialog';
 
 interface ChatInputProps {
   usage?: {
@@ -30,6 +31,7 @@ interface ChatInputProps {
   isLoading?: boolean;
   className?: string;
   onCancel?: () => void;
+  sessionId?: string;
 }
 
 const useChatbotModelSelectorStore = create<{
@@ -73,9 +75,11 @@ export const ChatInput = ({
   isLoading = false,
   className,
   onCancel,
+  sessionId,
 }: ChatInputProps) => {
   const modelSelectorRef = useRef<ModelSelectorRef>(null);
   const { selectedModel, setSelectedModel } = useChatbotModelSelector();
+  const [assetsDialogOpen, setAssetsDialogOpen] = useState(false);
 
   const handleModelSelect = (model: ModelInfo) => {
     setSelectedModel(model);
@@ -87,10 +91,26 @@ export const ChatInput = ({
     }
     return (
       <div className="text-muted-foreground/60 flex items-center gap-2 px-2 text-xs">
-        <span>输入: {usage.inputTokens.toLocaleString()} tokens</span>
-        <span>输出: {usage.outputTokens.toLocaleString()} tokens</span>
-        <span>缓存输入: {usage.cachedInputTokens.toLocaleString()} tokens</span>
-        <span>缓存输出: {usage.cachedOutputTokens.toLocaleString()} tokens</span>
+        {sessionId && (
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 flex-shrink-0"
+            onClick={() => setAssetsDialogOpen(true)}
+            disabled={disabled}
+            aria-label="查看素材库"
+            title="查看素材库"
+          >
+            <FolderOpen className="h-4 w-4" />
+          </Button>
+        )}
+        <div className="flex items-center gap-2">
+          <span>输入: {usage.inputTokens.toLocaleString()} tokens</span>
+          <span>输出: {usage.outputTokens.toLocaleString()} tokens</span>
+          <span>缓存输入: {usage.cachedInputTokens.toLocaleString()} tokens</span>
+          <span>缓存输出: {usage.cachedOutputTokens.toLocaleString()} tokens</span>
+        </div>
       </div>
     );
   };
@@ -242,6 +262,7 @@ export const ChatInput = ({
         className={className}
       />
       <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={handleModelSelect} type="language" />
+      {sessionId && <AssetsDialog sessionId={sessionId} open={assetsDialogOpen} onOpenChange={setAssetsDialogOpen} />}
     </>
   );
 };

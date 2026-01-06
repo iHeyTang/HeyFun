@@ -11,6 +11,8 @@ import { useState } from 'react';
 import { WebSearchResult } from './tool-renderers/web-search-result';
 import { AigcModelsResult } from './tool-renderers/aigc-models-result';
 import { InitializeAgentResult } from './tool-renderers/initialize-agent-result';
+import { PresentationResult } from './tool-renderers/presentation-result';
+import { ImageSearchResult } from './tool-renderers/image-search-result';
 import { useBuiltinTools } from '@/hooks/use-builtin-tools';
 
 interface ToolCallCardProps {
@@ -65,8 +67,10 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
       }>
     > = {
       web_search: WebSearchResult,
+      image_search: ImageSearchResult,
       get_aigc_models: AigcModelsResult,
       initialize_agent: InitializeAgentResult,
+      generate_presentation: PresentationResult,
     };
     return renderers[toolName];
   };

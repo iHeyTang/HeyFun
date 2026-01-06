@@ -1,11 +1,12 @@
 'use client';
 
-import { FileText, Pause, Play, Volume2, VolumeX } from 'lucide-react';
+import { Download, FileText, Pause, Play, Volume2, VolumeX } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Slider } from '../../ui/slider';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../../ui/scroll-area';
 import { Dialog, DialogContent, DialogTrigger } from '../../ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu';
 
 // 字幕数据结构
 interface SubtitleWord {
@@ -295,6 +296,43 @@ export function AudioPlayer({ src, className, subtitle, onLoadedData, onEnded, o
     [seekToTime],
   );
 
+  // 下载音频
+  const handleDownloadAudio = useCallback(() => {
+    const link = document.createElement('a');
+    link.href = src;
+    link.download = src.split('/').pop() || 'audio.mp3';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [src]);
+
+  // 下载字幕文件
+  const handleDownloadSubtitle = useCallback(() => {
+    if (!subtitleData) return;
+
+    // 如果 subtitle 是 URL，直接下载
+    if (typeof subtitle === 'string') {
+      const link = document.createElement('a');
+      link.href = subtitle;
+      link.download = subtitle.split('/').pop() || 'subtitle.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // 如果是对象，转换为 JSON 并下载
+      const jsonStr = JSON.stringify(subtitleData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'subtitle.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  }, [subtitle, subtitleData]);
+
   // 监听音频事件
   useEffect(() => {
     const audio = audioRef.current;
@@ -491,6 +529,30 @@ export function AudioPlayer({ src, className, subtitle, onLoadedData, onEnded, o
               <div className="text-sm leading-relaxed">{subtitleData.text}</div>
             </DialogContent>
           </Dialog>
+        )}
+
+        {/* 下载按钮 - 仅在存在字幕数据时显示 */}
+        {subtitleData && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="text-muted-foreground hover:text-foreground flex h-6 w-6 cursor-pointer items-center justify-center transition-colors"
+                aria-label="下载"
+              >
+                <Download className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleDownloadAudio}>
+                <Download className="h-4 w-4" />
+                下载音频
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownloadSubtitle}>
+                <FileText className="h-4 w-4" />
+                下载原始字幕文件
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 

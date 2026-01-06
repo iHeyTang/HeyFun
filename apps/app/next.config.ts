@@ -18,6 +18,13 @@ const nextConfig: NextConfig = {
       '@repo/llm': path.resolve(__dirname, '../../packages/llm/src'),
     };
 
+    // 支持导入 .template.md 文件作为原始字符串
+    // 同时支持直接导入和 ?raw 查询参数
+    config.module.rules.push({
+      test: /\.template\.md(\?raw)?$/,
+      type: 'asset/source', // 使用 asset/source 类型，将文件内容作为字符串导入
+    });
+
     return config;
   },
   images: {

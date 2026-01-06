@@ -48,6 +48,7 @@ export interface SandboxRuntimeManager {
     options?: {
       env?: Record<string, string>;
       timeout?: number;
+      cwd?: string;
     },
   ): Promise<SandboxExecResult>;
 
@@ -81,7 +82,7 @@ export interface SandboxRuntimeManager {
  */
 export interface SandboxRuntimeInstance {
   handle: SandboxHandle;
-  exec(command: string, options?: { env?: Record<string, string>; timeout?: number }): Promise<SandboxExecResult>;
+  exec(command: string, options?: { env?: Record<string, string>; timeout?: number; cwd?: string }): Promise<SandboxExecResult>;
   readFile(path: string): Promise<string>;
   writeFile(path: string, content: string): Promise<void>;
   destroy(): Promise<void>;

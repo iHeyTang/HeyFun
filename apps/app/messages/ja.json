@@ -145,7 +145,8 @@
       "taskTerminated": "タスクはユーザーによって終了されました",
       "taskError": "おっと！何か問題が発生しました",
       "inputTokens": "入力",
-      "completionTokens": "出力"
+      "completionTokens": "出力",
+      "suggestedQuestions": "推奨される質問"
     },
     "confirm": {
       "terminate": {

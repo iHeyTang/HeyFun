@@ -407,12 +407,7 @@ export class CanvasAgent extends ReactAgent {
     id: 'canvas',
     name: 'Canvas',
     description: '基于 ReAct 框架的智能画布协调者，支持自主推理和行动',
-    promptBlocks: [
-      createPresetBlock('canvas-agent', CANVAS_SYSTEM_PROMPT, {
-        title: 'Canvas Agent 系统提示词',
-        priority: 10,
-      }),
-    ],
+    promptBlocks: [createPresetBlock('canvas-agent', CANVAS_SYSTEM_PROMPT, { title: 'Canvas Agent 系统提示词' })],
     tools: flowcanvasToolboxes
       .flatMap(tool => tool.schema)
       .map(definition => {

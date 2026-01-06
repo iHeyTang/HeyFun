@@ -145,7 +145,8 @@
       "taskTerminated": "任務已被使用者終止",
       "taskError": "哎呀！出錯了",
       "inputTokens": "輸入",
-      "completionTokens": "輸出"
+      "completionTokens": "輸出",
+      "suggestedQuestions": "建議追問"
     },
     "confirm": {
       "terminate": {

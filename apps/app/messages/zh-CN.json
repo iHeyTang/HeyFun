@@ -145,7 +145,8 @@
       "taskTerminated": "任务已被用户终止",
       "taskError": "哎呀！出错了",
       "inputTokens": "输入",
-      "completionTokens": "输出"
+      "completionTokens": "输出",
+      "suggestedQuestions": "建议追问"
     },
     "confirm": {
       "terminate": {

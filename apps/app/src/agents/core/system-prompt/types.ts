@@ -20,8 +20,6 @@ export interface SystemPromptBlock {
   title?: string;
   /** Block 内容 */
   content: string;
-  /** Block 优先级（数字越小越靠前，默认 100） */
-  priority?: number;
   /** 是否启用（默认 true） */
   enabled?: boolean;
 }
@@ -65,4 +63,3 @@ export interface PresetPromptConfig {
   /** 其他自定义 Blocks */
   customBlocks?: SystemPromptBlock[];
 }
-

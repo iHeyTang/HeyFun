@@ -940,3 +940,49 @@ model NoteVersions {
   @@index([noteId, createdAt])
   @@index([createdAt])
 }
+
+// ============================================
+// Assets Module - 素材管理模块
+// ============================================
+
+// 素材表：存储 agent session 产出的各种素材（图片/视频/文档/PPT等）
+model Assets {
+  id             String    @id @default(cuid())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime? // 软删除时间戳
+
+  organizationId String
+
+  // Session关联（支持两种session类型）
+  sessionId      String // ChatSessions 或 FlowCanvasProjectAgentSessions 的 ID
+  sessionType    String // 'chat' | 'flowcanvas'
+
+  // 文件信息
+  type           String // 素材类型：image, video, document, presentation, audio, code, other
+  fileKey        String // OSS文件路径，格式：${organizationId}/assets/${sessionId}/${id}/文件名
+  fileName       String // 原始文件名
+  fileSize       Int // 文件大小（字节）
+  mimeType       String // MIME类型
+
+  // 元数据
+  title          String? // 素材标题
+  description    String? @db.Text // 描述
+  /// [String[]] 标签数组
+  tags           Json    @default("[]")
+  /// 其他元数据（JSON格式，可用于存储外部资源的原始URL等信息）
+  metadata       Json    @default("{}")
+
+  // 关联的工具调用信息（可选，用于追踪素材来源）
+  toolCallId     String? // 生成该素材的工具调用ID
+  messageId      String? // 关联的消息ID
+
+  @@index([organizationId])
+  @@index([organizationId, sessionId, sessionType])
+  @@index([organizationId, type])
+  @@index([organizationId, deletedAt])
+  @@index([sessionId, sessionType])
+  @@index([createdAt])
+  @@index([toolCallId])
+  @@index([messageId])
+}

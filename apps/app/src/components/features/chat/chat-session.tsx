@@ -373,7 +373,7 @@ export function ChatSession({
     () => (
       <A2UIProvider sessionId={sessionId} apiPrefix={apiPrefix} onEvent={handleA2UIEvent}>
         <div className="min-w-0 space-y-0">
-          {messages.map(message => (
+          {messages.map((message, index) => (
             <ChatMessageComponent
               key={message.id}
               role={message.role as 'user' | 'assistant'}
@@ -390,6 +390,8 @@ export function ChatSession({
               outputTokens={message.outputTokens ?? undefined}
               cachedInputTokens={message.cachedInputTokens ?? undefined}
               cachedOutputTokens={message.cachedOutputTokens ?? undefined}
+              onSendMessage={handleSendMessage}
+              isLastMessage={index === messages.length - 1}
             />
           ))}
           {shouldShowThinkingMessage && <ThinkingMessage modelId={selectedModel?.id} />}
@@ -397,7 +399,7 @@ export function ChatSession({
         </div>
       </A2UIProvider>
     ),
-    [messages, shouldShowThinkingMessage, selectedModel?.id, sessionId, apiPrefix, handleA2UIEvent],
+    [messages, shouldShowThinkingMessage, selectedModel?.id, sessionId, apiPrefix, handleA2UIEvent, handleSendMessage],
   );
 
   const usage = useMemo(() => {
@@ -448,6 +450,7 @@ export function ChatSession({
         onAttachmentsChange={handleAttachmentsChange}
         isLoading={isLoading}
         onCancel={handleCancel}
+        sessionId={sessionId}
       />
     </div>
   );

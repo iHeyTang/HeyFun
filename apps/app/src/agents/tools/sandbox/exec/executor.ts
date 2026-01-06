@@ -3,7 +3,7 @@ import { sandboxExecParamsSchema } from './schema';
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import { getSandboxRuntimeManager } from '@/lib/server/sandbox';
 import { updateSandboxHandleLastUsed } from '@/lib/server/sandbox/handle';
-import { getSandboxHandleFromState, saveSandboxHandleToState } from '../utils';
+import { ensureSandbox, saveSandboxHandleToState } from '../utils';
 
 export const sandboxExecExecutor = definitionToolExecutor(sandboxExecParamsSchema, async (args, context) => {
   return await context.workflow.run(`toolcall-${context.toolCallId || 'sandbox-exec'}`, async () => {
@@ -17,14 +17,8 @@ export const sandboxExecExecutor = definitionToolExecutor(sandboxExecParamsSchem
 
       const { command, env, timeout } = args;
 
-      // 获取当前会话的 sandbox handle（框架自动管理，Agent 无需关心 sandbox_id）
-      const handle = await getSandboxHandleFromState(context.sessionId);
-      if (!handle) {
-        return {
-          success: false,
-          error: 'No sandbox found for this session. Please use sandbox.get to get or create a sandbox first.',
-        };
-      }
+      // 确保 sandbox 存在，如果不存在则自动创建
+      const handle = await ensureSandbox(context.sessionId);
 
       // 获取实例（底层框架会自动恢复依赖，无需手动处理）
       const srm = getSandboxRuntimeManager();

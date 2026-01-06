@@ -145,7 +145,8 @@
       "taskTerminated": "Task Terminated By User",
       "taskError": "Oops! something went wrong",
       "inputTokens": "input",
-      "completionTokens": "completion"
+      "completionTokens": "completion",
+      "suggestedQuestions": "Suggested Questions"
     },
     "confirm": {
       "terminate": {

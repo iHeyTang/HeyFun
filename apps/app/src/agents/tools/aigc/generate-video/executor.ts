@@ -4,6 +4,7 @@ import { workflow } from '@/lib/server/workflow';
 import AIGC, { GenerationType, videoParamsSchema } from '@repo/llm/aigc';
 import type { z } from 'zod';
 import { generateVideoParamsSchema } from './schema';
+import { createAssetsFromAigcResults } from '@/agents/utils/aigc-asset-helper';
 
 /**
  * 根据参数推断视频生成类型
@@ -21,11 +22,9 @@ function inferVideoGenerationType(params: z.infer<typeof videoParamsSchema>): Ge
   return 'text-to-video';
 }
 
-export const generateVideoExecutor = definitionToolExecutor(
-  generateVideoParamsSchema,
-  async (args, context) => {
-    const { error, task } = await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
-      const { model, prompt, firstFrame, lastFrame, referenceImage, video, audio, aspectRatio, resolution, duration, advanced } = args;
+export const generateVideoExecutor = definitionToolExecutor(generateVideoParamsSchema, async (args, context) => {
+  const { error, task } = await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+    const { model, prompt, firstFrame, lastFrame, referenceImage, video, audio, aspectRatio, resolution, duration, advanced } = args;
 
     if (!context.organizationId) {
       return { error: 'Organization ID is required' };
@@ -91,7 +90,6 @@ export const generateVideoExecutor = definitionToolExecutor(
       params.advanced = advanced;
     }
 
-
     // 推断生成类型
     const generationType = inferVideoGenerationType(params);
 
@@ -144,10 +142,27 @@ export const generateVideoExecutor = definitionToolExecutor(
     };
   }
 
+  // 为生成的结果文件创建 Assets 记录
+  if (result.eventData?.results && Array.isArray(result.eventData.results) && result.eventData.results.length > 0) {
+    const assets = await createAssetsFromAigcResults(context, result.eventData.results, {
+      defaultType: 'video',
+      titlePrefix: '生成的视频',
+      toolArgs: args,
+    });
+
+    if (assets.length > 0) {
+      return {
+        success: true,
+        data: {
+          ...result.eventData.results,
+          assets,
+        },
+      };
+    }
+  }
+
   return {
     success: true,
     data: result.eventData.results,
   };
-  },
-);
-
+});

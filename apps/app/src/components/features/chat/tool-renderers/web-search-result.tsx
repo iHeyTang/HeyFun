@@ -117,12 +117,13 @@ export function WebSearchResult({ args, result, status, error }: WebSearchResult
   return (
     <div className="space-y-2">
       {/* 搜索关键词和结果数量 */}
-      <div className="text-muted-foreground/70 flex items-center gap-1.5 text-xs">
-        <Search className="h-3 w-3" />
-        <span>
-          搜索关键词: <span className="text-foreground/80 font-medium">{query}</span>
+      <div className="text-muted-foreground/70 flex flex-wrap items-center gap-1.5 text-xs">
+        <span className="flex items-center gap-1.5">
+          <span>
+            搜索关键词: <span className="text-foreground/80 font-medium">{query}</span>
+          </span>
+          {data.count !== undefined && <span className="text-muted-foreground/50">({data.count} 条结果)</span>}
         </span>
-        {data.count !== undefined && <span className="text-muted-foreground/50">({data.count} 条结果)</span>}
       </div>
 
       <div className="space-y-2">

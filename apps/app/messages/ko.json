@@ -145,7 +145,8 @@
       "taskTerminated": "작업이 사용자에 의해 종료되었습니다",
       "taskError": "앗! 문제가 발생했습니다",
       "inputTokens": "입력",
-      "completionTokens": "출력"
+      "completionTokens": "출력",
+      "suggestedQuestions": "추천 질문"
     },
     "confirm": {
       "terminate": {

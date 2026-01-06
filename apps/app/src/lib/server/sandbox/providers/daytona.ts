@@ -198,6 +198,7 @@ export class DaytonaSandboxRuntimeManager implements SandboxRuntimeManager {
     options?: {
       env?: Record<string, string>;
       timeout?: number;
+      cwd?: string;
     },
   ): Promise<SandboxExecResult> {
     const instance = await this.get(handle);
@@ -324,14 +325,17 @@ class DaytonaSandboxRuntimeInstance implements SandboxRuntimeInstance {
     }
   }
 
-  async exec(command: string, options?: { env?: Record<string, string>; timeout?: number }): Promise<SandboxExecResult> {
+  async exec(command: string, options?: { env?: Record<string, string>; timeout?: number; cwd?: string }): Promise<SandboxExecResult> {
     try {
       // 每次操作都重新获取 sandbox（不缓存）
       const sandbox = await this.getSandbox();
 
+      // 获取工作目录：优先使用options.cwd，否则使用handle中的workspaceRoot，最后使用默认值
+      const cwd = options?.cwd || this.handle.workspaceRoot || '/heyfun/workspace';
+
       // 执行命令（Daytona SDK 接受完整命令字符串）
       // executeCommand 签名：executeCommand(command: string, cwd?: string, env?: Record<string, string>)
-      const result = await sandbox.process.executeCommand(command, undefined, options?.env);
+      const result = await sandbox.process.executeCommand(command, cwd, options?.env);
 
       return {
         exitCode: result.exitCode,
@@ -377,7 +381,7 @@ class DaytonaSandboxRuntimeInstance implements SandboxRuntimeInstance {
   }
 
   private async resolvePath(sandbox: Sandbox, path: string): Promise<string> {
-    const workspaceRoot = '/heyfun/workspace';
+    const workspaceRoot = this.handle.workspaceRoot || '/heyfun/workspace';
     return resolve(workspaceRoot, path);
   }
 }

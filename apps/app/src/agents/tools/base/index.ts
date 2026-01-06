@@ -5,6 +5,7 @@ import { retrievePromptFragmentsTool } from './retrieve-prompt-fragments';
 import { InitializeAgentTool } from './initialize-agent';
 import { retrieveContextTool } from './retrieve-context';
 import { searchToolsTool } from './search-tools';
+import { completeTool } from './complete';
 
 export * from './get-current-time';
 export * from './wait';
@@ -13,6 +14,7 @@ export * from './retrieve-prompt-fragments';
 export * from './initialize-agent';
 export * from './retrieve-context';
 export * from './search-tools';
+export * from './complete';
 
 export const baseToolboxes = [
   getCurrentTimeTool,
@@ -22,4 +24,5 @@ export const baseToolboxes = [
   InitializeAgentTool,
   retrieveContextTool,
   searchToolsTool,
+  completeTool,
 ];

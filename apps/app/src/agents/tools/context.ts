@@ -1,5 +1,6 @@
 import { WorkflowContext } from '@upstash/workflow';
 import type { UnifiedChat, ChatClient } from '@repo/llm/chat';
+import { ReactAgent } from '@/agents/core/frameworks/react';
 
 /**
  * 动态系统提示词管理器
@@ -86,7 +87,7 @@ const toolManagerStore = new Map<string, ToolManager>();
  * 创建工具管理器实现
  * 接收当前 ReactAgent 实例，用于动态添加工具
  */
-export function createToolManager(sessionId: string, reactAgent?: { addToolsByName: (toolNames: string[]) => void }): ToolManager | undefined {
+export function createToolManager(sessionId: string, reactAgent?: ReactAgent): ToolManager | undefined {
   if (!reactAgent) {
     return undefined;
   }

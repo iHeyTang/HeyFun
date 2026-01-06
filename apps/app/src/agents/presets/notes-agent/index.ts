@@ -150,12 +150,7 @@ export class NotesAgent extends ReactAgent {
       id: 'notes',
       name: 'Notes Assistant',
       description: '笔记写作助手，基于 General Agent 扩展，专门用于笔记编辑和写作辅助',
-      promptBlocks: [
-        createPresetBlock('notes-agent', getNotesSystemPrompt(), {
-          title: 'Notes Agent 系统提示词',
-          priority: 10,
-        }),
-      ],
+      promptBlocks: [createPresetBlock('notes-agent', getNotesSystemPrompt(), { title: 'Notes Agent 系统提示词' })],
       tools: notesToolboxes
         .flatMap(tool => tool.schema)
         .map(definition => {

@@ -4,12 +4,11 @@ import { workflow } from '@/lib/server/workflow';
 import AIGC, { musicParamsSchema } from '@repo/llm/aigc';
 import type { z } from 'zod';
 import { generateMusicParamsSchema } from './schema';
+import { createAssetsFromAigcResults } from '@/agents/utils/aigc-asset-helper';
 
-export const generateMusicExecutor = definitionToolExecutor(
-  generateMusicParamsSchema,
-  async (args, context) => {
-    const { error, task } = await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
-      const { model, lyrics, prompt, advanced } = args;
+export const generateMusicExecutor = definitionToolExecutor(generateMusicParamsSchema, async (args, context) => {
+  const { error, task } = await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+    const { model, lyrics, prompt, advanced } = args;
 
     if (!context.organizationId) {
       return { error: 'Organization ID is required' };
@@ -91,10 +90,27 @@ export const generateMusicExecutor = definitionToolExecutor(
     };
   }
 
+  // 为生成的结果文件创建 Assets 记录
+  if (result.eventData?.results && Array.isArray(result.eventData.results) && result.eventData.results.length > 0) {
+    const assets = await createAssetsFromAigcResults(context, result.eventData.results, {
+      defaultType: 'audio',
+      titlePrefix: '生成的音乐',
+      toolArgs: args,
+    });
+
+    if (assets.length > 0) {
+      return {
+        success: true,
+        data: {
+          ...result.eventData.results,
+          assets,
+        },
+      };
+    }
+  }
+
   return {
     success: true,
     data: result.eventData.results,
   };
-  },
-);
-
+});

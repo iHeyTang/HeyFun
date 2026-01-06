@@ -4,12 +4,11 @@ import { workflow } from '@/lib/server/workflow';
 import AIGC, { GenerationType, imageParamsSchema } from '@repo/llm/aigc';
 import type { z } from 'zod';
 import { generateImageParamsSchema } from './schema';
+import { createAssetsFromAigcResults } from '@/agents/utils/aigc-asset-helper';
 
-export const generateImageExecutor = definitionToolExecutor(
-  generateImageParamsSchema,
-  async (args, context) => {
-    const { error, task } = await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
-      const { model, prompt, referenceImage, aspectRatio, n, advanced } = args;
+export const generateImageExecutor = definitionToolExecutor(generateImageParamsSchema, async (args, context) => {
+  const { error, task } = await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+    const { model, prompt, referenceImage, aspectRatio, n, advanced } = args;
 
     if (!context.organizationId) {
       return { error: 'Organization ID is required' };
@@ -112,10 +111,27 @@ export const generateImageExecutor = definitionToolExecutor(
     };
   }
 
+  // 为生成的结果文件创建 Assets 记录
+  if (result.eventData?.results && Array.isArray(result.eventData.results) && result.eventData.results.length > 0) {
+    const assets = await createAssetsFromAigcResults(context, result.eventData.results, {
+      defaultType: 'image',
+      titlePrefix: '生成的图片',
+      toolArgs: args,
+    });
+
+    if (assets.length > 0) {
+      return {
+        success: true,
+        data: {
+          ...result.eventData.results,
+          assets,
+        },
+      };
+    }
+  }
+
   return {
     success: true,
     data: result.eventData.results,
   };
-  },
-);
-
+});

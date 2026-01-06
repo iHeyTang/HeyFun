@@ -1,5 +1,7 @@
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import { imageSearchParamsSchema } from './schema';
+import { createAssetFromTool } from '@/agents/utils/asset-helper';
+import { downloadFile } from '@/lib/server/storage';
 
 interface ImageResult {
   title: string;
@@ -213,6 +215,75 @@ export const imageSearchExecutor = definitionToolExecutor(imageSearchParamsSchem
           error: 'No image results found. Please check your API keys configuration or try a different query.',
         };
       }
+
+      // 异步保存图片到 session assets（不阻塞工具返回结果）
+      // 使用 Promise 来异步执行，不阻塞主流程返回结果
+      Promise.resolve().then(async () => {
+        try {
+          // 批量下载图片并创建 assets
+          const assetPromises = results.map(async (imageResult, index) => {
+            try {
+              const imageUrl = imageResult.image || imageResult.thumbnail;
+              if (!imageUrl) {
+                return null;
+              }
+
+              // 下载图片
+              const { buffer, mimeType } = await downloadFile(imageUrl);
+
+              // 从 URL 中提取文件名，如果没有则生成一个
+              let fileName = `image-${index + 1}`;
+              try {
+                const urlObj = new URL(imageUrl);
+                const pathname = urlObj.pathname;
+                const urlFileName = pathname.split('/').pop();
+                if (urlFileName) {
+                  fileName = urlFileName;
+                }
+              } catch {
+                // 如果不是有效的 URL，使用默认文件名
+              }
+
+              // 如果文件名没有扩展名，尝试从 mimeType 推断
+              if (!fileName.includes('.')) {
+                const ext = mimeType.split('/')[1]?.split(';')[0] || 'jpg';
+                fileName = `${fileName}.${ext}`;
+              }
+
+              // 创建 asset，在 metadata 中记录原始 URL 等信息
+              const asset = await createAssetFromTool({
+                context,
+                fileContent: buffer,
+                fileName,
+                mimeType,
+                type: 'image',
+                title: imageResult.title || `Image ${index + 1}`,
+                description: imageResult.source ? `From ${imageResult.source}` : undefined,
+                metadata: {
+                  originalUrl: imageUrl,
+                  sourceUrl: imageResult.url,
+                  source: imageResult.source,
+                  width: imageResult.width,
+                  height: imageResult.height,
+                  author: imageResult.author,
+                  authorUrl: imageResult.authorUrl,
+                },
+              });
+
+              return asset;
+            } catch (error) {
+              // 单个图片下载失败不影响其他图片的保存
+              console.error(`[ImageSearch] Failed to save image asset ${index + 1}:`, error);
+              return null;
+            }
+          });
+
+          await Promise.allSettled(assetPromises);
+        } catch (error) {
+          // 保存 assets 失败不影响工具返回结果
+          console.error('[ImageSearch] Asset saving workflow error:', error);
+        }
+      });
 
       return {
         success: true,

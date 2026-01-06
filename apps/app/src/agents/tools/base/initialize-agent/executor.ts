@@ -169,15 +169,6 @@ async function cleanQueryText(queryText: string, llmClient?: ChatClient): Promis
       .map(k => k.trim())
       .filter((k, index, arr) => arr.indexOf(k) === index);
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[InitializeAgentTool] ✅ 查询清洗结果:', {
-        originalQuery: queryText,
-        cleanedText,
-        keywordsCount: keywords.length,
-        keywords: keywords.slice(0, 10),
-      });
-    }
-
     return { cleanedText, keywords };
   } catch (error) {
     console.error('[InitializeAgentTool] ❌ 查询清洗失败，使用原始查询:', error);
@@ -460,8 +451,6 @@ async function retrieveTools(
       return [];
     }
 
-    console.log(`[InitializeAgentTool] 📋 可检索的动态工具共 ${dynamicToolSummaries.length} 个（排除 ${builtinTools.length} 个内置工具）`);
-
     const keyword = query;
     const maxTools = 10; // 默认最多检索10个工具
 
@@ -513,7 +502,6 @@ ${toolsList}
     }
 
     const selectedToolNames = extracted.filter((name): name is string => typeof name === 'string' && name.trim().length > 0);
-    console.log(`[InitializeAgentTool] ✅ LLM 检索到 ${selectedToolNames.length} 个工具:`, selectedToolNames);
 
     // 获取选中工具的完整信息（只从动态工具中查找，排除内置工具）
     const retrievedTools = selectedToolNames
@@ -542,9 +530,6 @@ ${toolsList}
       const toolNames = retrievedTools.map(t => t.name);
       try {
         toolManager.addToolsByName(toolNames);
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[InitializeAgentTool] ✅ 已通过 toolManager 装载工具: ${toolNames.join(', ')}`);
-        }
       } catch (error) {
         console.error('[InitializeAgentTool] ❌ 装载工具失败:', error);
       }
@@ -667,22 +652,8 @@ export const initializeAgentExecutor = definitionToolExecutor(initializeAgentPar
       const keywords = searchResult.keywords;
 
       // 阶段 3: 检索相关工具 - 无论是否找到片段都要检索工具（复用提示词检索的关键词提取结果）
-      console.log('[InitializeAgentTool] 🔍 开始检索相关工具...');
       const toolSearchQuery = cleanedQuery || userMessage; // 优先使用已清洗的查询文本
       const retrievedTools = await retrieveTools(toolSearchQuery, context.llmClient, context.toolManager, context.builtinToolNames);
-      if (retrievedTools.length > 0) {
-        if (context.toolManager) {
-          console.log(`[InitializeAgentTool] ✅ 已检索并装载 ${retrievedTools.length} 个工具:`, retrievedTools.map(t => t.name).join(', '));
-        } else {
-          console.warn(
-            `[InitializeAgentTool] ⚠️ 检索到 ${retrievedTools.length} 个工具，但 toolManager 不可用，无法注入到 agent。工具列表:`,
-            retrievedTools.map(t => t.name).join(', '),
-          );
-          console.warn('[InitializeAgentTool] ⚠️ toolManager 不可用的可能原因：1) 不是 ReactAgent；2) session 没有 agentId');
-        }
-      } else {
-        console.log('[InitializeAgentTool] ℹ️ 未检索到相关工具');
-      }
 
       // 阶段 4: 处理无片段情况
       if (fragmentIds.length === 0) {
