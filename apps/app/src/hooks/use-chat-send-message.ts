@@ -133,13 +133,9 @@ export const useChatSendMessage = ({
         const data = await response.json();
         console.log('[useSendMessage] 消息发送成功，userMessageId:', data.userMessageId, 'workflowRunId:', data.workflowRunId);
 
-        // 更新临时用户消息ID
+        // 记录真实消息 ID，但不在此时更新临时消息 ID
+        // 让 fetchAndUpdateMessages 用真实消息替换临时消息，避免时序问题
         if (data.userMessageId) {
-          const { sessionMessages: currentMessages } = useChatMessagesStore.getState();
-          setSessionMessages(
-            sessionId,
-            (currentMessages[sessionId] || []).map((msg: ChatMessages) => (msg.id === tempUserMessage.id ? { ...msg, id: data.userMessageId } : msg)),
-          );
           lastMessageIdRef.current = data.userMessageId;
         }
 

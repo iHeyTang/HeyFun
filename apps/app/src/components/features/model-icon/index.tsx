@@ -21,13 +21,7 @@ interface ModelIconConfig {
  * 支持按模型ID和家族映射图标
  */
 const MODEL_ICONS: Record<string, ModelIconConfig> = {
-  // 具体模型图标 (优先级最高)
-  'openai/gpt-5': { type: 'image', src: '/icons/gpt-5.svg' },
-  'openai/gpt-5-mini': { type: 'image', src: '/icons/gpt-5-mini.svg' },
-  'anthropic/claude-sonnet-4.5': { type: 'image', src: '/icons/claude-sonnet-4-5.svg' },
-  'gemma3:1b': { type: 'image', src: '/icons/gemma3.svg' },
-
-  // 家族图标 (中等优先级)
+  // 家族图标
   openai: { type: 'image', src: '/icons/openai.svg' },
   anthropic: { type: 'image', src: '/icons/anthropic.svg' },
   gemma: { type: 'image', src: '/icons/gemma.svg' },

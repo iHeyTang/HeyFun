@@ -22,6 +22,8 @@ export interface ToolExecutionContext {
   reactAgent?: ReactAgent;
   /** 内置工具名称列表（不参与动态检索） */
   builtinToolNames?: string[];
+  /** 工具执行完成后的回调，在 workflow context.run 中执行 */
+  afterToolExecution?: (result: ToolExecutionResult, workflowContext: WorkflowContext) => Promise<void>;
 }
 
 /**
@@ -115,8 +117,17 @@ export async function executeTools(toolCalls: UnifiedChat.ToolCall[], context: T
     }
   }
 
-  return {
+  const executionResult: ToolExecutionResult = {
     results,
     tokenUsage,
   };
+
+  // 如果提供了 afterToolExecution 回调，在 workflow context.run 中执行
+  if (context.afterToolExecution && context.workflow) {
+    await context.workflow.run(`after-tool-execution-${context.toolCallId}`, async () => {
+      await context.afterToolExecution!(executionResult, context.workflow!);
+    });
+  }
+
+  return executionResult;
 }

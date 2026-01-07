@@ -8,11 +8,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLLM } from '@/hooks/use-llm';
 import { cn } from '@/lib/utils';
-import { ArrowRight, BookOpen, Bot, Brain, Check, ChevronDown, ChevronUp, Copy, MessageSquareIcon, User } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { BookOpen, Bot, Brain, Check, ChevronDown, ChevronUp, Copy, User } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { ModelIcon } from '../model-icon';
+import { getMessageRenderer } from './message-renderers';
 import { ToolCallCard } from './tool-call-card';
 
 interface ChatMessageProps {
@@ -85,7 +85,6 @@ const ChatMessageComponent = ({
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const { availableModels } = useLLM();
-  const t = useTranslations('chat.messages');
 
   // 根据 modelId 获取模型信息
   const modelInfo = useMemo(() => {
@@ -93,13 +92,13 @@ const ChatMessageComponent = ({
     return availableModels.find(m => m.id === modelId) || null;
   }, [modelId, availableModels]);
 
-  // 解析建议追问
-  const suggestedQuestions = useMemo(() => {
+  // 通用消息解析器：解析定制化消息类型
+  const customMessage = useMemo(() => {
     if (isUser || !content) return null;
     try {
       const parsed = JSON.parse(content);
-      if (parsed.type === 'suggested_questions' && Array.isArray(parsed.questions)) {
-        return parsed.questions as string[];
+      if (parsed && typeof parsed === 'object' && parsed.type) {
+        return parsed;
       }
     } catch (e) {
       // 不是JSON格式，继续正常解析
@@ -109,8 +108,8 @@ const ChatMessageComponent = ({
 
   // 解析多模态内容（支持文本、图片和附件）
   const { thinkingContent, mainContent, attachments } = useMemo(() => {
-    // 如果是建议追问消息，不显示原始内容
-    if (suggestedQuestions) {
+    // 如果是定制化消息，不显示原始内容
+    if (customMessage) {
       return { thinkingContent: null, mainContent: '', attachments: [] };
     }
 
@@ -161,11 +160,10 @@ const ChatMessageComponent = ({
       .trim();
 
     return { thinkingContent: thinking, mainContent: main, attachments: parsedAttachments };
-  }, [content, isUser, suggestedQuestions]);
+  }, [content, isUser, customMessage]);
 
   // 判断是否有特殊内容需要渲染
   const hasToolCalls = useMemo(() => toolCalls && toolCalls.length > 0, [toolCalls]);
-  const hasToolResults = useMemo(() => toolResults && toolResults.length > 0, [toolResults]);
 
   // 复制到剪贴板
   const handleCopy = async () => {
@@ -212,50 +210,27 @@ const ChatMessageComponent = ({
     }
   };
 
-  // 如果是建议追问消息，使用特殊布局（对齐消息气泡，但无头像）
-  // 只有当是最后一条消息时才显示继续追问
-  if (suggestedQuestions && suggestedQuestions.length > 0) {
-    // 如果不是最后一条消息，则不渲染这条消息
-    if (!isLastMessage) {
-      return null;
+  // 如果是定制化消息，使用对应的渲染器
+  if (customMessage && customMessage.type) {
+    const MessageRenderer = getMessageRenderer(customMessage.type);
+    if (MessageRenderer) {
+      return <MessageRenderer data={customMessage} onSendMessage={onSendMessage} isLastMessage={isLastMessage} modelId={modelId} />;
     }
-    // 是最后一条消息，渲染继续追问
-    return (
-      <div className={cn('flex min-w-0 gap-3 px-4', isUser ? 'justify-end' : 'justify-start')}>
-        {/* 占位，保持与assistant消息对齐 */}
-        <div className="h-8 w-8 flex-shrink-0" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="border-border/20 bg-muted/20 max-w-[70%] rounded-lg border px-4 py-3">
-            <div className="text-muted-foreground mb-2 ml-3 text-xs font-medium">{t('suggestedQuestions')}</div>
-            {suggestedQuestions.map((question, index) => (
-              <div
-                key={index}
-                onClick={() => {
-                  if (onSendMessage) {
-                    onSendMessage(question);
-                  }
-                }}
-                className="hover:bg-muted-foreground/10 flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <MessageSquareIcon className="text-muted-foreground h-3 w-3" />
-                  {question}
-                </div>
-                <ArrowRight className="h-3 w-3" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
   }
 
   // 检查是否有任何可显示的内容
   const hasAnyContent = mainContent || thinkingContent || attachments.length > 0 || hasToolCalls;
 
-  // 如果没有任何可显示的内容，则不渲染这条消息
-  if (!hasAnyContent && !isStreaming) {
-    return null;
+  // 如果没有任何可显示的内容，且不是定制化消息
+  // 但如果是最后一条 assistant 消息且还在处理中，仍然显示 Thinking 占位符，不返回 null
+  if (!hasAnyContent && !isStreaming && !customMessage) {
+    // 如果是最后一条 assistant 消息，显示 Thinking 占位符而不是返回 null
+    if (!isUser && isLastMessage) {
+      // 继续执行，会在下面显示 Thinking 占位符
+    } else {
+      // 不是最后一条消息，返回 null
+      return null;
+    }
   }
 
   return (
@@ -394,8 +369,8 @@ const ChatMessageComponent = ({
           </div>
         )}
 
-        {/* 空状态 - 正在思考（仅 assistant 消息且没有内容时显示） */}
-        {!isUser && !mainContent && !hasToolCalls && !thinkingContent && !suggestedQuestions && (
+        {/* 空状态 - 正在思考（仅最后一条 assistant 消息且没有内容时显示） */}
+        {!isUser && !mainContent && !hasToolCalls && !thinkingContent && !customMessage && isLastMessage && (
           <div className="bg-muted max-w-[70%] rounded-lg px-4 py-3">
             <LoadingDots label="Thinking" />
           </div>

@@ -28,6 +28,7 @@ export interface SandboxRuntimeManager {
   create(options?: {
     workspaceRoot?: string;
     costProfile?: SandboxHandle['costProfile'];
+    ports?: number[]; // 要暴露的端口列表（用于 CDP 等服务）
   }): Promise<SandboxHandle>;
 
   /**

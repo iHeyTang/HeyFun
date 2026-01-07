@@ -29,7 +29,8 @@ const REACT_FRAMEWORK_TEMPLATE = `
 继续循环 Think -> Act -> Observe，直到任务完成。
 `.trim();
 
-const REACT_FRAMEWORK_NEXT_STEP = `你现在需要继续执行下一步行动。请根据已经获取的信息，继续执行下一步行动。`;
+// 用于驱动 React 循环的下一轮迭代的系统指令
+const REACT_FRAMEWORK_NEXT_STEP = `继续下一步行动。`;
 
 /**
  * 迭代次数提供者接口
@@ -95,7 +96,7 @@ export abstract class ReactAgent extends BaseAgent {
     if (typeof input === 'string') {
       messages = [...history, { role: 'user', content: input }];
     } else {
-      messages = input;
+      messages = [...history, ...input];
     }
 
     // 调用 BaseAgent 的 chatStream 方法，直接透传
@@ -152,10 +153,16 @@ export abstract class ReactAgent extends BaseAgent {
       const toolName = tool.function?.name;
       if (!toolName) continue;
 
-      const exists = this.dynamicTools.some(t => t.function?.name === toolName);
-      if (!exists) {
+      // 检查是否已经在基础工具列表中
+      const existsInBaseTools = this.config.tools.some(t => t.function?.name === toolName);
+      // 检查是否已经在动态工具列表中
+      const existsInDynamicTools = this.dynamicTools.some(t => t.function?.name === toolName);
+
+      if (!existsInBaseTools && !existsInDynamicTools) {
         this.dynamicTools.push(tool);
         console.log(`[ReactAgent] ✅ 动态添加工具: ${toolName}`);
+      } else {
+        console.log(`[ReactAgent] ⚠️ 工具 ${toolName} 已存在，跳过添加`);
       }
     }
   }

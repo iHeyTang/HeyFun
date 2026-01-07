@@ -12,7 +12,7 @@ export const sandboxReadFileParamsSchema = z.object({
 export type SandboxReadFileParams = z.infer<typeof sandboxReadFileParamsSchema>;
 
 export const sandboxReadFileSchema: ToolDefinition = {
-  name: 'sandbox.read_file',
+  name: 'sandbox_read_file',
   description: '从 sandbox 中读取文件内容。文件路径相对于 workspaceRoot。',
   displayName: {
     en: 'Sandbox Read File',
@@ -27,10 +27,10 @@ export const sandboxReadFileSchema: ToolDefinition = {
   }) as any,
   runtime: ToolRuntime.SERVER,
   category: 'sandbox',
-  manual: `# sandbox.read_file 工具使用手册
+  manual: `# sandbox_read_file 工具使用手册
 
 ## 功能说明
-sandbox.read_file 用于从 sandbox 中读取文件内容。文件路径相对于 workspaceRoot。
+sandbox_read_file 用于从 sandbox 中读取文件内容。文件路径相对于 workspaceRoot。
 
 ## 使用场景
 1. **读取脚本**：读取 Python、JavaScript 等脚本文件

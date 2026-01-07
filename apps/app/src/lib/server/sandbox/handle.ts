@@ -27,6 +27,8 @@ export interface SandboxHandle {
   status: SandboxStatus;
   /** 成本配置 */
   costProfile: SandboxCostProfile;
+  /** 预览 URL 映射（端口 -> previewUrl，用于外部访问，Daytona 等 provider 需要） */
+  previewUrls?: Record<number, string>;
   /** 创建时间（ISO 8601 字符串） */
   createdAt: string;
   /** 最后使用时间（ISO 8601 字符串） */
@@ -43,6 +45,7 @@ export function createSandboxHandle(
     workspaceRoot?: string;
     status?: SandboxStatus;
     costProfile?: SandboxCostProfile;
+    previewUrls?: Record<number, string>;
   } = {},
 ): SandboxHandle {
   const now = new Date().toISOString();
@@ -52,6 +55,7 @@ export function createSandboxHandle(
     workspaceRoot: options.workspaceRoot ?? '/workspace',
     status: options.status ?? 'creating',
     costProfile: options.costProfile ?? 'standard',
+    previewUrls: options.previewUrls,
     createdAt: now,
     lastUsedAt: now,
   };

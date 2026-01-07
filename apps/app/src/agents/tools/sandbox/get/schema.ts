@@ -13,7 +13,7 @@ export const sandboxGetParamsSchema = z.object({
 export type SandboxGetParams = z.infer<typeof sandboxGetParamsSchema>;
 
 export const sandboxGetSchema: ToolDefinition = {
-  name: 'sandbox.get',
+  name: 'sandbox_get',
   description:
     '获取当前会话的 sandbox。如果会话中已有可用的 sandbox，直接返回；如果没有，会自动创建一个新的。这是获取 sandbox 的唯一方式，框架会自动处理复用逻辑。',
   displayName: {
@@ -29,10 +29,10 @@ export const sandboxGetSchema: ToolDefinition = {
   }) as any,
   runtime: ToolRuntime.SERVER,
   category: 'sandbox',
-  manual: `# sandbox.get 工具使用手册
+  manual: `# sandbox_get 工具使用手册
 
 ## 功能说明
-sandbox.get 用于获取当前会话的 sandbox。这是获取 sandbox 的唯一方式：
+sandbox_get 用于获取当前会话的 sandbox。这是获取 sandbox 的唯一方式：
 - **自动复用**：如果会话中已有可用的 sandbox，直接返回现有的（框架会自动处理复用逻辑）
 - **自动创建**：如果没有 sandbox 或 sandbox 已过期，会自动创建一个新的
 
@@ -60,7 +60,7 @@ sandbox.get 用于获取当前会话的 sandbox。这是获取 sandbox 的唯一
 - **status**：Sandbox 状态
 
 ## 使用建议
-1. **直接调用即可**：不需要先检查是否存在，直接调用 sandbox.get，框架会自动处理
+1. **直接调用即可**：不需要先检查是否存在，直接调用 sandbox_get，框架会自动处理
 2. **生命周期管理**：
    - Sandbox 与 session 关联，同一个 session 中的多次调用会复用同一个 sandbox
    - 任务完成后可以调用 sandbox.destroy 释放资源

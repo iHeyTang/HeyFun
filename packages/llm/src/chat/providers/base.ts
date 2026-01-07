@@ -71,12 +71,8 @@ export abstract class BaseProvider {
    */
   async sendRequest(request: HTTPRequest): Promise<HTTPResponse> {
     try {
-    console.log(`[${this.name}] Sending request to: ${request.url}`);
-    if (request.body) {
-      const bodyStr = typeof request.body === 'string' ? request.body : JSON.stringify(request.body);
-      console.log(`[${this.name}] Request body (first 500 chars):`, bodyStr.substring(0, 500));
-    }
-    const response = await fetch(request.url, {
+      console.log(`[${this.name}] Sending request to: ${request.url}`);
+      const response = await fetch(request.url, {
         method: request.method,
         headers: request.headers,
         body: request.body ? JSON.stringify(request.body) : undefined,

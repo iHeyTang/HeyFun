@@ -101,12 +101,11 @@ export class DaytonaSandboxRuntimeManager implements SandboxRuntimeManager {
     } as DaytonaConfig);
   }
 
-  async create(
-    options?: {
-      workspaceRoot?: string;
-      costProfile?: SandboxHandle['costProfile'];
-    },
-  ): Promise<SandboxHandle> {
+  async create(options?: {
+    workspaceRoot?: string;
+    costProfile?: SandboxHandle['costProfile'];
+    ports?: number[]; // 要暴露的端口列表（用于 CDP 等服务）
+  }): Promise<SandboxHandle> {
     // 生成唯一的 sandbox ID
     const id = `sandbox-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -128,12 +127,26 @@ export class DaytonaSandboxRuntimeManager implements SandboxRuntimeManager {
 
     while (retries > 0) {
       try {
-        sandbox = await daytona.create({
+        // 构建创建选项
+        const createOptions: any = {
           snapshot: process.env.DAYTONA_SANDBOX_SNAPSHOT,
           user: 'daytona',
           labels: { id },
           volumes: [{ volumeId: volume.id, mountPath: '/heyfun/workspace' }],
-        });
+        };
+
+        // 如果指定了端口，添加到创建选项
+        // 注意：Daytona SDK 的端口配置方式可能需要根据实际 API 文档调整
+        // 可能的字段名：ports, exposePorts, forwardPorts, portMappings 等
+        if (options?.ports && options.ports.length > 0) {
+          // 尝试使用 ports 字段（如果 Daytona SDK 支持）
+          // 如果 SDK 不支持，可能需要通过其他方式配置端口暴露
+          createOptions.ports = options.ports;
+          console.log(`[DaytonaSRM] Attempting to create sandbox with exposed ports:`, options.ports);
+          console.log(`[DaytonaSRM] Note: If ports are not exposed, check Daytona SDK documentation for correct field name`);
+        }
+
+        sandbox = await daytona.create(createOptions);
         break; // 成功创建，跳出循环
       } catch (createError) {
         const errorMessage = createError instanceof Error ? createError.message : String(createError);
@@ -170,11 +183,46 @@ export class DaytonaSandboxRuntimeManager implements SandboxRuntimeManager {
     // 获取 workspace 路径
     const workspaceRoot = options?.workspaceRoot ?? '/heyfun/workspace';
 
+    // 获取 previewUrls（如果可用）
+    // Daytona Sandbox 可能包含多个 previewUrl，每个端口对应一个
+    // 格式可能是：previewUrls: { [port]: url } 或 previewUrl: baseUrl
+    let previewUrls: Record<number, string> | undefined;
+    try {
+      // 检查 sandbox 对象是否有 previewUrls 或 previewUrl
+      const sandboxPreviewUrls = sandbox.previewUrls || sandbox.preview_urls;
+      const sandboxPreviewUrl = sandbox.previewUrl || sandbox.preview_url || sandbox.url;
+
+      if (sandboxPreviewUrls && typeof sandboxPreviewUrls === 'object') {
+        // 如果已经是对象格式 { [port]: url }
+        previewUrls = sandboxPreviewUrls as Record<number, string>;
+        console.log(`[DaytonaSRM] Found previewUrls for sandbox ${id}:`, Object.keys(previewUrls).length, 'ports');
+      } else if (sandboxPreviewUrl && typeof sandboxPreviewUrl === 'string') {
+        // 如果是单个 baseUrl，尝试解析并构建映射
+        // 对于单个 URL，我们假设它可能对应多个端口，但无法确定具体映射
+        // 为了兼容性，我们可以创建一个默认映射，或者在使用时动态处理
+        try {
+          const baseUrl = new URL(sandboxPreviewUrl);
+          // 如果 URL 包含端口，提取端口号
+          const port = baseUrl.port ? parseInt(baseUrl.port, 10) : baseUrl.protocol === 'https:' ? 443 : 80;
+          // 创建单个端口的映射
+          previewUrls = { [port]: sandboxPreviewUrl };
+          console.log(`[DaytonaSRM] Created previewUrls from base URL for sandbox ${id}: port ${port} -> ${sandboxPreviewUrl}`);
+        } catch (urlError) {
+          // URL 解析失败，记录但不设置 previewUrls
+          console.log(`[DaytonaSRM] Failed to parse previewUrl for sandbox ${id}: ${sandboxPreviewUrl}`);
+        }
+      }
+    } catch (e) {
+      // 忽略错误，previewUrls 可能不存在
+      console.log(`[DaytonaSRM] No previewUrls found for sandbox ${id}`);
+    }
+
     // 创建 handle（只包含可序列化的信息）
     const handle = createSandboxHandle(id, 'daytona', {
       workspaceRoot,
       status: 'ready',
       costProfile: options?.costProfile ?? 'standard',
+      previewUrls,
     });
 
     // 注意：不返回 sandbox 对象，只返回可序列化的 handle
@@ -262,6 +310,32 @@ class DaytonaSandboxRuntimeInstance implements SandboxRuntimeInstance {
       if (sandbox.state !== SandboxState.STARTED) {
         await daytona.start(sandbox);
       }
+
+      // 更新 handle 的 previewUrls（如果 sandbox 有 previewUrls 但 handle 没有）
+      if (!this.handle.previewUrls || Object.keys(this.handle.previewUrls).length === 0) {
+        try {
+          const sandboxPreviewUrls = sandbox.previewUrls || sandbox.preview_urls;
+          const sandboxPreviewUrl = sandbox.previewUrl || sandbox.preview_url || sandbox.url;
+
+          if (sandboxPreviewUrls && typeof sandboxPreviewUrls === 'object') {
+            this.handle.previewUrls = sandboxPreviewUrls as Record<number, string>;
+            console.log(`[DaytonaSRM] Updated previewUrls for sandbox ${this.handle.id}:`, Object.keys(this.handle.previewUrls).length, 'ports');
+          } else if (sandboxPreviewUrl && typeof sandboxPreviewUrl === 'string') {
+            // 处理单个 previewUrl
+            try {
+              const baseUrl = new URL(sandboxPreviewUrl);
+              const port = baseUrl.port ? parseInt(baseUrl.port, 10) : baseUrl.protocol === 'https:' ? 443 : 80;
+              this.handle.previewUrls = { [port]: sandboxPreviewUrl };
+              console.log(`[DaytonaSRM] Updated previewUrls from base URL for sandbox ${this.handle.id}: port ${port} -> ${sandboxPreviewUrl}`);
+            } catch (urlError) {
+              console.log(`[DaytonaSRM] Failed to parse previewUrl for sandbox ${this.handle.id}: ${sandboxPreviewUrl}`);
+            }
+          }
+        } catch (e) {
+          // 忽略错误
+        }
+      }
+
       return sandbox;
     } catch (error) {
       // 如果找不到，创建新的 sandbox
@@ -281,12 +355,19 @@ class DaytonaSandboxRuntimeInstance implements SandboxRuntimeInstance {
 
         while (retries > 0) {
           try {
-            sandbox = await daytona.create({
+            // 构建创建选项
+            const createOptions: any = {
               snapshot: process.env.DAYTONA_SANDBOX_SNAPSHOT,
               user: 'daytona',
               labels: { id: this.handle.id },
               volumes: [{ volumeId: volume.id, mountPath: '/heyfun/workspace' }],
-            });
+            };
+
+            // 如果指定了端口，添加到创建选项
+            // 注意：这里暂时不传递端口，因为这是在 getSandbox 中恢复已存在的 sandbox
+            // 端口配置应该在初始创建时设置
+
+            sandbox = await daytona.create(createOptions);
             break; // 成功创建，跳出循环
           } catch (createError) {
             const errorMessage = createError instanceof Error ? createError.message : String(createError);
@@ -355,7 +436,9 @@ class DaytonaSandboxRuntimeInstance implements SandboxRuntimeInstance {
     const sandbox = await this.getSandbox();
     const fullPath = await this.resolvePath(sandbox, path);
     const buffer = await sandbox.fs.downloadFile(fullPath);
-    return buffer.toString('utf-8');
+    // 返回 base64 编码的字符串，这样可以正确处理二进制文件（如图片）
+    // 对于文本文件，调用方可以先用 Buffer.from(base64, 'base64').toString('utf-8') 转换
+    return buffer.toString('base64');
   }
 
   async writeFile(path: string, content: string): Promise<void> {

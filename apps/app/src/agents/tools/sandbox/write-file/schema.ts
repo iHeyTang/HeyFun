@@ -13,7 +13,7 @@ export const sandboxWriteFileParamsSchema = z.object({
 export type SandboxWriteFileParams = z.infer<typeof sandboxWriteFileParamsSchema>;
 
 export const sandboxWriteFileSchema: ToolDefinition = {
-  name: 'sandbox.write_file',
+  name: 'sandbox_write_file',
   description: '向 sandbox 中写入文件内容。如果文件不存在会创建，如果存在会覆盖。文件路径相对于 workspaceRoot。',
   displayName: {
     en: 'Sandbox Write File',
@@ -28,10 +28,10 @@ export const sandboxWriteFileSchema: ToolDefinition = {
   }) as any,
   runtime: ToolRuntime.SERVER,
   category: 'sandbox',
-  manual: `# sandbox.write_file 工具使用手册
+  manual: `# sandbox_write_file 工具使用手册
 
 ## 功能说明
-sandbox.write_file 用于向 sandbox 中写入文件内容。如果文件不存在会创建，如果存在会覆盖。文件路径相对于 workspaceRoot。
+sandbox_write_file 用于向 sandbox 中写入文件内容。如果文件不存在会创建，如果存在会覆盖。文件路径相对于 workspaceRoot。
 
 ## 使用场景
 1. **创建脚本**：创建 Python、JavaScript 等脚本文件

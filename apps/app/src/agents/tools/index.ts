@@ -10,6 +10,7 @@ import { webSearchToolboxes } from './web-search';
 import { amapToolboxes } from './amap';
 import { sandboxToolboxes } from './sandbox';
 import { presentationToolboxes } from './presentation';
+import { browserToolboxes } from './browser';
 
 /**
  * 全局工具注册表实例
@@ -26,6 +27,7 @@ const allTools: Tool[] = [
   ...amapToolboxes,
   ...sandboxToolboxes,
   ...presentationToolboxes,
+  ...browserToolboxes,
 ].flat();
 
 // 注册所有工具（会自动同步到工具库）
@@ -42,3 +44,4 @@ export { webSearchToolboxes } from './web-search';
 export { amapToolboxes } from './amap';
 export { sandboxToolboxes } from './sandbox';
 export { presentationToolboxes } from './presentation';
+export { browserToolboxes } from './browser';

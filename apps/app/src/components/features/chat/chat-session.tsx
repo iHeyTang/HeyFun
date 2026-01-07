@@ -106,15 +106,38 @@ export function ChatSession({
 
   const fetchMessages = useCallback(async (): Promise<{ status: string; shouldContinue: boolean }> => {
     // 使用 store 封装的 fetchAndUpdateMessages，自动处理状态和标题更新
-    // 这个方法已经会自动更新 store 中的 sessionMessages
-    const result = await fetchAndUpdateMessages({ sessionId, apiPrefix });
+    // 使用倒数第二条消息作为游标，这样既能获取新消息，也能获取最后一条消息的更新
+    const state = useChatMessagesStore.getState();
+    const currentMessages = state.sessionMessages[sessionId] || [];
 
-    // 更新最后一条消息ID
-    if (result.messages.length > 0) {
-      lastMessageIdRef.current = result.messages[result.messages.length - 1]!.id;
+    // 如果有至少 2 条消息，使用倒数第二条消息的 ID 作为游标
+    // 这样可以获取新消息，同时也能获取最后一条消息的更新
+    let cursorMessageId: string | undefined;
+    if (currentMessages.length >= 2) {
+      const secondLastMessage = currentMessages[currentMessages.length - 2];
+      if (secondLastMessage && !secondLastMessage.id.startsWith('temp_')) {
+        cursorMessageId = secondLastMessage.id;
+      }
+    } else if (currentMessages.length === 1) {
+      // 如果只有一条消息，使用第一条消息的前一个位置（不传 cursor，但这样会获取全量）
+      // 实际上如果只有一条消息，我们还是需要获取所有消息以确保更新
+      cursorMessageId = undefined;
     }
+    const result = await fetchAndUpdateMessages({ sessionId, apiPrefix, lastMessageId: cursorMessageId });
 
-    console.log('[ChatSession] 获取消息完成，session 状态:', result.status, '，是否继续轮询:', result.shouldContinue);
+    // 更新最后一条消息ID（用于下次判断）
+    if (result.messages.length > 0) {
+      const newLastMessage = result.messages[result.messages.length - 1];
+      if (newLastMessage) {
+        lastMessageIdRef.current = newLastMessage.id;
+      }
+    } else if (currentMessages.length > 0) {
+      // 如果没有新消息，更新为当前最后一条消息的 ID
+      const currentLastMessage = currentMessages[currentMessages.length - 1];
+      if (currentLastMessage && !currentLastMessage.id.startsWith('temp_')) {
+        lastMessageIdRef.current = currentLastMessage.id;
+      }
+    }
 
     return { status: result.status, shouldContinue: result.shouldContinue };
   }, [apiPrefix, sessionId, fetchAndUpdateMessages]);
@@ -323,6 +346,8 @@ export function ChatSession({
   });
 
   // 判断是否需要显示思考中消息
+  // 注意：只有当最后一条消息是 user 消息时才显示 ThinkingMessage
+  // 如果最后一条消息是空的 assistant 消息，由 ChatMessage 组件自己显示 Thinking 占位符
   const shouldShowThinkingMessage = useMemo(() => {
     if (!isLoading || messages.length === 0) {
       return false;
@@ -330,6 +355,38 @@ export function ChatSession({
     const lastMessage = messages[messages.length - 1];
     // 最后一条消息是 user 消息，且正在加载中
     return lastMessage && lastMessage.role === 'user';
+  }, [messages, isLoading]);
+
+  // 判断是否正在生成建议问题
+  // 当最后一条消息是 assistant 消息且有内容，但不是 suggested_questions 类型，且还在 loading 时
+  const shouldShowGeneratingQuestionsMessage = useMemo(() => {
+    if (!isLoading || messages.length === 0) {
+      return false;
+    }
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage || lastMessage.role !== 'assistant') {
+      return false;
+    }
+
+    // 检查最后一条消息是否有内容
+    const hasContent = lastMessage.content && lastMessage.content.trim().length > 0;
+    if (!hasContent) {
+      return false;
+    }
+
+    // 检查最后一条消息是否是 suggested_questions 类型
+    try {
+      const parsed = JSON.parse(lastMessage.content);
+      if (parsed && typeof parsed === 'object' && parsed.type === 'suggested_questions') {
+        return false; // 已经是 suggested_questions 类型，不需要显示占位符
+      }
+    } catch (e) {
+      // 不是 JSON 格式，说明是普通文本消息，可能正在生成建议问题
+    }
+
+    // 最后一条 assistant 消息有内容，但不是 suggested_questions 类型，且还在 loading
+    // 说明可能正在生成建议问题
+    return true;
   }, [messages, isLoading]);
 
   // 当显示/隐藏思考中消息时也滚动到底部
@@ -394,12 +451,22 @@ export function ChatSession({
               isLastMessage={index === messages.length - 1}
             />
           ))}
-          {shouldShowThinkingMessage && <ThinkingMessage modelId={selectedModel?.id} />}
+          {shouldShowThinkingMessage && <ThinkingMessage modelId={selectedModel?.id} label="思考中" />}
+          {shouldShowGeneratingQuestionsMessage && <ThinkingMessage modelId={selectedModel?.id} label="正在生成建议问题" />}
           <div ref={messagesEndRef} />
         </div>
       </A2UIProvider>
     ),
-    [messages, shouldShowThinkingMessage, selectedModel?.id, sessionId, apiPrefix, handleA2UIEvent, handleSendMessage],
+    [
+      messages,
+      shouldShowThinkingMessage,
+      shouldShowGeneratingQuestionsMessage,
+      selectedModel?.id,
+      sessionId,
+      apiPrefix,
+      handleA2UIEvent,
+      handleSendMessage,
+    ],
   );
 
   const usage = useMemo(() => {

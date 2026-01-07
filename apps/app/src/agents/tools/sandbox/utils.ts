@@ -70,8 +70,14 @@ export async function ensureSandbox(sessionId: string): Promise<SandboxHandle> {
   }
 
   // 不存在或已过期，创建新的 sandbox
+  // 预先暴露一个端口范围（9000-9999），用于 CDP 等服务
+  // 这样可以支持浏览器自动化等需要外部访问的服务
   const srm = getSandboxRuntimeManager();
-  const handle = await srm.create();
+  const handle = await srm.create({
+    ports: [], // 暂时不指定具体端口，让 Daytona 自动处理
+    // 如果需要，可以指定端口范围，例如生成 9000-9999 的所有端口
+    // 但通常 Daytona 会自动暴露所有监听的端口
+  });
 
   // 保存到 state
   await saveSandboxHandleToState(sessionId, handle);

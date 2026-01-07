@@ -15,9 +15,11 @@ interface ChatMessagesState {
 
 interface ChatMessagesActions {
   // 获取并更新消息（自动处理状态和标题更新）
+  // lastMessageId: 可选，如果提供则只获取该消息之后的新消息（游标分页）
   fetchAndUpdateMessages: (params: {
     sessionId: string;
     apiPrefix?: string;
+    lastMessageId?: string;
   }) => Promise<{ status: string; shouldContinue: boolean; messages: ChatMessages[] }>;
   // 设置 session 消息
   setSessionMessages: (sessionId: string, messages: ChatMessages[]) => void;
@@ -91,11 +93,20 @@ export const useChatMessagesStore = create<ChatMessagesStore>()((set, get) => ({
   },
 
   // 获取并更新消息（自动处理状态和标题更新）
-  fetchAndUpdateMessages: async ({ sessionId, apiPrefix = '/api/agent' }) => {
+  // lastMessageId: 可选，如果提供则只获取该消息之后的新消息（游标分页）
+  fetchAndUpdateMessages: async ({ sessionId, apiPrefix = '/api/agent', lastMessageId }) => {
     try {
       const url = new URL(`${apiPrefix}/messages`, window.location.origin);
       url.searchParams.set('sessionId', sessionId);
-      url.searchParams.set('limit', '100');
+
+      // 如果提供了 lastMessageId，使用游标分页（只获取新消息）
+      // 否则获取所有消息（limit 100）
+      if (lastMessageId) {
+        url.searchParams.set('cursor', lastMessageId);
+        url.searchParams.set('limit', '50'); // 轮询时限制获取数量
+      } else {
+        url.searchParams.set('limit', '100'); // 首次加载获取更多消息
+      }
 
       const response = await fetch(url.toString());
       if (!response.ok) {
@@ -120,18 +131,20 @@ export const useChatMessagesStore = create<ChatMessagesStore>()((set, get) => ({
       const processedMessages = get().processMessages(rawMessages);
 
       // 更新消息列表
-      if (processedMessages.length > 0) {
-        const state = get();
-        const existingMessages = state.sessionMessages[sessionId] || [];
+      const state = get();
+      const existingMessages = state.sessionMessages[sessionId] || [];
 
-        // 创建消息映射，以ID为key
+      // 如果使用游标分页（有 lastMessageId），返回的消息都是新消息，直接添加到现有消息后面
+      // 否则，需要合并和去重（首次加载或全量更新）
+      if (lastMessageId && processedMessages.length > 0) {
+        // 游标分页模式：只处理新消息
         const messageMap = new Map<string, ChatMessages>();
+        // 先添加现有消息（包括临时消息）
         existingMessages.forEach(msg => messageMap.set(msg.id, msg));
 
-        // 更新或添加消息
+        // 添加或更新新消息
         processedMessages.forEach((newMsg: ChatMessages) => {
           const existing = messageMap.get(newMsg.id);
-          // 确保 createdAt 是 Date 对象
           const createdAtDate = newMsg.createdAt instanceof Date ? newMsg.createdAt : new Date(newMsg.createdAt);
 
           if (existing) {
@@ -140,10 +153,7 @@ export const useChatMessagesStore = create<ChatMessagesStore>()((set, get) => ({
               ...existing,
               ...newMsg,
               createdAt: createdAtDate,
-              // 如果新消息有 toolResults，更新它
               toolResults: newMsg.toolResults || existing.toolResults,
-              // 如果新消息的 token 字段为 null/undefined，保留现有的 token 值
-              // 这样可以避免在 token 还未更新时，用 null 覆盖已有的 token 值
               inputTokens: newMsg.inputTokens ?? existing.inputTokens,
               outputTokens: newMsg.outputTokens ?? existing.outputTokens,
               cachedInputTokens: newMsg.cachedInputTokens ?? existing.cachedInputTokens,
@@ -151,13 +161,121 @@ export const useChatMessagesStore = create<ChatMessagesStore>()((set, get) => ({
               tokenCount: newMsg.tokenCount ?? existing.tokenCount,
             });
           } else {
-            // 添加新消息
-            messageMap.set(newMsg.id, {
-              ...newMsg,
-              createdAt: createdAtDate,
-            });
+            // 检查是否有对应的临时消息（通过内容和角色匹配）
+            if (newMsg.role === 'user') {
+              let tempMessageFound = false;
+              for (const [tempId, tempMsg] of messageMap.entries()) {
+                if (tempId.startsWith('temp_user_') && tempMsg.role === 'user' && tempMsg.content === newMsg.content) {
+                  // 找到匹配的临时消息，用真实消息替换
+                  messageMap.delete(tempId);
+                  messageMap.set(newMsg.id, {
+                    ...newMsg,
+                    createdAt: createdAtDate,
+                  });
+                  tempMessageFound = true;
+                  break;
+                }
+              }
+              if (!tempMessageFound) {
+                messageMap.set(newMsg.id, {
+                  ...newMsg,
+                  createdAt: createdAtDate,
+                });
+              }
+            } else {
+              messageMap.set(newMsg.id, {
+                ...newMsg,
+                createdAt: createdAtDate,
+              });
+            }
           }
         });
+
+        // 清理所有剩余的临时消息（可能因为某些原因没有被替换）
+        for (const [msgId] of Array.from(messageMap.entries())) {
+          if (msgId.startsWith('temp_')) {
+            messageMap.delete(msgId);
+          }
+        }
+
+        // 转换为数组并按时间排序
+        const sortedMessages = Array.from(messageMap.values()).sort((a, b) => {
+          const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : new Date(a.createdAt).getTime();
+          const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : new Date(b.createdAt).getTime();
+          return timeA - timeB;
+        });
+
+        set(state => ({
+          sessionMessages: {
+            ...state.sessionMessages,
+            [sessionId]: sortedMessages,
+          },
+        }));
+
+        return {
+          status: sessionStatus,
+          shouldContinue: sessionStatus === 'pending' || sessionStatus === 'processing',
+          messages: sortedMessages,
+        };
+      } else if (processedMessages.length > 0) {
+        // 全量更新模式：合并所有消息
+        const messageMap = new Map<string, ChatMessages>();
+        existingMessages.forEach(msg => messageMap.set(msg.id, msg));
+
+        // 更新或添加消息
+        processedMessages.forEach((newMsg: ChatMessages) => {
+          const existing = messageMap.get(newMsg.id);
+          const createdAtDate = newMsg.createdAt instanceof Date ? newMsg.createdAt : new Date(newMsg.createdAt);
+
+          if (existing) {
+            // 更新现有消息（保留 toolResults 等前端状态）
+            messageMap.set(newMsg.id, {
+              ...existing,
+              ...newMsg,
+              createdAt: createdAtDate,
+              toolResults: newMsg.toolResults || existing.toolResults,
+              inputTokens: newMsg.inputTokens ?? existing.inputTokens,
+              outputTokens: newMsg.outputTokens ?? existing.outputTokens,
+              cachedInputTokens: newMsg.cachedInputTokens ?? existing.cachedInputTokens,
+              cachedOutputTokens: newMsg.cachedOutputTokens ?? existing.cachedOutputTokens,
+              tokenCount: newMsg.tokenCount ?? existing.tokenCount,
+            });
+          } else {
+            // 检查是否有对应的临时消息（通过内容和角色匹配）
+            if (newMsg.role === 'user') {
+              let tempMessageFound = false;
+              for (const [tempId, tempMsg] of messageMap.entries()) {
+                if (tempId.startsWith('temp_user_') && tempMsg.role === 'user' && tempMsg.content === newMsg.content) {
+                  messageMap.delete(tempId);
+                  messageMap.set(newMsg.id, {
+                    ...newMsg,
+                    createdAt: createdAtDate,
+                  });
+                  tempMessageFound = true;
+                  break;
+                }
+              }
+              if (!tempMessageFound) {
+                messageMap.set(newMsg.id, {
+                  ...newMsg,
+                  createdAt: createdAtDate,
+                });
+              }
+            } else {
+              messageMap.set(newMsg.id, {
+                ...newMsg,
+                createdAt: createdAtDate,
+              });
+            }
+          }
+        });
+
+        // 清理所有剩余的临时消息
+        for (const [msgId] of Array.from(messageMap.entries())) {
+          if (msgId.startsWith('temp_')) {
+            messageMap.delete(msgId);
+          }
+        }
 
         // 转换为数组并按时间排序
         const sortedMessages = Array.from(messageMap.values()).sort((a, b) => {
@@ -184,12 +302,12 @@ export const useChatMessagesStore = create<ChatMessagesStore>()((set, get) => ({
       const shouldContinue = sessionStatus === 'pending' || sessionStatus === 'processing';
 
       // 如果没有新消息，返回现有的消息
-      const existingMessages = get().sessionMessages[sessionId] || [];
+      const currentMessages = get().sessionMessages[sessionId] || [];
 
       return {
         status: sessionStatus,
         shouldContinue,
-        messages: existingMessages,
+        messages: currentMessages,
       };
     } catch (error) {
       console.error('[ChatMessages] 获取消息失败:', error);
@@ -214,12 +332,22 @@ export const useChatMessagesStore = create<ChatMessagesStore>()((set, get) => ({
 
   // 添加消息到 session
   addMessageToSession: (sessionId, message) => {
-    set(state => ({
-      sessionMessages: {
-        ...state.sessionMessages,
-        [sessionId]: [...(state.sessionMessages[sessionId] || []), message],
-      },
-    }));
+    set(state => {
+      const existingMessages = state.sessionMessages[sessionId] || [];
+      const newMessages = [...existingMessages, message];
+      // 按时间排序，确保消息顺序正确
+      const sortedMessages = newMessages.sort((a, b) => {
+        const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : new Date(a.createdAt).getTime();
+        const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : new Date(b.createdAt).getTime();
+        return timeA - timeB;
+      });
+      return {
+        sessionMessages: {
+          ...state.sessionMessages,
+          [sessionId]: sortedMessages,
+        },
+      };
+    });
   },
 
   // 清空 session 消息

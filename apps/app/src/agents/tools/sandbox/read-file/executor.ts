@@ -21,9 +21,27 @@ export const sandboxReadFileExecutor = definitionToolExecutor(sandboxReadFilePar
       const handle = await ensureSandbox(context.sessionId);
 
       // 读取文件（底层框架会自动恢复依赖）
+      // 注意：readFile 返回 base64 编码的字符串，需要转换为 UTF-8（对于文本文件）
       const srm = getSandboxRuntimeManager();
       const instance = await srm.get(handle);
-      const content = await srm.readFile(handle, path);
+      const contentBase64 = await srm.readFile(handle, path);
+
+      // 尝试将 base64 转换为 UTF-8 文本
+      // 如果转换失败（二进制文件），则返回 base64 字符串
+      let content: string;
+      try {
+        const buffer = Buffer.from(contentBase64, 'base64');
+        // 尝试检测是否为文本文件（检查是否包含无效的 UTF-8 序列）
+        content = buffer.toString('utf-8');
+        // 如果转换后的内容包含替换字符（），可能是二进制文件
+        if (content.includes('\ufffd')) {
+          // 可能是二进制文件，返回 base64
+          content = contentBase64;
+        }
+      } catch (e) {
+        // 转换失败，返回 base64
+        content = contentBase64;
+      }
 
       // 更新 handle 的最后使用时间并保存
       const updatedHandle = updateSandboxHandleLastUsed(instance.handle);

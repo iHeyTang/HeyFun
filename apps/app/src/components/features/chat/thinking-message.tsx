@@ -11,7 +11,7 @@ import { ModelIcon } from '../model-icon';
  * ThinkingMessage 组件
  * 显示"思考中..."的加载状态消息，带有脉冲动画和跳跃加载点
  */
-export function ThinkingMessage({ modelId }: { modelId?: string }) {
+export function ThinkingMessage({ modelId, label = 'Thinking' }: { modelId?: string; label?: string }) {
   const { availableModels } = useLLM();
 
   // 根据 modelId 获取模型信息
@@ -34,7 +34,7 @@ export function ThinkingMessage({ modelId }: { modelId?: string }) {
 
         {/* 思考中消息内容 */}
         <div className="bg-muted max-w-[70%] rounded-lg px-4 py-3">
-          <LoadingDots label="Thinking" />
+          <LoadingDots label={label} />
         </div>
       </div>
     </div>

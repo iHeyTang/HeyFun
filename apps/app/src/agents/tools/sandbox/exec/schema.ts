@@ -14,7 +14,7 @@ export const sandboxExecParamsSchema = z.object({
 export type SandboxExecParams = z.infer<typeof sandboxExecParamsSchema>;
 
 export const sandboxExecSchema: ToolDefinition = {
-  name: 'sandbox.exec',
+  name: 'sandbox_exec',
   description: '在 sandbox 中执行 shell 命令。命令会在隔离的环境中运行，返回执行结果（退出码、标准输出、标准错误）。',
   displayName: {
     en: 'Sandbox Command',
@@ -29,10 +29,10 @@ export const sandboxExecSchema: ToolDefinition = {
   }) as any,
   runtime: ToolRuntime.SERVER,
   category: 'sandbox',
-  manual: `# sandbox.exec 工具使用手册
+  manual: `# sandbox_exec 工具使用手册
 
 ## 功能说明
-sandbox.exec 用于在 sandbox 环境中执行 shell 命令。命令会在隔离的环境中运行，可以执行任何 shell 支持的命令。
+sandbox_exec 用于在 sandbox 环境中执行 shell 命令。命令会在隔离的环境中运行，可以执行任何 shell 支持的命令。
 
 ## 使用场景
 1. **运行脚本**：执行 Python、Node.js、Bash 等脚本
@@ -60,7 +60,8 @@ sandbox.exec 用于在 sandbox 环境中执行 shell 命令。命令会在隔离
 1. 执行命令前会自动使用当前会话的 sandbox（框架自动管理）
 2. 对于长时间运行的命令，建议设置 timeout
 3. 使用环境变量传递配置信息
-4. 检查 exitCode 判断命令是否成功执行`,
+4. 检查 exitCode 判断命令是否成功执行
+5. 需要安装依赖时使用 sandbox_exec 执行安装命令`,
   returnSchema: {
     type: 'object',
     properties: {

@@ -33,5 +33,5 @@ export function getPromptBlocks(): SystemPromptBlock[] {
     currentTimeISO: now.toISOString(),
     currentTimeLocale: formatTime(now),
   });
-  return [createPresetBlock('general-agent', content, { title: 'General Agent 系统提示词' })];
+  return [createPresetBlock('general-agent', content, { title: '系统提示词' })];
 }

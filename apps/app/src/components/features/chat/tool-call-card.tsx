@@ -13,6 +13,9 @@ import { AigcModelsResult } from './tool-renderers/aigc-models-result';
 import { InitializeAgentResult } from './tool-renderers/initialize-agent-result';
 import { PresentationResult } from './tool-renderers/presentation-result';
 import { ImageSearchResult } from './tool-renderers/image-search-result';
+import { BrowserNavigateResult } from './tool-renderers/browser-navigate-result';
+import { BrowserClickResult } from './tool-renderers/browser-click-result';
+import { BrowserExtractContentResult } from './tool-renderers/browser-extract-content-result';
 import { useBuiltinTools } from '@/hooks/use-builtin-tools';
 
 interface ToolCallCardProps {
@@ -71,6 +74,9 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
       get_aigc_models: AigcModelsResult,
       initialize_agent: InitializeAgentResult,
       generate_presentation: PresentationResult,
+      browser_navigate: BrowserNavigateResult,
+      browser_click: BrowserClickResult,
+      browser_extract_content: BrowserExtractContentResult,
     };
     return renderers[toolName];
   };
@@ -209,7 +215,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
         return (
           <div
             key={toolCall.id}
-            className="border-border/20 bg-muted/30 hover:border-border/40 hover:bg-muted/50 group w-full min-w-0 rounded-md border transition-all"
+            className="border-border/20 bg-muted/30 hover:border-border/40 hover:bg-muted/50 group w-fit min-w-0 rounded-md border transition-all"
           >
             <div className="group flex cursor-pointer items-center gap-2 px-2.5 py-1.5" onClick={() => toggleExpand(toolCall.id)}>
               <Wrench className="text-muted-foreground h-3 w-3 opacity-60" />
