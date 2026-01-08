@@ -145,7 +145,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
     const infoFilePath = browserScriptPath.replace('.py', '.json');
 
     // 写入浏览器启动脚本
-    await srm.writeFile(sandboxHandle, browserScriptPath, browserLauncherScript);
+    await srm.writeFile(sandboxHandle, browserScriptPath, browserLauncherScript());
 
     // 在后台启动浏览器（使用 nohup 或类似方式）
     const configJson = JSON.stringify({
@@ -253,7 +253,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
       const checkResult = await this.execPythonScript(
         srm,
         sandboxHandle,
-        checkBrowserScript,
+        checkBrowserScript(),
         {
           debugPort,
           browserId,
@@ -369,7 +369,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
       const result = await this.execPythonScript(
         srm,
         sandboxHandle,
-        navigateScript,
+        navigateScript(),
         {
           wsEndpoint: handle.wsEndpoint,
           stateFilePath: handle.stateFilePath,
@@ -454,7 +454,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
       const result = await this.execPythonScript(
         srm,
         sandboxHandle,
-        clickScript,
+        clickScript(),
         {
           wsEndpoint: handle.wsEndpoint,
           stateFilePath: handle.stateFilePath,
@@ -508,7 +508,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
       const result = await this.execPythonScript(
         srm,
         sandboxHandle,
-        clickAtScript,
+        clickAtScript(),
         {
           wsEndpoint: handle.wsEndpoint,
           stateFilePath: handle.stateFilePath,
@@ -560,7 +560,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
       const result = await this.execPythonScript(
         srm,
         sandboxHandle,
-        scrollScript,
+        scrollScript(),
         {
           wsEndpoint: handle.wsEndpoint,
           stateFilePath: handle.stateFilePath,
@@ -617,7 +617,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
       const result = await this.execPythonScript(
         srm,
         sandboxHandle,
-        typeScript,
+        typeScript(),
         {
           wsEndpoint: handle.wsEndpoint,
           stateFilePath: handle.stateFilePath,
@@ -675,7 +675,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
       const result = await this.execPythonScript(
         srm,
         sandboxHandle,
-        extractContentScript,
+        extractContentScript(),
         {
           wsEndpoint: handle.wsEndpoint,
           stateFilePath: handle.stateFilePath,
@@ -757,7 +757,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
       const result = await this.execPythonScript(
         srm,
         sandboxHandle,
-        screenshotScript,
+        screenshotScript(),
         {
           wsEndpoint: handle.wsEndpoint, // 传递 WebSocket endpoint，连接到已存在的浏览器
           stateFilePath: handle.stateFilePath,
@@ -833,7 +833,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
       const result = await this.execPythonScript(
         srm,
         sandboxHandle,
-        downloadScript,
+        downloadScript(),
         {
           wsEndpoint: handle.wsEndpoint,
           stateFilePath: handle.stateFilePath,
