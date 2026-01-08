@@ -1,15 +1,28 @@
 ![HeyFun](https://socialify.git.ci/iHeyTang/HeyFun/image?description=1&font=Inter&forks=1&issues=1&logo=https%3A%2F%2Fheyfun.ai%2Flogo.png&name=1&owner=1&pattern=Signal&pulls=1&stargazers=1&theme=Auto)
 
-<div style="max-width:1000px">
-  <h5>FlowCanvas</h5>
-  <img src="assets/screenshots/flowcanvas.png" style="border-radius:16px" alt="screenshots/tasks.png">
-  <h5>Paintboard</h5>
-  <img src="assets/screenshots/paintboard.png" style="border-radius:16px" alt="screenshots/paintboard.png">
-  <h5>Chat bot</h5>
-  <img src="assets/screenshots/tasks.png" style="border-radius:16px" alt="screenshots/tasks.png">
-  <h5>Settings</h5>
-  <img src="assets/screenshots/settings-models.png" style="border-radius:16px"  alt="screenshots/settings-models.png">
-</div>
+## 项目特点
+
+HeyFun 是一个全领域通用人工智能助手，致力于成为 AI 时代的全能伙伴。无论你是需要日常辅助、专业工作支持，还是想要构建自定义智能体，HeyFun 都能提供强大而灵活的能力。
+
+### 一个助手，覆盖全领域
+
+- **通用智能助手**：无需在不同工具间切换，一个助手即可处理信息查询、内容创作、任务规划、代码开发等各类需求
+- **自动专业转换**：助手会根据你的任务需求，智能转换为对应领域的专业助手，提供更精准的专业支持
+- **全场景覆盖**：从日常的天气查询、网页浏览，到专业的内容生成、代码执行、数据分析，再到复杂的工作流编排，一应俱全
+
+### 丰富的原生能力
+
+- **内容创作**：支持图片、视频、音频、音乐的生成，以及演示文稿的自动创建
+- **信息获取**：网络搜索、图片搜索、百科查询，快速获取所需信息
+- **自动化操作**：浏览器自动化能力，可帮你浏览网页、提取内容、下载资源
+- **沙箱代码执行**：隔离安全的代码执行环境，支持 Python、Node.js 等脚本运行，文件和数据持久化保存
+
+### 灵活的能力扩展
+
+- **提示词动态构建**：根据任务需求，自动检索相关知识片段并生成针对性的工作指导，让助手以最适合的方式完成任务
+- **工具动态发现**：助手能够根据任务需求，自动发现和调用工具库中的相关工具
+- **MCP 协议集成**：支持集成符合 MCP 标准的工具和服务，轻松扩展功能边界
+- **个性化定制**：开发者可以快速构建和验证垂类 AI Agent，打造专属的智能助手
 
 ## 项目愿景
 

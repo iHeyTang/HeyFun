@@ -19,9 +19,9 @@ const nextConfig: NextConfig = {
     };
 
     // 支持导入 .template.md 文件作为原始字符串
+    // 支持两种方式：直接导入和 ?raw 查询参数
     config.module.rules.push({
       test: /\.template\.md$/,
-      resourceQuery: /raw/,
       type: 'asset/source', // 使用 asset/source 类型，将文件内容作为字符串导入
     });
 
@@ -30,7 +30,6 @@ const nextConfig: NextConfig = {
     // 注意：这个规则需要在其他规则之前，确保优先匹配
     config.module.rules.unshift({
       test: /\.py$/,
-      resourceQuery: /raw/,
       type: 'asset/source', // 使用 asset/source 类型，将文件内容作为字符串导入
     });
 
