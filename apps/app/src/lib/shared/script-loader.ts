@@ -58,4 +58,3 @@ export function createScriptLoader(importMetaUrl: string) {
     return loadScriptFile(importMetaUrl, filename);
   };
 }
-

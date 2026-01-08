@@ -59,3 +59,62 @@ export const updatePreferences = withUserAuth('settings/updatePreferences', asyn
     });
   }
 });
+
+export const getEnvironmentVariables = withUserAuth('settings/getEnvironmentVariables', async ({ orgId }: AuthWrapperContext<{}>) => {
+  const envVars = await prisma.environmentVariables.findUnique({
+    where: { organizationId: orgId },
+  });
+
+  if (!envVars) {
+    // 如果不存在，返回空对象
+    return { variables: {} };
+  }
+
+  return { variables: envVars.variables || {} };
+});
+
+export type UpdateEnvironmentVariablesArgs = {
+  variables: Record<string, string>;
+};
+
+export const updateEnvironmentVariables = withUserAuth(
+  'settings/updateEnvironmentVariables',
+  async ({ orgId, args }: AuthWrapperContext<UpdateEnvironmentVariablesArgs>) => {
+    const existing = await prisma.environmentVariables.findUnique({
+      where: { organizationId: orgId },
+    });
+
+    if (!existing) {
+      await prisma.environmentVariables.create({
+        data: {
+          organizationId: orgId,
+          variables: args.variables,
+        },
+      });
+    } else {
+      await prisma.environmentVariables.update({
+        where: { organizationId: orgId },
+        data: {
+          variables: args.variables,
+        },
+      });
+    }
+  },
+);
+
+// 获取单个环境变量的值（供工具使用）
+export const getEnvironmentVariable = withUserAuth(
+  'settings/getEnvironmentVariable',
+  async ({ orgId, args }: AuthWrapperContext<{ key: string }>) => {
+    const envVars = await prisma.environmentVariables.findUnique({
+      where: { organizationId: orgId },
+    });
+
+    if (!envVars || !envVars.variables || typeof envVars.variables !== 'object') {
+      return null;
+    }
+
+    const variables = envVars.variables as Record<string, any>;
+    return variables[args.key] || null;
+  },
+);

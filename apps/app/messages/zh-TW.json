@@ -333,7 +333,31 @@
       "aigc": "畫板",
       "agents": "智慧體",
       "voices": "音色",
-      "preferences": "偏好設定"
+      "gateway": "AI 網關",
+      "preferences": "偏好設定",
+      "environmentVariables": "環境變數"
+    },
+    "environmentVariables": {
+      "title": "環境變數",
+      "description": "管理組織級別的環境變數配置，用於工具和 Agent 腳本中",
+      "loading": "載入中...",
+      "form": {
+        "key": "變數名",
+        "keyPlaceholder": "例如：AMAP_API_KEY",
+        "value": "變數值",
+        "valuePlaceholder": "輸入變數值",
+        "addNew": "新增環境變數"
+      },
+      "actions": {
+        "add": "新增",
+        "save": "儲存",
+        "saving": "儲存中...",
+        "delete": "刪除"
+      },
+      "toast": {
+        "updateSuccess": "環境變數已更新",
+        "updateError": "更新環境變數失敗"
+      }
     }
   },
   "paintboard": {

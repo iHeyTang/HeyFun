@@ -2,7 +2,7 @@ import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { toolRegistry } from '@/agents/tools';
 import { WorkflowContext } from '@upstash/workflow';
 import CHAT, { UnifiedChat, ChatClient, ModelInfo } from '@repo/llm/chat';
-import { createDynamicSystemPromptManager, createToolManager } from '@/agents/tools/context';
+import { createDynamicSystemPromptManager, createToolManager, createCompletionManager } from '@/agents/tools/context';
 import { ReactAgent } from '@/agents/core/frameworks/react';
 import { getAgentInstance } from '..';
 
@@ -55,6 +55,9 @@ export async function executeTools(toolCalls: UnifiedChat.ToolCall[], context: T
   const agentInstance = getAgentInstance(context.agentId) as unknown as ReactAgent;
   const toolManager = createToolManager(context.sessionId, agentInstance);
 
+  // 为工具创建完结管理器
+  const completion = createCompletionManager(context.sessionId);
+
   CHAT.setModels(context.allModels);
   const llmClient = CHAT.createClient(context.modelId);
 
@@ -83,6 +86,7 @@ export async function executeTools(toolCalls: UnifiedChat.ToolCall[], context: T
         dynamicSystemPrompt,
         toolManager,
         builtinToolNames: context.builtinToolNames,
+        completion,
       });
     } else {
       // 工具未找到

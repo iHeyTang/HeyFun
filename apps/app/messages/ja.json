@@ -333,7 +333,31 @@
       "aigc": "ペイントボード",
       "agents": "エージェント",
       "voices": "音声",
-      "preferences": "設定"
+      "gateway": "AI ゲートウェイ",
+      "preferences": "設定",
+      "environmentVariables": "環境変数"
+    },
+    "environmentVariables": {
+      "title": "環境変数",
+      "description": "ツールとエージェントスクリプト用の組織レベルの環境変数設定を管理",
+      "loading": "読み込み中...",
+      "form": {
+        "key": "変数名",
+        "keyPlaceholder": "例：AMAP_API_KEY",
+        "value": "変数値",
+        "valuePlaceholder": "変数値を入力",
+        "addNew": "新しい環境変数を追加"
+      },
+      "actions": {
+        "add": "追加",
+        "save": "保存",
+        "saving": "保存中...",
+        "delete": "削除"
+      },
+      "toast": {
+        "updateSuccess": "環境変数が更新されました",
+        "updateError": "環境変数の更新に失敗しました"
+      }
     }
   },
   "paintboard": {

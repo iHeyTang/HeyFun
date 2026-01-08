@@ -45,6 +45,48 @@ export interface ToolManager {
 }
 
 /**
+ * 完结类型
+ */
+export type CompletionType = 'complete' | 'configure_environment_variable' | string;
+
+/**
+ * 完结信息
+ */
+export interface CompletionInfo {
+  /** 完结类型 */
+  type: CompletionType;
+  /** 触发完结的工具名称 */
+  toolName: string;
+  /** 自定义参数，用于传递给前端渲染 */
+  params?: Record<string, any>;
+}
+
+/**
+ * 完结管理器
+ * 用于工具设置 workflow 完结状态
+ */
+export interface CompletionManager {
+  /**
+   * 设置 workflow 完结状态
+   * @param type 完结类型
+   * @param toolName 触发完结的工具名称
+   * @param params 自定义参数，用于传递给前端渲染
+   */
+  setCompletion(type: CompletionType, toolName: string, params?: Record<string, any>): void;
+
+  /**
+   * 获取当前完结信息
+   * @returns 完结信息，如果未设置则返回 undefined
+   */
+  getCompletion(): CompletionInfo | undefined;
+
+  /**
+   * 清除完结状态
+   */
+  clearCompletion(): void;
+}
+
+/**
  * 全局动态系统提示词片段存储
  * key: sessionId, value: 动态系统提示词片段内容
  */
@@ -123,6 +165,46 @@ export function getSessionToolManager(sessionId: string): ToolManager | undefine
 }
 
 /**
+ * 全局完结信息存储
+ * key: sessionId, value: 完结信息
+ */
+const completionStore = new Map<string, CompletionInfo>();
+
+/**
+ * 创建完结管理器实现
+ * 使用内存存储，在同一进程内共享
+ */
+export function createCompletionManager(sessionId: string): CompletionManager {
+  return {
+    setCompletion(type: CompletionType, toolName: string, params?: Record<string, any>): void {
+      completionStore.set(sessionId, { type, toolName, params });
+    },
+
+    getCompletion(): CompletionInfo | undefined {
+      return completionStore.get(sessionId);
+    },
+
+    clearCompletion(): void {
+      completionStore.delete(sessionId);
+    },
+  };
+}
+
+/**
+ * 获取会话的完结信息（全局函数，供外部使用）
+ */
+export function getSessionCompletion(sessionId: string): CompletionInfo | undefined {
+  return completionStore.get(sessionId);
+}
+
+/**
+ * 清除会话的完结信息（全局函数，供外部使用）
+ */
+export function clearSessionCompletion(sessionId: string): void {
+  completionStore.delete(sessionId);
+}
+
+/**
  * 通用工具执行上下文
  * 所有工具都使用这个统一的上下文
  */
@@ -147,4 +229,6 @@ export interface ToolContext {
   toolManager?: ToolManager;
   /** 内置工具名称列表（不参与动态检索） */
   builtinToolNames?: string[];
+  /** 完结管理器，用于工具设置 workflow 完结状态 */
+  completion?: CompletionManager;
 }

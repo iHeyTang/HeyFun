@@ -51,6 +51,15 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
           >
             {t('preferences')}
           </Link>
+          <Link
+            href="/dashboard/settings/environment-variables"
+            className={cn(
+              'hover:bg-muted cursor-pointer p-2 text-sm transition-colors',
+              pathname === '/dashboard/settings/environment-variables' && 'bg-muted',
+            )}
+          >
+            {t('environmentVariables')}
+          </Link>
 
           {/* Footer */}
           <div className="mt-auto p-2">

@@ -214,7 +214,16 @@ const ChatMessageComponent = ({
   if (customMessage && customMessage.type) {
     const MessageRenderer = getMessageRenderer(customMessage.type);
     if (MessageRenderer) {
-      return <MessageRenderer data={customMessage} onSendMessage={onSendMessage} isLastMessage={isLastMessage} modelId={modelId} />;
+      // 传递 sessionId 给需要它的渲染器（如环境变量表单渲染器）
+      return (
+        <MessageRenderer
+          data={customMessage}
+          onSendMessage={onSendMessage}
+          isLastMessage={isLastMessage}
+          modelId={modelId}
+          {...(customMessage.type === 'environment_variable_form' && { sessionId })}
+        />
+      );
     }
   }
 

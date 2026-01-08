@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Bot, Flower, Network, Palette, SettingsIcon, FileText, Code } from 'lucide-react';
+import { Bot, Flower, Network, Palette, SettingsIcon, FileText, Code, Box } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -58,11 +58,11 @@ const useBottomNavItems = () => {
   const t = useTranslations('dashboard.sidebar');
 
   return [
-    // {
-    //   icon: BoxIcon,
-    //   label: t('tools'),
-    //   path: '/dashboard/tools',
-    // },
+    {
+      icon: Box,
+      label: t('tools'),
+      path: '/dashboard/tools',
+    },
     {
       icon: Network,
       label: t('gateway'),

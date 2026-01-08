@@ -986,3 +986,20 @@ model Assets {
   @@index([toolCallId])
   @@index([messageId])
 }
+
+// ============================================
+// Environment Variables Module - 环境变量模块
+// ============================================
+
+// 环境变量配置表：存储租户级别的环境变量配置
+model EnvironmentVariables {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String   @unique
+  /// [JSONSchema] 环境变量配置，JSON 格式存储，例如：{ "AMAP_API_KEY": "xxx", "FEISHU_API_KEY": "xxx" }
+  variables      Json     @default("{}")
+
+  @@index([organizationId])
+  @@index([createdAt])
+}

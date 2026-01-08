@@ -1,12 +1,11 @@
 'use client';
 import { listAgentTools, listToolSchemas } from '@/actions/tools';
-import { Sparkles, Search, Filter, Star, Download, ExternalLink, Tag, Plus } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useRef, useState, useMemo } from 'react';
 import { ToolInfoDialog, ToolInfoDialogRef } from './_components/tool-info-dialog';
+import { ToolCard } from './_components/tool-card';
 import { useServerAction } from '@/hooks/use-async';
 import { ToolSchemas } from '@prisma/client';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslations } from 'next-intl';
@@ -42,7 +41,17 @@ export default function MarketplacePage() {
 
     if (statusFilter !== 'all') {
       filtered = filtered.filter(tool => {
-        const isInstalled = installedTools.some(installed => installed.schema.id === tool.id);
+        const isInstalled = installedTools.some(installed => {
+          // 通过 schema.id 匹配
+          if (installed.schema?.id === tool.id) {
+            return true;
+          }
+          // 通过 name 匹配
+          if (installed.name === tool.name) {
+            return true;
+          }
+          return false;
+        });
         return statusFilter === 'installed' ? isInstalled : !isInstalled;
       });
     }
@@ -80,12 +89,22 @@ export default function MarketplacePage() {
       </div>
 
       {/* Available Tools Section */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {filteredTools.map(tool => (
-          <ToolItem
+          <ToolCard
             key={tool.name}
             tool={tool}
-            installed={installedTools.some(installed => installed.schema.id === tool.id)}
+            installed={installedTools.some(installed => {
+              // 通过 schema.id 匹配
+              if (installed.schema?.id === tool.id) {
+                return true;
+              }
+              // 通过 name 匹配
+              if (installed.name === tool.name) {
+                return true;
+              }
+              return false;
+            })}
             onShowInfo={() => toolInfoDialogRef.current?.showInfo(tool)}
             t={t}
           />
@@ -104,75 +123,3 @@ export default function MarketplacePage() {
     </div>
   );
 }
-
-const ToolItem = ({ tool, installed, onShowInfo, t }: { tool: ToolSchemas; installed: boolean; onShowInfo: () => void; t: any }) => {
-  const tags = Array.isArray(tool.tags) ? tool.tags.filter((tag): tag is string => typeof tag === 'string') : [];
-  const capabilities = Array.isArray(tool.capabilities) ? tool.capabilities.filter((cap): cap is string => typeof cap === 'string') : [];
-
-  return (
-    <div
-      className="bg-muted border-muted hover:border-border-secondary flex cursor-pointer flex-col gap-3 rounded-lg border p-2 transition-all hover:shadow-md"
-      onClick={onShowInfo}
-    >
-      {/* Header with logo and status */}
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0">
-          {tool.logoUrl ? (
-            <img src={tool.logoUrl} alt={`${tool.name} logo`} className="h-10 w-10 rounded object-cover" />
-          ) : (
-            <div className="from-primary/20 to-primary/5 flex h-10 w-10 items-center justify-center rounded bg-gradient-to-br text-sm font-medium text-white">
-              {tool.name.charAt(0).toUpperCase()}
-            </div>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between">
-            <span className="text-primary line-clamp-1 text-sm font-semibold">{tool.name}</span>
-            {installed && (
-              <Badge variant="secondary" className="bg-badge-green shrink-0 text-xs">
-                {t('badge.installed')}
-              </Badge>
-            )}
-          </div>
-          {tool.author && (
-            <p className="mt-0.5 text-xs">
-              {t('item.by')} {tool.author}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Description */}
-      <p className="text-muted-foreground line-clamp-2 h-9 text-xs leading-relaxed">{tool.description}</p>
-
-      {/* Footer stats */}
-      <div className="border-border flex h-8 w-full items-center justify-between overflow-hidden border-t pt-2">
-        <div className="flex items-center gap-3 text-xs">
-          {tool.stars && (
-            <Badge className="bg-badge-amber text-badge-amber flex items-center gap-1">
-              <Star className="h-3 w-3" />
-              {tool.stars > 1000 ? `${(tool.stars / 1000).toFixed(1)}k` : tool.stars}
-            </Badge>
-          )}
-          {tool.downloads && (
-            <Badge className="bg-badge-blue text-badge-blue flex items-center gap-1">
-              <Download className="h-3 w-3" />
-              {tool.downloads > 1000 ? `${(tool.downloads / 1000).toFixed(1)}k` : tool.downloads}
-            </Badge>
-          )}
-          {tool.version && <Badge className="bg-badge-blue text-badge-blue font-medium">v{tool.version}</Badge>}
-          {tags.length > 0 && (
-            <div className="flex w-full gap-1 overflow-hidden whitespace-nowrap">
-              {tags.slice(0, 3).map((tag: string, index: number) => (
-                <span key={index} className="bg-secondary inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs">
-                  <Tag className="h-3 w-3" />
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};

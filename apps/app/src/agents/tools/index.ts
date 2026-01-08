@@ -11,6 +11,7 @@ import { amapToolboxes } from './amap';
 import { sandboxToolboxes } from './sandbox';
 import { presentationToolboxes } from './presentation';
 import { browserToolboxes } from './browser';
+import { douyinToolboxes } from './douyin';
 
 /**
  * 全局工具注册表实例
@@ -28,6 +29,7 @@ const allTools: Tool[] = [
   ...sandboxToolboxes,
   ...presentationToolboxes,
   ...browserToolboxes,
+  ...douyinToolboxes,
 ].flat();
 
 // 注册所有工具（会自动同步到工具库）
@@ -45,3 +47,4 @@ export { amapToolboxes } from './amap';
 export { sandboxToolboxes } from './sandbox';
 export { presentationToolboxes } from './presentation';
 export { browserToolboxes } from './browser';
+export { douyinToolboxes } from './douyin';

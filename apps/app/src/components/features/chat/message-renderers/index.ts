@@ -4,6 +4,7 @@
  */
 
 import { SuggestedQuestionsRenderer } from './suggested-questions-renderer';
+import { EnvironmentVariableFormRenderer } from './environment-variable-form-renderer';
 import type { MessageRenderer } from './types';
 
 /**
@@ -11,6 +12,7 @@ import type { MessageRenderer } from './types';
  */
 const messageRenderers: Record<string, MessageRenderer> = {
   suggested_questions: SuggestedQuestionsRenderer,
+  environment_variable_form: EnvironmentVariableFormRenderer,
 };
 
 /**
@@ -40,5 +42,5 @@ export function getRegisteredMessageTypes(): string[] {
 
 // 导出所有渲染器，方便直接使用
 export { SuggestedQuestionsRenderer } from './suggested-questions-renderer';
+export { EnvironmentVariableFormRenderer } from './environment-variable-form-renderer';
 export type { MessageRendererProps, CustomMessageData } from './types';
-

@@ -333,7 +333,31 @@
       "aigc": "Paintboard",
       "agents": "Agents",
       "voices": "Voices",
-      "preferences": "Preferences"
+      "gateway": "AI Gateway",
+      "preferences": "Preferences",
+      "environmentVariables": "Environment Variables"
+    },
+    "environmentVariables": {
+      "title": "Environment Variables",
+      "description": "Manage organization-level environment variable configurations for tools and agent scripts",
+      "loading": "Loading...",
+      "form": {
+        "key": "Variable Name",
+        "keyPlaceholder": "e.g., AMAP_API_KEY",
+        "value": "Variable Value",
+        "valuePlaceholder": "Enter variable value",
+        "addNew": "Add New Environment Variable"
+      },
+      "actions": {
+        "add": "Add",
+        "save": "Save",
+        "saving": "Saving...",
+        "delete": "Delete"
+      },
+      "toast": {
+        "updateSuccess": "Environment variables updated",
+        "updateError": "Failed to update environment variables"
+      }
     }
   },
   "paintboard": {

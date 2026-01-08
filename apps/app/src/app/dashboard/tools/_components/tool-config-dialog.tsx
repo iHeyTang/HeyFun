@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ToolSchemas } from '@prisma/client';
 import { JSONSchema } from 'json-schema-to-ts';
@@ -10,6 +11,7 @@ import { forwardRef, useImperativeHandle, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
+import { cn } from '@/lib/utils';
 
 interface ToolConfigDialogProps {
   onSuccess?: () => void;
@@ -79,18 +81,22 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Install {tool.name}</DialogTitle>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader className="border-border/50 pb-4">
+          <DialogTitle className="text-lg font-semibold">Install {tool.name}</DialogTitle>
         </DialogHeader>
-        <div className="mt-4 flex-1">
+        <div className="max-h-[70vh] overflow-y-auto px-1">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Environment Configuration */}
               {tool.envSchema.properties && Object.keys(tool.envSchema.properties).length > 0 && (
                 <div className="space-y-4">
-                  <h4 className="text-primary text-sm font-medium">Environment Variables</h4>
-                  {Object.entries(tool.envSchema.properties).map(([key, value]: [string, any]) => (
+                  <div className="space-y-1">
+                    <h4 className="text-foreground text-sm font-semibold">Environment Variables</h4>
+                    <p className="text-muted-foreground text-xs">Configure environment variables for this tool</p>
+                  </div>
+                  <div className="border-border/50 bg-muted/30 space-y-4 rounded-lg border p-4">
+                    {Object.entries(tool.envSchema.properties).map(([key, value]: [string, any]) => (
                     <FormField
                       key={`env.${key}`}
                       control={form.control}
@@ -117,7 +123,8 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
                         </FormItem>
                       )}
                     />
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -128,8 +135,12 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
                 tool.querySchema.properties &&
                 Object.keys(tool.querySchema.properties).length > 0 && (
                   <div className="space-y-4">
-                    <h4 className="text-primary text-sm font-medium">Query Parameters</h4>
-                    {Object.entries(tool.querySchema.properties).map(([key, value]: [string, any]) => (
+                    <div className="space-y-1">
+                      <h4 className="text-foreground text-sm font-semibold">Query Parameters</h4>
+                      <p className="text-muted-foreground text-xs">Configure query parameters for this tool</p>
+                    </div>
+                    <div className="border-border/50 bg-muted/30 space-y-4 rounded-lg border p-4">
+                      {Object.entries(tool.querySchema.properties).map(([key, value]: [string, any]) => (
                       <FormField
                         key={`query.${key}`}
                         control={form.control}
@@ -154,11 +165,12 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
                             </FormControl>
                             <FormMessage />
                           </FormItem>
-                        )}
-                      />
+                      )}
+                    />
                     ))}
                   </div>
-                )}
+                </div>
+              )}
 
               {/* Headers Configuration */}
               {tool.headersSchema &&
@@ -167,8 +179,12 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
                 tool.headersSchema.properties &&
                 Object.keys(tool.headersSchema.properties).length > 0 && (
                   <div className="space-y-4">
-                    <h4 className="text-primary text-sm font-medium">Headers</h4>
-                    {Object.entries(tool.headersSchema.properties).map(([key, value]: [string, any]) => (
+                    <div className="space-y-1">
+                      <h4 className="text-foreground text-sm font-semibold">Headers</h4>
+                      <p className="text-muted-foreground text-xs">Configure HTTP headers for this tool</p>
+                    </div>
+                    <div className="border-border/50 bg-muted/30 space-y-4 rounded-lg border p-4">
+                      {Object.entries(tool.headersSchema.properties).map(([key, value]: [string, any]) => (
                       <FormField
                         key={`headers.${key}`}
                         control={form.control}
@@ -193,14 +209,20 @@ export const ToolConfigDialog = forwardRef<ToolConfigDialogRef, ToolConfigDialog
                             </FormControl>
                             <FormMessage />
                           </FormItem>
-                        )}
-                      />
+                      )}
+                    />
                     ))}
                   </div>
-                )}
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? 'Installing...' : 'Install Tool'}
-              </Button>
+                </div>
+              )}
+              <div className="border-border/50 flex justify-end gap-2 border-t pt-4">
+                <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isLoading} className="font-medium">
+                  {isLoading ? 'Installing...' : 'Install Tool'}
+                </Button>
+              </div>
             </form>
           </Form>
         </div>

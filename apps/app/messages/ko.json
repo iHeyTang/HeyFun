@@ -333,7 +333,31 @@
       "aigc": "페인트보드",
       "agents": "에이전트",
       "voices": "음성",
-      "preferences": "설정"
+      "gateway": "AI 게이트웨이",
+      "preferences": "설정",
+      "environmentVariables": "환경 변수"
+    },
+    "environmentVariables": {
+      "title": "환경 변수",
+      "description": "도구 및 에이전트 스크립트용 조직 수준의 환경 변수 구성 관리",
+      "loading": "로딩 중...",
+      "form": {
+        "key": "변수 이름",
+        "keyPlaceholder": "예: AMAP_API_KEY",
+        "value": "변수 값",
+        "valuePlaceholder": "변수 값 입력",
+        "addNew": "새 환경 변수 추가"
+      },
+      "actions": {
+        "add": "추가",
+        "save": "저장",
+        "saving": "저장 중...",
+        "delete": "삭제"
+      },
+      "toast": {
+        "updateSuccess": "환경 변수가 업데이트되었습니다",
+        "updateError": "환경 변수 업데이트 실패"
+      }
     }
   },
   "paintboard": {

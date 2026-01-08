@@ -16,6 +16,10 @@ import { ImageSearchResult } from './tool-renderers/image-search-result';
 import { BrowserNavigateResult } from './tool-renderers/browser-navigate-result';
 import { BrowserClickResult } from './tool-renderers/browser-click-result';
 import { BrowserExtractContentResult } from './tool-renderers/browser-extract-content-result';
+import { BrowserDownloadResult } from './tool-renderers/browser-download-result';
+import { ConfigureEnvironmentVariableResult } from './tool-renderers/configure-environment-variable-result';
+import { DouyinGetVideoInfoResult } from './tool-renderers/douyin-get-video-info-result';
+import { DouyinDownloadVideoResult } from './tool-renderers/douyin-download-video-result';
 import { useBuiltinTools } from '@/hooks/use-builtin-tools';
 
 interface ToolCallCardProps {
@@ -77,6 +81,10 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
       browser_navigate: BrowserNavigateResult,
       browser_click: BrowserClickResult,
       browser_extract_content: BrowserExtractContentResult,
+      browser_download: BrowserDownloadResult,
+      configure_environment_variable: ConfigureEnvironmentVariableResult,
+      douyin_get_video_info: DouyinGetVideoInfoResult,
+      douyin_download_video: DouyinDownloadVideoResult,
     };
     return renderers[toolName];
   };

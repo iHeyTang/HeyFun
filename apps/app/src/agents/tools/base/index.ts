@@ -6,6 +6,8 @@ import { InitializeAgentTool } from './initialize-agent';
 import { retrieveContextTool } from './retrieve-context';
 import { searchToolsTool } from './search-tools';
 import { completeTool } from './complete';
+import { configureEnvironmentVariableTool } from './configure-environment-variable';
+import { discoverMcpToolsTool } from './discover-mcp-tools';
 
 export * from './get-current-time';
 export * from './wait';
@@ -15,6 +17,8 @@ export * from './initialize-agent';
 export * from './retrieve-context';
 export * from './search-tools';
 export * from './complete';
+export * from './configure-environment-variable';
+export * from './discover-mcp-tools';
 
 export const baseToolboxes = [
   getCurrentTimeTool,
@@ -25,4 +29,6 @@ export const baseToolboxes = [
   retrieveContextTool,
   searchToolsTool,
   completeTool,
+  configureEnvironmentVariableTool,
+  discoverMcpToolsTool,
 ];

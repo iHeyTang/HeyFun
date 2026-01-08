@@ -3,13 +3,15 @@
 import { useSessionAssets } from '@/hooks/use-session-assets';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Image as ImageIcon, Video, FileText, Music, Code, File } from 'lucide-react';
+import { Loader2, Image as ImageIcon, Video, FileText, Download, Music, Code, File } from 'lucide-react';
 import { ImagePreview } from '@/components/block/preview/image-preview';
 import { VideoPreview } from '@/components/block/preview/video-preview';
 import { PresentationPreview } from '@/components/block/preview/presentation-preview';
 import { AudioPlayer } from '@/components/block/audio-player';
 import { useState, useEffect } from 'react';
 import { useSignedUrl } from '@/hooks/use-signed-url';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface AssetsDialogProps {
   sessionId: string | undefined;
@@ -95,10 +97,61 @@ export function AssetsDialog({ sessionId, open, onOpenChange }: AssetsDialogProp
   );
 }
 
+// 判断文件是否为 PDF
+function isPdfFile(fileName?: string, mimeType?: string): boolean {
+  if (!fileName && !mimeType) return false;
+  const name = fileName || '';
+  const mime = mimeType || '';
+  return name.toLowerCase().endsWith('.pdf') || mime.toLowerCase().includes('application/pdf');
+}
+
+// PDF 下载卡片组件
+function PdfDownloadCard({ pdfUrl, title, className }: { pdfUrl: string; title?: string; className?: string }) {
+  const handleDownload = () => {
+    window.open(pdfUrl, '_blank');
+  };
+
+  return (
+    <div
+      className={cn(
+        'group relative cursor-pointer overflow-hidden rounded-lg border border-gray-200/50 bg-gray-50/50 dark:border-gray-800/50 dark:bg-gray-900/50',
+        className,
+      )}
+      onClick={handleDownload}
+    >
+      {/* PDF 缩略图预览 */}
+      <div className="flex h-full items-center justify-center">
+        <div className="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-400">
+          <FileText className="h-12 w-12" />
+          <span className="text-xs font-medium">{title || 'PDF 文件'}</span>
+          <span className="text-[10px] opacity-70">点击下载</span>
+        </div>
+      </div>
+
+      {/* 悬停遮罩 */}
+      <div
+        className={cn(
+          'absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/60 transition-opacity',
+          'opacity-0 group-hover:opacity-100',
+        )}
+        style={{ pointerEvents: 'none' }}
+      >
+        <div className="flex flex-col gap-2" style={{ pointerEvents: 'auto' }}>
+          <Button variant="default" size="sm" onClick={handleDownload} className="flex items-center gap-2">
+            <Download className="h-3 w-3" />
+            下载 PDF
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AssetCard({ asset }: { asset: any }) {
   const typeLabel = getAssetTypeLabel(asset.type);
   const { getSignedUrl } = useSignedUrl();
   const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const isPdf = asset.type === 'document' && isPdfFile(asset.fileName, asset.mimeType);
 
   // 获取文件 URL
   useEffect(() => {
@@ -139,7 +192,10 @@ function AssetCard({ asset }: { asset: any }) {
           </div>
         )}
         {asset.type === 'audio' && <AudioPreviewCard src={fileUrl} fileName={asset.fileName} />}
-        {!['image', 'video', 'presentation', 'audio'].includes(asset.type) && (
+        {isPdf && fileUrl && (
+          <PdfDownloadCard pdfUrl={fileUrl} title={asset.title || asset.fileName} className="h-full w-full border-0 bg-transparent p-0" />
+        )}
+        {!['image', 'video', 'presentation', 'audio'].includes(asset.type) && !isPdf && (
           <div className="flex h-full items-center justify-center">
             {(() => {
               const Icon = getAssetIcon(asset.type);

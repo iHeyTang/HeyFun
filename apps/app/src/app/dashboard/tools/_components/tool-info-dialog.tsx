@@ -5,11 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ToolSchemas } from '@prisma/client';
-import { Download, ExternalLink, FileText, Package, RefreshCw, Star, Tag, User, Wrench } from 'lucide-react';
+import { Download, ExternalLink, FileText, Package, RefreshCw, Star, Tag, Wrench } from 'lucide-react';
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ToolConfigDialog, ToolConfigDialogRef } from './tool-config-dialog';
-import { Separator } from '@/components/ui/separator';
 
 export interface ToolInfoDialogRef {
   showInfo: (tool: ToolSchemas) => void;
@@ -63,53 +62,75 @@ export const ToolInfoDialog = forwardRef<ToolInfoDialogRef, ToolInfoDialogProps>
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="flex h-[90vh] w-[90vw] flex-col overflow-hidden" style={{ maxWidth: '800px' }} showCloseButton={false}>
+        <DialogContent className="flex h-[90vh] w-[90vw] flex-col overflow-hidden p-0" style={{ maxWidth: '900px' }} showCloseButton={true}>
           {/* Header */}
-          <DialogHeader className="mb-2">
+          <DialogHeader className="border-border/50 bg-muted/30 px-6 pb-4 pr-12 pt-6">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
                 {tool.logoUrl ? (
-                  <img src={tool.logoUrl} alt={`${tool.name} logo`} className="h-12 w-12 rounded-lg object-cover" />
+                  <div className="border-border/50 bg-muted/50 relative overflow-hidden rounded-xl border p-2">
+                    <img src={tool.logoUrl} alt={`${tool.name} logo`} className="h-14 w-14 rounded-lg object-cover" loading="lazy" />
+                  </div>
                 ) : (
-                  <div className="from-primary/50 to-primary/80 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br text-xl font-bold text-white">
+                  <div className="from-primary/20 to-primary/5 border-border/50 text-primary flex h-14 w-14 items-center justify-center rounded-xl border bg-gradient-to-br text-xl font-semibold shadow-sm">
                     {tool.name.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <DialogTitle className="mb-1 flex items-baseline gap-2 text-lg font-bold">
-                  <div>{tool.name}</div>
-                  {tool.author && (
-                    <div className="text-muted-foreground flex items-center gap-2 text-sm font-normal">
-                      <span>by {tool.author}</span>
-                    </div>
-                  )}
+                <DialogTitle className="mb-2 flex items-baseline gap-3 text-xl font-semibold">
+                  <span className="text-foreground">{tool.name}</span>
+                  {tool.author && <span className="text-muted-foreground text-sm font-normal">by {tool.author}</span>}
                 </DialogTitle>
 
-                <div className="text-muted-foreground flex items-center gap-2 text-xs">
-                  {tool.version && <Badge variant="outline">v{tool.version}</Badge>}
+                <div className="flex flex-wrap items-center gap-2">
+                  {tool.version && (
+                    <Badge
+                      variant="outline"
+                      className="bg-muted/50 text-muted-foreground border-border/50 border px-2 py-0.5 text-[11px] font-medium"
+                    >
+                      v{tool.version}
+                    </Badge>
+                  )}
                   {tool.stars && (
-                    <Badge className="bg-badge-amber text-badge-amber flex items-center gap-1">
+                    <Badge
+                      variant="outline"
+                      className="bg-badge-amber/10 text-badge-amber border-badge-amber/20 flex items-center gap-1 border px-2 py-0.5 text-[11px] font-medium"
+                    >
                       <Star className="h-3 w-3" />
                       {tool.stars > 1000 ? `${(tool.stars / 1000).toFixed(1)}k` : tool.stars}
                     </Badge>
                   )}
                   {tool.downloads && (
-                    <Badge className="bg-badge-blue text-badge-blue flex items-center gap-1">
+                    <Badge
+                      variant="outline"
+                      className="bg-badge-blue/10 text-badge-blue border-badge-blue/20 flex items-center gap-1 border px-2 py-0.5 text-[11px] font-medium"
+                    >
                       <Download className="h-3 w-3" />
                       {tool.downloads > 1000 ? `${(tool.downloads / 1000).toFixed(1)}k` : tool.downloads}
                     </Badge>
                   )}
                   {tool.license && (
-                    <Badge className="bg-badge-green text-badge-green rounded-full px-3">
-                      <Package className="h-4 w-4" />
+                    <Badge
+                      variant="outline"
+                      className="bg-badge-green/10 text-badge-green border-badge-green/20 flex items-center gap-1 border px-2 py-0.5 text-[11px] font-medium"
+                    >
+                      <Package className="h-3 w-3" />
                       {tool.license}
                     </Badge>
                   )}
                 </div>
               </div>
               <div className="flex flex-shrink-0 gap-2">
-                <Button variant="default" size="sm" onClick={() => toolConfigDialogRef.current?.showConfig(tool!)}>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => {
+                    setOpen(false);
+                    toolConfigDialogRef.current?.showConfig(tool!);
+                  }}
+                  className="font-medium"
+                >
                   Install Tool
                 </Button>
               </div>
@@ -117,7 +138,7 @@ export const ToolInfoDialog = forwardRef<ToolInfoDialogRef, ToolInfoDialogProps>
           </DialogHeader>
 
           {/* Content */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden px-6">
             <Tabs defaultValue="overview" className="flex h-full flex-col">
               <div className="mb-2">
                 <TabsList className="grid grid-cols-2">
@@ -132,47 +153,51 @@ export const ToolInfoDialog = forwardRef<ToolInfoDialogRef, ToolInfoDialogProps>
                 </TabsList>
               </div>
 
-              <TabsContent value="overview" className="m-0 flex-1 overflow-hidden pl-1">
-                <ScrollArea className="h-full">
-                  <div className="space-y-6">
+              <TabsContent value="overview" className="m-0 flex-1 overflow-hidden">
+                <ScrollArea className="h-full pr-4">
+                  <div className="space-y-6 pb-4">
                     {/* Quick Links */}
-                    {tool.sourceUrl && (
-                      <div>
-                        <Badge className="bg-badge-blue text-badge-blue mb-2">Homepage</Badge>
-                        <div className="pl-2">
-                          <a href={tool.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline">
-                            <ExternalLink className="h-4 w-4" />
-                            {tool.sourceUrl}
-                          </a>
+                    {(tool.sourceUrl || tool.repoUrl) && (
+                      <div className="space-y-3">
+                        <h3 className="text-foreground text-sm font-semibold">Links</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {tool.sourceUrl && (
+                            <a
+                              href={tool.sourceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-badge-blue/10 text-badge-blue border-badge-blue/20 hover:bg-badge-blue/20 inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              Homepage
+                            </a>
+                          )}
+                          {tool.repoUrl && (
+                            <a
+                              href={tool.repoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-badge-green/10 text-badge-green border-badge-green/20 hover:bg-badge-green/20 inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              Repository
+                            </a>
+                          )}
                         </div>
-                      </div>
-                    )}
-                    {tool.repoUrl && (
-                      <div>
-                        <Badge className="bg-badge-green text-badge-green mb-2">Repository</Badge>
-                        <div className="pl-2">
-                          <a href={tool.repoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline">
-                            <ExternalLink className="h-4 w-4" />
-                            {tool.repoUrl}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                    {/* Description */}
-                    {tool.description && (
-                      <div>
-                        <Badge className="bg-badge-amber text-badge-amber mb-2">Description</Badge>
-                        <div className="pl-2">{tool.description}</div>
                       </div>
                     )}
 
                     {/* Tags */}
                     {tags.length > 0 && (
-                      <div>
-                        <Badge className="bg-badge-purple text-badge-purple mb-2">Tags</Badge>
+                      <div className="space-y-2">
+                        <h3 className="text-foreground text-sm font-semibold">Tags</h3>
                         <div className="flex flex-wrap gap-2">
                           {tags.map((tag: string, index: number) => (
-                            <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="bg-secondary/50 text-muted-foreground border-border/50 inline-flex items-center gap-1 border px-2 py-0.5 text-[11px] font-medium"
+                            >
                               <Tag className="h-3 w-3" />
                               {tag}
                             </Badge>
@@ -180,25 +205,36 @@ export const ToolInfoDialog = forwardRef<ToolInfoDialogRef, ToolInfoDialogProps>
                         </div>
                       </div>
                     )}
+
+                    {/* Description */}
+                    {tool.description && (
+                      <div className="space-y-2">
+                        <h3 className="text-foreground text-sm font-semibold">Description</h3>
+                        <p className="text-muted-foreground whitespace-pre-wrap text-sm leading-relaxed">{tool.description}</p>
+                      </div>
+                    )}
                   </div>
                 </ScrollArea>
               </TabsContent>
 
               <TabsContent value="capabilities" className="m-0 flex-1 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="space-y-4">
-                    <h3 className="text-primary text-lg font-semibold">Available Tools</h3>
+                <ScrollArea className="h-full pr-4">
+                  <div className="space-y-4 pb-4">
+                    <h3 className="text-foreground text-sm font-semibold">Available Tools</h3>
                     {capabilities.length > 0 ? (
-                      <div className="grid gap-3">
+                      <div className="grid gap-2">
                         {capabilities.map((capability: string, index: number) => (
-                          <div key={index} className="bg-secondary flex items-center gap-3 rounded-lg p-3">
-                            <Wrench className="h-5 w-5 flex-shrink-0" />
-                            <span className="font-medium">{capability}</span>
+                          <div
+                            key={index}
+                            className="border-border/50 bg-muted/30 hover:bg-muted/50 flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors"
+                          >
+                            <Wrench className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+                            <span className="text-foreground text-sm font-medium">{capability}</span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="italic">No capabilities information available</p>
+                      <p className="text-muted-foreground text-sm italic">No capabilities information available</p>
                     )}
                   </div>
                 </ScrollArea>

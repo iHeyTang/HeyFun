@@ -9,6 +9,7 @@ import { getBuiltinToolNames } from '@/agents/core/frameworks/base';
 import { ReactAgent, type IterationProvider } from '@/agents/core/frameworks/react';
 import { buildSystemPrompt } from '@/agents/core/system-prompt';
 import { convertPrismaMessagesToUnifiedChat, executeTools, filterReadyChatMessages, saveToolResultsToMessage } from '@/agents/utils';
+import { getSessionCompletion, clearSessionCompletion, CompletionInfo } from '@/agents/tools/context';
 import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/server/credit';
 import { prisma } from '@/lib/server/prisma';
 import { queue } from '@/lib/server/queue';
@@ -391,16 +392,16 @@ export const { POST } = serve<AgentWorkflowConfig>(
 
       // 步骤13（Observation）: 观察工具执行结果，判定是否完成
       // 这是 ReAct 框架的 Observe 阶段，负责判断任务是否完成
-      const shouldComplete = await context.run(`round-${roundCount}-observe`, async () => {
+      const completionInfo = await context.run(`round-${roundCount}-observe`, async () => {
         // 如果没有工具调用，继续下一轮对话（让 LLM 继续思考）
         if (!llmResult.data.toolCalls.length) {
-          return false;
+          return null;
         }
 
-        // 检查是否调用了 complete 工具
-        const hasCompleteTask = llmResult.data.toolCalls.some(tc => tc.function?.name === 'complete');
+        // 从完结状态存储中读取完结信息
+        const completion = getSessionCompletion(sessionId);
 
-        if (hasCompleteTask) {
+        if (completion) {
           // 标记消息和会话为完成
           await prisma.chatMessages.update({
             where: { id: aiMessage.id },
@@ -415,11 +416,11 @@ export const { POST } = serve<AgentWorkflowConfig>(
           });
         }
 
-        return hasCompleteTask;
+        return completion;
       });
 
       // 如果任务完成，退出循环
-      if (shouldComplete) {
+      if (completionInfo) {
         break;
       }
 
@@ -427,46 +428,78 @@ export const { POST } = serve<AgentWorkflowConfig>(
       continue;
     }
 
-    // 生成建议追问
-    await context.run('generate-suggested-questions', async () => {
-      try {
-        // 获取会话和消息历史
-        const session = await prisma.chatSessions.findUnique({
-          where: { id: sessionId },
-          include: {
-            messages: {
-              where: { isComplete: true },
-              orderBy: { createdAt: 'asc' },
-              take: 10, // 只取最近10条消息用于生成建议追问
+    // 从完结状态存储中读取完结信息（循环结束后）
+    const finalCompletionInfo = await context.run('get-completion-info', async () => {
+      return getSessionCompletion(sessionId);
+    });
+
+    // 根据完结类型做不同处理
+    if (finalCompletionInfo) {
+      if (finalCompletionInfo.type === 'configure_environment_variable') {
+        // 环境变量配置类型：创建新的消息类型用于前端渲染表单
+        await context.run('create-environment-variable-form-message', async () => {
+          const formMessageContent = JSON.stringify({
+            type: 'environment_variable_form',
+            variables: finalCompletionInfo.params?.variables || [],
+            message: finalCompletionInfo.params?.message || '需要配置环境变量',
+          });
+
+          await prisma.chatMessages.create({
+            data: {
+              sessionId,
+              organizationId,
+              role: 'assistant',
+              content: formMessageContent,
+              isStreaming: false,
+              isComplete: true,
+              modelId,
             },
-          },
+          });
+
+          // 清除完结状态（表单提交后会重新启动 workflow）
+          clearSessionCompletion(sessionId);
         });
+      } else if (finalCompletionInfo.type === 'complete') {
+        // complete 类型：生成建议追问
+        await context.run('generate-suggested-questions', async () => {
+          try {
+            // 获取会话和消息历史
+            const session = await prisma.chatSessions.findUnique({
+              where: { id: sessionId },
+              include: {
+                messages: {
+                  where: { isComplete: true },
+                  orderBy: { createdAt: 'asc' },
+                  take: 10, // 只取最近10条消息用于生成建议追问
+                },
+              },
+            });
 
-        if (!session || session.messages.length === 0) {
-          return;
-        }
+            if (!session || session.messages.length === 0) {
+              return;
+            }
 
-        // 获取最后5条消息（用于提供上下文）
-        const allMessages = session.messages.filter(msg => msg.role === 'assistant');
-        const lastMessages = allMessages.slice(-5);
+            // 获取最后5条消息（用于提供上下文）
+            const allMessages = session.messages.filter(msg => msg.role === 'assistant');
+            const lastMessages = allMessages.slice(-5);
 
-        if (lastMessages.length === 0) {
-          return;
-        }
+            if (lastMessages.length === 0) {
+              return;
+            }
 
-        // 构建最后几条消息的内容
-        const recentMessagesContent = lastMessages
-          .map((msg, index) => {
-            const messageNum = lastMessages.length - 5 + index + 1;
-            return `[消息 ${messageNum}]\n${msg.content || ''}`;
-          })
-          .join('\n\n---\n\n');
+            // 构建最后几条消息的内容
+            const recentMessagesContent = lastMessages
+              .map((msg, index) => {
+                const messageNum = lastMessages.length - 5 + index + 1;
+                return `[消息 ${messageNum}]\n${msg.content || ''}`;
+              })
+              .join('\n\n---\n\n');
 
-        // 获取最后一条消息的内容（用于重点分析）
-        const lastMessageContent = lastMessages[lastMessages.length - 1]?.content || '';
+            // 获取最后一条消息的内容（用于重点分析）
+            const lastMessageContent = lastMessages[lastMessages.length - 1]?.content || '';
 
-        // 构建提示词，让模型站在用户角度生成想要继续问的问题
-        const suggestionPrompt = `以下是 Agent 最近的回复消息（共${lastMessages.length}条，从旧到新）：
+            // 构建提示词，让模型站在用户角度生成想要继续问的问题
+            const suggestionPrompt = `以下是 Agent 最近的回复消息（共${lastMessages.length}条，从旧到新）：
 
 """
 ${recentMessagesContent}
@@ -487,125 +520,133 @@ ${recentMessagesContent}
 
 请直接返回JSON数组：`;
 
-        // 使用小模型生成建议追问
-        const allModels = await loadModelDefinitionsFromDatabase();
-        CHAT.setModels(allModels);
+            // 使用小模型生成建议追问
+            const allModels = await loadModelDefinitionsFromDatabase();
+            CHAT.setModels(allModels);
 
-        // 尝试使用的内置小模型ID列表（按优先级）
-        const preferredSmallModelIds = ['openai/gpt-5-mini'];
+            // 尝试使用的内置小模型ID列表（按优先级）
+            const preferredSmallModelIds = ['openai/gpt-5-mini'];
 
-        // 查找可用的小模型
-        let smallModelId = null;
-        for (const preferredModelId of preferredSmallModelIds) {
-          const found = allModels.find(m => m.id === preferredModelId);
-          if (found) {
-            smallModelId = preferredModelId;
-            break;
+            // 查找可用的小模型
+            let smallModelId = null;
+            for (const preferredModelId of preferredSmallModelIds) {
+              const found = allModels.find(m => m.id === preferredModelId);
+              if (found) {
+                smallModelId = preferredModelId;
+                break;
+              }
+            }
+
+            // 如果找不到小模型，使用原模型
+            if (!smallModelId) {
+              console.warn('[Workflow] 未找到小模型，使用原模型生成建议追问');
+              smallModelId = modelId;
+            }
+
+            const llmClient = CHAT.createClient(smallModelId);
+
+            // 使用最后几条消息和提示词
+            // 将最后几条 assistant 消息转换为对话格式
+            const suggestionMessages: UnifiedChat.Message[] = lastMessages.map(msg => ({
+              role: 'assistant' as const,
+              content: msg.content || '',
+            }));
+
+            // 添加用户提示
+            suggestionMessages.push({ role: 'user', content: suggestionPrompt });
+
+            const suggestionResult = await llmClient.chat({
+              messages: suggestionMessages,
+              temperature: 0.7,
+            });
+
+            // 处理MessageContent可能是字符串或数组的情况
+            const rawContent = suggestionResult.choices[0]?.message?.content;
+            let suggestionContent = '';
+            if (typeof rawContent === 'string') {
+              suggestionContent = rawContent;
+            } else if (Array.isArray(rawContent)) {
+              // 如果是数组，提取所有文本内容
+              suggestionContent = rawContent
+                .filter(item => item.type === 'text')
+                .map(item => (item as { type: 'text'; text: string }).text)
+                .join('\n');
+            }
+
+            // 尝试解析JSON数组
+            let suggestedQuestions: string[] = [];
+            try {
+              // 尝试提取JSON数组（可能包含markdown代码块）
+              const jsonMatch = suggestionContent.match(/\[[\s\S]*?\]/);
+              if (jsonMatch) {
+                suggestedQuestions = JSON.parse(jsonMatch[0]);
+              } else {
+                suggestedQuestions = JSON.parse(suggestionContent);
+              }
+
+              // 验证是字符串数组
+              if (!Array.isArray(suggestedQuestions) || !suggestedQuestions.every((q: any) => typeof q === 'string')) {
+                throw new Error('Invalid format');
+              }
+            } catch (parseError) {
+              console.error('[Workflow] Failed to parse suggested questions:', parseError);
+              // 如果解析失败，尝试从文本中提取问题
+              const lines = suggestionContent.split('\n').filter((line: string) => line.trim());
+              suggestedQuestions = lines
+                .filter((line: string) => line.trim().length > 0 && line.trim().length < 50)
+                .map((line: string) =>
+                  line
+                    .replace(/^[-*•]\s*/, '')
+                    .replace(/^\d+[.)]\s*/, '')
+                    .trim(),
+                )
+                .filter((q: string) => q.length > 0)
+                .slice(0, 5);
+            }
+
+            // 如果成功生成了建议追问，保存为特殊类型的消息
+            if (suggestedQuestions.length > 0) {
+              const suggestionMessageContent = JSON.stringify({
+                type: 'suggested_questions',
+                questions: suggestedQuestions,
+              });
+
+              await prisma.chatMessages.create({
+                data: {
+                  sessionId,
+                  organizationId,
+                  role: 'assistant',
+                  content: suggestionMessageContent,
+                  isStreaming: false,
+                  isComplete: true,
+                  modelId: smallModelId, // 保存小模型的ID
+                },
+              });
+
+              // 计算并扣除credits（使用小模型）
+              const modelInfo = allModels.find(m => m.id === smallModelId);
+              if (modelInfo) {
+                const inputTokens = suggestionResult.usage?.prompt_tokens || 0;
+                const outputTokens = suggestionResult.usage?.completion_tokens || 0;
+                const cost = calculateLLMCost(modelInfo, inputTokens, outputTokens);
+                if (cost > 0) {
+                  await deductCredits(organizationId, cost);
+                }
+              }
+            }
+          } catch (error) {
+            // 生成建议追问失败不影响主流程，只记录错误
+            console.error('[Workflow] Failed to generate suggested questions:', error);
           }
-        }
-
-        // 如果找不到小模型，使用原模型
-        if (!smallModelId) {
-          console.warn('[Workflow] 未找到小模型，使用原模型生成建议追问');
-          smallModelId = modelId;
-        }
-
-        const llmClient = CHAT.createClient(smallModelId);
-
-        // 使用最后几条消息和提示词
-        // 将最后几条 assistant 消息转换为对话格式
-        const suggestionMessages: UnifiedChat.Message[] = lastMessages.map(msg => ({
-          role: 'assistant' as const,
-          content: msg.content || '',
-        }));
-
-        // 添加用户提示
-        suggestionMessages.push({ role: 'user', content: suggestionPrompt });
-
-        const suggestionResult = await llmClient.chat({
-          messages: suggestionMessages,
-          temperature: 0.7,
         });
 
-        // 处理MessageContent可能是字符串或数组的情况
-        const rawContent = suggestionResult.choices[0]?.message?.content;
-        let suggestionContent = '';
-        if (typeof rawContent === 'string') {
-          suggestionContent = rawContent;
-        } else if (Array.isArray(rawContent)) {
-          // 如果是数组，提取所有文本内容
-          suggestionContent = rawContent
-            .filter(item => item.type === 'text')
-            .map(item => (item as { type: 'text'; text: string }).text)
-            .join('\n');
-        }
-
-        // 尝试解析JSON数组
-        let suggestedQuestions: string[] = [];
-        try {
-          // 尝试提取JSON数组（可能包含markdown代码块）
-          const jsonMatch = suggestionContent.match(/\[[\s\S]*?\]/);
-          if (jsonMatch) {
-            suggestedQuestions = JSON.parse(jsonMatch[0]);
-          } else {
-            suggestedQuestions = JSON.parse(suggestionContent);
-          }
-
-          // 验证是字符串数组
-          if (!Array.isArray(suggestedQuestions) || !suggestedQuestions.every((q: any) => typeof q === 'string')) {
-            throw new Error('Invalid format');
-          }
-        } catch (parseError) {
-          console.error('[Workflow] Failed to parse suggested questions:', parseError);
-          // 如果解析失败，尝试从文本中提取问题
-          const lines = suggestionContent.split('\n').filter((line: string) => line.trim());
-          suggestedQuestions = lines
-            .filter((line: string) => line.trim().length > 0 && line.trim().length < 50)
-            .map((line: string) =>
-              line
-                .replace(/^[-*•]\s*/, '')
-                .replace(/^\d+[.)]\s*/, '')
-                .trim(),
-            )
-            .filter((q: string) => q.length > 0)
-            .slice(0, 5);
-        }
-
-        // 如果成功生成了建议追问，保存为特殊类型的消息
-        if (suggestedQuestions.length > 0) {
-          const suggestionMessageContent = JSON.stringify({
-            type: 'suggested_questions',
-            questions: suggestedQuestions,
-          });
-
-          await prisma.chatMessages.create({
-            data: {
-              sessionId,
-              organizationId,
-              role: 'assistant',
-              content: suggestionMessageContent,
-              isStreaming: false,
-              isComplete: true,
-              modelId: smallModelId, // 保存小模型的ID
-            },
-          });
-
-          // 计算并扣除credits（使用小模型）
-          const modelInfo = allModels.find(m => m.id === smallModelId);
-          if (modelInfo) {
-            const inputTokens = suggestionResult.usage?.prompt_tokens || 0;
-            const outputTokens = suggestionResult.usage?.completion_tokens || 0;
-            const cost = calculateLLMCost(modelInfo, inputTokens, outputTokens);
-            if (cost > 0) {
-              await deductCredits(organizationId, cost);
-            }
-          }
-        }
-      } catch (error) {
-        // 生成建议追问失败不影响主流程，只记录错误
-        console.error('[Workflow] Failed to generate suggested questions:', error);
+        // 清除完结状态
+        clearSessionCompletion(sessionId);
+      } else {
+        // 其他类型：清除完结状态
+        clearSessionCompletion(sessionId);
       }
-    });
+    }
 
     // 更新状态：processing -> idle（执行完成或失败都设为idle，避免阻塞新消息）
     // 使用 context.run 确保即使 workflow 执行失败，状态也能被重置
