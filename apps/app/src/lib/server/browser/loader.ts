@@ -1,29 +1,22 @@
 /**
  * Python 脚本加载器
- * 使用 webpack 的 ?raw 查询参数在构建时内联脚本内容
- * 这样不依赖运行时的文件系统，适用于所有部署环境
+ * 使用运行时文件系统读取脚本内容，兼容 Turbopack 和 webpack
+ * 脚本文件会在构建时被包含在输出中
  */
 
-// 使用 import ... ?raw 在构建时内联脚本内容
-import checkBrowserScriptContent from './scripts/check-browser.py?raw';
-import navigateScriptContent from './scripts/navigate.py?raw';
-import clickScriptContent from './scripts/click.py?raw';
-import clickAtScriptContent from './scripts/click-at.py?raw';
-import scrollScriptContent from './scripts/scroll.py?raw';
-import typeScriptContent from './scripts/type.py?raw';
-import extractContentScriptContent from './scripts/extract-content.py?raw';
-import screenshotScriptContent from './scripts/screenshot.py?raw';
-import downloadScriptContent from './scripts/download.py?raw';
-import browserLauncherScriptContent from './scripts/browser-launcher.py?raw';
+import { createScriptLoader } from '@/lib/shared/script-loader';
 
-// 导出脚本内容（在构建时已经内联到代码中）
-export const checkBrowserScript = checkBrowserScriptContent;
-export const navigateScript = navigateScriptContent;
-export const clickScript = clickScriptContent;
-export const clickAtScript = clickAtScriptContent;
-export const scrollScript = scrollScriptContent;
-export const typeScript = typeScriptContent;
-export const extractContentScript = extractContentScriptContent;
-export const screenshotScript = screenshotScriptContent;
-export const downloadScript = downloadScriptContent;
-export const browserLauncherScript = browserLauncherScriptContent;
+// 创建脚本加载器
+const loadScript = createScriptLoader(import.meta.url);
+
+// 在运行时加载脚本内容（首次访问时加载，后续使用缓存）
+export const checkBrowserScript = loadScript('scripts/check-browser.py');
+export const navigateScript = loadScript('scripts/navigate.py');
+export const clickScript = loadScript('scripts/click.py');
+export const clickAtScript = loadScript('scripts/click-at.py');
+export const scrollScript = loadScript('scripts/scroll.py');
+export const typeScript = loadScript('scripts/type.py');
+export const extractContentScript = loadScript('scripts/extract-content.py');
+export const screenshotScript = loadScript('scripts/screenshot.py');
+export const downloadScript = loadScript('scripts/download.py');
+export const browserLauncherScript = loadScript('scripts/browser-launcher.py');

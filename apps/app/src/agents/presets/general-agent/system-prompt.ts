@@ -11,10 +11,7 @@
 
 import { formatTime } from '@/lib/shared/time';
 import { SystemPromptBlock, createPresetBlock } from '@/agents/core/system-prompt';
-import Handlebars from 'handlebars';
-
-// 使用 import ... ?raw 在构建时内联模板内容
-import templateContent from './system-prompt.template.md?raw';
+import { createTemplateLoader } from '@/lib/shared/template-loader';
 
 // ============================================================================
 // 模板变量
@@ -25,8 +22,8 @@ interface PromptVariables {
   currentTimeLocale: string;
 }
 
-// 在模块级别编译 Handlebars 模板（避免重复编译）
-const template = Handlebars.compile<PromptVariables>(templateContent);
+// 在模块级别加载并编译 Handlebars 模板（避免重复编译）
+const template = createTemplateLoader<PromptVariables>(import.meta.url, 'system-prompt.template.md');
 
 /**
  * 获取所有 Preset 层提示词 Blocks

@@ -1,13 +1,14 @@
 /**
  * 抖音工具 Python 脚本加载器
- * 使用 webpack 的 ?raw 查询参数在构建时内联脚本内容
- * 这样不依赖运行时的文件系统，适用于所有部署环境
+ * 使用运行时文件系统读取脚本内容，兼容 Turbopack 和 webpack
+ * 脚本文件会在构建时被包含在输出中
  */
 
-// 使用 import ... ?raw 在构建时内联脚本内容
-import parseVideoScriptContent from './scripts/parse-video.py?raw';
-import downloadVideoScriptContent from './scripts/download-video.py?raw';
+import { createScriptLoader } from '@/lib/shared/script-loader';
 
-// 导出脚本内容（在构建时已经内联到代码中）
-export const parseVideoScript = parseVideoScriptContent;
-export const downloadVideoScript = downloadVideoScriptContent;
+// 创建脚本加载器
+const loadScript = createScriptLoader(import.meta.url);
+
+// 在运行时加载脚本内容（首次访问时加载，后续使用缓存）
+export const parseVideoScript = loadScript('scripts/parse-video.py');
+export const downloadVideoScript = loadScript('scripts/download-video.py');
