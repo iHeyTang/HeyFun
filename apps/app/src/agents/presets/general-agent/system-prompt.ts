@@ -12,6 +12,8 @@
 import { formatTime } from '@/lib/shared/time';
 import { SystemPromptBlock, createPresetBlock } from '@/agents/core/system-prompt';
 import { createTemplateLoader } from '@/lib/shared/template-loader';
+// 直接导入模板文件，webpack 会将其作为字符串内联
+import templateContent from './system-prompt.template.md';
 
 // ============================================================================
 // 模板变量
@@ -23,7 +25,7 @@ interface PromptVariables {
 }
 
 // 在模块级别加载并编译 Handlebars 模板（避免重复编译）
-const template = createTemplateLoader<PromptVariables>(import.meta.url, 'system-prompt.template.md');
+const template = createTemplateLoader<PromptVariables>(templateContent);
 
 /**
  * 获取所有 Preset 层提示词 Blocks

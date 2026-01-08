@@ -1,22 +1,30 @@
 /**
  * Python 脚本加载器
- * 使用运行时文件系统读取脚本内容，兼容 Turbopack 和 webpack
- * 脚本文件会在构建时被包含在输出中
+ * 使用 webpack 在构建时将脚本内容内联到代码中
+ * 这样在 Vercel standalone 模式下也能正常工作
  */
 
-import { createScriptLoader } from '@/lib/shared/script-loader';
+// 直接导入 Python 脚本，webpack 会将其作为字符串内联
+// next.config.ts 中已配置 .py 文件为 asset/source 类型
+import checkBrowserScriptContent from './scripts/check-browser.py';
+import navigateScriptContent from './scripts/navigate.py';
+import clickScriptContent from './scripts/click.py';
+import clickAtScriptContent from './scripts/click-at.py';
+import scrollScriptContent from './scripts/scroll.py';
+import typeScriptContent from './scripts/type.py';
+import extractContentScriptContent from './scripts/extract-content.py';
+import screenshotScriptContent from './scripts/screenshot.py';
+import downloadScriptContent from './scripts/download.py';
+import browserLauncherScriptContent from './scripts/browser-launcher.py';
 
-// 创建脚本加载器
-const loadScript = createScriptLoader(import.meta.url);
-
-// 在运行时加载脚本内容（首次访问时加载，后续使用缓存）
-export const checkBrowserScript = loadScript('scripts/check-browser.py');
-export const navigateScript = loadScript('scripts/navigate.py');
-export const clickScript = loadScript('scripts/click.py');
-export const clickAtScript = loadScript('scripts/click-at.py');
-export const scrollScript = loadScript('scripts/scroll.py');
-export const typeScript = loadScript('scripts/type.py');
-export const extractContentScript = loadScript('scripts/extract-content.py');
-export const screenshotScript = loadScript('scripts/screenshot.py');
-export const downloadScript = loadScript('scripts/download.py');
-export const browserLauncherScript = loadScript('scripts/browser-launcher.py');
+// 导出脚本内容（webpack 会将文件内容作为字符串导入）
+export const checkBrowserScript = checkBrowserScriptContent;
+export const navigateScript = navigateScriptContent;
+export const clickScript = clickScriptContent;
+export const clickAtScript = clickAtScriptContent;
+export const scrollScript = scrollScriptContent;
+export const typeScript = typeScriptContent;
+export const extractContentScript = extractContentScriptContent;
+export const screenshotScript = screenshotScriptContent;
+export const downloadScript = downloadScriptContent;
+export const browserLauncherScript = browserLauncherScriptContent;

@@ -1,14 +1,14 @@
 /**
  * 抖音工具 Python 脚本加载器
- * 使用运行时文件系统读取脚本内容，兼容 Turbopack 和 webpack
- * 脚本文件会在构建时被包含在输出中
+ * 使用 webpack 在构建时将脚本内容内联到代码中
+ * 这样在 Vercel standalone 模式下也能正常工作
  */
 
-import { createScriptLoader } from '@/lib/shared/script-loader';
+// 直接导入 Python 脚本，webpack 会将其作为字符串内联
+// next.config.ts 中已配置 .py 文件为 asset/source 类型
+import parseVideoScriptContent from './scripts/parse-video.py';
+import downloadVideoScriptContent from './scripts/download-video.py';
 
-// 创建脚本加载器
-const loadScript = createScriptLoader(import.meta.url);
-
-// 在运行时加载脚本内容（首次访问时加载，后续使用缓存）
-export const parseVideoScript = loadScript('scripts/parse-video.py');
-export const downloadVideoScript = loadScript('scripts/download-video.py');
+// 导出脚本内容（webpack 会将文件内容作为字符串导入）
+export const parseVideoScript = parseVideoScriptContent;
+export const downloadVideoScript = downloadVideoScriptContent;
