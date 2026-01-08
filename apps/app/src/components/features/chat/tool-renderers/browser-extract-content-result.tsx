@@ -33,7 +33,7 @@ export function BrowserExtractContentResult({ args, result, status, error, sessi
   // 解析结果数据
   const data: BrowserExtractContentData | null = result && status === 'success' ? result : null;
   const selector = args?.selector;
-  const extractType = args?.extractType || data?.contentType || 'text';
+  const extractType = args?.extractType || data?.contentType || 'markdown';
   const content = data?.content || '';
 
   // 错误状态

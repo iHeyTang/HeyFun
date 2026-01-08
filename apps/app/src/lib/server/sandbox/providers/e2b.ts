@@ -15,7 +15,10 @@ export class E2BSandboxRuntimeManager implements SandboxRuntimeManager {
     options?: {
       workspaceRoot?: string;
       costProfile?: SandboxHandle['costProfile'];
+      ports?: number[];
+      idleTimeout?: number;
     },
+    waitForReady: boolean = true,
   ): Promise<SandboxHandle> {
     throw new Error('E2B provider is not implemented yet');
   }
@@ -43,9 +46,7 @@ export class E2BSandboxRuntimeManager implements SandboxRuntimeManager {
     throw new Error('E2B provider is not implemented yet');
   }
 
-
   async destroy(handle: SandboxHandle): Promise<SandboxHandle> {
     throw new Error('E2B provider is not implemented yet');
   }
 }
-

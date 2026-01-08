@@ -17,7 +17,7 @@ export const browserExtractContentExecutor = definitionToolExecutor(
           };
         }
 
-        const { selector, extractType = 'text' } = args;
+        const { selector, extractType = 'markdown' } = args;
 
         const handle = await ensureBrowser(context.sessionId);
         const brm = getBrowserRuntimeManager();

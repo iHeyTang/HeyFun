@@ -101,17 +101,149 @@ export class DaytonaSandboxRuntimeManager implements SandboxRuntimeManager {
     } as DaytonaConfig);
   }
 
-  async create(options?: {
-    workspaceRoot?: string;
-    costProfile?: SandboxHandle['costProfile'];
-    ports?: number[]; // 要暴露的端口列表（用于 CDP 等服务）
-  }): Promise<SandboxHandle> {
+  /**
+   * 异步执行 sandbox 创建过程
+   * 用于在不需要等待的情况下启动创建
+   */
+  private async createSandboxAsync(
+    id: string,
+    options?: {
+      workspaceRoot?: string;
+      costProfile?: SandboxHandle['costProfile'];
+      ports?: number[];
+      idleTimeout?: number;
+    },
+  ): Promise<void> {
+    const daytona = this.getDaytonaClient();
+    const workspaceRoot = options?.workspaceRoot ?? '/heyfun/workspace';
+
+    try {
+      // 获取或创建 volume
+      const volume = await daytona.volume.get(id, true);
+      await waitForVolumeReady(daytona, id);
+
+      // 尝试创建 sandbox
+      let retries = 3;
+      let lastError: Error | null = null;
+      let sandbox: Sandbox | null = null;
+
+      while (retries > 0) {
+        try {
+          const createOptions: any = {
+            snapshot: process.env.DAYTONA_SANDBOX_SNAPSHOT,
+            user: 'daytona',
+            labels: { id },
+            volumes: [{ volumeId: volume.id, mountPath: '/heyfun/workspace' }],
+          };
+
+          if (options?.ports && options.ports.length > 0) {
+            createOptions.ports = options.ports;
+          }
+
+          if (options?.idleTimeout !== undefined) {
+            createOptions.idleTimeout = options.idleTimeout;
+          } else {
+            createOptions.idleTimeout = 300;
+          }
+
+          sandbox = await daytona.create(createOptions);
+          break;
+        } catch (createError) {
+          const errorMessage = createError instanceof Error ? createError.message : String(createError);
+          if (
+            errorMessage.includes('not in a ready state') ||
+            errorMessage.includes('pending_create') ||
+            errorMessage.includes('Current state: creating') ||
+            (errorMessage.includes('Current state:') && errorMessage.includes('pending'))
+          ) {
+            lastError = createError instanceof Error ? createError : new Error(String(createError));
+            retries--;
+            if (retries > 0) {
+              await waitForVolumeReady(daytona, id, 30 * 1000, 2 * 1000);
+              continue;
+            }
+          }
+          throw createError;
+        }
+      }
+
+      if (!sandbox) {
+        throw lastError || new Error('Failed to create sandbox after retries');
+      }
+
+      // 确保工作区目录存在
+      await sandbox.fs.createFolder('/heyfun/workspace', '777');
+
+      // 获取 previewUrls
+      let previewUrls: Record<number, string> | undefined;
+      try {
+        const sandboxPreviewUrls = sandbox.previewUrls || sandbox.preview_urls;
+        const sandboxPreviewUrl = sandbox.previewUrl || sandbox.preview_url || sandbox.url;
+
+        if (sandboxPreviewUrls && typeof sandboxPreviewUrls === 'object') {
+          previewUrls = sandboxPreviewUrls as Record<number, string>;
+        } else if (sandboxPreviewUrl && typeof sandboxPreviewUrl === 'string') {
+          try {
+            const baseUrl = new URL(sandboxPreviewUrl);
+            const port = baseUrl.port ? parseInt(baseUrl.port, 10) : baseUrl.protocol === 'https:' ? 443 : 80;
+            previewUrls = { [port]: sandboxPreviewUrl };
+          } catch (urlError) {
+            // 忽略解析错误
+          }
+        }
+      } catch (e) {
+        // 忽略错误
+      }
+
+      // 更新 handle 状态为 ready（需要保存到 Redis）
+      // 注意：这里需要访问 saveSandboxHandleToState，但这个方法在 utils 中
+      // 我们需要通过 sessionId 来更新，但这里没有 sessionId
+      // 实际上，当工具执行时，会通过 srm.get() 来获取 sandbox，那时会自动更新状态
+      // 所以这里我们只需要创建完成即可，状态会在使用时更新
+      console.log(`[DaytonaSRM] Sandbox ${id} created asynchronously, ready to use`);
+    } catch (error) {
+      console.error(`[DaytonaSRM] Failed to create sandbox ${id} asynchronously:`, error);
+      throw error;
+    }
+  }
+
+  async create(
+    options?: {
+      workspaceRoot?: string;
+      costProfile?: SandboxHandle['costProfile'];
+      ports?: number[]; // 要暴露的端口列表（用于 CDP 等服务）
+      idleTimeout?: number; // idle 超时时间（秒），超时后自动关闭 sandbox
+    },
+    waitForReady: boolean = true, // 是否等待启动完成，默认为 true
+  ): Promise<SandboxHandle> {
     // 生成唯一的 sandbox ID
     const id = `sandbox-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     // 创建新的 Daytona 客户端（确保无状态）
     const daytona = this.getDaytonaClient();
 
+    // 获取 workspace 路径
+    const workspaceRoot = options?.workspaceRoot ?? '/heyfun/workspace';
+
+    // 如果不需要等待，只创建 handle 并返回（状态为 creating）
+    // 实际的创建和等待会在后续通过 srm.get() 时进行
+    if (!waitForReady) {
+      const handle = createSandboxHandle(id, 'daytona', {
+        workspaceRoot,
+        status: 'creating',
+        costProfile: options?.costProfile ?? 'standard',
+      });
+      console.log(`[DaytonaSRM] Initiated sandbox creation for ${id} (not waiting for ready)`);
+
+      // 异步执行实际的创建过程（不等待完成）
+      this.createSandboxAsync(id, options).catch((err: Error) => {
+        console.error(`[DaytonaSRM] Failed to create sandbox ${id} asynchronously:`, err);
+      });
+
+      return handle;
+    }
+
+    // 需要等待的情况下，执行完整的创建流程
     // 获取或创建 volume（持久化存储）
     // 注意：volume.get(id, true) 使用 sandbox ID 来标识 volume
     const volume = await daytona.volume.get(id, true);
@@ -144,6 +276,17 @@ export class DaytonaSandboxRuntimeManager implements SandboxRuntimeManager {
           createOptions.ports = options.ports;
           console.log(`[DaytonaSRM] Attempting to create sandbox with exposed ports:`, options.ports);
           console.log(`[DaytonaSRM] Note: If ports are not exposed, check Daytona SDK documentation for correct field name`);
+        }
+
+        // 如果指定了 idle 超时，添加到创建选项
+        // 默认 5 分钟（300 秒）
+        if (options?.idleTimeout !== undefined) {
+          createOptions.idleTimeout = options.idleTimeout;
+          console.log(`[DaytonaSRM] Setting sandbox idle timeout to ${options.idleTimeout} seconds`);
+        } else {
+          // 默认 5 分钟 idle 超时
+          createOptions.idleTimeout = 300;
+          console.log(`[DaytonaSRM] Using default sandbox idle timeout: 300 seconds (5 minutes)`);
         }
 
         sandbox = await daytona.create(createOptions);
@@ -179,9 +322,6 @@ export class DaytonaSandboxRuntimeManager implements SandboxRuntimeManager {
 
     // 确保工作区目录存在
     await sandbox.fs.createFolder('/heyfun/workspace', '777');
-
-    // 获取 workspace 路径
-    const workspaceRoot = options?.workspaceRoot ?? '/heyfun/workspace';
 
     // 获取 previewUrls（如果可用）
     // Daytona Sandbox 可能包含多个 previewUrl，每个端口对应一个

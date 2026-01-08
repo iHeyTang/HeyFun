@@ -1,9 +1,10 @@
 import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { toolRegistry } from '@/agents/tools';
 import { WorkflowContext } from '@upstash/workflow';
-import { UnifiedChat, ChatClient } from '@repo/llm/chat';
+import CHAT, { UnifiedChat, ChatClient, ModelInfo } from '@repo/llm/chat';
 import { createDynamicSystemPromptManager, createToolManager } from '@/agents/tools/context';
 import { ReactAgent } from '@/agents/core/frameworks/react';
+import { getAgentInstance } from '..';
 
 /**
  * 工具执行上下文
@@ -15,11 +16,12 @@ export interface ToolExecutionContext {
   toolCallId?: string;
   workflow?: WorkflowContext;
   /** LLM 客户端，用于工具内部调用模型能力 */
-  llmClient?: ChatClient;
+  modelId: string;
+  allModels: ModelInfo[];
   /** 当前消息历史，用于需要访问对话上下文的工具 */
   messages?: UnifiedChat.Message[];
   /** 当前 ReactAgent 实例，用于动态添加工具 */
-  reactAgent?: ReactAgent;
+  agentId?: string;
   /** 内置工具名称列表（不参与动态检索） */
   builtinToolNames?: string[];
   /** 工具执行完成后的回调，在 workflow context.run 中执行 */
@@ -50,15 +52,11 @@ export async function executeTools(toolCalls: UnifiedChat.ToolCall[], context: T
   const dynamicSystemPrompt = createDynamicSystemPromptManager(context.sessionId);
 
   // 为工具创建工具管理器（传入当前 ReactAgent 实例）
-  const toolManager = createToolManager(context.sessionId, context.reactAgent);
+  const agentInstance = getAgentInstance(context.agentId) as unknown as ReactAgent;
+  const toolManager = createToolManager(context.sessionId, agentInstance);
 
-  // 记录工具执行前的 token 计数（如果提供了 llmClient）
-  let beforeInputTokens = 0;
-  let beforeCompletionTokens = 0;
-  if (context.llmClient) {
-    beforeInputTokens = context.llmClient.totalInputTokens;
-    beforeCompletionTokens = context.llmClient.totalCompletionTokens;
-  }
+  CHAT.setModels(context.allModels);
+  const llmClient = CHAT.createClient(context.modelId);
 
   for (const toolCall of toolCalls) {
     const toolName = toolCall.function?.name;
@@ -80,7 +78,7 @@ export async function executeTools(toolCalls: UnifiedChat.ToolCall[], context: T
         workflow: context.workflow!,
         toolCallId: toolCall.id || context.toolCallId,
         messageId: context.messageId,
-        llmClient: context.llmClient,
+        llmClient,
         messages: context.messages,
         dynamicSystemPrompt,
         toolManager,
@@ -102,19 +100,14 @@ export async function executeTools(toolCalls: UnifiedChat.ToolCall[], context: T
 
   // 计算工具执行期间的 token 使用情况（如果提供了 llmClient）
   let tokenUsage: ToolExecutionResult['tokenUsage'] | undefined;
-  if (context.llmClient) {
-    const afterInputTokens = context.llmClient.totalInputTokens;
-    const afterCompletionTokens = context.llmClient.totalCompletionTokens;
-    const promptTokens = afterInputTokens - beforeInputTokens;
-    const completionTokens = afterCompletionTokens - beforeCompletionTokens;
-
-    if (promptTokens > 0 || completionTokens > 0) {
-      tokenUsage = {
-        promptTokens,
-        completionTokens,
-        totalTokens: promptTokens + completionTokens,
-      };
-    }
+  if (llmClient) {
+    const afterInputTokens = llmClient.totalInputTokens;
+    const afterCompletionTokens = llmClient.totalCompletionTokens;
+    tokenUsage = {
+      promptTokens: afterInputTokens,
+      completionTokens: afterCompletionTokens,
+      totalTokens: afterInputTokens + afterCompletionTokens,
+    };
   }
 
   const executionResult: ToolExecutionResult = {

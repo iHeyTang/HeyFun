@@ -56,30 +56,65 @@ export async function deleteSandboxHandleFromState(sessionId: string): Promise<v
 }
 
 /**
- * 确保 sandbox 存在，如果不存在则自动创建
- * 这是工具内部使用的辅助函数，用于自动初始化 sandbox
+ * 发起 sandbox 创建（不等待完成）
  */
-export async function ensureSandbox(sessionId: string): Promise<SandboxHandle> {
-  // 检查是否已有 sandbox，如果存在且状态正常，直接复用
+export async function createSandbox(sessionId: string): Promise<void> {
+  // 检查是否已有 sandbox
   const existingHandle = await getSandboxHandleFromState(sessionId);
   if (existingHandle && existingHandle.status !== 'expired') {
-    // 更新最后使用时间并保存
-    const updatedHandle = updateSandboxHandleLastUsed(existingHandle);
-    await saveSandboxHandleToState(sessionId, updatedHandle);
-    return updatedHandle;
+    // 已存在，无需创建
+    console.log(`[SandboxUtils] Sandbox already exists for session ${sessionId}`);
+    return;
   }
 
-  // 不存在或已过期，创建新的 sandbox
-  // 预先暴露一个端口范围（9000-9999），用于 CDP 等服务
-  // 这样可以支持浏览器自动化等需要外部访问的服务
+  // 创建新的 sandbox（不等待完成）
   const srm = getSandboxRuntimeManager();
-  const handle = await srm.create({
-    ports: [], // 暂时不指定具体端口，让 Daytona 自动处理
-    // 如果需要，可以指定端口范围，例如生成 9000-9999 的所有端口
-    // 但通常 Daytona 会自动暴露所有监听的端口
-  });
+  const handle = await srm.create({ ports: [], idleTimeout: 300 }, false);
 
   // 保存到 state
   await saveSandboxHandleToState(sessionId, handle);
+  console.log(`[SandboxUtils] Initiated sandbox creation for session ${sessionId}`);
+}
+
+/**
+ * 确保 sandbox 存在，如果不存在则自动创建，并等待其就绪
+ * 这是工具内部使用的辅助函数，用于自动初始化 sandbox
+ * 如果 sandbox 状态为 creating，会等待其变为 ready
+ */
+export async function ensureSandbox(sessionId: string): Promise<SandboxHandle> {
+  // 检查是否已有 sandbox
+  let handle = await getSandboxHandleFromState(sessionId);
+
+  if (handle && handle.status !== 'expired') {
+    // 如果状态是 creating，需要等待其变为 ready
+    if (handle.status === 'creating') {
+      console.log(`[SandboxUtils] Sandbox ${handle.id} is still creating, waiting for ready...`);
+      const srm = getSandboxRuntimeManager();
+      // 通过 srm.get() 获取实例，这会等待 sandbox 启动完成
+      const instance = await srm.get(handle);
+      // 更新 handle（状态已变为 ready）
+      handle = instance.handle;
+      await saveSandboxHandleToState(sessionId, handle);
+    } else {
+      // 已就绪，更新最后使用时间
+      const updatedHandle = updateSandboxHandleLastUsed(handle);
+      await saveSandboxHandleToState(sessionId, updatedHandle);
+      return updatedHandle;
+    }
+  } else {
+    // 不存在或已过期，创建新的 sandbox（等待完成）
+    const srm = getSandboxRuntimeManager();
+    handle = await srm.create(
+      {
+        ports: [],
+        idleTimeout: 300, // 5 分钟 idle 超时
+      },
+      true,
+    ); // 等待启动完成
+
+    // 保存到 state
+    await saveSandboxHandleToState(sessionId, handle);
+  }
+
   return handle;
 }

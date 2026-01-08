@@ -36,10 +36,7 @@ export const sandboxGetExecutor = definitionToolExecutor(sandboxGetParamsSchema,
 
       // 不存在或已过期，创建新的 sandbox（框架内部逻辑）
       const srm = getSandboxRuntimeManager();
-      const handle = await srm.create({
-        workspaceRoot,
-        costProfile,
-      });
+      const handle = await srm.create({ workspaceRoot, costProfile, idleTimeout: 300 });
 
       // 保存到 state
       await saveSandboxHandleToState(context.sessionId, handle);

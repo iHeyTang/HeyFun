@@ -24,100 +24,93 @@ interface AgentWorkflowConfig {
   agentId?: string | null;
 }
 
+// ============================================================================
+// 循环说明：
+// 1. Workflow 循环 (roundCount): 处理多轮对话流程
+//    - 每次循环 = 一轮完整对话（加载会话 -> 调用 LLM -> 执行工具 -> 继续）
+//    - 限制：最多 30 轮 (MAX_ROUNDS)
+//
+// 2. ReactAgent 循环 (iteration): ReAct 框架内部的 Think-Act-Observe 迭代
+//    - 在单次 ReactAgent.stream() 调用中，可进行多次迭代
+//    - 遇到工具调用时会 return，退出当前 stream，等待工具结果
+//    - 工具执行后，workflow 继续下一轮循环，再次调用 ReactAgent.stream()
+//    - 限制：最多 100 次迭代 (maxIterations)
+//
+// 关键：ReactAgent 的 iteration 需要跨 workflow 的 roundCount 循环保持！
+// 因为它们是同一个 ReAct 推理过程的延续：
+//   Round 1: iteration 1 (Think) -> iteration 2 (Act: 工具) -> return
+//   工具执行...
+//   Round 2: iteration 3 (Observe + Think) -> iteration 4 (Act) -> return
+//   工具执行...
+//   Round 3: iteration 5 (Observe + Think) -> iteration 6 (Final Answer)
+// ============================================================================
 export const { POST } = serve<AgentWorkflowConfig>(
   async context => {
     const { organizationId, sessionId, userMessageId, modelId, agentId } = context.requestPayload;
 
-    // 更新状态：pending -> processing（开始执行），并保存 workflow run ID
-    await context.run('start-processing', async () => {
-      // 将 workflow run ID 存储到 session 的某个地方（可以通过 metadata 或其他方式）
-      // 这里我们暂时通过日志记录，实际可以通过 Redis 或其他方式存储
+    // 最大轮次限制，避免无限循环
+    const MAX_ROUNDS = 30;
+    let roundCount = 0;
+    // 迭代次数存储键（用于跨 workflow 步骤保持 ReactAgent 的迭代次数）
+    const iterationKey = `agent-iteration:${sessionId}`;
+
+    // 初始化工作流：更新状态、触发标题生成、初始化迭代次数、加载 Agent 配置和模型
+    const { modelInfo, agentConfig, allModels } = await context.run('initialize-agent-workflow', async () => {
+      // 更新状态：pending -> processing（开始执行）
       await prisma.chatSessions.update({
         where: { id: sessionId },
         data: { status: 'processing' },
       });
-    });
 
-    // 检查并触发标题生成（如果需要）
-    await context.run('check-and-trigger-title-generation', async () => {
-      // 获取用户消息内容
+      // 检查并触发标题生成（如果需要）
       const userMessage = await prisma.chatMessages.findUnique({
         where: { id: userMessageId },
       });
 
-      if (!userMessage) {
-        return;
-      }
-
-      // 检查是否需要生成标题
-      const session = await prisma.chatSessions.findUnique({
-        where: { id: sessionId },
-        include: {
-          messages: {
-            where: { role: 'user' },
-            orderBy: { createdAt: 'asc' },
-            take: 1,
-          },
-        },
-      });
-
-      // 如果是第一条用户消息，且标题为空或者是默认标题，则需要生成标题
-      const shouldGenerateTitle =
-        session && session.messages.length === 1 && session.messages[0]?.id === userMessageId && (!session.title || session.title === 'New Chat');
-
-      // 如果需要生成标题，立即触发异步标题生成任务（不阻塞主流程）
-      if (shouldGenerateTitle) {
-        await queue.publish({
-          url: '/api/queue/summary',
-          body: {
-            sessionId,
-            userMessage: userMessage.content,
-            organizationId,
+      if (userMessage) {
+        // 检查是否需要生成标题
+        const session = await prisma.chatSessions.findUnique({
+          where: { id: sessionId },
+          include: {
+            messages: {
+              where: { role: 'user' },
+              orderBy: { createdAt: 'asc' },
+              take: 1,
+            },
           },
         });
-        console.log(`[Workflow] Triggered title generation for session ${sessionId} at start`);
+
+        // 如果是第一条用户消息，且标题为空或者是默认标题，则需要生成标题
+        const shouldGenerateTitle =
+          session && session.messages.length === 1 && session.messages[0]?.id === userMessageId && (!session.title || session.title === 'New Chat');
+
+        // 如果需要生成标题，立即触发异步标题生成任务（不阻塞主流程）
+        if (shouldGenerateTitle) {
+          await queue.publish({
+            url: '/api/queue/summary',
+            body: {
+              sessionId,
+              userMessage: userMessage.content,
+              organizationId,
+            },
+          });
+          console.log(`[Workflow] Triggered title generation for session ${sessionId} at start`);
+        }
       }
-    });
 
-    // ============================================================================
-    // 循环说明：
-    // 1. Workflow 循环 (roundCount): 处理多轮对话流程
-    //    - 每次循环 = 一轮完整对话（加载会话 -> 调用 LLM -> 执行工具 -> 继续）
-    //    - 限制：最多 30 轮 (MAX_ROUNDS)
-    //
-    // 2. ReactAgent 循环 (iteration): ReAct 框架内部的 Think-Act-Observe 迭代
-    //    - 在单次 ReactAgent.stream() 调用中，可进行多次迭代
-    //    - 遇到工具调用时会 return，退出当前 stream，等待工具结果
-    //    - 工具执行后，workflow 继续下一轮循环，再次调用 ReactAgent.stream()
-    //    - 限制：最多 100 次迭代 (maxIterations)
-    //
-    // 关键：ReactAgent 的 iteration 需要跨 workflow 的 roundCount 循环保持！
-    // 因为它们是同一个 ReAct 推理过程的延续：
-    //   Round 1: iteration 1 (Think) -> iteration 2 (Act: 工具) -> return
-    //   工具执行...
-    //   Round 2: iteration 3 (Observe + Think) -> iteration 4 (Act) -> return
-    //   工具执行...
-    //   Round 3: iteration 5 (Observe + Think) -> iteration 6 (Final Answer)
-    // ============================================================================
+      // 触发异步开启 sandbox（不阻塞主流程）
+      // ensureSandbox 具有幂等性，如果已存在则复用
+      await queue.publish({ url: '/api/queue/sandbox/create', body: { sessionId } });
+      console.log(`[Workflow] Triggered sandbox create for session ${sessionId} at start`);
 
-    // 最大轮次限制，避免无限循环
-    const MAX_ROUNDS = 30;
-    let roundCount = 0;
-
-    // 迭代次数存储键（用于跨 workflow 步骤保持 ReactAgent 的迭代次数）
-    const iterationKey = `agent-iteration:${sessionId}`;
-
-    // 初始化迭代次数（如果不存在）
-    // 注意：这个迭代次数是 ReactAgent 内部的 ReAct 循环迭代次数，不是 workflow 的 roundCount
-    await context.run('init-iteration', async () => {
+      // 初始化迭代次数（如果不存在）
+      // 注意：这个迭代次数是 ReactAgent 内部的 ReAct 循环迭代次数，不是 workflow 的 roundCount
       const current = await redis.get<number>(iterationKey);
       if (current === null) {
         await redis.set(iterationKey, 0, { ex: 3600 }); // 1小时过期
       }
-    });
 
-    // 加载 Agent 配置和模型
-    const { modelInfo, agentConfig, allModels } = await context.run('load-agent-and-models', async () => {
+      // 加载 Agent 配置和模型
       const [agentConfig, allModels] = await Promise.all([getAgent(agentId || undefined), loadModelDefinitionsFromDatabase()]);
       const modelInfo = allModels.find(m => m.id === modelId);
       if (!modelInfo) {
@@ -125,10 +118,6 @@ export const { POST } = serve<AgentWorkflowConfig>(
       }
       return { modelInfo, agentConfig, allModels };
     });
-
-    CHAT.setModels(allModels);
-    const llmClient = CHAT.createClient(modelId);
-    const agentInstance = getAgentInstance(agentId || undefined) as unknown as ReactAgent;
 
     // 主循环：处理多轮次对话
     while (roundCount < MAX_ROUNDS) {
@@ -232,6 +221,7 @@ export const { POST } = serve<AgentWorkflowConfig>(
           },
         };
 
+        const agentInstance = getAgentInstance(agentId || undefined) as unknown as ReactAgent;
         const nextStepMessage: UnifiedChat.Message = { role: 'assistant', content: agentInstance.getNextStepPrompt() };
         const stream = agentInstance.reason(llmClient, [nextStepMessage], messages, { modelId, sessionId, iterationProvider });
 
@@ -355,9 +345,10 @@ export const { POST } = serve<AgentWorkflowConfig>(
         sessionId,
         workflow: context,
         messageId: aiMessage.id,
-        llmClient,
+        modelId,
+        allModels,
         messages,
-        reactAgent: agentInstance,
+        agentId: agentId || undefined,
         builtinToolNames: getBuiltinToolNames(agentConfig),
         afterToolExecution: async result => {
           // 步骤11: 保存服务端工具结果到 assistant 消息的 toolResults 字段

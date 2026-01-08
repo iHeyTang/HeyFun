@@ -24,12 +24,17 @@ export interface SandboxRuntimeManager {
   /**
    * 创建新的 sandbox
    * @param options 创建选项
+   * @param waitForReady 是否等待 sandbox 启动完成，默认为 true。如果为 false，只发起创建请求，返回状态为 creating 的 handle
    */
-  create(options?: {
-    workspaceRoot?: string;
-    costProfile?: SandboxHandle['costProfile'];
-    ports?: number[]; // 要暴露的端口列表（用于 CDP 等服务）
-  }): Promise<SandboxHandle>;
+  create(
+    options?: {
+      workspaceRoot?: string;
+      costProfile?: SandboxHandle['costProfile'];
+      ports?: number[]; // 要暴露的端口列表（用于 CDP 等服务）
+      idleTimeout?: number; // idle 超时时间（秒），超时后自动关闭 sandbox
+    },
+    waitForReady?: boolean, // 是否等待启动完成
+  ): Promise<SandboxHandle>;
 
   /**
    * 根据 handle 恢复/获取已存在的 sandbox

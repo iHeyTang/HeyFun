@@ -41,3 +41,6 @@ yarn-error.log*
 apps/agent/workspace/**/*
 !apps/agent/workspace/example.md
 .env*.local
+
+.cursor/
+.shared/

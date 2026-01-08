@@ -35,7 +35,7 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # 安装 Python 依赖
-RUN pip3 install --no-cache-dir playwright requests
+RUN pip3 install --no-cache-dir playwright requests trafilatura html2text markdownify
 
 # 安装 Playwright 浏览器（Chromium）
 RUN python3 -m playwright install chromium

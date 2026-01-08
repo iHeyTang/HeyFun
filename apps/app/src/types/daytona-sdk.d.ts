@@ -31,7 +31,7 @@ declare module '@daytonaio/sdk' {
 
   /**
    * Sandbox 创建选项扩展
-   * 添加端口暴露配置
+   * 添加端口暴露配置和 idle 超时配置
    */
   interface SandboxCreateOptions {
     /**
@@ -45,6 +45,12 @@ declare module '@daytonaio/sdk' {
      * 例如：{ start: 9000, end: 9999 } 会暴露 9000-9999 的所有端口
      */
     portRange?: { start: number; end: number };
+    /**
+     * idle 超时时间（秒）
+     * sandbox 在 idle 状态超过此时间后自动关闭
+     * 例如：300 表示 5 分钟后自动关闭
+     */
+    idleTimeout?: number;
   }
 }
 

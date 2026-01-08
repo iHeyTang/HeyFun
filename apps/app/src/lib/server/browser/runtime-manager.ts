@@ -154,6 +154,23 @@ export interface BrowserRuntimeManager {
   ): Promise<BrowserActionResult>;
 
   /**
+   * 下载资源
+   * @param handle BrowserHandle
+   * @param url 要下载的资源 URL（可以是绝对 URL 或相对 URL）
+   * @param options 下载选项
+   */
+  download(
+    handle: BrowserHandle,
+    url: string,
+    options?: {
+      timeout?: number;
+      sessionId?: string;
+      organizationId?: string;
+      keepFile?: boolean; // 是否保留文件路径（用于后续保存到资源库）
+    },
+  ): Promise<BrowserActionResult>;
+
+  /**
    * 保存浏览器状态（cookies、localStorage 等）
    * @param handle BrowserHandle
    */

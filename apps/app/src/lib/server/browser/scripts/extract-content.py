@@ -1,12 +1,33 @@
 #!/usr/bin/env python3
 """
 浏览器提取内容脚本
-从页面中提取指定元素或整个页面的内容
+从页面中提取指定元素或整个页面的内容，并转换为LLM友好的格式
 """
 import json
 import sys
 import os
 from playwright.sync_api import sync_playwright
+
+# 尝试导入内容提取库
+try:
+    import trafilatura
+    TRAFILATURA_AVAILABLE = True
+except ImportError:
+    TRAFILATURA_AVAILABLE = False
+    sys.stderr.write("Warning: trafilatura not available, falling back to basic extraction\n")
+
+try:
+    import html2text
+    HTML2TEXT_AVAILABLE = True
+except ImportError:
+    HTML2TEXT_AVAILABLE = False
+    sys.stderr.write("Warning: html2text not available, markdown conversion disabled\n")
+
+try:
+    from markdownify import markdownify as md
+    MARKDOWNIFY_AVAILABLE = True
+except ImportError:
+    MARKDOWNIFY_AVAILABLE = False
 
 # 从命令行参数读取配置 JSON
 if len(sys.argv) < 2:
@@ -20,7 +41,7 @@ try:
     ws_endpoint = config.get("wsEndpoint")
     state_file_path = config.get("stateFilePath")
     selector = config.get("selector")
-    extract_type = config.get("extractType", "text")
+    extract_type = config.get("extractType", "markdown")
     current_url = config.get("currentUrl")
 
     with sync_playwright() as p:
@@ -143,8 +164,39 @@ try:
             try:
                 if extract_type == "html":
                     content = element_locator.inner_html(timeout=5000)
+                elif extract_type == "markdown":
+                    # 对于 markdown，先获取 HTML，然后转换
+                    html_content = element_locator.inner_html(timeout=5000)
+                    if html_content and HTML2TEXT_AVAILABLE:
+                        h = html2text.HTML2Text()
+                        h.ignore_links = False
+                        h.ignore_images = False
+                        h.body_width = 0  # 不换行
+                        content = h.handle(html_content)
+                    elif html_content and MARKDOWNIFY_AVAILABLE:
+                        content = md(html_content)
+                    else:
+                        # 回退到纯文本
+                        content = element_locator.inner_text(timeout=5000)
                 else:
-                    content = element_locator.inner_text(timeout=5000)
+                    # text 类型：尝试使用 trafilatura 提取主要内容
+                    html_content = element_locator.inner_html(timeout=5000)
+                    if html_content and TRAFILATURA_AVAILABLE:
+                        try:
+                            # 使用 trafilatura 提取主要内容
+                            extracted = trafilatura.extract(html_content, include_comments=False, include_tables=True)
+                            if extracted and len(extracted.strip()) > 0:
+                                content = extracted
+                                sys.stderr.write(f"Extracted {len(content)} chars using trafilatura\n")
+                            else:
+                                # trafilatura 提取失败，回退到 inner_text
+                                content = element_locator.inner_text(timeout=5000)
+                                sys.stderr.write("Trafilatura extraction returned empty, using inner_text\n")
+                        except Exception as e:
+                            sys.stderr.write(f"Trafilatura extraction failed: {str(e)}, using inner_text\n")
+                            content = element_locator.inner_text(timeout=5000)
+                    else:
+                        content = element_locator.inner_text(timeout=5000)
 
                 if content is None:
                     content = ""
@@ -165,94 +217,80 @@ try:
                 content = page.content()
                 if content is None:
                     content = ""
+            elif extract_type == "markdown":
+                # 提取为 Markdown 格式
+                html_content = page.content()
+                if html_content and HTML2TEXT_AVAILABLE:
+                    try:
+                        h = html2text.HTML2Text()
+                        h.ignore_links = False
+                        h.ignore_images = False
+                        h.body_width = 0  # 不换行
+                        h.unicode_snob = True  # 保留 Unicode 字符
+                        content = h.handle(html_content)
+                        sys.stderr.write(f"Converted {len(content)} chars to markdown using html2text\n")
+                    except Exception as e:
+                        sys.stderr.write(f"html2text conversion failed: {str(e)}, trying markdownify\n")
+                        if MARKDOWNIFY_AVAILABLE:
+                            try:
+                                content = md(html_content)
+                                sys.stderr.write(f"Converted {len(content)} chars to markdown using markdownify\n")
+                            except Exception as e2:
+                                sys.stderr.write(f"markdownify conversion failed: {str(e2)}, using inner_text\n")
+                                content = page.locator("body").inner_text(timeout=10000) or ""
+                        else:
+                            content = page.locator("body").inner_text(timeout=10000) or ""
+                elif html_content and MARKDOWNIFY_AVAILABLE:
+                    try:
+                        content = md(html_content)
+                        sys.stderr.write(f"Converted {len(content)} chars to markdown using markdownify\n")
+                    except Exception as e:
+                        sys.stderr.write(f"markdownify conversion failed: {str(e)}, using inner_text\n")
+                        content = page.locator("body").inner_text(timeout=10000) or ""
+                else:
+                    # 回退到纯文本
+                    content = page.locator("body").inner_text(timeout=10000) or ""
             else:
-                # 提取文本内容 - 使用最可靠的方法
+                # text 类型：使用 trafilatura 提取主要内容
+                html_content = page.content()
                 content = ""
 
-                # 首先检查页面是否有内容
-                try:
-                    body_exists = page.evaluate("() => document.body !== null")
-                    if not body_exists:
-                        sys.stderr.write("Warning: document.body is null\n")
-                        content = ""
-                    else:
-                        # 方法1: 直接使用 Playwright 的 locator（最可靠）
-                        try:
+                if html_content and TRAFILATURA_AVAILABLE:
+                    try:
+                        # 使用 trafilatura 提取主要内容（去除导航、广告等噪音）
+                        extracted = trafilatura.extract(
+                            html_content,
+                            include_comments=False,
+                            include_tables=True,
+                            include_images=False,  # 不包含图片描述，减少噪音
+                            include_links=True,   # 保留链接
+                            output_format="text",  # 纯文本输出
+                        )
+                        if extracted and len(extracted.strip()) > 0:
+                            content = extracted
+                            sys.stderr.write(f"Extracted {len(content)} chars using trafilatura\n")
+                        else:
+                            # trafilatura 提取失败，回退到基本方法
+                            sys.stderr.write("Trafilatura extraction returned empty, using fallback\n")
+                            content = page.locator("body").inner_text(timeout=10000) or ""
+                    except Exception as e:
+                        sys.stderr.write(f"Trafilatura extraction failed: {str(e)}, using fallback\n")
+                        content = page.locator("body").inner_text(timeout=10000) or ""
+                else:
+                    # trafilatura 不可用，使用基本方法
+                    try:
+                        body_exists = page.evaluate("() => document.body !== null")
+                        if not body_exists:
+                            sys.stderr.write("Warning: document.body is null\n")
+                            content = ""
+                        else:
                             body_locator = page.locator("body")
-                            # 等待body元素可见
                             body_locator.wait_for(state="attached", timeout=5000)
-                            content = body_locator.inner_text(timeout=10000)
-                            if content is None:
-                                content = ""
-                            sys.stderr.write(
-                                f"Extracted {len(content)} chars using locator\n"
-                            )
-                        except Exception as e:
-                            sys.stderr.write(f"Locator method failed: {str(e)}\n")
-                            # 方法2: 使用 evaluate 提取 body 的文本
-                            try:
-                                content = page.evaluate(
-                                    """() => {
-                                    if (!document.body) return '';
-                                    // 移除script和style标签内容
-                                    const scripts = document.body.querySelectorAll('script, style, noscript');
-                                    scripts.forEach(el => el.remove());
-                                    // 获取文本
-                                    const text = document.body.innerText || document.body.textContent || '';
-                                    return text.trim();
-                                }"""
-                                )
-                                if content is None:
-                                    content = ""
-                                sys.stderr.write(
-                                    f"Extracted {len(content)} chars using evaluate\n"
-                                )
-                            except Exception as e2:
-                                sys.stderr.write(f"Evaluate method failed: {str(e2)}\n")
-                                # 方法3: 获取所有可见文本节点
-                                try:
-                                    content = page.evaluate(
-                                        """() => {
-                                        if (!document.body) return '';
-                                        const walker = document.createTreeWalker(
-                                            document.body,
-                                            NodeFilter.SHOW_TEXT,
-                                            {
-                                                acceptNode: function(node) {
-                                                    // 跳过script和style标签
-                                                    const parent = node.parentElement;
-                                                    if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
-                                                        return NodeFilter.FILTER_REJECT;
-                                                    }
-                                                    // 只接受非空文本
-                                                    if (node.textContent.trim().length === 0) {
-                                                        return NodeFilter.FILTER_REJECT;
-                                                    }
-                                                    return NodeFilter.FILTER_ACCEPT;
-                                                }
-                                            }
-                                        );
-                                        let text = '';
-                                        let node;
-                                        while (node = walker.nextNode()) {
-                                            text += node.textContent.trim() + '\\n';
-                                        }
-                                        return text.trim();
-                                    }"""
-                                    )
-                                    if content is None:
-                                        content = ""
-                                    sys.stderr.write(
-                                        f"Extracted {len(content)} chars using TreeWalker\n"
-                                    )
-                                except Exception as e3:
-                                    sys.stderr.write(
-                                        f"TreeWalker method failed: {str(e3)}\n"
-                                    )
-                                    content = ""
-                except Exception as e:
-                    sys.stderr.write(f"Error checking page content: {str(e)}\n")
-                    content = ""
+                            content = body_locator.inner_text(timeout=10000) or ""
+                            sys.stderr.write(f"Extracted {len(content)} chars using locator\n")
+                    except Exception as e:
+                        sys.stderr.write(f"Error extracting content: {str(e)}\n")
+                        content = ""
 
         # 保存状态（只在非 CDP 连接时）
         if not ws_endpoint and state_file_path:
@@ -273,11 +311,15 @@ try:
             not content or len(content.strip()) == 0
         )
 
-        # 如果内容很大（超过 100KB），保存到文件；否则直接返回
+        # 如果内容很大（超过 50KB），保存到文件；否则直接返回
+        # 降低阈值以避免 JSON 序列化后过大导致 stdout 写入阻塞
         content_size = len(content.encode("utf-8")) if content else 0
+        max_content_size = 50 * 1024  # 50KB，JSON 序列化后可能达到 70-80KB
+        
+        # 预先检查 JSON 大小，如果序列化后可能超过 100KB，也保存到文件
         result_data = {
             "success": True,
-            "content": content if content_size <= 100 * 1024 else None,
+            "content": None,  # 先设为 None，后面根据大小决定
             "contentType": extract_type,
             "contentSize": content_size,
             "debug": {
@@ -295,25 +337,77 @@ try:
                 "warning"
             ] = "Page appears to be blank or has no extractable content"
 
-        if content_size > 100 * 1024:  # 100KB
+        # 决定是否保存到文件
+        should_save_to_file = content_size > max_content_size
+        
+        if should_save_to_file:
             # 保存到临时文件
             workspace_root = config.get("workspaceRoot", "/tmp")
             content_file = os.path.join(
                 workspace_root, f"content-{os.urandom(8).hex()}.txt"
             )
-            with open(content_file, "w", encoding="utf-8") as f:
-                f.write(content)
-            result_data["contentFile"] = content_file
-            del result_data["content"]  # 大文件不直接返回内容
+            try:
+                with open(content_file, "w", encoding="utf-8") as f:
+                    f.write(content)
+                result_data["contentFile"] = content_file
+                # 不包含 content 字段，减少 JSON 大小
+            except Exception as e:
+                sys.stderr.write(f"Warning: Failed to save content to file: {str(e)}\n")
+                # 如果保存文件失败，尝试包含内容（可能失败，但至少尝试）
+                result_data["content"] = content
+        else:
+            # 小内容直接包含在 JSON 中
+            result_data["content"] = content
+            
+            # 额外检查：如果 JSON 序列化后可能太大，也保存到文件
+            try:
+                test_json = json.dumps(result_data)
+                if len(test_json.encode("utf-8")) > 100 * 1024:  # JSON 超过 100KB
+                    sys.stderr.write(f"Warning: JSON size ({len(test_json)} bytes) exceeds 100KB, saving to file instead\n")
+                    workspace_root = config.get("workspaceRoot", "/tmp")
+                    content_file = os.path.join(
+                        workspace_root, f"content-{os.urandom(8).hex()}.txt"
+                    )
+                    with open(content_file, "w", encoding="utf-8") as f:
+                        f.write(content)
+                    result_data["contentFile"] = content_file
+                    del result_data["content"]
+            except Exception as e:
+                sys.stderr.write(f"Warning: Failed to test JSON size: {str(e)}\n")
 
         # 在输出 JSON 之前，确保 stderr 已刷新（避免调试信息混入 stdout）
         sys.stderr.flush()
 
         # 输出 JSON 结果（确保是唯一的 stdout 输出）
-        result = json.dumps(result_data)
-        # 直接写入 stdout 而不是使用 print，避免额外的换行符
-        sys.stdout.write(result + "\n")
-        sys.stdout.flush()
+        # 使用更安全的方式写入，分块写入以避免阻塞
+        try:
+            result = json.dumps(result_data, ensure_ascii=False)
+            result_bytes = (result + "\n").encode("utf-8")
+            
+            # 分块写入，避免一次性写入大量数据导致阻塞
+            chunk_size = 8192  # 8KB chunks
+            for i in range(0, len(result_bytes), chunk_size):
+                chunk = result_bytes[i:i + chunk_size]
+                sys.stdout.buffer.write(chunk)
+            sys.stdout.buffer.flush()
+        except (IOError, OSError) as e:
+            # 如果写入失败，尝试使用文本模式
+            sys.stderr.write(f"Warning: Binary write failed: {str(e)}, trying text mode\n")
+            try:
+                result = json.dumps(result_data, ensure_ascii=False)
+                sys.stdout.write(result + "\n")
+                sys.stdout.flush()
+            except Exception as e2:
+                # 最后的回退：只返回基本信息，不包含内容
+                error_result = json.dumps({
+                    "success": False,
+                    "error": f"Failed to write result to stdout: {str(e2)}",
+                    "contentSize": content_size,
+                    "contentFile": result_data.get("contentFile"),
+                })
+                sys.stdout.write(error_result + "\n")
+                sys.stdout.flush()
+                sys.exit(1)
 except Exception as e:
     # 确保错误信息只输出到 stdout
     sys.stderr.flush()  # 先刷新 stderr

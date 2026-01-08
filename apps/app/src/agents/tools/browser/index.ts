@@ -6,6 +6,6 @@
 import { browserNavigateTool } from './navigate';
 import { browserClickTool } from './click';
 import { browserExtractContentTool } from './extract-content';
+import { browserDownloadTool } from './download';
 
-export const browserToolboxes = [browserNavigateTool, browserClickTool, browserExtractContentTool];
-
+export const browserToolboxes = [browserNavigateTool, browserClickTool, browserExtractContentTool, browserDownloadTool];

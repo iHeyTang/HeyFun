@@ -7,7 +7,7 @@ import zodToJsonSchema from 'zod-to-json-schema';
  */
 export const browserExtractContentParamsSchema = z.object({
   selector: z.string().optional().describe('要提取内容的元素选择器（CSS 选择器），如果为空则提取整个页面'),
-  extractType: z.enum(['text', 'html', 'markdown']).default('text').optional().describe('提取类型：text（纯文本）、html（HTML）、markdown（Markdown）'),
+  extractType: z.enum(['text', 'html', 'markdown']).default('markdown').optional().describe('提取类型：text（纯文本）、html（HTML）、markdown（Markdown，默认，LLM友好格式）'),
 });
 
 export type BrowserExtractContentParams = z.infer<typeof browserExtractContentParamsSchema>;

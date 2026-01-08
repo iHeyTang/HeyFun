@@ -19,4 +19,5 @@ export const scrollScript = loadScriptFile(currentModuleUrl, 'scripts/scroll.py'
 export const typeScript = loadScriptFile(currentModuleUrl, 'scripts/type.py');
 export const extractContentScript = loadScriptFile(currentModuleUrl, 'scripts/extract-content.py');
 export const screenshotScript = loadScriptFile(currentModuleUrl, 'scripts/screenshot.py');
+export const downloadScript = loadScriptFile(currentModuleUrl, 'scripts/download.py');
 export const browserLauncherScript = loadScriptFile(currentModuleUrl, 'scripts/browser-launcher.py');

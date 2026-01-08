@@ -4,7 +4,8 @@
  */
 
 import { BrowserRuntimeManager, BrowserRuntimeInstance, BrowserActionResult } from '../runtime-manager';
-import { BrowserHandle, createBrowserHandle, updateBrowserHandleStatus, updateBrowserHandleUrl } from '../handle';
+import { BrowserHandle, createBrowserHandle, updateBrowserHandleStatus, updateBrowserHandleUrl, updateBrowserHandleLastUsed } from '../handle';
+import { saveBrowserHandleToState } from '@/agents/tools/browser/utils';
 import { nanoid } from 'nanoid';
 import { getSandboxRuntimeManager, type SandboxRuntimeManager } from '@/lib/server/sandbox';
 import type { SandboxHandle } from '@/lib/server/sandbox/handle';
@@ -20,6 +21,7 @@ import {
   typeScript,
   extractContentScript,
   screenshotScript,
+  downloadScript,
   browserLauncherScript,
 } from '../loader';
 
@@ -186,11 +188,14 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
         const infoContentBase64 = await srm.readFile(sandboxHandle, infoPath);
         const infoContent = Buffer.from(infoContentBase64, 'base64').toString('utf-8');
         browserInfo = JSON.parse(infoContent);
-        console.log(`[PlaywrightBRM] Browser info file found after ${waited}ms:`, {
-          browserId: browserInfo?.browserId,
-          wsEndpoint: browserInfo?.wsEndpoint ? 'present' : 'missing',
-          debugPort: browserInfo?.debugPort,
-        });
+        console.log(
+          `[PlaywrightBRM] Browser info file found after ${waited}ms:`,
+          JSON.stringify({
+            browserId: browserInfo?.browserId,
+            wsEndpoint: browserInfo?.wsEndpoint ? 'present' : 'missing',
+            debugPort: browserInfo?.debugPort,
+          }),
+        );
         break;
       } catch (e) {
         // 文件还不存在，检查日志文件看是否有错误
@@ -261,7 +266,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
 
       if (checkResult.exitCode === 0) {
         try {
-        browserInfo = JSON.parse(checkResult.stdout);
+          browserInfo = JSON.parse(checkResult.stdout);
           console.log(`[PlaywrightBRM] CDP check successful:`, {
             success: browserInfo?.success,
             wsEndpoint: browserInfo?.wsEndpoint ? 'present' : 'missing',
@@ -373,7 +378,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
           timeout: options?.timeout || 30000,
         },
         {
-        timeout: Math.max((options?.timeout || 30000) / 1000 + 10, 60),
+          timeout: Math.max((options?.timeout || 30000) / 1000 + 10, 60),
         },
       );
 
@@ -458,7 +463,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
           currentUrl: handle.currentUrl,
         },
         {
-        timeout: Math.max((options?.timeout || 10000) / 1000 + 10, 30),
+          timeout: Math.max((options?.timeout || 10000) / 1000 + 10, 30),
         },
       );
 
@@ -622,7 +627,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
           currentUrl: handle.currentUrl,
         },
         {
-        timeout: Math.max((options?.timeout || 10000) / 1000 + 10, 30),
+          timeout: Math.max((options?.timeout || 10000) / 1000 + 10, 30),
         },
       );
 
@@ -675,7 +680,7 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
           wsEndpoint: handle.wsEndpoint,
           stateFilePath: handle.stateFilePath,
           selector: options?.selector,
-          extractType: options?.extractType || 'text',
+          extractType: options?.extractType || 'markdown',
           currentUrl: handle.currentUrl,
         },
         { timeout: 60 },
@@ -701,14 +706,17 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
       // 如果有内容文件，读取并上传到 storage
       if (browserResult.contentFile && options?.sessionId && options?.organizationId) {
         try {
+          const contentType = browserResult.contentType || 'text';
+          const fileExt = contentType === 'html' ? 'html' : contentType === 'markdown' ? 'md' : 'txt';
+          const mimeType = contentType === 'html' ? 'text/html' : contentType === 'markdown' ? 'text/markdown' : 'text/plain';
           const contentUrl = await this.readAndUploadFile(
             srm,
             sandboxHandle,
             browserResult.contentFile,
             options.organizationId,
             options.sessionId,
-            `content.${browserResult.contentType === 'html' ? 'html' : 'txt'}`,
-            browserResult.contentType === 'html' ? 'text/html' : 'text/plain',
+            `content.${fileExt}`,
+            mimeType,
           );
           // 读取文件内容并添加到结果中
           const fileContent = await srm.readFile(sandboxHandle, browserResult.contentFile);
@@ -801,6 +809,125 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
         success: browserResult.success || false,
         data: browserResult,
         error: browserResult.error,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * 下载资源
+   */
+  async download(
+    handle: BrowserHandle,
+    url: string,
+    options?: { timeout?: number; sessionId?: string; organizationId?: string; keepFile?: boolean },
+  ): Promise<BrowserActionResult> {
+    try {
+      const srm = getSandboxRuntimeManager();
+      const sandboxHandle = await this.getSandboxHandleById(handle.sandboxId, options?.sessionId);
+
+      const result = await this.execPythonScript(
+        srm,
+        sandboxHandle,
+        downloadScript,
+        {
+          wsEndpoint: handle.wsEndpoint,
+          stateFilePath: handle.stateFilePath,
+          url,
+          timeout: options?.timeout || 60000,
+          currentUrl: handle.currentUrl,
+        },
+        {
+          timeout: Math.max((options?.timeout || 60000) / 1000 + 10, 120),
+        },
+      );
+
+      if (result.exitCode !== 0) {
+        return {
+          success: false,
+          error: `Browser automation failed: ${result.stderr || result.stdout}`,
+        };
+      }
+
+      let browserResult: any;
+      try {
+        browserResult = this.parseScriptOutput(result.stdout);
+      } catch (e) {
+        return {
+          success: false,
+          error: `Failed to parse browser result: ${e instanceof Error ? e.message : String(e)}`,
+        };
+      }
+
+      if (!browserResult.success) {
+        return {
+          success: false,
+          error: browserResult.error || 'Download failed',
+        };
+      }
+
+      // 如果有下载文件，读取并上传到 storage
+      if (browserResult.downloadFile && options?.sessionId && options?.organizationId) {
+        try {
+          // 从文件名推断 MIME 类型
+          const fileName = browserResult.fileName || 'download';
+          const ext = fileName.split('.').pop()?.toLowerCase() || '';
+          const mimeTypes: Record<string, string> = {
+            pdf: 'application/pdf',
+            zip: 'application/zip',
+            txt: 'text/plain',
+            json: 'application/json',
+            xml: 'application/xml',
+            html: 'text/html',
+            css: 'text/css',
+            js: 'application/javascript',
+            png: 'image/png',
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            gif: 'image/gif',
+            svg: 'image/svg+xml',
+            mp4: 'video/mp4',
+            mp3: 'audio/mpeg',
+            doc: 'application/msword',
+            docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            xls: 'application/vnd.ms-excel',
+            xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ppt: 'application/vnd.ms-powerpoint',
+            pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          };
+          const mimeType = mimeTypes[ext] || 'application/octet-stream';
+
+          const downloadUrl = await this.readAndUploadFile(
+            srm,
+            sandboxHandle,
+            browserResult.downloadFile,
+            options.organizationId,
+            options.sessionId,
+            fileName,
+            mimeType,
+          );
+          browserResult.downloadUrl = downloadUrl;
+
+          // 如果 keepFile 为 true，保留文件路径（用于后续保存到资源库）
+          if (!options.keepFile) {
+            delete browserResult.downloadFile;
+          }
+        } catch (error) {
+          console.error('[PlaywrightBRM] Failed to upload download file:', error);
+          // 继续执行，不阻止返回结果
+        }
+      }
+
+      const updatedHandle = updateBrowserHandleLastUsed(handle);
+      await saveBrowserHandleToState(options?.sessionId || '', updatedHandle);
+
+      return {
+        success: true,
+        data: browserResult,
       };
     } catch (error) {
       return {
