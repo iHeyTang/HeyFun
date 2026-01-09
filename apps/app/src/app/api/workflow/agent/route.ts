@@ -4,16 +4,18 @@
  */
 
 import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
-import { getAgent, getAgentInstance } from '@/agents';
+import { getAgent, getReactAgentInstance } from '@/agents';
 import { getBuiltinToolNames } from '@/agents/core/frameworks/base';
-import { ReactAgent, type IterationProvider } from '@/agents/core/frameworks/react';
+import { type IterationProvider } from '@/agents/core/frameworks/react';
 import { buildSystemPrompt } from '@/agents/core/system-prompt';
+import { clearSessionCompletion, getSessionCompletion } from '@/agents/tools/context';
 import { convertPrismaMessagesToUnifiedChat, executeTools, filterReadyChatMessages, saveToolResultsToMessage } from '@/agents/utils';
-import { getSessionCompletion, clearSessionCompletion, CompletionInfo } from '@/agents/tools/context';
 import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/server/credit';
 import { prisma } from '@/lib/server/prisma';
 import { queue } from '@/lib/server/queue';
 import { redis } from '@/lib/server/redis';
+import { realtime } from '@/lib/realtime';
+import { extractJsonFromText } from '@/lib/shared/json';
 import CHAT, { UnifiedChat } from '@/llm/chat';
 import { serve } from '@upstash/workflow/nextjs';
 
@@ -56,11 +58,16 @@ export const { POST } = serve<AgentWorkflowConfig>(
     const iterationKey = `agent-iteration:${sessionId}`;
 
     // 初始化工作流：更新状态、触发标题生成、初始化迭代次数、加载 Agent 配置和模型
-    const { modelInfo, agentConfig, allModels } = await context.run('initialize-agent-workflow', async () => {
+    const { modelInfo, agentConfig, allModels } = await context.run('prepare', async () => {
       // 更新状态：pending -> processing（开始执行）
       await prisma.chatSessions.update({
         where: { id: sessionId },
         data: { status: 'processing' },
+      });
+
+      // 推送会话状态更新
+      await (realtime.emit as any)('session.status', { sessionId, status: 'processing' }).catch((err: any) => {
+        console.error(`[Workflow] Failed to emit session.status:`, err);
       });
 
       // 检查并触发标题生成（如果需要）
@@ -124,232 +131,319 @@ export const { POST } = serve<AgentWorkflowConfig>(
     while (roundCount < MAX_ROUNDS) {
       roundCount++;
 
-      // 步骤1-5：准备对话数据（获取会话、检查余额、构建消息、创建占位、检查状态）
-      const { session, messages, aiMessage, sessionCheckBeforeLLM, roundStartTime } = await context.run(`round-${roundCount}-prepare`, async () => {
-        // 记录轮次开始时间
-        const roundStartTime = Date.now();
-        // 步骤1：获取会话和消息历史
-        const session = await prisma.chatSessions.findUnique({
-          where: { id: sessionId, organizationId },
-          include: { messages: { orderBy: { createdAt: 'asc' } } },
-        });
+      // 步骤1-9：准备对话数据、调用 LLM、更新消息、扣除费用、检查会话状态
+      const { session, messages, aiMessage, sessionCheckBeforeLLM, sessionCheckAfterTools, llmResult, reasonTime, roundStartTime } =
+        await context.run(`round-${roundCount}-reason`, async () => {
+          // 记录轮次开始时间
+          const roundStartTime = Date.now();
 
-        if (!session) {
-          throw new Error('Session not found');
-        }
-        if (session.status !== 'processing') {
-          // 状态不是 processing（可能是 idle，用户取消了），优雅停止 workflow
-          console.log(`[Workflow] Session ${sessionId} status is ${session.status}, stopping workflow gracefully`);
-          return { session: null, messages: null, aiMessage: null, sessionCheckBeforeLLM: false };
-        }
+          // 步骤1：获取会话和消息历史
+          const session = await prisma.chatSessions.findUnique({
+            where: { id: sessionId, organizationId },
+            include: { messages: { orderBy: { createdAt: 'asc' } } },
+          });
 
-        // 步骤2：检查余额
-        const estimatedOutputTokens = 1000;
-        const estimatedCost = calculateLLMCost(modelInfo, 0, estimatedOutputTokens);
-        const hasBalance = await checkCreditsBalance(organizationId, estimatedCost);
-        if (!hasBalance) {
-          throw new Error('Insufficient balance');
-        }
-
-        // 步骤3：构建消息历史
-        const readyMessages = filterReadyChatMessages(session.messages);
-        const systemPrompt = buildSystemPrompt({ preset: agentConfig.promptBlocks, framework: [], dynamic: [] });
-        const messages = await convertPrismaMessagesToUnifiedChat(readyMessages, organizationId, systemPrompt);
-
-        // 步骤4：创建 AI 消息占位
-        const aiMessage = await prisma.chatMessages.create({
-          data: {
-            sessionId,
-            organizationId,
-            role: 'assistant',
-            content: '',
-            isStreaming: false,
-            isComplete: false,
-            modelId: modelId,
-          },
-        });
-
-        // 步骤5：再次检查会话是否已被中断（在 LLM 调用前）
-        const currentSession = await prisma.chatSessions.findUnique({ where: { id: sessionId } });
-        const sessionCheckBeforeLLM = currentSession?.status === 'processing';
-        if (!sessionCheckBeforeLLM) {
-          console.log(`[Workflow] Session ${sessionId} status is ${currentSession?.status}, stopping workflow gracefully before LLM call`);
-        }
-
-        return { session, messages, aiMessage, sessionCheckBeforeLLM, roundStartTime };
-      });
-
-      // 如果 session 为 null 或检查失败，说明用户取消了，停止 workflow
-      if (!session || sessionCheckBeforeLLM === false) {
-        if (!session) {
-          console.log(`[Workflow] Stopping workflow for session ${sessionId} due to cancelled status`);
-        } else {
-          console.log(`[Workflow] Stopping workflow for session ${sessionId} due to cancelled status before LLM call`);
-        }
-        break;
-      }
-
-      // 步骤6-9：调用 LLM、更新消息、扣除费用、检查会话状态
-      const { llmResult, sessionCheckAfterTools, reasonTime } = await context.run(`round-${roundCount}-call-llm-and-update`, async () => {
-        // 步骤6：调用 LLM
-        // 使用 ReactAgent.stream（支持微代理）
-        const reasonStartTime = Date.now();
-        CHAT.setModels(allModels);
-        const llmClient = CHAT.createClient(modelId);
-
-        let fullContent = '';
-        const toolCalls: any[] = [];
-        let inputTokens = 0;
-        let outputTokens = 0;
-        const cachedInputTokens = 0;
-        const cachedOutputTokens = 0;
-
-        // 从 Redis 读取当前迭代次数，并创建同步的迭代次数提供者
-        // 使用内存变量在本次调用中维护迭代次数，并在每次递增时同步更新 Redis
-        let currentIteration = (await redis.get<number>(iterationKey)) ?? 0;
-        const iterationProvider: IterationProvider = {
-          getIteration: () => currentIteration,
-          incrementIteration: () => {
-            currentIteration++;
-            // 异步更新 Redis（不阻塞）
-            redis.set(iterationKey, currentIteration, { ex: 3600 }).catch(err => {
-              console.error(`[Workflow] Failed to update iteration count in Redis:`, err);
-            });
-            return currentIteration;
-          },
-          resetIteration: () => {
-            currentIteration = 0;
-            redis.del(iterationKey).catch(err => {
-              console.error(`[Workflow] Failed to reset iteration count in Redis:`, err);
-            });
-          },
-        };
-
-        const agentInstance = getAgentInstance(agentId || undefined) as unknown as ReactAgent;
-        const nextStepMessage: UnifiedChat.Message = { role: 'assistant', content: agentInstance.getNextStepPrompt() };
-        const stream = agentInstance.reason(llmClient, [nextStepMessage], messages, { modelId, sessionId, iterationProvider });
-
-        for await (const chunk of stream) {
-          // 处理文本内容
-          if (chunk.type === 'content' && chunk.content) {
-            fullContent += chunk.content;
+          if (!session) {
+            throw new Error('Session not found');
+          }
+          if (session.status !== 'processing') {
+            // 状态不是 processing（可能是 idle，用户取消了），优雅停止 workflow
+            console.log(`[Workflow] Session ${sessionId} status is ${session.status}, stopping workflow gracefully`);
+            return {
+              session: null,
+              messages: null,
+              aiMessage: null,
+              sessionCheckBeforeLLM: false,
+              sessionCheckAfterTools: false,
+              llmResult: null,
+              reasonTime: 0,
+              roundStartTime,
+            };
           }
 
-          // 处理工具调用
-          if (chunk.type === 'tool_call' && chunk.toolCall) {
-            const toolCall = chunk.toolCall;
-            // 从 tool_call chunk 中提取工具调用信息
-            if (!toolCalls.find(tc => tc.id === toolCall.id)) {
-              // 处理 arguments，确保是字符串格式
-              let argumentsStr: string;
-              const args = toolCall.function.arguments;
-              if (typeof args === 'string') {
-                // 检查是否是 "[object Object]" 这种错误转换
-                if (args === '[object Object]') {
-                  console.error(`[Workflow] Tool ${toolCall.function.name} has invalid arguments: "[object Object]"`);
-                  argumentsStr = JSON.stringify({});
-                } else {
-                  // 检查是否是有效的 JSON
-                  try {
-                    JSON.parse(args);
-                    argumentsStr = args;
-                  } catch {
-                    // 如果不是有效的 JSON，当作空对象处理
-                    console.error(`[Workflow] Tool ${toolCall.function.name} has invalid JSON string in arguments:`, args);
-                    argumentsStr = JSON.stringify({});
-                  }
+          // 步骤2：检查余额
+          const estimatedOutputTokens = 1000;
+          const estimatedCost = calculateLLMCost(modelInfo, 0, estimatedOutputTokens);
+          const hasBalance = await checkCreditsBalance(organizationId, estimatedCost);
+          if (!hasBalance) {
+            throw new Error('Insufficient balance');
+          }
+
+          // 步骤3：构建消息历史
+          const readyMessages = filterReadyChatMessages(session.messages);
+          const systemPrompt = buildSystemPrompt({ preset: agentConfig.promptBlocks, framework: [], dynamic: [] });
+          const messages = await convertPrismaMessagesToUnifiedChat(readyMessages, organizationId, systemPrompt);
+
+          // 步骤4：创建 AI 消息占位
+          const aiMessage = await prisma.chatMessages.create({
+            data: {
+              sessionId,
+              organizationId,
+              role: 'assistant',
+              content: '',
+              isStreaming: false,
+              isComplete: false,
+              modelId: modelId,
+            },
+          });
+
+          // 步骤5：再次检查会话是否已被中断（在 LLM 调用前）
+          const currentSession = await prisma.chatSessions.findUnique({ where: { id: sessionId } });
+          const sessionCheckBeforeLLM = currentSession?.status === 'processing';
+          if (!sessionCheckBeforeLLM) {
+            console.log(`[Workflow] Session ${sessionId} status is ${currentSession?.status}, stopping workflow gracefully before LLM call`);
+            return {
+              session,
+              messages,
+              aiMessage,
+              sessionCheckBeforeLLM: false,
+              sessionCheckAfterTools: false,
+              llmResult: null,
+              reasonTime: 0,
+              roundStartTime,
+            };
+          }
+
+          // 步骤6：调用 LLM
+          // 使用 ReactAgent.stream（支持微代理）
+          const reasonStartTime = Date.now();
+          CHAT.setModels(allModels);
+          const llmClient = CHAT.createClient(modelId);
+
+          let fullContent = '';
+          const toolCalls: any[] = [];
+          let inputTokens = 0;
+          let outputTokens = 0;
+          const cachedInputTokens = 0;
+          const cachedOutputTokens = 0;
+
+          // 从 Redis 读取当前迭代次数，并创建同步的迭代次数提供者
+          // 使用内存变量在本次调用中维护迭代次数，并在每次递增时同步更新 Redis
+          let currentIteration = (await redis.get<number>(iterationKey)) ?? 0;
+          const iterationProvider: IterationProvider = {
+            getIteration: () => currentIteration,
+            incrementIteration: () => {
+              currentIteration++;
+              // 异步更新 Redis（不阻塞）
+              redis.set(iterationKey, currentIteration, { ex: 3600 }).catch(err => {
+                console.error(`[Workflow] Failed to update iteration count in Redis:`, err);
+              });
+              return currentIteration;
+            },
+            resetIteration: () => {
+              currentIteration = 0;
+              redis.del(iterationKey).catch(err => {
+                console.error(`[Workflow] Failed to reset iteration count in Redis:`, err);
+              });
+            },
+          };
+
+          const agentInstance = getReactAgentInstance(agentId || undefined);
+          const nextStepMessage: UnifiedChat.Message = { role: 'assistant', content: agentInstance.getNextStepPrompt() };
+          const stream = agentInstance.reason(llmClient, [nextStepMessage], messages, { modelId, sessionId, iterationProvider });
+
+          // Debounce 推送：避免过于频繁的实时更新
+          let lastPushTime = 0;
+          const PUSH_DEBOUNCE_MS = 200; // 200ms debounce
+
+          try {
+            for await (const chunk of stream) {
+              // 处理文本内容
+              if (chunk.type === 'content' && chunk.content) {
+                fullContent += chunk.content;
+
+                // 实时推送内容更新（debounced）
+                const now = Date.now();
+                if (now - lastPushTime >= PUSH_DEBOUNCE_MS) {
+                  lastPushTime = now;
+                  await (realtime.emit as any)('message.content', {
+                    sessionId,
+                    messageId: aiMessage.id,
+                    content: fullContent,
+                    isComplete: false,
+                  }).catch((err: any) => {
+                    console.error(`[Workflow] Failed to emit message.content:`, err);
+                  });
                 }
-              } else if (typeof args === 'object' && args !== null) {
-                // 如果是对象，序列化为 JSON 字符串
-                argumentsStr = JSON.stringify(args);
-              } else {
-                // 其他情况（null、undefined 等），使用空对象
-                argumentsStr = JSON.stringify({});
               }
 
-              toolCalls.push({
-                id: toolCall.id || `tool_${toolCalls.length}`,
-                type: 'function',
-                function: {
-                  name: toolCall.function.name,
-                  arguments: argumentsStr,
-                },
+              // 处理工具调用
+              if (chunk.type === 'tool_call' && chunk.toolCall) {
+                const toolCall = chunk.toolCall;
+                // 从 tool_call chunk 中提取工具调用信息
+                if (!toolCalls.find(tc => tc.id === toolCall.id)) {
+                  // 处理 arguments，确保是字符串格式
+                  let argumentsStr: string;
+                  const args = toolCall.function.arguments;
+                  if (typeof args === 'string') {
+                    // 检查是否是 "[object Object]" 这种错误转换
+                    if (args === '[object Object]') {
+                      console.error(`[Workflow] Tool ${toolCall.function.name} has invalid arguments: "[object Object]"`);
+                      argumentsStr = JSON.stringify({});
+                    } else {
+                      // 检查是否是有效的 JSON
+                      try {
+                        JSON.parse(args);
+                        argumentsStr = args;
+                      } catch {
+                        // 如果不是有效的 JSON，当作空对象处理
+                        console.error(`[Workflow] Tool ${toolCall.function.name} has invalid JSON string in arguments:`, args);
+                        argumentsStr = JSON.stringify({});
+                      }
+                    }
+                  } else if (typeof args === 'object' && args !== null) {
+                    // 如果是对象，序列化为 JSON 字符串
+                    argumentsStr = JSON.stringify(args);
+                  } else {
+                    // 其他情况（null、undefined 等），使用空对象
+                    argumentsStr = JSON.stringify({});
+                  }
+
+                  toolCalls.push({
+                    id: toolCall.id || `tool_${toolCalls.length}`,
+                    type: 'function',
+                    function: {
+                      name: toolCall.function.name,
+                      arguments: argumentsStr,
+                    },
+                  });
+                }
+              }
+
+              // 处理 token 使用情况
+              if (chunk.type === 'token_usage' && chunk.tokenUsage) {
+                inputTokens += chunk.tokenUsage.promptTokens || 0;
+                outputTokens += chunk.tokenUsage.completionTokens || 0;
+              }
+            }
+          } catch (streamError: any) {
+            // 处理流读取错误（如 socket 连接中断）
+            const errorMessage = streamError?.message || 'Unknown stream error';
+            const errorCause = streamError?.cause;
+
+            // 检查是否是连接中断错误
+            const isConnectionError =
+              errorMessage.includes('terminated') ||
+              errorMessage.includes('closed') ||
+              errorCause?.code === 'UND_ERR_SOCKET' ||
+              (errorCause?.message && errorCause.message.includes('closed'));
+
+            if (isConnectionError) {
+              // 连接中断：记录警告，但继续使用已收集的内容
+              console.warn(`[Workflow] Stream connection interrupted for session ${sessionId}, message ${aiMessage.id}:`, {
+                error: errorMessage,
+                cause: errorCause,
+                collectedContentLength: fullContent.length,
+                collectedToolCalls: toolCalls.length,
               });
+
+              // 如果已经收集到一些内容，继续处理；否则抛出错误
+              if (fullContent.length === 0 && toolCalls.length === 0) {
+                throw new Error(`Stream connection closed before receiving any data: ${errorMessage}`);
+              }
+            } else {
+              // 其他类型的错误，直接抛出
+              console.error(`[Workflow] Stream reading error for session ${sessionId}, message ${aiMessage.id}:`, streamError);
+              throw streamError;
             }
           }
+          // 计算 reason 阶段耗时
+          const reasonTime = Date.now() - reasonStartTime;
 
-          // 处理 token 使用情况
-          if (chunk.type === 'token_usage' && chunk.tokenUsage) {
-            inputTokens += chunk.tokenUsage.promptTokens || 0;
-            outputTokens += chunk.tokenUsage.completionTokens || 0;
-          }
-        }
-        // 计算 reason 阶段耗时
-        const reasonTime = Date.now() - reasonStartTime;
+          // 步骤6（Reason）只负责收集 LLM 响应，不做任何判定
+          const llmResult = {
+            success: true,
+            data: {
+              content: fullContent,
+              toolCalls: toolCalls.length > 0 ? toolCalls : [],
+            },
+            inputTokens,
+            outputTokens,
+            cachedInputTokens,
+            cachedOutputTokens,
+          };
 
-        // 步骤6（Reason）只负责收集 LLM 响应，不做任何判定
-        const llmResult = {
-          success: true,
-          data: {
-            content: fullContent,
-            toolCalls: toolCalls.length > 0 ? toolCalls : [],
-          },
-          inputTokens,
-          outputTokens,
-          cachedInputTokens,
-          cachedOutputTokens,
-        };
-
-        // 步骤7：更新 AI 消息
-        const {
-          data,
-          inputTokens: resultInputTokens,
-          outputTokens: resultOutputTokens,
-          cachedInputTokens: resultCachedInputTokens,
-          cachedOutputTokens: resultCachedOutputTokens,
-        } = llmResult;
-
-        await prisma.chatMessages.update({
-          where: { id: aiMessage.id },
-          data: {
-            content: data.content,
-            isComplete: false, // 只有调用了 complete 工具才会设置为 true（在步骤13中处理）
-            toolCalls: data.toolCalls.length > 0 ? data.toolCalls : undefined,
-            tokenCount: resultInputTokens + resultOutputTokens,
+          // 步骤7：更新 AI 消息
+          const {
+            data,
             inputTokens: resultInputTokens,
             outputTokens: resultOutputTokens,
-            cachedInputTokens: resultCachedInputTokens > 0 ? resultCachedInputTokens : null,
-            cachedOutputTokens: resultCachedOutputTokens > 0 ? resultCachedOutputTokens : null,
-          },
+            cachedInputTokens: resultCachedInputTokens,
+            cachedOutputTokens: resultCachedOutputTokens,
+          } = llmResult;
+
+          // 获取当前消息的 metadata，更新 reasonTime
+          const currentMessage = await prisma.chatMessages.findUnique({
+            where: { id: aiMessage.id },
+            select: { metadata: true },
+          });
+
+          const metadata = currentMessage?.metadata || {};
+          metadata.timing = {
+            ...(metadata.timing || {}),
+            reasonTime: reasonTime,
+          };
+
+          await prisma.chatMessages.update({
+            where: { id: aiMessage.id },
+            data: {
+              content: data.content,
+              isComplete: false, // 只有调用了 complete 工具才会设置为 true（在步骤13中处理）
+              toolCalls: data.toolCalls.length > 0 ? data.toolCalls : undefined,
+              tokenCount: resultInputTokens + resultOutputTokens,
+              inputTokens: resultInputTokens,
+              outputTokens: resultOutputTokens,
+              cachedInputTokens: resultCachedInputTokens > 0 ? resultCachedInputTokens : null,
+              cachedOutputTokens: resultCachedOutputTokens > 0 ? resultCachedOutputTokens : null,
+              metadata: metadata,
+            },
+          });
+
+          // 推送消息完整更新
+          await (realtime.emit as any)('message.update', {
+            sessionId,
+            messageId: aiMessage.id,
+            data: {
+              content: data.content,
+              toolCalls: data.toolCalls.length > 0 ? data.toolCalls : undefined,
+              isComplete: false,
+              metadata: metadata,
+            },
+          }).catch((err: any) => {
+            console.error(`[Workflow] Failed to emit message.update:`, err);
+          });
+
+          // 步骤8：扣除费用
+          const cost = calculateLLMCost(modelInfo, llmResult.inputTokens, llmResult.outputTokens);
+          if (cost > 0) {
+            await deductCredits(organizationId, cost);
+          }
+
+          // 步骤9: 再次检查会话是否已被中断
+          const finalSession = await prisma.chatSessions.findUnique({ where: { id: sessionId } });
+          const sessionCheckAfterTools = finalSession?.status === 'processing';
+          if (!sessionCheckAfterTools) {
+            console.log(`[Workflow] Session ${sessionId} status is ${finalSession?.status}, stopping workflow gracefully after tools`);
+          }
+
+          return { session, messages, aiMessage, sessionCheckBeforeLLM, sessionCheckAfterTools, llmResult, reasonTime, roundStartTime };
         });
 
-        // 步骤8：扣除费用
-        const cost = calculateLLMCost(modelInfo, llmResult.inputTokens, llmResult.outputTokens);
-        if (cost > 0) {
-          await deductCredits(organizationId, cost);
+      // 如果 session 为 null 或检查失败，说明用户取消了，停止 workflow
+      if (!session || sessionCheckBeforeLLM === false || sessionCheckAfterTools === false || !llmResult) {
+        if (!session) {
+          console.log(`[Workflow] Stopping workflow for session ${sessionId} due to cancelled status`);
+        } else if (sessionCheckBeforeLLM === false) {
+          console.log(`[Workflow] Stopping workflow for session ${sessionId} due to cancelled status before LLM call`);
+        } else {
+          console.log(`[Workflow] Stopping workflow for session ${sessionId} due to cancelled status after tools`);
         }
-
-        // 步骤9: 再次检查会话是否已被中断
-        const currentSession = await prisma.chatSessions.findUnique({ where: { id: sessionId } });
-        const sessionCheckAfterTools = currentSession?.status === 'processing';
-        if (!sessionCheckAfterTools) {
-          console.log(`[Workflow] Session ${sessionId} status is ${currentSession?.status}, stopping workflow gracefully after tools`);
-        }
-
-        return { llmResult, sessionCheckAfterTools, reasonTime };
-      });
-
-      // 如果检查失败，说明用户取消了，停止 workflow
-      if (sessionCheckAfterTools === false) {
-        console.log(`[Workflow] Stopping workflow for session ${sessionId} due to cancelled status after tools`);
         break;
       }
 
       // 步骤10: 执行工具
-      // 记录 action 开始时间（在 context.run 中）
-      const { actionStartTime } = await context.run(`round-${roundCount}-init-action-time`, async () => {
-        return { actionStartTime: Date.now() };
-      });
+      // 记录 action 开始时间
+      const actionStartTime = Date.now();
 
       // 执行工具（不在 context.run 中，因为 executeTools 内部会调用 context.run）
       await executeTools(llmResult.data.toolCalls, {
@@ -398,13 +492,34 @@ export const { POST } = serve<AgentWorkflowConfig>(
               await deductCredits(organizationId, toolCost);
             }
           }
-        },
-      });
 
-      // 计算 action 阶段耗时（在 context.run 中）
-      const { actionTime } = await context.run(`round-${roundCount}-save-action-time`, async () => {
-        const actionTime = Date.now() - actionStartTime;
-        return { actionTime };
+          // 计算 action 阶段耗时并更新到数据库
+          const actionTime = Date.now() - actionStartTime;
+          const currentMessage = await prisma.chatMessages.findUnique({
+            where: { id: aiMessage.id },
+            select: { metadata: true },
+          });
+
+          const metadata = currentMessage?.metadata || {};
+          metadata.timing = {
+            ...(metadata.timing || {}),
+            actionTime: actionTime,
+          };
+
+          await prisma.chatMessages.update({
+            where: { id: aiMessage.id },
+            data: { metadata: metadata },
+          });
+
+          // 推送工具执行后的消息更新
+          await (realtime.emit as any)('message.update', {
+            sessionId,
+            messageId: aiMessage.id,
+            data: { metadata: metadata },
+          }).catch((err: any) => {
+            console.error(`[Workflow] Failed to emit message.update after tool execution:`, err);
+          });
+        },
       });
 
       // 步骤13（Observation）: 观察工具执行结果，判定是否完成
@@ -414,6 +529,25 @@ export const { POST } = serve<AgentWorkflowConfig>(
         // 如果没有工具调用，继续下一轮对话（让 LLM 继续思考）
         if (!llmResult.data.toolCalls.length) {
           const observationTime = Date.now() - observationStartTime;
+
+          // 更新消息的 metadata，记录 observationTime
+          const currentMessage = await prisma.chatMessages.findUnique({
+            where: { id: aiMessage.id },
+            select: { metadata: true },
+          });
+
+          const metadata = currentMessage?.metadata || {};
+          metadata.timing = {
+            ...(metadata.timing || {}),
+            observationTime: observationTime,
+            roundTime: Date.now() - roundStartTime,
+          };
+
+          await prisma.chatMessages.update({
+            where: { id: aiMessage.id },
+            data: { metadata: metadata },
+          });
+
           return { completion: null, observationTime };
         }
 
@@ -429,6 +563,15 @@ export const { POST } = serve<AgentWorkflowConfig>(
             },
           });
 
+          // 推送消息完成状态
+          await (realtime.emit as any)('message.update', {
+            sessionId,
+            messageId: aiMessage.id,
+            data: { isComplete: true },
+          }).catch((err: any) => {
+            console.error(`[Workflow] Failed to emit message.update (complete):`, err);
+          });
+
           await prisma.chatSessions.update({
             where: { id: sessionId },
             data: { updatedAt: new Date() },
@@ -438,17 +581,7 @@ export const { POST } = serve<AgentWorkflowConfig>(
         // 计算 observation 阶段耗时
         const observationTime = Date.now() - observationStartTime;
 
-        return { completion, observationTime };
-      });
-
-      const completionInfo = observeResult.completion;
-      const observationTime = observeResult.observationTime;
-
-      // 保存时间统计到数据库（在 context.run 中）
-      await context.run(`round-${roundCount}-save-timing-to-db`, async () => {
-        const roundTime = Date.now() - roundStartTime;
-
-        // 更新消息的 metadata，记录时间统计
+        // 更新消息的 metadata，记录 observationTime 和 roundTime
         const currentMessage = await prisma.chatMessages.findUnique({
           where: { id: aiMessage.id },
           select: { metadata: true },
@@ -456,19 +589,22 @@ export const { POST } = serve<AgentWorkflowConfig>(
 
         const metadata = currentMessage?.metadata || {};
         metadata.timing = {
-          reasonTime: reasonTime || 0,
-          actionTime: actionTime || 0,
-          observationTime: observationTime || 0,
-          roundTime,
+          ...(metadata.timing || {}),
+          observationTime: observationTime,
+          roundTime: Date.now() - roundStartTime,
         };
 
         await prisma.chatMessages.update({
           where: { id: aiMessage.id },
           data: {
-            metadata: metadata as any,
-          } as any,
+            metadata: metadata,
+          },
         });
+
+        return { completion, observationTime };
       });
+
+      const completionInfo = observeResult.completion;
 
       // 如果任务完成，退出循环
       if (completionInfo) {
@@ -479,78 +615,77 @@ export const { POST } = serve<AgentWorkflowConfig>(
       continue;
     }
 
-    // 从完结状态存储中读取完结信息（循环结束后）
-    const finalCompletionInfo = await context.run('get-completion-info', async () => {
-      return getSessionCompletion(sessionId);
-    });
+    // 处理完结状态（循环结束后）
+    await context.run('before-finish', async () => {
+      // 从完结状态存储中读取完结信息
+      const finalCompletionInfo = getSessionCompletion(sessionId);
 
-    // 根据完结类型做不同处理
-    if (finalCompletionInfo) {
+      // 根据完结类型做不同处理
+      if (!finalCompletionInfo) {
+        return;
+      }
+
       if (finalCompletionInfo.type === 'configure_environment_variable') {
         // 环境变量配置类型：创建新的消息类型用于前端渲染表单
-        await context.run('create-environment-variable-form-message', async () => {
-          const formMessageContent = JSON.stringify({
-            type: 'environment_variable_form',
-            variables: finalCompletionInfo.params?.variables || [],
-            message: finalCompletionInfo.params?.message || '需要配置环境变量',
-          });
+        const formMessageContent = JSON.stringify({
+          type: 'environment_variable_form',
+          variables: finalCompletionInfo.params?.variables || [],
+          message: finalCompletionInfo.params?.message || '需要配置环境变量',
+        });
 
-          await prisma.chatMessages.create({
-            data: {
-              sessionId,
-              organizationId,
-              role: 'assistant',
-              content: formMessageContent,
-              isStreaming: false,
-              isComplete: true,
-              modelId,
+        await prisma.chatMessages.create({
+          data: {
+            sessionId,
+            organizationId,
+            role: 'assistant',
+            content: formMessageContent,
+            isStreaming: false,
+            isComplete: true,
+            modelId,
+          },
+        });
+
+        // 清除完结状态（表单提交后会重新启动 workflow）
+        clearSessionCompletion(sessionId);
+      } else if (finalCompletionInfo.type === 'complete') {
+        // complete 类型：生成建议追问
+        try {
+          // 获取会话和消息历史
+          const session = await prisma.chatSessions.findUnique({
+            where: { id: sessionId },
+            include: {
+              messages: {
+                where: { isComplete: true },
+                orderBy: { createdAt: 'asc' },
+                take: 10, // 只取最近10条消息用于生成建议追问
+              },
             },
           });
 
-          // 清除完结状态（表单提交后会重新启动 workflow）
-          clearSessionCompletion(sessionId);
-        });
-      } else if (finalCompletionInfo.type === 'complete') {
-        // complete 类型：生成建议追问
-        await context.run('generate-suggested-questions', async () => {
-          try {
-            // 获取会话和消息历史
-            const session = await prisma.chatSessions.findUnique({
-              where: { id: sessionId },
-              include: {
-                messages: {
-                  where: { isComplete: true },
-                  orderBy: { createdAt: 'asc' },
-                  take: 10, // 只取最近10条消息用于生成建议追问
-                },
-              },
-            });
+          if (!session || session.messages.length === 0) {
+            clearSessionCompletion(sessionId);
+            return;
+          }
 
-            if (!session || session.messages.length === 0) {
-              return;
-            }
+          // 获取最后5条消息（用于提供上下文）
+          const allMessages = session.messages.filter(msg => msg.role === 'assistant');
+          const lastMessages = allMessages.slice(-5);
 
-            // 获取最后5条消息（用于提供上下文）
-            const allMessages = session.messages.filter(msg => msg.role === 'assistant');
-            const lastMessages = allMessages.slice(-5);
+          if (lastMessages.length === 0) {
+            clearSessionCompletion(sessionId);
+            return;
+          }
 
-            if (lastMessages.length === 0) {
-              return;
-            }
+          // 构建最后几条消息的内容
+          const recentMessagesContent = lastMessages
+            .map((msg, index) => {
+              const messageNum = lastMessages.length - 5 + index + 1;
+              return `[消息 ${messageNum}]\n${msg.content || ''}`;
+            })
+            .join('\n\n---\n\n');
 
-            // 构建最后几条消息的内容
-            const recentMessagesContent = lastMessages
-              .map((msg, index) => {
-                const messageNum = lastMessages.length - 5 + index + 1;
-                return `[消息 ${messageNum}]\n${msg.content || ''}`;
-              })
-              .join('\n\n---\n\n');
-
-            // 获取最后一条消息的内容（用于重点分析）
-            const lastMessageContent = lastMessages[lastMessages.length - 1]?.content || '';
-
-            // 构建提示词，让模型站在用户角度生成想要继续问的问题
-            const suggestionPrompt = `以下是 Agent 最近的回复消息（共${lastMessages.length}条，从旧到新）：
+          // 构建提示词，让模型站在用户角度生成想要继续问的问题
+          const suggestionPrompt = `以下是 Agent 最近的回复消息（共${lastMessages.length}条，从旧到新）：
 
 """
 ${recentMessagesContent}
@@ -571,125 +706,97 @@ ${recentMessagesContent}
 
 请直接返回JSON数组：`;
 
-            // 使用小模型生成建议追问
-            const allModels = await loadModelDefinitionsFromDatabase();
-            CHAT.setModels(allModels);
+          // 使用小模型生成建议追问
+          const allModels = await loadModelDefinitionsFromDatabase();
+          CHAT.setModels(allModels);
 
-            // 尝试使用的内置小模型ID列表（按优先级）
-            const preferredSmallModelIds = ['openai/gpt-5-mini'];
+          // 尝试使用的内置小模型ID列表（按优先级）
+          const preferredSmallModelIds = ['openai/gpt-5-mini'];
 
-            // 查找可用的小模型
-            let smallModelId = null;
-            for (const preferredModelId of preferredSmallModelIds) {
-              const found = allModels.find(m => m.id === preferredModelId);
-              if (found) {
-                smallModelId = preferredModelId;
-                break;
-              }
+          // 查找可用的小模型
+          let smallModelId = null;
+          for (const preferredModelId of preferredSmallModelIds) {
+            const found = allModels.find(m => m.id === preferredModelId);
+            if (found) {
+              smallModelId = preferredModelId;
+              break;
             }
+          }
 
-            // 如果找不到小模型，使用原模型
-            if (!smallModelId) {
-              console.warn('[Workflow] 未找到小模型，使用原模型生成建议追问');
-              smallModelId = modelId;
-            }
+          // 如果找不到小模型，使用原模型
+          if (!smallModelId) {
+            console.warn('[Workflow] 未找到小模型，使用原模型生成建议追问');
+            smallModelId = modelId;
+          }
 
-            const llmClient = CHAT.createClient(smallModelId);
+          const llmClient = CHAT.createClient(smallModelId);
 
-            // 使用最后几条消息和提示词
-            // 将最后几条 assistant 消息转换为对话格式
-            const suggestionMessages: UnifiedChat.Message[] = lastMessages.map(msg => ({
-              role: 'assistant' as const,
-              content: msg.content || '',
-            }));
+          // 使用最后几条消息和提示词
+          // 将最后几条 assistant 消息转换为对话格式
+          const suggestionMessages: UnifiedChat.Message[] = lastMessages.map(msg => ({ role: 'assistant', content: msg.content || '' }));
 
-            // 添加用户提示
-            suggestionMessages.push({ role: 'user', content: suggestionPrompt });
+          // 添加用户提示
+          suggestionMessages.push({ role: 'user', content: suggestionPrompt });
 
-            const suggestionResult = await llmClient.chat({
-              messages: suggestionMessages,
-              temperature: 0.7,
+          const suggestionResult = await llmClient.chat({
+            messages: suggestionMessages,
+            temperature: 0.7,
+          });
+
+          // 处理MessageContent可能是字符串或数组的情况
+          const rawContent = suggestionResult.choices[0]?.message?.content;
+          let suggestionContent = '';
+          if (typeof rawContent === 'string') {
+            suggestionContent = rawContent;
+          } else if (Array.isArray(rawContent)) {
+            // 如果是数组，提取所有文本内容
+            suggestionContent = rawContent
+              .filter(item => item.type === 'text')
+              .map(item => item.text)
+              .join('\n');
+          }
+
+          // 尝试解析JSON数组
+          let suggestedQuestions: string[] = [];
+          const extractedJson = extractJsonFromText<string[]>(suggestionContent);
+          if (extractedJson && Array.isArray(extractedJson) && extractedJson.every((q: any) => typeof q === 'string')) {
+            suggestedQuestions = extractedJson;
+          }
+
+          // 如果成功生成了建议追问，保存为特殊类型的消息
+          if (suggestedQuestions.length > 0) {
+            const suggestionMessageContent = JSON.stringify({
+              type: 'suggested_questions',
+              questions: suggestedQuestions,
             });
 
-            // 处理MessageContent可能是字符串或数组的情况
-            const rawContent = suggestionResult.choices[0]?.message?.content;
-            let suggestionContent = '';
-            if (typeof rawContent === 'string') {
-              suggestionContent = rawContent;
-            } else if (Array.isArray(rawContent)) {
-              // 如果是数组，提取所有文本内容
-              suggestionContent = rawContent
-                .filter(item => item.type === 'text')
-                .map(item => (item as { type: 'text'; text: string }).text)
-                .join('\n');
-            }
+            await prisma.chatMessages.create({
+              data: {
+                sessionId,
+                organizationId,
+                role: 'assistant',
+                content: suggestionMessageContent,
+                isStreaming: false,
+                isComplete: true,
+                modelId: smallModelId, // 保存小模型的ID
+              },
+            });
 
-            // 尝试解析JSON数组
-            let suggestedQuestions: string[] = [];
-            try {
-              // 尝试提取JSON数组（可能包含markdown代码块）
-              const jsonMatch = suggestionContent.match(/\[[\s\S]*?\]/);
-              if (jsonMatch) {
-                suggestedQuestions = JSON.parse(jsonMatch[0]);
-              } else {
-                suggestedQuestions = JSON.parse(suggestionContent);
-              }
-
-              // 验证是字符串数组
-              if (!Array.isArray(suggestedQuestions) || !suggestedQuestions.every((q: any) => typeof q === 'string')) {
-                throw new Error('Invalid format');
-              }
-            } catch (parseError) {
-              console.error('[Workflow] Failed to parse suggested questions:', parseError);
-              // 如果解析失败，尝试从文本中提取问题
-              const lines = suggestionContent.split('\n').filter((line: string) => line.trim());
-              suggestedQuestions = lines
-                .filter((line: string) => line.trim().length > 0 && line.trim().length < 50)
-                .map((line: string) =>
-                  line
-                    .replace(/^[-*•]\s*/, '')
-                    .replace(/^\d+[.)]\s*/, '')
-                    .trim(),
-                )
-                .filter((q: string) => q.length > 0)
-                .slice(0, 5);
-            }
-
-            // 如果成功生成了建议追问，保存为特殊类型的消息
-            if (suggestedQuestions.length > 0) {
-              const suggestionMessageContent = JSON.stringify({
-                type: 'suggested_questions',
-                questions: suggestedQuestions,
-              });
-
-              await prisma.chatMessages.create({
-                data: {
-                  sessionId,
-                  organizationId,
-                  role: 'assistant',
-                  content: suggestionMessageContent,
-                  isStreaming: false,
-                  isComplete: true,
-                  modelId: smallModelId, // 保存小模型的ID
-                },
-              });
-
-              // 计算并扣除credits（使用小模型）
-              const modelInfo = allModels.find(m => m.id === smallModelId);
-              if (modelInfo) {
-                const inputTokens = suggestionResult.usage?.prompt_tokens || 0;
-                const outputTokens = suggestionResult.usage?.completion_tokens || 0;
-                const cost = calculateLLMCost(modelInfo, inputTokens, outputTokens);
-                if (cost > 0) {
-                  await deductCredits(organizationId, cost);
-                }
+            // 计算并扣除credits（使用小模型）
+            const modelInfo = allModels.find(m => m.id === smallModelId);
+            if (modelInfo) {
+              const inputTokens = suggestionResult.usage?.prompt_tokens || 0;
+              const outputTokens = suggestionResult.usage?.completion_tokens || 0;
+              const cost = calculateLLMCost(modelInfo, inputTokens, outputTokens);
+              if (cost > 0) {
+                await deductCredits(organizationId, cost);
               }
             }
-          } catch (error) {
-            // 生成建议追问失败不影响主流程，只记录错误
-            console.error('[Workflow] Failed to generate suggested questions:', error);
           }
-        });
+        } catch (error) {
+          // 生成建议追问失败不影响主流程，只记录错误
+          console.error('[Workflow] Failed to generate suggested questions:', error);
+        }
 
         // 清除完结状态
         clearSessionCompletion(sessionId);
@@ -697,17 +804,22 @@ ${recentMessagesContent}
         // 其他类型：清除完结状态
         clearSessionCompletion(sessionId);
       }
-    }
+    });
 
     // 更新状态：processing -> idle（执行完成或失败都设为idle，避免阻塞新消息）
     // 使用 context.run 确保即使 workflow 执行失败，状态也能被重置
-    await context.run('finish-processing', async () => {
+    await context.run('finish', async () => {
       await prisma.chatSessions.update({
         where: { id: sessionId },
         data: {
           status: 'idle', // 无论成功还是失败，都设为idle，避免阻塞新消息
           updatedAt: new Date(),
         },
+      });
+
+      // 推送会话状态更新
+      await (realtime.emit as any)('session.status', { sessionId, status: 'idle' }).catch((err: any) => {
+        console.error(`[Workflow] Failed to emit session.status (idle):`, err);
       });
 
       // 清理迭代次数（对话完成）
@@ -726,6 +838,11 @@ ${recentMessagesContent}
       await prisma.chatSessions.update({
         where: { id: sessionId },
         data: { status: 'idle' },
+      });
+
+      // 推送会话状态更新
+      await (realtime.emit as any)('session.status', { sessionId, status: 'idle' }).catch((err: any) => {
+        console.error(`[Workflow] Failed to emit session.status (idle on error):`, err);
       });
 
       // 清理迭代次数（对话完成）

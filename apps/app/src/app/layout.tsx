@@ -1,4 +1,5 @@
 import { Toaster } from '@/components/ui/sonner';
+import { RealtimeProviderWrapper } from '@/components/providers/realtime-provider';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -168,8 +169,10 @@ export default async function RootLayout({
         <body style={{ height: '100vh', width: '100vw', overflow: 'hidden', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, margin: 0, padding: 0 }} className="antialiased">
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <NextIntlClientProvider>
-              <div style={{ height: '100vh', width: '100vw', overflow: 'hidden', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>{children}</div>
-              <Toaster />
+              <RealtimeProviderWrapper>
+                <div style={{ height: '100vh', width: '100vw', overflow: 'hidden', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>{children}</div>
+                <Toaster />
+              </RealtimeProviderWrapper>
             </NextIntlClientProvider>
           </ThemeProvider>
           <Analytics />

@@ -1,6 +1,7 @@
 import { AgentRegistry } from '@/agents/core/frameworks/registry';
 import { GeneralAgent } from './presets/general-agent';
 import { IAgent } from './core/frameworks/base';
+import { ReactAgent } from './core/frameworks/react';
 
 const agentRegistry = new AgentRegistry();
 
@@ -15,4 +16,8 @@ export function getAgent(agentId?: string) {
  */
 export function getAgentInstance(agentId?: string): IAgent {
   return agentRegistry.get(agentId);
+}
+
+export function getReactAgentInstance(agentId?: string): ReactAgent {
+  return agentRegistry.get(agentId) as ReactAgent;
 }

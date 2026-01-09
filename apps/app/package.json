@@ -61,6 +61,7 @@
     "@tiptap/suggestion": "^3.13.0",
     "@types/ws": "^8.18.0",
     "@upstash/qstash": "^2.8.2",
+    "@upstash/realtime": "^1.0.0",
     "@upstash/redis": "^1.35.3",
     "@upstash/vector": "^1.2.2",
     "@upstash/workflow": "^0.2.19",

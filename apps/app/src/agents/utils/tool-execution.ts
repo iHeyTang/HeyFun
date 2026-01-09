@@ -1,10 +1,9 @@
 import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { toolRegistry } from '@/agents/tools';
+import { createCompletionManager, createDynamicSystemPromptManager, createToolManager } from '@/agents/tools/context';
+import CHAT, { ModelInfo, UnifiedChat } from '@/llm/chat';
 import { WorkflowContext } from '@upstash/workflow';
-import CHAT, { UnifiedChat, ChatClient, ModelInfo } from '@/llm/chat';
-import { createDynamicSystemPromptManager, createToolManager, createCompletionManager } from '@/agents/tools/context';
-import { ReactAgent } from '@/agents/core/frameworks/react';
-import { getAgentInstance } from '..';
+import { getReactAgentInstance } from '..';
 
 /**
  * 工具执行上下文
@@ -52,7 +51,7 @@ export async function executeTools(toolCalls: UnifiedChat.ToolCall[], context: T
   const dynamicSystemPrompt = createDynamicSystemPromptManager(context.sessionId);
 
   // 为工具创建工具管理器（传入当前 ReactAgent 实例）
-  const agentInstance = getAgentInstance(context.agentId) as unknown as ReactAgent;
+  const agentInstance = getReactAgentInstance(context.agentId);
   const toolManager = createToolManager(context.sessionId, agentInstance);
 
   // 为工具创建完结管理器

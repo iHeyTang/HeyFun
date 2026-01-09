@@ -9,6 +9,8 @@ import type { ChatInputAttachment } from '@/components/block/chat-input/index';
 import { ThemeLogo } from '@/components/features/theme-logo';
 import { useChatSendMessage } from '@/hooks/use-chat-send-message';
 import { useChatMessagesStore, useChatSessionsStore } from '@/hooks/use-chat-sessions';
+import { useChatSessionsListStore } from '@/hooks/use-chat-sessions-list';
+import { useRealtime } from '@/lib/realtime-client';
 import { ChatMessages } from '@prisma/client';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
@@ -83,6 +85,38 @@ export function ChatSession({
   const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isPollingRef = useRef<boolean>(false); // 防止多个轮询实例同时运行
   const { selectedModel } = useChatbotModelSelector();
+
+  // 实时订阅消息更新
+  useRealtime({
+    events: ['message.content', 'message.update', 'message.create', 'session.status'],
+    channel: `session:${sessionId}`,
+    onData({ event, data }) {
+      const { updateMessage, addMessageToSession } = useChatMessagesStore.getState();
+      const { updateSessionStatus } = useChatSessionsListStore.getState();
+
+      if (event === 'message.content' || event === 'message.update') {
+        // 更新消息内容
+        const messageId = 'messageId' in data ? data.messageId : '';
+        if (messageId) {
+          updateMessage(sessionId, messageId, event === 'message.content' ? { content: data.content, isComplete: data.isComplete } : data);
+        }
+      } else if (event === 'message.create') {
+        // 添加新消息
+        if ('message' in data && data.message) {
+          addMessageToSession(sessionId, data.message as ChatMessages);
+        }
+      } else if (event === 'session.status') {
+        // 更新会话状态
+        if ('status' in data) {
+          updateSessionStatus(sessionId, data.status);
+          // 如果状态变为 idle 或 failed，停止轮询
+          if (data.status === 'idle' || data.status === 'failed') {
+            shouldPollRef.current = false;
+          }
+        }
+      }
+    },
+  });
 
   // 使用 useCallback 优化滚动函数
   const scrollToBottom = useCallback(() => {
@@ -357,49 +391,6 @@ export function ChatSession({
     return lastMessage && lastMessage.role === 'user';
   }, [messages, isLoading]);
 
-  // 判断是否正在生成建议问题
-  // 当最后一条消息是 assistant 消息且有内容，但不是 suggested_questions 类型，且还在 loading 时
-  const shouldShowGeneratingQuestionsMessage = useMemo(() => {
-    if (!isLoading || messages.length === 0) {
-      return false;
-    }
-    const lastMessage = messages[messages.length - 1];
-    if (!lastMessage || lastMessage.role !== 'assistant') {
-      return false;
-    }
-
-    // 如果消息还在流式传输中，说明 agent 还在生成响应，不应该显示"正在生成建议问题"
-    if (lastMessage.isStreaming) {
-      return false;
-    }
-
-    // 检查最后一条消息是否有内容
-    const hasContent = lastMessage.content && lastMessage.content.trim().length > 0;
-    if (!hasContent) {
-      return false;
-    }
-
-    // 检查消息内容是否包含 thinking 标签，如果包含说明 agent 正在思考，不应该显示"正在生成建议问题"
-    const hasThinkingContent = /<thinking[\s\S]*?>/i.test(lastMessage.content);
-    if (hasThinkingContent) {
-      return false; // agent 正在思考，不显示"正在生成建议问题"
-    }
-
-    // 检查最后一条消息是否是 suggested_questions 类型
-    try {
-      const parsed = JSON.parse(lastMessage.content);
-      if (parsed && typeof parsed === 'object' && parsed.type === 'suggested_questions') {
-        return false; // 已经是 suggested_questions 类型，不需要显示占位符
-      }
-    } catch (e) {
-      // 不是 JSON 格式，说明是普通文本消息，可能正在生成建议问题
-    }
-
-    // 最后一条 assistant 消息有内容，但不是 suggested_questions 类型，且还在 loading
-    // 说明可能正在生成建议问题
-    return true;
-  }, [messages, isLoading]);
-
   // 当显示/隐藏思考中消息时也滚动到底部
   const shouldShowThinkingMessageRef = useRef(shouldShowThinkingMessage);
   useEffect(() => {
@@ -464,21 +455,11 @@ export function ChatSession({
             />
           ))}
           {shouldShowThinkingMessage && <ThinkingMessage modelId={selectedModel?.id} label="思考中" />}
-          {shouldShowGeneratingQuestionsMessage && <ThinkingMessage modelId={selectedModel?.id} label="正在生成建议问题" />}
           <div ref={messagesEndRef} />
         </div>
       </A2UIProvider>
     ),
-    [
-      messages,
-      shouldShowThinkingMessage,
-      shouldShowGeneratingQuestionsMessage,
-      selectedModel?.id,
-      sessionId,
-      apiPrefix,
-      handleA2UIEvent,
-      handleSendMessage,
-    ],
+    [messages, shouldShowThinkingMessage, selectedModel?.id, sessionId, apiPrefix, handleA2UIEvent, handleSendMessage],
   );
 
   const usage = useMemo(() => {
