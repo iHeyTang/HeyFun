@@ -1,7 +1,7 @@
 import { ToolResult } from '@/agents/core/tools/tool-definition';
 import { toolRegistry } from '@/agents/tools';
 import { WorkflowContext } from '@upstash/workflow';
-import CHAT, { UnifiedChat, ChatClient, ModelInfo } from '@repo/llm/chat';
+import CHAT, { UnifiedChat, ChatClient, ModelInfo } from '@/llm/chat';
 import { createDynamicSystemPromptManager, createToolManager, createCompletionManager } from '@/agents/tools/context';
 import { ReactAgent } from '@/agents/core/frameworks/react';
 import { getAgentInstance } from '..';

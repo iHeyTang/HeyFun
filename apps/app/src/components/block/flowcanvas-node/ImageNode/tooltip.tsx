@@ -8,7 +8,7 @@ import { FlowCanvasTextEditor, FlowCanvasTextEditorRef } from '../../flowcanvas/
 import { RatioIcon } from '../../ratio-icon';
 import { ImageNodeActionData, ImageNodeProcessor } from './processor';
 import { FullscreenModal, fullscreenModalRef } from '@/components/block/preview/fullscreen';
-import { ImageJsonSchema } from '@repo/llm/aigc';
+import { ImageJsonSchema } from '@/llm/aigc';
 import { useTranslations } from 'next-intl';
 import { AdvancedOptionsForm } from '../AdvancedOptionsForm';
 

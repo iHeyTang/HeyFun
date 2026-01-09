@@ -2,7 +2,7 @@ import { ToolContext } from '../../context';
 import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
 import storage, { extractOssFileKey, validateOssFileAccess } from '@/lib/server/storage';
-import AIGC, { speechToTextParamsSchema } from '@repo/llm/aigc';
+import AIGC, { speechToTextParamsSchema } from '@/llm/aigc';
 import type { z } from 'zod';
 import { transcribeMediaParamsSchema } from './schema';
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';

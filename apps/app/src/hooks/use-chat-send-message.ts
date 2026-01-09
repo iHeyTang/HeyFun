@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { ChatMessages } from '@prisma/client';
 import { ChatInputAttachment } from '@/components/block/chat-input';
 import { useChatSessionsStore, useChatMessagesStore } from './use-chat-sessions';
-import { ModelInfo } from '@repo/llm/chat';
+import { ModelInfo } from '@/llm/chat';
 import { buildMessageContent } from '@/components/features/chat/build-message-content';
 
 interface UseChatSendMessageOptions {

@@ -1,7 +1,7 @@
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
-import AIGC, { musicParamsSchema } from '@repo/llm/aigc';
+import AIGC, { musicParamsSchema } from '@/llm/aigc';
 import type { z } from 'zod';
 import { generateMusicParamsSchema } from './schema';
 import { createAssetsFromAigcResults } from '@/agents/utils/aigc-asset-helper';

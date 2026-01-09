@@ -4,7 +4,7 @@
  * 使用统一的 LLM 接口（通过 ChatClient 获取 Provider）
  */
 
-import CHAT from '@repo/llm/chat';
+import CHAT from '@/llm/chat';
 import { getModels } from '@/lib/server/gateway';
 
 /**

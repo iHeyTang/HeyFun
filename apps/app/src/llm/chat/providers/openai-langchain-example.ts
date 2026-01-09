@@ -1,6 +1,6 @@
 /**
  * OpenAI Provider 使用 LangChain 的示例实现
- * 
+ *
  * 这是一个示例文件，展示如何在 Provider 中使用 LangChain 实现 embedding
  * 要使用此实现，请取消注释 OpenAIProvider 中的相应代码
  */
@@ -9,7 +9,7 @@ import { BaseProvider, ProviderConfig } from './base';
 
 /**
  * 使用 LangChain 的 OpenAI Provider 示例
- * 
+ *
  * 注意：这只是一个示例，实际使用时请取消注释 OpenAIProvider 中的代码
  */
 export class OpenAIProviderWithLangChain extends BaseProvider {
@@ -52,4 +52,3 @@ export class OpenAIProviderWithLangChain extends BaseProvider {
     return embeddings.embedDocuments(texts);
   }
 }
-

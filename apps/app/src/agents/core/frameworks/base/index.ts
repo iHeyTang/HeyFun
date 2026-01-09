@@ -1,4 +1,4 @@
-import { ChatClient, UnifiedChat } from '@repo/llm/chat';
+import { ChatClient, UnifiedChat } from '@/llm/chat';
 import type { SystemPromptBlock } from '@/agents/core/system-prompt';
 
 /**

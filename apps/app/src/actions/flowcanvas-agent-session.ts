@@ -2,7 +2,7 @@
 
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
-import type { ModelInfo } from '@repo/llm/chat';
+import type { ModelInfo } from '@/llm/chat';
 
 /**
  * FlowCanvas Project Agent Sessions Actions

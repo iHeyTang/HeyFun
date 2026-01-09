@@ -4,7 +4,7 @@ import storage from '@/lib/server/storage';
 import { workflow } from '@/lib/server/workflow';
 import { to } from '@/lib/shared/to';
 import { PaintboardTasks } from '@prisma/client';
-import AIGC, { SubmitTaskParams } from '@repo/llm/aigc';
+import AIGC, { SubmitTaskParams } from '@/llm/aigc';
 import { serve } from '@upstash/workflow/nextjs';
 
 export interface PaintboardWorkflowConfig {

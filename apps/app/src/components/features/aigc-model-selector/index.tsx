@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GenerationType } from '@repo/llm/aigc';
+import { GenerationType } from '@/llm/aigc';
 import { Image, Mic, Search, Sparkles, Star, Video } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';

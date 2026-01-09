@@ -14,7 +14,7 @@ import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/serv
 import { prisma } from '@/lib/server/prisma';
 import { queue } from '@/lib/server/queue';
 import { redis } from '@/lib/server/redis';
-import CHAT, { UnifiedChat } from '@repo/llm/chat';
+import CHAT, { UnifiedChat } from '@/llm/chat';
 import { serve } from '@upstash/workflow/nextjs';
 
 interface AgentWorkflowConfig {

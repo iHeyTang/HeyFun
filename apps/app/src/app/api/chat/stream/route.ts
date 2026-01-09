@@ -6,7 +6,7 @@ import { calculateLLMCost, checkCreditsBalance, deductCredits } from '@/lib/serv
 import { recordGatewayUsage } from '@/lib/server/gateway';
 import { prisma } from '@/lib/server/prisma';
 import { queue } from '@/lib/server/queue';
-import CHAT, { UnifiedChat } from '@repo/llm/chat';
+import CHAT, { UnifiedChat } from '@/llm/chat';
 import { NextResponse } from 'next/server';
 
 // 获取AI流式响应

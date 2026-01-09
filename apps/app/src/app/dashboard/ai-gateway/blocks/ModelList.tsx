@@ -4,7 +4,7 @@ import { getModelList } from '@/actions/gateway';
 import { ModelCard } from '@/components/features/model-card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ModelInfo } from '@repo/llm/chat';
+import { ModelInfo } from '@/llm/chat';
 import { Loader2, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';

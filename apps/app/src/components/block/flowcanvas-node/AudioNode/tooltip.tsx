@@ -3,7 +3,7 @@ import { FlowCanvasTextEditor, FlowCanvasTextEditorRef } from '@/components/bloc
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAigc, useAigcVoiceList } from '@/hooks/use-llm';
-import { T2aJsonSchema, Voice } from '@repo/llm/aigc';
+import { T2aJsonSchema, Voice } from '@/llm/aigc';
 import { Loader2, WandSparkles } from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { AudioNodeActionData, AudioNodeProcessor } from './processor';

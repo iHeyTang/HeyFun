@@ -1,8 +1,8 @@
 'use server';
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
-import AIGC, { SubmitTaskParamsJsonSchema } from '@repo/llm/aigc';
-import type { ModelInfo } from '@repo/llm/chat';
+import AIGC, { SubmitTaskParamsJsonSchema } from '@/llm/aigc';
+import type { ModelInfo } from '@/llm/chat';
 import zodToJsonSchema from 'zod-to-json-schema';
 
 /**

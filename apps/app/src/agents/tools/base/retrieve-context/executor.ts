@@ -2,7 +2,7 @@ import { ToolContext } from '../../context';
 import { retrieveContextParamsSchema } from './schema';
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import { prisma } from '@/lib/server/prisma';
-import type { UnifiedChat } from '@repo/llm/chat';
+import type { UnifiedChat } from '@/llm/chat';
 
 /**
  * 提取消息文本内容

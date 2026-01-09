@@ -1,6 +1,6 @@
 import { formatContextLength } from '@/lib/shared/number';
 import { cn } from '@/lib/utils';
-import { ModelInfo } from '@repo/llm/chat';
+import { ModelInfo } from '@/llm/chat';
 import { ImageIcon, MessageCircle, MessageCircleIcon, Notebook } from 'lucide-react';
 import { ReactNode } from 'react';
 import { ModelIcon } from '../model-icon';

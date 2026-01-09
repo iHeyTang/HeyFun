@@ -9,7 +9,6 @@ function randomUUID(): string {
   // 在 Node.js 环境中使用 crypto 模块
   if (typeof window === 'undefined') {
     // 服务器端：使用 Node.js crypto 模块（动态导入避免 webpack 处理 node: 协议）
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     return nodeCrypto.randomUUID();
   }
   // 客户端：使用 Web Crypto API

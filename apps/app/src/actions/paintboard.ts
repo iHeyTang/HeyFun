@@ -3,7 +3,7 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
-import { SubmitTaskParams } from '@repo/llm/aigc';
+import { SubmitTaskParams } from '@/llm/aigc';
 
 // 获取用户的所有画板任务
 export const getUserPaintboardTasks = withUserAuth(

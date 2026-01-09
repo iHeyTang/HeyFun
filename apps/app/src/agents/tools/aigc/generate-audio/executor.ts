@@ -1,7 +1,7 @@
 import { ToolContext } from '../../context';
 import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
-import AIGC, { t2aParamsSchema } from '@repo/llm/aigc';
+import AIGC, { t2aParamsSchema } from '@/llm/aigc';
 import type { z } from 'zod';
 import { generateAudioParamsSchema } from './schema';
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';

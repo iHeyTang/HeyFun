@@ -1,7 +1,7 @@
 import { ToolContext } from '../../context';
 import { manageContextWindowParamsSchema } from './schema';
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
-import type { UnifiedChat } from '@repo/llm/chat';
+import type { UnifiedChat } from '@/llm/chat';
 
 /**
  * 提取消息文本内容

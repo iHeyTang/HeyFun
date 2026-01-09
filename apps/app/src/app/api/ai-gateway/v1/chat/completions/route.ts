@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyGatewayAuth, recordGatewayUsage, getModels } from '@/lib/server/gateway';
 import { calculateLLMCost, deductCredits, checkCreditsBalance } from '@/lib/server/credit';
-import CHAT, { UnifiedChat } from '@repo/llm/chat';
+import CHAT, { UnifiedChat } from '@/llm/chat';
 
 /**
  * POST /api/ai-gateway/v1/chat/completions

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLLM } from '@/hooks/use-llm';
 import { usePreferences } from '@/hooks/use-preferences';
-import { ModelInfo } from '@repo/llm/chat';
+import { ModelInfo } from '@/llm/chat';
 import { ArrowUp, FileIcon, Loader2, Plus, StopCircle, X, FolderOpen } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';

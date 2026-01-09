@@ -9,7 +9,7 @@
 
 import { buildSystemPrompt, createDynamicBlock, createFrameworkBlock, SystemPromptTemplate } from '@/agents/core/system-prompt';
 import { getSessionDynamicSystemPrompt } from '@/agents/tools/context';
-import { ChatClient, UnifiedChat } from '@repo/llm/chat';
+import { ChatClient, UnifiedChat } from '@/llm/chat';
 import { BaseAgent } from '../base';
 import { toolRegistry } from '@/agents/tools';
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import AIGC from '@repo/llm/aigc';
+import AIGC from '@/llm/aigc';
 import { prisma } from '@/lib/server/prisma';
 import { restoreAigcTaskResultToStorage } from '@/lib/server/aigc';
 

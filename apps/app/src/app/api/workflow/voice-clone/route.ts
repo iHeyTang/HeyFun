@@ -2,7 +2,7 @@ import { prisma } from '@/lib/server/prisma';
 import storage, { downloadFile } from '@/lib/server/storage';
 import { to } from '@/lib/shared/to';
 import { toJson } from '@/lib/utils';
-import AIGC from '@repo/llm/aigc';
+import AIGC from '@/llm/aigc';
 import { serve } from '@upstash/workflow/nextjs';
 import { nanoid } from 'nanoid';
 

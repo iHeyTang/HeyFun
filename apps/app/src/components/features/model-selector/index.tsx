@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useLLM } from '@/hooks/use-llm';
-import { ModelInfo } from '@repo/llm/chat';
+import { ModelInfo } from '@/llm/chat';
 import { Check, Code, Eye, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { forwardRef, useImperativeHandle, useMemo, useState } from 'react';

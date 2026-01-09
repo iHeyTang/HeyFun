@@ -2,7 +2,7 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
 import { Prisma } from '@prisma/client';
-import { ModelInfo } from '@repo/llm/chat';
+import { ModelInfo } from '@/llm/chat';
 
 export const getPreferences = withUserAuth('settings/getPreferences', async ({ orgId }: AuthWrapperContext<{}>) => {
   const preferences = await prisma.preferences.findUnique({

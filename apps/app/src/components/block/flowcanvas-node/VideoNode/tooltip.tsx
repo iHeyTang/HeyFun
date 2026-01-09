@@ -7,7 +7,7 @@ import { WandSparkles } from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { RatioIcon } from '../../ratio-icon';
 import { VideoNodeActionData, VideoNodeProcessor } from './processor';
-import { VideoJsonSchema } from '@repo/llm/aigc';
+import { VideoJsonSchema } from '@/llm/aigc';
 import { useTranslations } from 'next-intl';
 import { AdvancedOptionsForm } from '../AdvancedOptionsForm';
 

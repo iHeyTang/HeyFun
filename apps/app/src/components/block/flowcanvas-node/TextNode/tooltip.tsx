@@ -3,7 +3,7 @@ import { FlowCanvasTextEditor, FlowCanvasTextEditorRef } from '@/components/bloc
 import { ModelSelectorDialog, ModelSelectorRef } from '@/components/features/model-selector';
 import { Button } from '@/components/ui/button';
 import { useLLM } from '@/hooks/use-llm';
-import { ModelInfo } from '@repo/llm/chat';
+import { ModelInfo } from '@/llm/chat';
 import { WandSparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { memo, useEffect, useRef, useState } from 'react';

@@ -1,4 +1,4 @@
-import { GenerationTaskResult } from '@repo/llm/aigc';
+import { GenerationTaskResult } from '@/llm/aigc';
 import storage, { downloadFile, getBucket } from './storage';
 import { nanoid } from 'nanoid';
 

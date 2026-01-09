@@ -1,5 +1,5 @@
 import { baseToolboxes, sandboxToolboxes } from '@/agents/tools';
-import { UnifiedChat } from '@repo/llm/chat';
+import { UnifiedChat } from '@/llm/chat';
 
 export default function getTools() {
   // 合并核心工具和 sandbox 工具

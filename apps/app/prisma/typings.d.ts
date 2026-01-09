@@ -1,5 +1,5 @@
 import { JSONSchema as JsonSchemaType } from 'json-schema-to-ts';
-import { SubmitTaskParams } from '@repo/llm/aigc';
+import { SubmitTaskParams } from '@/llm/aigc';
 
 declare global {
   declare namespace PrismaJson {

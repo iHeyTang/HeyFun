@@ -6,7 +6,7 @@ import { useAigc } from '@/hooks/use-llm';
 import { WandSparkles } from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { MusicNodeActionData, MusicNodeProcessor } from './processor';
-import { MusicJsonSchema } from '@repo/llm/aigc';
+import { MusicJsonSchema } from '@/llm/aigc';
 import { useTranslations } from 'next-intl';
 import { AdvancedOptionsForm } from '../AdvancedOptionsForm';
 

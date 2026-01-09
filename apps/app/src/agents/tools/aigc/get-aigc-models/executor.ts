@@ -1,5 +1,5 @@
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
-import AIGC from '@repo/llm/aigc';
+import AIGC from '@/llm/aigc';
 import zodToJsonSchema from 'zod-to-json-schema';
 import { getAigcModelsParamsSchema } from './schema';
 

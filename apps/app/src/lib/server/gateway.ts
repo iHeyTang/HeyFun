@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import { decryptTextWithPrivateKey } from './crypto';
-import { type ModelInfo } from '@repo/llm/chat';
+import { type ModelInfo } from '@/llm/chat';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { jwtVerify } from 'jose';
 import { getDesktopAuthSecret } from './desktop-auth';

@@ -1,4 +1,4 @@
-import CHAT, { UnifiedChat, type ModelInfo } from '@repo/llm/chat';
+import CHAT, { UnifiedChat, type ModelInfo } from '@/llm/chat';
 
 /**
  * LLM 调用结果

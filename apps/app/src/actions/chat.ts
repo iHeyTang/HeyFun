@@ -2,7 +2,7 @@
 
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
-import CHAT from '@repo/llm/chat';
+import CHAT from '@/llm/chat';
 import { loadModelDefinitionsFromDatabase } from './llm';
 
 // 创建聊天会话

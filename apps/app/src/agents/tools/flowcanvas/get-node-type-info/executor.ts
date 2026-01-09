@@ -1,5 +1,5 @@
 import { ToolContext } from '../../context';
-import AIGC from '@repo/llm/aigc';
+import AIGC from '@/llm/aigc';
 import { getNodeTypeInfoParamsSchema } from './schema';
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 

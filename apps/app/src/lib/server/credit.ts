@@ -1,5 +1,5 @@
 import { prisma } from './prisma';
-import type { ModelInfo } from '@repo/llm/chat';
+import type { ModelInfo } from '@/llm/chat';
 
 /**
  * 根据模型定价和token使用量计算费用

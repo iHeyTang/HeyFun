@@ -25,7 +25,12 @@ export class BytedanceOpenspeechProvider {
    * @param additionalHeaders 额外的请求头
    * @returns 返回响应数据和响应头
    */
-  async request<T>(method: string, path: string, body?: any, additionalHeaders?: Record<string, string>): Promise<{ data: T; headers: Record<string, string> }> {
+  async request<T>(
+    method: string,
+    path: string,
+    body?: any,
+    additionalHeaders?: Record<string, string>,
+  ): Promise<{ data: T; headers: Record<string, string> }> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'x-api-key': this.token,

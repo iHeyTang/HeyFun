@@ -5,7 +5,7 @@ import { prisma } from '@/lib/server/prisma';
 import { vectorManager, isVectorIndexAvailable, extractSnippetIdFromVectorId } from '@/lib/server/vector';
 import type { VectorProvider } from '@/lib/server/vector/types';
 import { generateEmbedding } from '@/lib/server/embeddings';
-import type { ChatClient } from '@repo/llm/chat';
+import type { ChatClient } from '@/llm/chat';
 
 /**
  * 获取用于片段检索的向量库提供者

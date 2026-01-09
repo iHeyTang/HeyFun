@@ -1,7 +1,7 @@
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
-import AIGC, { GenerationType, videoParamsSchema } from '@repo/llm/aigc';
+import AIGC, { GenerationType, videoParamsSchema } from '@/llm/aigc';
 import type { z } from 'zod';
 import { generateVideoParamsSchema } from './schema';
 import { createAssetsFromAigcResults } from '@/agents/utils/aigc-asset-helper';

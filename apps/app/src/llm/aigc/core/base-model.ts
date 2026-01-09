@@ -132,7 +132,11 @@ export abstract class BaseAigcModel {
 
   // 抽象方法：子类必须实现自己的参数验证规则
   public abstract paramsSchema: z.ZodSchema<
-    z.infer<typeof videoParamsSchema> | z.infer<typeof imageParamsSchema> | z.infer<typeof t2aParamsSchema> | z.infer<typeof musicParamsSchema> | z.infer<typeof speechToTextParamsSchema>
+    | z.infer<typeof videoParamsSchema>
+    | z.infer<typeof imageParamsSchema>
+    | z.infer<typeof t2aParamsSchema>
+    | z.infer<typeof musicParamsSchema>
+    | z.infer<typeof speechToTextParamsSchema>
   >;
 
   abstract submitTask(params: z.infer<typeof this.paramsSchema>): Promise<string>;

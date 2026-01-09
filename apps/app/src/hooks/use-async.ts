@@ -83,7 +83,7 @@ export const useAsync = <R, T extends unknown[]>(
         setIsLoading(false);
       }
     },
-    [shouldSkip, cacheKey, ...(options.deps ?? [])],
+    [shouldSkip, cacheKey, setCache, ...(options.deps ?? [])],
   );
 
   const refresh = useCallback(() => {
@@ -102,7 +102,7 @@ export const useAsync = <R, T extends unknown[]>(
 
       return newData;
     },
-    [data, cacheKey],
+    [data, cacheKey, setCache],
   );
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export const useAsync = <R, T extends unknown[]>(
       }
     }
     run(...paramsRef.current);
-  }, [run, options.manual, cacheKey]);
+  }, [run, options.manual, cacheKey, getCache, setCache]);
 
   return { data, isLoading, error, run, refresh, mutate };
 };

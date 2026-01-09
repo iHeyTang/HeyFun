@@ -1,4 +1,4 @@
-import { UnifiedChat } from '@repo/llm/chat';
+import { UnifiedChat } from '@/llm/chat';
 import { convertImageUrlToBase64 } from '@/lib/server/storage-image';
 import storage from '@/lib/server/storage';
 

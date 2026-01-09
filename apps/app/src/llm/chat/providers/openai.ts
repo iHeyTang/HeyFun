@@ -22,7 +22,7 @@ export class OpenAIProvider extends BaseProvider {
   /**
    * 可选：使用 LangChain 实现 embedding
    * 取消注释以下代码以使用 LangChain（需要安装 @langchain/openai）
-   * 
+   *
    * 使用 LangChain 的优势：
    * - 自动处理批量请求优化
    * - 更好的错误处理和重试机制

@@ -1,5 +1,5 @@
 import { WorkflowContext } from '@upstash/workflow';
-import type { UnifiedChat, ChatClient } from '@repo/llm/chat';
+import type { UnifiedChat, ChatClient } from '@/llm/chat';
 import { ReactAgent } from '@/agents/core/frameworks/react';
 
 /**

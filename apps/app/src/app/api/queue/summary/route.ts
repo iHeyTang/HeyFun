@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/server/prisma';
-import CHAT from '@repo/llm/chat';
+import CHAT from '@/llm/chat';
 import { loadModelDefinitionsFromDatabase } from '@/actions/llm';
 
 // 注册此 route 的 body 类型到 QueueRoutes interface

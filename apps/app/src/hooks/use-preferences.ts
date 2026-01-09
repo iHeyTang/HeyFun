@@ -1,5 +1,5 @@
 import { getPreferences, updatePreferences, UpdatePreferencesArgs } from '@/actions/settings';
-import { ModelInfo } from '@repo/llm/chat';
+import { ModelInfo } from '@/llm/chat';
 import { useCallback } from 'react';
 import { create } from 'zustand';
 

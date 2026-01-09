@@ -5,18 +5,9 @@ import path from 'path';
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   output: 'standalone',
-  transpilePackages: ['@repo/llm', '@repo/ui'],
   webpack: (config, { isServer }) => {
     // 添加根目录 node_modules 到解析路径
     config.resolve.modules = [...(config.resolve.modules || []), path.resolve(__dirname, '../../node_modules')];
-
-    // 确保正确解析 workspace 包
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@repo/llm/chat': path.resolve(__dirname, '../../packages/llm/src/chat/index.ts'),
-      '@repo/llm/aigc': path.resolve(__dirname, '../../packages/llm/src/aigc/index.ts'),
-      '@repo/llm': path.resolve(__dirname, '../../packages/llm/src'),
-    };
 
     // 支持导入 .template.md 文件作为原始字符串
     // 支持两种方式：直接导入和 ?raw 查询参数

@@ -2,7 +2,7 @@
 import { AuthWrapperContext, withUserAuth } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
-import AIGC, { VoiceCloneParams } from '@repo/llm/aigc';
+import AIGC, { VoiceCloneParams } from '@/llm/aigc';
 
 // ============= 音色列表查询 =============
 

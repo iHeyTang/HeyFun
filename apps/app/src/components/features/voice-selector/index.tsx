@@ -2,7 +2,7 @@
 
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Voice } from '@repo/llm/aigc';
+import { Voice } from '@/llm/aigc';
 import { Check, Mic, Play, Search } from 'lucide-react';
 import { useImperativeHandle, useMemo, useState, forwardRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';

@@ -1,5 +1,5 @@
 import { prisma } from './prisma';
-import type { ModelInfo } from '@repo/llm/chat';
+import type { ModelInfo } from '@/llm/chat';
 
 /**
  * 验证系统 API Key

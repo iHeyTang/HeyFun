@@ -12,7 +12,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { DynamicForm, extractDefaultValuesFromSchema } from './dynamic-form';
-import { imageParamsSchema, videoParamsSchema, t2aParamsSchema, musicParamsSchema, speechToTextParamsSchema } from '@repo/llm/aigc';
+import { imageParamsSchema, videoParamsSchema, t2aParamsSchema, musicParamsSchema, speechToTextParamsSchema } from '@/llm/aigc';
 import { useTranslations } from 'next-intl';
 
 /**

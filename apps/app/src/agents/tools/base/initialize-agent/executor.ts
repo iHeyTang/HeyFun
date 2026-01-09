@@ -3,7 +3,7 @@ import { generateEmbedding } from '@/lib/server/embeddings';
 import { prisma } from '@/lib/server/prisma';
 import { extractSnippetIdFromVectorId, vectorManager } from '@/lib/server/vector';
 import type { VectorProvider } from '@/lib/server/vector/types';
-import type { ChatClient } from '@repo/llm/chat';
+import type { ChatClient } from '@/llm/chat';
 import { initializeAgentParamsSchema } from './schema';
 import { ToolManager } from '../../context';
 

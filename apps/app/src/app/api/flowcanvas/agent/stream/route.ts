@@ -5,7 +5,7 @@
 
 import { withUserAuthApi } from '@/lib/server/auth-wrapper';
 import { prisma } from '@/lib/server/prisma';
-import CHAT, { UnifiedChat } from '@repo/llm/chat';
+import CHAT, { UnifiedChat } from '@/llm/chat';
 import { NextResponse } from 'next/server';
 import { getAgent } from '@/agents';
 import { buildSystemPrompt } from '@/agents/core/system-prompt';
