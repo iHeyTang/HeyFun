@@ -92,6 +92,7 @@ export const GET = withUserAuthApi<{}, { sessionId: string; cursor?: string; lim
         outputTokens: msg.outputTokens,
         cachedInputTokens: msg.cachedInputTokens,
         cachedOutputTokens: msg.cachedOutputTokens,
+        metadata: msg.metadata,
       })),
       nextCursor,
       hasMore: nextCursor !== null,

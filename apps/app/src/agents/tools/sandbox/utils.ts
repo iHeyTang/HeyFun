@@ -56,27 +56,6 @@ export async function deleteSandboxHandleFromState(sessionId: string): Promise<v
 }
 
 /**
- * 发起 sandbox 创建（不等待完成）
- */
-export async function createSandbox(sessionId: string): Promise<void> {
-  // 检查是否已有 sandbox
-  const existingHandle = await getSandboxHandleFromState(sessionId);
-  if (existingHandle && existingHandle.status !== 'expired') {
-    // 已存在，无需创建
-    console.log(`[SandboxUtils] Sandbox already exists for session ${sessionId}`);
-    return;
-  }
-
-  // 创建新的 sandbox（不等待完成）
-  const srm = getSandboxRuntimeManager();
-  const handle = await srm.create({ ports: [], idleTimeout: 300 }, false);
-
-  // 保存到 state
-  await saveSandboxHandleToState(sessionId, handle);
-  console.log(`[SandboxUtils] Initiated sandbox creation for session ${sessionId}`);
-}
-
-/**
  * 确保 sandbox 存在，如果不存在则自动创建，并等待其就绪
  * 这是工具内部使用的辅助函数，用于自动初始化 sandbox
  * 如果 sandbox 状态为 creating，会等待其变为 ready

@@ -6,17 +6,16 @@ import zodToJsonSchema from 'zod-to-json-schema';
  * 工具检索参数 Schema
  */
 export const searchToolsParamsSchema = z.object({
-  keyword: z.string().optional().describe('关键词，用于匹配工具名称、描述、分类等'),
-  category: z.string().optional().describe('工具分类过滤，例如 "utility"、"aigc"、"notes" 等'),
-  maxResults: z.number().int().min(1).max(50).default(10).describe('最大返回结果数量，默认10，最多50'),
+  keyword: z.string().optional().describe('关键词，用于匹配工具名称、描述、分类等，当为空时，返回所有工具'),
+  category: z.string().optional().describe('工具分类过滤，例如 "utility"、"aigc"、"notes" 等，当为空时，返回所有工具'),
+  maxResults: z.number().int().min(1).max(500).default(10).describe('最大返回结果数量，默认10，最多500'),
 });
 
 export type SearchToolsParams = z.infer<typeof searchToolsParamsSchema>;
 
 export const searchToolsSchema: ToolDefinition = {
   name: 'search_tools',
-  description:
-    '在工具库中检索可用的工具。根据关键词、分类等条件搜索工具，返回匹配的工具列表及其使用手册。这是agent获取可用工具的主要方式。',
+  description: '在工具库中检索可用的工具。根据关键词、分类等条件搜索工具，返回匹配的工具列表及其使用手册。这是agent获取可用工具的主要方式。',
   displayName: {
     en: 'Search Tools',
     'zh-CN': '搜索工具',
@@ -82,4 +81,3 @@ search_tools 用于在工具库中检索可用的工具。当agent需要了解�
     },
   },
 };
-

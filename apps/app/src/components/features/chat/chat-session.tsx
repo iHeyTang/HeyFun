@@ -368,10 +368,21 @@ export function ChatSession({
       return false;
     }
 
+    // 如果消息还在流式传输中，说明 agent 还在生成响应，不应该显示"正在生成建议问题"
+    if (lastMessage.isStreaming) {
+      return false;
+    }
+
     // 检查最后一条消息是否有内容
     const hasContent = lastMessage.content && lastMessage.content.trim().length > 0;
     if (!hasContent) {
       return false;
+    }
+
+    // 检查消息内容是否包含 thinking 标签，如果包含说明 agent 正在思考，不应该显示"正在生成建议问题"
+    const hasThinkingContent = /<thinking[\s\S]*?>/i.test(lastMessage.content);
+    if (hasThinkingContent) {
+      return false; // agent 正在思考，不显示"正在生成建议问题"
     }
 
     // 检查最后一条消息是否是 suggested_questions 类型
@@ -447,6 +458,7 @@ export function ChatSession({
               outputTokens={message.outputTokens ?? undefined}
               cachedInputTokens={message.cachedInputTokens ?? undefined}
               cachedOutputTokens={message.cachedOutputTokens ?? undefined}
+              metadata={message.metadata}
               onSendMessage={handleSendMessage}
               isLastMessage={index === messages.length - 1}
             />

@@ -125,7 +125,9 @@ export const { POST } = serve<AgentWorkflowConfig>(
       roundCount++;
 
       // 步骤1-5：准备对话数据（获取会话、检查余额、构建消息、创建占位、检查状态）
-      const { session, messages, aiMessage, sessionCheckBeforeLLM } = await context.run(`round-${roundCount}-prepare`, async () => {
+      const { session, messages, aiMessage, sessionCheckBeforeLLM, roundStartTime } = await context.run(`round-${roundCount}-prepare`, async () => {
+        // 记录轮次开始时间
+        const roundStartTime = Date.now();
         // 步骤1：获取会话和消息历史
         const session = await prisma.chatSessions.findUnique({
           where: { id: sessionId, organizationId },
@@ -174,7 +176,7 @@ export const { POST } = serve<AgentWorkflowConfig>(
           console.log(`[Workflow] Session ${sessionId} status is ${currentSession?.status}, stopping workflow gracefully before LLM call`);
         }
 
-        return { session, messages, aiMessage, sessionCheckBeforeLLM };
+        return { session, messages, aiMessage, sessionCheckBeforeLLM, roundStartTime };
       });
 
       // 如果 session 为 null 或检查失败，说明用户取消了，停止 workflow
@@ -188,9 +190,10 @@ export const { POST } = serve<AgentWorkflowConfig>(
       }
 
       // 步骤6-9：调用 LLM、更新消息、扣除费用、检查会话状态
-      const { llmResult, sessionCheckAfterTools } = await context.run(`round-${roundCount}-call-llm-and-update`, async () => {
+      const { llmResult, sessionCheckAfterTools, reasonTime } = await context.run(`round-${roundCount}-call-llm-and-update`, async () => {
         // 步骤6：调用 LLM
         // 使用 ReactAgent.stream（支持微代理）
+        const reasonStartTime = Date.now();
         CHAT.setModels(allModels);
         const llmClient = CHAT.createClient(modelId);
 
@@ -281,6 +284,8 @@ export const { POST } = serve<AgentWorkflowConfig>(
             outputTokens += chunk.tokenUsage.completionTokens || 0;
           }
         }
+        // 计算 reason 阶段耗时
+        const reasonTime = Date.now() - reasonStartTime;
 
         // 步骤6（Reason）只负责收集 LLM 响应，不做任何判定
         const llmResult = {
@@ -331,7 +336,7 @@ export const { POST } = serve<AgentWorkflowConfig>(
           console.log(`[Workflow] Session ${sessionId} status is ${currentSession?.status}, stopping workflow gracefully after tools`);
         }
 
-        return { llmResult, sessionCheckAfterTools };
+        return { llmResult, sessionCheckAfterTools, reasonTime };
       });
 
       // 如果检查失败，说明用户取消了，停止 workflow
@@ -341,6 +346,12 @@ export const { POST } = serve<AgentWorkflowConfig>(
       }
 
       // 步骤10: 执行工具
+      // 记录 action 开始时间（在 context.run 中）
+      const { actionStartTime } = await context.run(`round-${roundCount}-init-action-time`, async () => {
+        return { actionStartTime: Date.now() };
+      });
+
+      // 执行工具（不在 context.run 中，因为 executeTools 内部会调用 context.run）
       await executeTools(llmResult.data.toolCalls, {
         organizationId,
         sessionId,
@@ -390,12 +401,20 @@ export const { POST } = serve<AgentWorkflowConfig>(
         },
       });
 
+      // 计算 action 阶段耗时（在 context.run 中）
+      const { actionTime } = await context.run(`round-${roundCount}-save-action-time`, async () => {
+        const actionTime = Date.now() - actionStartTime;
+        return { actionTime };
+      });
+
       // 步骤13（Observation）: 观察工具执行结果，判定是否完成
       // 这是 ReAct 框架的 Observe 阶段，负责判断任务是否完成
-      const completionInfo = await context.run(`round-${roundCount}-observe`, async () => {
+      const observeResult = await context.run(`round-${roundCount}-observe`, async () => {
+        const observationStartTime = Date.now();
         // 如果没有工具调用，继续下一轮对话（让 LLM 继续思考）
         if (!llmResult.data.toolCalls.length) {
-          return null;
+          const observationTime = Date.now() - observationStartTime;
+          return { completion: null, observationTime };
         }
 
         // 从完结状态存储中读取完结信息
@@ -416,7 +435,39 @@ export const { POST } = serve<AgentWorkflowConfig>(
           });
         }
 
-        return completion;
+        // 计算 observation 阶段耗时
+        const observationTime = Date.now() - observationStartTime;
+
+        return { completion, observationTime };
+      });
+
+      const completionInfo = observeResult.completion;
+      const observationTime = observeResult.observationTime;
+
+      // 保存时间统计到数据库（在 context.run 中）
+      await context.run(`round-${roundCount}-save-timing-to-db`, async () => {
+        const roundTime = Date.now() - roundStartTime;
+
+        // 更新消息的 metadata，记录时间统计
+        const currentMessage = await prisma.chatMessages.findUnique({
+          where: { id: aiMessage.id },
+          select: { metadata: true },
+        });
+
+        const metadata = currentMessage?.metadata || {};
+        metadata.timing = {
+          reasonTime: reasonTime || 0,
+          actionTime: actionTime || 0,
+          observationTime: observationTime || 0,
+          roundTime,
+        };
+
+        await prisma.chatMessages.update({
+          where: { id: aiMessage.id },
+          data: {
+            metadata: metadata as any,
+          } as any,
+        });
       });
 
       // 如果任务完成，退出循环
@@ -681,6 +732,7 @@ ${recentMessagesContent}
       await redis.del(iterationKey).catch(err => {
         console.error(`[Workflow] Failed to cleanup iteration count:`, err);
       });
+
       return Promise.resolve();
     },
   },

@@ -352,6 +352,9 @@ model ChatMessages {
   /// [MicroAgentExecutionDetail[]]
   microAgentExecutions Json? // 微代理执行详情列表
 
+  /// [ChatMessageMetadata] 元数据，用于存储额外信息，如时间统计等
+  metadata Json?
+
   // 关联的会话
   session ChatSessions @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 

@@ -30,6 +30,7 @@ interface ChatMessageProps {
   outputTokens?: number | null;
   cachedInputTokens?: number | null;
   cachedOutputTokens?: number | null;
+  metadata?: PrismaJson.ChatMessageMetadata | null;
   onSendMessage?: (content: string) => void;
   isLastMessage?: boolean;
 }
@@ -76,6 +77,7 @@ const ChatMessageComponent = ({
   outputTokens,
   cachedInputTokens,
   cachedOutputTokens,
+  metadata,
   onSendMessage,
   isLastMessage = false,
 }: ChatMessageProps) => {
@@ -385,12 +387,13 @@ const ChatMessageComponent = ({
           </div>
         )}
 
-        {/* Token 数量显示 - 在消息/工具下方，只在 hover 时显示 */}
+        {/* Token 数量和时间统计显示 - 在消息/工具下方，只在 hover 时显示 */}
         {((inputTokens !== null && inputTokens !== undefined) ||
           (outputTokens !== null && outputTokens !== undefined) ||
           (cachedInputTokens !== null && cachedInputTokens !== undefined) ||
           (cachedOutputTokens !== null && cachedOutputTokens !== undefined) ||
-          (tokenCount !== null && tokenCount !== undefined)) && (
+          (tokenCount !== null && tokenCount !== undefined) ||
+          metadata?.timing) && (
           <div className="group-hover/message:text-muted-foreground/70 text-xs text-transparent transition-all">
             {(() => {
               const parts: string[] = [];
@@ -406,6 +409,28 @@ const ChatMessageComponent = ({
               if (cachedOutputTokens !== null && cachedOutputTokens !== undefined && cachedOutputTokens > 0) {
                 parts.push(`缓存输出: ${cachedOutputTokens.toLocaleString()}`);
               }
+
+              // 显示时间统计
+              if (metadata?.timing) {
+                const timing = metadata.timing;
+                const timeParts: string[] = [];
+                if (timing.reasonTime) {
+                  timeParts.push(`推理: ${(timing.reasonTime / 1000).toFixed(2)}s`);
+                }
+                if (timing.actionTime) {
+                  timeParts.push(`执行: ${(timing.actionTime / 1000).toFixed(2)}s`);
+                }
+                if (timing.observationTime) {
+                  timeParts.push(`观察: ${(timing.observationTime / 1000).toFixed(2)}s`);
+                }
+                if (timing.roundTime) {
+                  timeParts.push(`总计: ${(timing.roundTime / 1000).toFixed(2)}s`);
+                }
+                if (timeParts.length > 0) {
+                  parts.push(timeParts.join(' · '));
+                }
+              }
+
               if (parts.length > 0) {
                 return parts.join(' · ');
               }
@@ -446,6 +471,7 @@ export const ChatMessage = memo(ChatMessageComponent, (prevProps, nextProps) => 
     prevProps.onSendMessage === nextProps.onSendMessage &&
     prevProps.isLastMessage === nextProps.isLastMessage &&
     JSON.stringify(prevProps.toolCalls) === JSON.stringify(nextProps.toolCalls) &&
-    JSON.stringify(prevProps.toolResults) === JSON.stringify(nextProps.toolResults)
+    JSON.stringify(prevProps.toolResults) === JSON.stringify(nextProps.toolResults) &&
+    JSON.stringify(prevProps.metadata) === JSON.stringify(nextProps.metadata)
   );
 });

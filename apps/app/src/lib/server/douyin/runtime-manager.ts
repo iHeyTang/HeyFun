@@ -7,7 +7,9 @@ import { getSandboxRuntimeManager, type SandboxRuntimeManager } from '@/lib/serv
 import type { SandboxHandle } from '@/lib/server/sandbox/handle';
 import { getSandboxHandleFromState } from '@/agents/tools/sandbox/utils';
 import { nanoid } from 'nanoid';
-import { parseVideoScript, downloadVideoScript } from './loader';
+// 直接导入 Python 脚本，webpack 会将其作为字符串内联
+import parseVideoScript from './scripts/parse-video.py';
+import downloadVideoScript from './scripts/download-video.py';
 
 export interface DouyinVideoInfo {
   videoId: string;

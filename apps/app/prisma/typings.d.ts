@@ -40,6 +40,15 @@ declare global {
       error?: string;
       message?: string;
     };
+
+    type ChatMessageMetadata = {
+      timing?: {
+        reasonTime?: number;
+        actionTime?: number;
+        observationTime?: number;
+        roundTime?: number;
+      };
+    };
   }
 }
 

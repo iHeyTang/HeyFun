@@ -11,25 +11,27 @@ import { getSandboxRuntimeManager, type SandboxRuntimeManager } from '@/lib/serv
 import type { SandboxHandle } from '@/lib/server/sandbox/handle';
 import { getSandboxHandleFromState } from '@/agents/tools/sandbox/utils';
 
-// 导入 Python 脚本（运行时读取，避免 Turbopack 限制）
-import {
-  checkBrowserScript,
-  navigateScript,
-  clickScript,
-  clickAtScript,
-  scrollScript,
-  typeScript,
-  extractContentScript,
-  screenshotScript,
-  downloadScript,
-  browserLauncherScript,
-} from '../loader';
+// 直接导入 Python 脚本，webpack 会将其作为字符串内联
+import checkBrowserScript from '../scripts/check-browser.py';
+import navigateScript from '../scripts/navigate.py';
+import clickScript from '../scripts/click.py';
+import clickAtScript from '../scripts/click-at.py';
+import scrollScript from '../scripts/scroll.py';
+import typeScript from '../scripts/type.py';
+import extractContentScript from '../scripts/extract-content.py';
+import screenshotScript from '../scripts/screenshot.py';
+import downloadScript from '../scripts/download.py';
+import browserLauncherScript from '../scripts/browser-launcher.py';
+import browserServerScript from '../scripts/browser-server.py';
 
 /**
  * Playwright BRM 实现
  * 浏览器在 sandbox 中运行，所有操作通过 sandbox 执行
  */
 export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
+  // 存储每个 session 的 HTTP server 端口
+  private serverPorts = new Map<string, number>();
+
   /**
    * 从 Python 脚本输出中解析 JSON
    * 由于 stderr 可能被重定向到 stdout，尝试从最后一行解析 JSON
@@ -89,6 +91,102 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
     });
 
     return result;
+  }
+
+  /**
+   * 启动浏览器 HTTP Server（如果尚未启动）
+   */
+  private async ensureBrowserServer(
+    sandboxHandle: SandboxHandle,
+    handle: BrowserHandle,
+    sessionId: string,
+  ): Promise<number> {
+    // 检查是否已有 server 端口
+    const existingPort = this.serverPorts.get(sessionId);
+    if (existingPort) {
+      return existingPort;
+    }
+
+    const srm = getSandboxRuntimeManager();
+    const workspaceRoot = sandboxHandle.workspaceRoot;
+    const serverPort = 8888; // 固定端口
+
+    // 写入 server 脚本
+    const serverScriptPath = `${workspaceRoot}/browser-server-${nanoid()}.py`;
+    await srm.writeFile(sandboxHandle, serverScriptPath, browserServerScript);
+
+    // 启动 server（后台运行）
+    const configJson = JSON.stringify({
+      port: serverPort,
+      workspaceRoot,
+      stateFilePath: handle.stateFilePath,
+      wsEndpoint: handle.wsEndpoint,
+    }).replace(/'/g, "'\\''");
+
+    const startCommand = `nohup python3 ${serverScriptPath} '${configJson}' > ${workspaceRoot}/browser-server.log 2>&1 & echo $!`;
+    const startResult = await srm.exec(sandboxHandle, startCommand, { timeout: 10 });
+
+    if (startResult.exitCode !== 0) {
+      throw new Error(`Failed to start browser server: ${startResult.stderr || startResult.stdout}`);
+    }
+
+    // 等待 server 启动
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // 存储端口
+    this.serverPorts.set(sessionId, serverPort);
+    return serverPort;
+  }
+
+  /**
+   * 通过 HTTP 请求调用浏览器操作
+   */
+  private async callBrowserServer(
+    sandboxHandle: SandboxHandle,
+    endpoint: string,
+    data: Record<string, any>,
+    sessionId: string,
+    handle?: BrowserHandle,
+  ): Promise<any> {
+    const browserHandle = handle || data.handle || {};
+    const serverPort = await this.ensureBrowserServer(sandboxHandle, browserHandle, sessionId);
+
+    // 获取 server URL（通过 sandbox 的 previewUrls 或直接使用 localhost）
+    let serverUrl: string;
+    if (sandboxHandle.previewUrls && sandboxHandle.previewUrls[serverPort]) {
+      serverUrl = sandboxHandle.previewUrls[serverPort];
+    } else {
+      // 如果没有 previewUrl，通过 sandbox 内部访问
+      // 使用 curl 在 sandbox 内部调用
+      const requestBody = JSON.stringify(data);
+      const curlCommand = `curl -s -X POST http://localhost:${serverPort}${endpoint} -H "Content-Type: application/json" -d '${requestBody.replace(/'/g, "'\\''")}'`;
+
+      const srm = getSandboxRuntimeManager();
+      const result = await srm.exec(sandboxHandle, curlCommand, { timeout: 60 });
+
+      if (result.exitCode !== 0) {
+        throw new Error(`HTTP request failed: ${result.stderr || result.stdout}`);
+      }
+
+      try {
+        return JSON.parse(result.stdout);
+      } catch (e) {
+        throw new Error(`Failed to parse response: ${result.stdout}`);
+      }
+    }
+
+    // 如果有外部 URL，直接通过 HTTP 请求
+    const response = await fetch(`${serverUrl}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP request failed: ${response.statusText}`);
+    }
+
+    return await response.json();
   }
 
   /**
@@ -672,62 +770,61 @@ export class PlaywrightBrowserRuntimeManager implements BrowserRuntimeManager {
       const srm = getSandboxRuntimeManager();
       const sandboxHandle = await this.getSandboxHandleById(handle.sandboxId, options?.sessionId);
 
-      const result = await this.execPythonScript(
-        srm,
+      // 使用 HTTP server 方式调用
+      const browserResult = await this.callBrowserServer(
         sandboxHandle,
-        extractContentScript,
+        '/extract-content',
         {
-          wsEndpoint: handle.wsEndpoint,
-          stateFilePath: handle.stateFilePath,
           selector: options?.selector,
           extractType: options?.extractType || 'markdown',
           currentUrl: handle.currentUrl,
         },
-        { timeout: 60 },
+        options?.sessionId || '',
+        handle,
       );
 
-      if (result.exitCode !== 0) {
-        return {
-          success: false,
-          error: `Browser automation failed: ${result.stderr || result.stdout}`,
-        };
-      }
-
-      let browserResult: any;
-      try {
-        browserResult = this.parseScriptOutput(result.stdout);
-      } catch (e) {
-        return {
-          success: false,
-          error: `Failed to parse browser result: ${e instanceof Error ? e.message : String(e)}`,
-        };
-      }
-
-      // 如果有内容文件，读取并上传到 storage
-      if (browserResult.contentFile && options?.sessionId && options?.organizationId) {
+      // 统一采用文件读写方式：总是从文件读取内容
+      if (browserResult.success && browserResult.contentFile) {
         try {
-          const contentType = browserResult.contentType || 'text';
-          const fileExt = contentType === 'html' ? 'html' : contentType === 'markdown' ? 'md' : 'txt';
-          const mimeType = contentType === 'html' ? 'text/html' : contentType === 'markdown' ? 'text/markdown' : 'text/plain';
-          const contentUrl = await this.readAndUploadFile(
-            srm,
-            sandboxHandle,
-            browserResult.contentFile,
-            options.organizationId,
-            options.sessionId,
-            `content.${fileExt}`,
-            mimeType,
-          );
-          // 读取文件内容并添加到结果中
+          // 从文件读取内容（统一方式）
           const fileContent = await srm.readFile(sandboxHandle, browserResult.contentFile);
           const content = Buffer.from(fileContent, 'base64').toString('utf-8');
           browserResult.content = content;
-          browserResult.contentUrl = contentUrl;
+
+          // 如果有 sessionId 和 organizationId，上传到 storage
+          if (options?.sessionId && options?.organizationId) {
+            try {
+              const contentType = browserResult.contentType || 'text';
+              const fileExt = contentType === 'html' ? 'html' : contentType === 'markdown' ? 'md' : 'txt';
+              const mimeType = contentType === 'html' ? 'text/html' : contentType === 'markdown' ? 'text/markdown' : 'text/plain';
+              const contentUrl = await this.readAndUploadFile(
+                srm,
+                sandboxHandle,
+                browserResult.contentFile,
+                options.organizationId,
+                options.sessionId,
+                `content.${fileExt}`,
+                mimeType,
+              );
+              browserResult.contentUrl = contentUrl;
+            } catch (error) {
+              console.error('[PlaywrightBRM] Failed to upload content file:', error);
+              // 继续执行，不阻止返回结果
+            }
+          }
+
+          // 删除文件路径，只保留内容
           delete browserResult.contentFile;
         } catch (error) {
-          console.error('[PlaywrightBRM] Failed to upload content file:', error);
-          // 继续执行，不阻止返回结果
+          return {
+            success: false,
+            error: `Failed to read content file: ${error instanceof Error ? error.message : String(error)}`,
+          };
         }
+      } else if (browserResult.success && browserResult.content) {
+        // 容错处理：如果文件保存失败，Python 脚本可能会回退到 stdout 传递小内容（<10KB）
+        // 这种情况应该很少发生，但保留兼容性处理
+        console.warn('[PlaywrightBRM] Content found in stdout (fallback mode), file save may have failed');
       }
 
       return {
