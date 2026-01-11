@@ -60,7 +60,7 @@ export default function AgentSessionPage() {
       if (!hasMessages && !isLoading && !hasFetched) {
         fetchedSessionsRef.current.add(activeSessionId);
         setLoadingMessage(activeSessionId, true);
-        fetchAndUpdateMessages({ sessionId: activeSessionId, apiPrefix: '/api/agent' }).finally(() => {
+        fetchAndUpdateMessages({ sessionId: activeSessionId }).finally(() => {
           setLoadingMessage(activeSessionId, false);
         });
       }

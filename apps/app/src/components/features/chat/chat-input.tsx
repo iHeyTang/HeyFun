@@ -6,6 +6,7 @@ import { ModelSelectorDialog, ModelSelectorRef } from '@/components/features/mod
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useChatSessionsStore } from '@/hooks/use-chat-sessions';
 import { useLLM } from '@/hooks/use-llm';
 import { usePreferences } from '@/hooks/use-preferences';
 import { ModelInfo } from '@/llm/chat';
@@ -16,6 +17,7 @@ import { ModelIcon } from '../model-icon';
 import { AssetsDialog } from './assets-dialog';
 
 interface ChatInputProps {
+  sessionId: string;
   usage?: {
     inputTokens: number;
     outputTokens: number;
@@ -24,14 +26,9 @@ interface ChatInputProps {
   };
   onSend: (message: string, attachments?: ChatInputAttachment[]) => void;
   disabled?: boolean;
-  inputValue?: string;
-  onInputValueChange?: (value: string) => void;
-  attachments?: ChatInputAttachment[];
-  onAttachmentsChange?: (attachments: ChatInputAttachment[]) => void;
   isLoading?: boolean;
   className?: string;
   onCancel?: () => void;
-  sessionId?: string;
 }
 
 const useChatbotModelSelectorStore = create<{
@@ -65,21 +62,31 @@ export const useChatbotModelSelector = () => {
 };
 
 export const ChatInput = ({
+  sessionId,
   usage,
   onSend,
   disabled = false,
-  inputValue: controlledInputValue,
-  onInputValueChange,
-  attachments,
-  onAttachmentsChange,
   isLoading = false,
   className,
   onCancel,
-  sessionId,
 }: ChatInputProps) => {
   const modelSelectorRef = useRef<ModelSelectorRef>(null);
   const { selectedModel, setSelectedModel } = useChatbotModelSelector();
   const [assetsDialogOpen, setAssetsDialogOpen] = useState(false);
+
+  // 从 store 获取输入值和附件
+  const { sessionInputValues, sessionAttachments, setSessionInputValue, setSessionAttachments } = useChatSessionsStore();
+  const inputValue = sessionInputValues[sessionId] || '';
+  const attachments = sessionAttachments[sessionId] || [];
+
+  // 输入值和附件管理（直接从 store 读取和更新）
+  const handleInputValueChange = (value: string) => {
+    setSessionInputValue(sessionId, value);
+  };
+
+  const handleAttachmentsChange = (newAttachments: ChatInputAttachment[]) => {
+    setSessionAttachments(sessionId, newAttachments);
+  };
 
   const handleModelSelect = (model: ModelInfo) => {
     setSelectedModel(model);
@@ -91,20 +98,18 @@ export const ChatInput = ({
     }
     return (
       <div className="text-muted-foreground/60 flex items-center gap-2 px-2 text-xs">
-        {sessionId && (
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-6 w-6 flex-shrink-0"
-            onClick={() => setAssetsDialogOpen(true)}
-            disabled={disabled}
-            aria-label="查看素材库"
-            title="查看素材库"
-          >
-            <FolderOpen className="h-4 w-4" />
-          </Button>
-        )}
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-6 w-6 flex-shrink-0"
+          onClick={() => setAssetsDialogOpen(true)}
+          disabled={disabled}
+          aria-label="查看素材库"
+          title="查看素材库"
+        >
+          <FolderOpen className="h-4 w-4" />
+        </Button>
         <div className="flex items-center gap-2">
           <span>输入: {usage.inputTokens.toLocaleString()} tokens</span>
           <span>输出: {usage.outputTokens.toLocaleString()} tokens</span>
@@ -255,14 +260,14 @@ export const ChatInput = ({
         placeholder={isLoading ? '正在处理中...' : disabled ? 'AI is responding...' : 'Type your message...'}
         renderHeader={renderHeader}
         renderFooter={renderFooter}
-        value={controlledInputValue}
-        onValueChange={onInputValueChange}
+        value={inputValue}
+        onValueChange={handleInputValueChange}
         attachments={attachments}
-        onAttachmentsChange={onAttachmentsChange}
+        onAttachmentsChange={handleAttachmentsChange}
         className={className}
       />
       <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={handleModelSelect} type="language" />
-      {sessionId && <AssetsDialog sessionId={sessionId} open={assetsDialogOpen} onOpenChange={setAssetsDialogOpen} />}
+      <AssetsDialog sessionId={sessionId} open={assetsDialogOpen} onOpenChange={setAssetsDialogOpen} />
     </>
   );
 };

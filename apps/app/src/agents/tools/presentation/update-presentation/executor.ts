@@ -1,11 +1,10 @@
 import { updatePresentationParamsSchema } from './schema';
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
-import { getSandboxRuntimeManager } from '@/lib/server/sandbox';
-import { updateSandboxHandleLastUsed } from '@/lib/server/sandbox/handle';
-import { ensureSandbox, saveSandboxHandleToState } from '../../sandbox/utils';
 import { AssetManager } from '@/lib/server/asset-manager';
 import { prisma } from '@/lib/server/prisma';
-import { generateHtmlContent, generatePythonScript } from '../generate-presentation/executor';
+import { convertLegacyPresentationToNewFormat, type ExtendedLegacySlide } from '../_lib/converter';
+import { generateHtmlContent } from '../_lib/renderers/html-renderer';
+import { generatePptxBuffer } from '../_lib/renderers/pptx-renderer';
 
 export const updatePresentationExecutor = definitionToolExecutor(updatePresentationParamsSchema, async (args, context) => {
   return await context.workflow.run(`toolcall-${context.toolCallId || 'update-presentation'}`, async () => {
@@ -109,36 +108,36 @@ export const updatePresentationExecutor = definitionToolExecutor(updatePresentat
         },
       });
 
-      // 6. 确保 sandbox 存在
-      const handle = await ensureSandbox(context.sessionId);
-      const srm = getSandboxRuntimeManager();
-      const instance = await srm.get(handle);
+      // 6. 使用 LLM 进行智能设计决策（如果可用）
+      let designedSlides: ExtendedLegacySlide[] = newSlides as ExtendedLegacySlide[];
 
-      // 7. 生成新的演示文稿
-      let htmlContent = '';
-      if (newExportFormats.includes('html')) {
-        htmlContent = generateHtmlContent(newTitle, newSlides, newStyle);
-        await srm.writeFile(handle, 'presentation.html', htmlContent);
+      if (context.llmClient) {
+        try {
+          // 复用 generate-presentation 的设计逻辑
+          const { designSlidesWithLLM } = await import('../generate-presentation/executor');
+          designedSlides = await designSlidesWithLLM(newTitle, newSlides, newStyle, context.llmClient);
+        } catch (error) {
+          console.error('Failed to design slides with LLM, using fallback:', error);
+          designedSlides = newSlides as ExtendedLegacySlide[];
+        }
       }
 
-      // 生成Python脚本（仅用于生成PPTX）
+      // 7. 转换为新格式并生成演示文稿
+      const presentationData = convertLegacyPresentationToNewFormat(newTitle, designedSlides, newStyle);
+
+      // 生成HTML内容
+      let htmlContent = '';
+      if (newExportFormats.includes('html')) {
+        htmlContent = generateHtmlContent(presentationData);
+      }
+
+      // 生成PPTX Buffer
+      let pptxBuffer: Buffer | null = null;
       if (newExportFormats.includes('pptx')) {
-        const pythonScript = generatePythonScript(newTitle, newSlides, newStyle, newExportFormats);
-        await srm.writeFile(handle, 'generate_presentation.py', pythonScript);
-
-        // 安装依赖
-        const installResult = await srm.exec(handle, 'pip install python-pptx', { timeout: 120 });
-        if (installResult.exitCode !== 0) {
-          console.warn('Failed to install python-pptx:', installResult.stderr);
-        }
-
-        // 执行Python脚本
-        const execResult = await srm.exec(handle, 'python generate_presentation.py', { timeout: 300 });
-        if (execResult.exitCode !== 0) {
-          return {
-            success: false,
-            error: `Failed to generate presentation: ${execResult.stderr || execResult.stdout}`,
-          };
+        try {
+          pptxBuffer = await generatePptxBuffer(presentationData);
+        } catch (error) {
+          console.error('Failed to generate PPTX:', error);
         }
       }
 
@@ -180,56 +179,38 @@ export const updatePresentationExecutor = definitionToolExecutor(updatePresentat
         }
       }
 
-      // 读取并上传PPTX文件
-      if (newExportFormats.includes('pptx')) {
+      // 上传PPTX文件
+      if (newExportFormats.includes('pptx') && pptxBuffer) {
         try {
-          const base64Script = `
-import base64
-import sys
-
-try:
-    with open('presentation.pptx', 'rb') as f:
-        data = base64.b64encode(f.read()).decode('utf-8')
-        print(data)
-except Exception as e:
-    print(f"Error: {e}", file=sys.stderr)
-    sys.exit(1)
-`;
-          await srm.writeFile(handle, 'read_pptx.py', base64Script);
-          const base64Result = await srm.exec(handle, 'python read_pptx.py', { timeout: 60 });
-          if (base64Result.exitCode === 0 && base64Result.stdout) {
-            const pptxBuffer = Buffer.from(base64Result.stdout.trim(), 'base64');
-            const pptxAsset = await AssetManager.createAsset({
-              organizationId: context.organizationId,
-              sessionId: context.sessionId,
-              fileContent: pptxBuffer,
-              fileName: `${newTitle || 'presentation'}.pptx`,
-              mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-              type: 'presentation',
-              title: `${newTitle || '演示文稿'} (PPTX)`,
-              description: `PPTX版本的演示文稿：${newTitle}`,
-              toolCallId: context.toolCallId,
-              messageId: context.messageId,
-              metadata: {
-                presentationTitle: newTitle,
-                slides: newSlides,
-                style: newStyle,
-                exportFormats: newExportFormats,
-                version: originalVersion + 1,
-                isHistory: false,
-                previousVersionId: historyAssetId,
-              },
-            });
-            assets.push(pptxAsset);
-            pptxUrl = pptxAsset.fileUrl;
-            if (!newAssetId) {
-              newAssetId = pptxAsset.id;
-            }
-          } else {
-            console.error('Failed to read PPTX as base64:', base64Result.stderr);
+          const pptxAsset = await AssetManager.createAsset({
+            organizationId: context.organizationId,
+            sessionId: context.sessionId,
+            fileContent: pptxBuffer,
+            fileName: `${newTitle || 'presentation'}.pptx`,
+            mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            type: 'presentation',
+            title: `${newTitle || '演示文稿'} (PPTX)`,
+            description: `PPTX版本的演示文稿：${newTitle}`,
+            toolCallId: context.toolCallId,
+            messageId: context.messageId,
+            metadata: {
+              presentationTitle: newTitle,
+              slides: newSlides,
+              style: newStyle,
+              exportFormats: newExportFormats,
+              version: originalVersion + 1,
+              isHistory: false,
+              previousVersionId: historyAssetId,
+              presentationData: presentationData,
+            },
+          });
+          assets.push(pptxAsset);
+          pptxUrl = pptxAsset.fileUrl;
+          if (!newAssetId) {
+            newAssetId = pptxAsset.id;
           }
         } catch (error) {
-          console.error('Failed to read/upload PPTX:', error);
+          console.error('Failed to upload PPTX:', error);
         }
       }
 
@@ -246,10 +227,6 @@ except Exception as e:
           },
         });
       }
-
-      // 10. 更新 handle
-      const updatedHandle = updateSandboxHandleLastUsed(instance.handle);
-      await saveSandboxHandleToState(context.sessionId, updatedHandle);
 
       return {
         success: true,

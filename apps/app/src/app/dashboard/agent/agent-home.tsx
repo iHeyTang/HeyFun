@@ -76,16 +76,19 @@ const examplePrompts = [
   },
 ];
 
+// 使用临时 sessionId 来管理 AgentHome 的输入值
+const HOME_TEMP_SESSION_ID = '__agent_home__';
+
 export const AgentHome = ({ onCreateSession }: AgentHomeProps) => {
-  const { createSession, setActiveSessionId, activeSessionId, fetchAndUpdateMessages } = useChatSessionsStore();
+  const { createSession, setActiveSessionId, activeSessionId, fetchAndUpdateMessages, setSessionInputValue, setSessionAttachments } =
+    useChatSessionsStore();
   const { navigateToSession } = useAgentRouter();
   const { selectedModel } = useChatbotModelSelector();
-  const [inputValue, setInputValue] = useState('');
-  const [attachments, setAttachments] = useState<ChatInputAttachment[]>([]);
   const [isSending, setIsSending] = useState(false);
 
   const handleExampleClick = (prompt: string) => {
-    setInputValue(prompt);
+    // 通过 store 设置输入值
+    setSessionInputValue(HOME_TEMP_SESSION_ID, prompt);
   };
 
   const handleSend = async (message: string, messageAttachments?: ChatInputAttachment[]) => {
@@ -95,7 +98,7 @@ export const AgentHome = ({ onCreateSession }: AgentHomeProps) => {
     }
 
     const trimmedMessage = message.trim();
-    if (!trimmedMessage && (!messageAttachments || messageAttachments.length === 0) && attachments.length === 0) {
+    if (!trimmedMessage && (!messageAttachments || messageAttachments.length === 0)) {
       return;
     }
 
@@ -117,22 +120,14 @@ export const AgentHome = ({ onCreateSession }: AgentHomeProps) => {
         navigateToSession(session.id);
       }
 
-      // 使用传入的 attachments 或当前的 attachments
-      const finalAttachments = messageAttachments || attachments;
       // 构建消息内容
-      const messageContent = buildMessageContent(trimmedMessage, finalAttachments.length > 0 ? finalAttachments : undefined);
+      const messageContent = buildMessageContent(trimmedMessage, messageAttachments);
 
       // 发送消息到后端
       const response = await fetch('/api/agent/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          sessionId,
-          content: messageContent,
-          modelId: selectedModel.id,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, content: messageContent, modelId: selectedModel.id }),
       });
 
       if (!response.ok) {
@@ -142,15 +137,15 @@ export const AgentHome = ({ onCreateSession }: AgentHomeProps) => {
 
       // 发送成功后，立即获取消息，以便界面切换到 ChatSession
       try {
-        await fetchAndUpdateMessages({ sessionId, apiPrefix: '/api/agent' });
+        await fetchAndUpdateMessages({ sessionId });
       } catch (error) {
         console.error('Failed to fetch messages after sending:', error);
         // 不阻止流程，继续执行
       }
 
-      // 清空输入
-      setInputValue('');
-      setAttachments([]);
+      // 清空输入（清空临时 sessionId 的输入值）
+      setSessionInputValue(HOME_TEMP_SESSION_ID, '');
+      setSessionAttachments(HOME_TEMP_SESSION_ID, []);
 
       if (onCreateSession) {
         onCreateSession();
@@ -175,16 +170,7 @@ export const AgentHome = ({ onCreateSession }: AgentHomeProps) => {
 
         {/* 输入框 */}
         <div className="flex flex-col gap-2">
-          <ChatInput
-            onSend={handleSend}
-            disabled={isSending}
-            inputValue={inputValue}
-            onInputValueChange={setInputValue}
-            attachments={attachments}
-            onAttachmentsChange={setAttachments}
-            isLoading={isSending}
-            className="pb-0"
-          />
+          <ChatInput sessionId={HOME_TEMP_SESSION_ID} onSend={handleSend} disabled={isSending} isLoading={isSending} className="pb-0" />
           <div className="flex flex-wrap justify-center gap-2.5 px-6">
             {examplePrompts.map((example, index) => (
               <Badge

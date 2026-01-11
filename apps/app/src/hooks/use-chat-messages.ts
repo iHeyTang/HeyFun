@@ -53,7 +53,6 @@ interface ChatMessagesActions {
   // lastMessageId: 可选，如果提供则只获取该消息之后的新消息（游标分页）
   fetchAndUpdateMessages: (params: {
     sessionId: string;
-    apiPrefix?: string;
     lastMessageId?: string;
   }) => Promise<{ status: string; shouldContinue: boolean; messages: ChatMessages[] }>;
   // 设置 session 消息
@@ -131,9 +130,9 @@ export const useChatMessagesStore = create<ChatMessagesStore>()((set, get) => ({
 
   // 获取并更新消息（自动处理状态和标题更新）
   // lastMessageId: 可选，如果提供则只获取该消息之后的新消息（游标分页）
-  fetchAndUpdateMessages: async ({ sessionId, apiPrefix = '/api/agent', lastMessageId }) => {
+  fetchAndUpdateMessages: async ({ sessionId, lastMessageId }) => {
     try {
-      const url = new URL(`${apiPrefix}/messages`, window.location.origin);
+      const url = new URL('/api/agent/messages', window.location.origin);
       url.searchParams.set('sessionId', sessionId);
 
       // 如果提供了 lastMessageId，使用游标分页（只获取新消息）
