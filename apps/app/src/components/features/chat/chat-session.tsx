@@ -12,11 +12,15 @@ import { useChatSendMessage } from '@/hooks/use-chat-send-message';
 import { useChatSessionsStore } from '@/hooks/use-chat-sessions';
 import { useChatMessageSync } from '@/hooks/use-chat-message-sync';
 import { ChatMessages } from '@prisma/client';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ChatInput, useChatbotModelSelector } from './chat-input';
 import { ChatMessage as ChatMessageComponent } from './chat-message';
 import { ThinkingMessage } from './thinking-message';
+import { AgentsComputer } from './agents-computer';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import type { ImperativePanelHandle } from 'react-resizable-panels';
+import { cn } from '@/lib/utils';
 
 interface ChatSessionProps {
   /** 必需的 sessionId */
@@ -41,6 +45,14 @@ function ChatSessionComponent({ sessionId, initialMessages = [], disabled = fals
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { selectedModel } = useChatbotModelSelector();
+
+  // 侧边栏折叠状态管理
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [contentVisible, setContentVisible] = useState(true); // 控制内容的可见性（用于动画）
+  const [isPanelAnimating, setIsPanelAnimating] = useState(false); // 控制面板过渡动画
+  const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
+  const selectedToolCallIdRef = useRef<string | null>(null);
+  const [toolSelectTrigger, setToolSelectTrigger] = useState(0); // 用于触发工具选择更新
 
   // 使用消息同步 hook（统一管理 realtime 和 polling）
   const { checkStatusAndStartPolling } = useChatMessageSync({ sessionId });
@@ -129,46 +141,133 @@ function ChatSessionComponent({ sessionId, initialMessages = [], disabled = fals
     };
   }, [messages]);
 
+  // 处理侧边栏折叠/展开（带动画）
+  const handleCollapseSidebar = useCallback(() => {
+    // 启用面板过渡动画
+    setIsPanelAnimating(true);
+    // 同时执行：内容滑出 + 面板折叠
+    setContentVisible(false);
+    sidebarPanelRef.current?.collapse();
+    // 动画完成后禁用过渡
+    setTimeout(() => {
+      setIsPanelAnimating(false);
+    }, 350);
+  }, []);
+
+  const handleExpandSidebar = useCallback(() => {
+    // 启用面板过渡动画
+    setIsPanelAnimating(true);
+    // 先展开面板
+    sidebarPanelRef.current?.expand();
+    // 稍微延迟后让内容滑入
+    setTimeout(() => {
+      setContentVisible(true);
+    }, 50);
+    // 动画完成后禁用过渡
+    setTimeout(() => {
+      setIsPanelAnimating(false);
+    }, 400);
+  }, []);
+
+  // 处理工具点击：打开侧边栏并切换到对应工具
+  const handleToolClick = useCallback(
+    (toolCallId: string) => {
+      // 如果侧边栏已折叠，先展开
+      if (isSidebarCollapsed) {
+        handleExpandSidebar();
+      }
+      // 设置要选中的工具ID
+      selectedToolCallIdRef.current = toolCallId;
+      // 触发更新
+      setToolSelectTrigger(prev => prev + 1);
+    },
+    [isSidebarCollapsed, handleExpandSidebar],
+  );
+
   return (
-    <div className="flex h-full flex-col">
-      {/* Messages */}
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="min-w-0 space-y-0">
-          {messages.map((message, index) => (
-            <ChatMessageComponent
-              key={message.id}
-              role={message.role as 'user' | 'assistant'}
-              content={message.content}
-              isStreaming={message.isStreaming}
-              timestamp={message.createdAt}
-              toolCalls={message.toolCalls || []}
-              toolResults={message.toolResults || []}
-              modelId={message.role === 'assistant' ? (message.modelId ?? undefined) : undefined}
-              messageId={message.id}
-              sessionId={sessionId}
-              tokenCount={message.tokenCount ?? undefined}
-              inputTokens={message.inputTokens ?? undefined}
-              outputTokens={message.outputTokens ?? undefined}
-              cachedInputTokens={message.cachedInputTokens ?? undefined}
-              cachedOutputTokens={message.cachedOutputTokens ?? undefined}
-              metadata={message.metadata}
-              onSendMessage={handleSendMessage}
-              isLastMessage={index === messages.length - 1}
-            />
-          ))}
-          {shouldShowThinkingMessage && <ThinkingMessage modelId={selectedModel?.id} label="思考中" />}
+    <ResizablePanelGroup direction="horizontal" className={cn('flex h-full p-2', isPanelAnimating && 'panels-animating')}>
+      {/* 左侧：聊天内容 */}
+      <ResizablePanel defaultSize={50} minSize={20} className="mr-2 flex min-w-0 flex-col">
+        {/* Messages */}
+        <div
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <div className="min-w-0 space-y-0">
+            {messages.map((message, index) => (
+              <ChatMessageComponent
+                key={message.id}
+                role={message.role as 'user' | 'assistant'}
+                content={message.content}
+                isStreaming={message.isStreaming}
+                timestamp={message.createdAt}
+                toolCalls={message.toolCalls || []}
+                toolResults={message.toolResults || []}
+                modelId={message.role === 'assistant' ? (message.modelId ?? undefined) : undefined}
+                messageId={message.id}
+                sessionId={sessionId}
+                tokenCount={message.tokenCount ?? undefined}
+                inputTokens={message.inputTokens ?? undefined}
+                outputTokens={message.outputTokens ?? undefined}
+                cachedInputTokens={message.cachedInputTokens ?? undefined}
+                cachedOutputTokens={message.cachedOutputTokens ?? undefined}
+                metadata={message.metadata}
+                onSendMessage={handleSendMessage}
+                isLastMessage={index === messages.length - 1}
+                onToolClick={handleToolClick}
+              />
+            ))}
+            {shouldShowThinkingMessage && <ThinkingMessage modelId={selectedModel?.id} label="思考中" />}
+          </div>
         </div>
-      </div>
-      {/* Input */}
-      <ChatInput
-        sessionId={sessionId}
-        usage={usage}
-        onSend={handleSendMessage}
-        disabled={isLoading || disabled}
-        isLoading={isLoading}
-        onCancel={handleCancel}
-      />
-    </div>
+        {/* Input */}
+        <ChatInput
+          sessionId={sessionId}
+          usage={usage}
+          onSend={handleSendMessage}
+          disabled={isLoading || disabled}
+          isLoading={isLoading}
+          onCancel={handleCancel}
+          onExpandSidebar={handleExpandSidebar}
+          onCollapseSidebar={handleCollapseSidebar}
+          isSidebarCollapsed={isSidebarCollapsed}
+          className="mx-2"
+        />
+      </ResizablePanel>
+
+      <ResizableHandle className="bg-transparent after:bg-transparent" />
+
+      {/* 右侧：Agent's Computer */}
+      <ResizablePanel
+        ref={sidebarPanelRef}
+        defaultSize={50}
+        minSize={20}
+        collapsible={true}
+        collapsedSize={0}
+        onCollapse={() => {
+          setIsSidebarCollapsed(true);
+          setContentVisible(false);
+        }}
+        onExpand={() => {
+          setIsSidebarCollapsed(false);
+          // 展开后让内容滑入
+          setTimeout(() => {
+            setContentVisible(true);
+          }, 50);
+        }}
+        className="flex-shrink-0 overflow-hidden"
+      >
+        <div className={cn('h-full w-full transition-transform duration-300 ease-out', contentVisible ? 'translate-x-0' : 'translate-x-full')}>
+          <AgentsComputer
+            sessionId={sessionId}
+            messages={messages}
+            onCollapse={handleCollapseSidebar}
+            selectedToolCallIdRef={selectedToolCallIdRef}
+            toolSelectTrigger={toolSelectTrigger}
+          />
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }
 

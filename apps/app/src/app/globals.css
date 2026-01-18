@@ -246,3 +246,9 @@
 .ProseMirror[contenteditable='false'] {
   @apply select-text;
 }
+
+
+/* 面板过渡动画 - 仅在按钮触发时启用 */
+.panels-animating [data-panel] {
+  transition: flex 300ms ease-out !important;
+}

@@ -34,40 +34,17 @@ export const POST = withUserAuthApi<{}, {}, { sessionId: string }>(async (_req, 
 
     // 检查当前处理状态，只有正在处理中的会话才能中断
     if (session.status !== 'pending' && session.status !== 'processing') {
-      return NextResponse.json({ error: 'Session is not processing, cannot cancel' }, { status: 400 });
+      return NextResponse.json({ error: `Session is ${session.status}, cannot cancel` }, { status: 400 });
     }
 
-    // 更新会话状态为 idle，标记为已中断
-    // 使用事务确保状态更新和消息更新的原子性
-    await prisma.$transaction(async tx => {
-      await tx.chatSessions.update({
-        where: { id: sessionId },
-        data: {
-          status: 'idle', // 重置为 idle，workflow 会在下次检查时发现并停止
-          updatedAt: new Date(),
-        },
-      });
-
-      // 查找并更新最后一条未完成的消息
-      const lastMessage = await tx.chatMessages.findFirst({
-        where: {
-          sessionId,
-          role: 'assistant',
-          isComplete: false,
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      if (lastMessage) {
-        await tx.chatMessages.update({
-          where: { id: lastMessage.id },
-          data: {
-            isComplete: true,
-            isStreaming: false,
-            content: lastMessage.content ? `${lastMessage.content}\n\n[已中断]` : '[已中断]',
-          },
-        });
-      }
+    // 更新会话状态为 cancelling，标记为中断中
+    // workflow 会在合适的位置检查这个标志位并结束 workflow
+    await prisma.chatSessions.update({
+      where: { id: sessionId },
+      data: {
+        status: 'cancelling', // 设置为 cancelling，workflow 会在下次检查时发现并停止
+        updatedAt: new Date(),
+      },
     });
 
     return NextResponse.json({

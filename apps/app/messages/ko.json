@@ -146,7 +146,9 @@
       "taskError": "앗! 문제가 발생했습니다",
       "inputTokens": "입력",
       "completionTokens": "출력",
-      "suggestedQuestions": "추천 질문"
+      "suggestedQuestions": "추천 질문",
+      "cancelledByUser": "취소됨 (사용자 취소)",
+      "cancelledBySystem": "취소됨 (시스템 취소)"
     },
     "confirm": {
       "terminate": {

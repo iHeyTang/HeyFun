@@ -146,7 +146,9 @@
       "taskError": "Oops! something went wrong",
       "inputTokens": "input",
       "completionTokens": "completion",
-      "suggestedQuestions": "Suggested Questions"
+      "suggestedQuestions": "Suggested Questions",
+      "cancelledByUser": "Cancelled (User)",
+      "cancelledBySystem": "Cancelled (System)"
     },
     "confirm": {
       "terminate": {

@@ -33,6 +33,7 @@ interface ChatMessageProps {
   metadata?: PrismaJson.ChatMessageMetadata | null;
   onSendMessage?: (content: string) => void;
   isLastMessage?: boolean;
+  onToolClick?: (toolCallId: string) => void;
 }
 
 // 带 Tooltip 的消息操作按钮组件
@@ -80,6 +81,7 @@ const ChatMessageComponent = ({
   metadata,
   onSendMessage,
   isLastMessage = false,
+  onToolClick,
 }: ChatMessageProps) => {
   const isUser = role === 'user';
 
@@ -376,7 +378,13 @@ const ChatMessageComponent = ({
         {/* 工具调用卡片（包含结果）- 更小的宽度 */}
         {hasToolCalls && toolCalls && (
           <div className="min-w-0 max-w-[50%]">
-            <ToolCallCard toolCalls={toolCalls} toolResults={toolResults} messageId={messageId} sessionId={sessionId} />
+            <ToolCallCard
+              toolCalls={toolCalls}
+              toolResults={toolResults}
+              messageId={messageId}
+              sessionId={sessionId}
+              onToolClick={onToolClick}
+            />
           </div>
         )}
 

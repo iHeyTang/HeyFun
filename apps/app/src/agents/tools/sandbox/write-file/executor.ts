@@ -1,13 +1,11 @@
-import { ToolContext } from '../../context';
-import { sandboxWriteFileParamsSchema } from './schema';
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
 import { getSandboxRuntimeManager } from '@/lib/server/sandbox';
 import { updateSandboxHandleLastUsed } from '@/lib/server/sandbox/handle';
 import { ensureSandbox, saveSandboxHandleToState } from '../utils';
+import { sandboxWriteFileParamsSchema } from './schema';
 
 export const sandboxWriteFileExecutor = definitionToolExecutor(sandboxWriteFileParamsSchema, async (args, context) => {
-  return await context.workflow.run(`toolcall-${context.toolCallId || 'sandbox-write-file'}`, async () => {
-    try {
+  try {
       if (!context.sessionId) {
         return {
           success: false,
@@ -41,5 +39,4 @@ export const sandboxWriteFileExecutor = definitionToolExecutor(sandboxWriteFileP
         error: error instanceof Error ? error.message : String(error),
       };
     }
-  });
 });

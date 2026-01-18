@@ -146,7 +146,9 @@
       "taskError": "おっと！何か問題が発生しました",
       "inputTokens": "入力",
       "completionTokens": "出力",
-      "suggestedQuestions": "推奨される質問"
+      "suggestedQuestions": "推奨される質問",
+      "cancelledByUser": "中断されました（ユーザーによるキャンセル）",
+      "cancelledBySystem": "中断されました（システムによるキャンセル）"
     },
     "confirm": {
       "terminate": {

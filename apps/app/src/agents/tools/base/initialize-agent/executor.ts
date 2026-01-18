@@ -634,50 +634,77 @@ function buildSuccessResult(
 }
 
 /**
+ * 提取提示词片段（异步函数）
+ */
+async function extractPromptSnippets(
+  userMessage: string,
+  maxFragments: number,
+  llmClient?: ChatClient,
+): Promise<{
+  fragmentIds: string[];
+  cleanedQuery?: string;
+  keywords?: string[];
+}> {
+  const searchResult = await searchByVector(userMessage, maxFragments * 2, llmClient);
+  const fragmentIds = searchResult.fragmentIds.slice(0, maxFragments);
+  return {
+    fragmentIds,
+    cleanedQuery: searchResult.cleanedQuery,
+    keywords: searchResult.keywords,
+  };
+}
+
+/**
+ * 检索相关工具（异步函数）
+ */
+async function extractTools(
+  query: string,
+  llmClient?: ChatClient,
+  toolManager?: ToolManager,
+  builtinToolNames?: string[],
+): Promise<Array<{ name: string; description: string; category?: string; manual?: string }>> {
+  return await retrieveTools(query, llmClient, toolManager, builtinToolNames);
+}
+
+/**
  * Agent 初始化执行器
  * 负责整个流程的编排
  */
 export const initializeAgentExecutor = definitionToolExecutor(initializeAgentParamsSchema, async (args, context) => {
-  return await context.workflow.run(`toolcall-${context.toolCallId || 'initialize-agent'}`, async () => {
-    try {
-      const { userMessage, maxFragments = 10, basePrompt } = args;
+  try {
+    const { message } = args;
+    const maxFragments = 10; // 内部写死
 
-      // 阶段 1: 构建向量搜索查询文本
-      const vectorQueryText = buildVectorQueryText(userMessage);
+    // 并行执行提示词提取和工具检索
+    const [snippetResult, retrievedTools] = await Promise.all([
+      extractPromptSnippets(message, maxFragments, context.llmClient),
+      extractTools(message, context.llmClient, context.toolManager, context.builtinToolNames),
+    ]);
 
-      // 阶段 2: 从向量库检索片段
-      const searchResult = await searchByVector(vectorQueryText, maxFragments * 2, context.llmClient);
-      const fragmentIds = searchResult.fragmentIds.slice(0, maxFragments);
-      const cleanedQuery = searchResult.cleanedQuery;
-      const keywords = searchResult.keywords;
+    const { fragmentIds, cleanedQuery, keywords } = snippetResult;
 
-      // 阶段 3: 检索相关工具 - 无论是否找到片段都要检索工具（复用提示词检索的关键词提取结果）
-      const toolSearchQuery = cleanedQuery || userMessage; // 优先使用已清洗的查询文本
-      const retrievedTools = await retrieveTools(toolSearchQuery, context.llmClient, context.toolManager, context.builtinToolNames);
-
-      // 阶段 4: 处理无片段情况
-      if (fragmentIds.length === 0) {
-        clearDynamicSystemPrompt(context.dynamicSystemPrompt);
-        return buildNoFragmentsResult(vectorQueryText, cleanedQuery, keywords, retrievedTools);
-      }
-
-      // 阶段 5: 获取片段详细信息
-      const fragments = await getFragmentDetails(fragmentIds);
-
-      // 阶段 6: 生成动态系统提示词
-      const dynamicSystemPrompt = await generateDynamicSystemPrompt(userMessage, fragmentIds, context.llmClient);
-
-      // 阶段 7: 设置动态系统提示词到上下文
-      setDynamicSystemPrompt(dynamicSystemPrompt, context.dynamicSystemPrompt);
-
-      // 阶段 8: 构建并返回结果
-      return buildSuccessResult(fragmentIds, fragments, dynamicSystemPrompt, retrievedTools, vectorQueryText, cleanedQuery, keywords);
-    } catch (error) {
-      console.error('[InitializeAgentTool] ❌ Agent 初始化失败:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
+    // 处理无片段情况
+    if (fragmentIds.length === 0) {
+      clearDynamicSystemPrompt(context.dynamicSystemPrompt);
+      return buildNoFragmentsResult(message, cleanedQuery, keywords, retrievedTools);
     }
-  });
+
+    // 获取片段详细信息
+    const fragments = await getFragmentDetails(fragmentIds);
+
+    // 生成动态系统提示词
+    const dynamicSystemPrompt = await generateDynamicSystemPrompt(message, fragmentIds, context.llmClient);
+
+    // 设置动态系统提示词到上下文
+    setDynamicSystemPrompt(dynamicSystemPrompt, context.dynamicSystemPrompt);
+
+    // 构建并返回结果
+    return buildSuccessResult(fragmentIds, fragments, dynamicSystemPrompt, retrievedTools, message, cleanedQuery, keywords);
+  } catch (error) {
+    console.error('[InitializeAgentTool] ❌ Agent 初始化失败:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 });

@@ -301,7 +301,7 @@ model ChatSessions {
 
   // 会话状态
   /// [ChatSessionStatus]
-  status String @default("idle") // 处理状态：idle（空闲）, pending（挂起，准备执行）, processing（正在执行）, failed（执行失败）
+  status String @default("idle") // 处理状态：idle（空闲）, pending（挂起，准备执行）, processing（正在执行）, cancelling（中断中）, failed（执行失败）
 
   // 关联的消息
   messages ChatMessages[]

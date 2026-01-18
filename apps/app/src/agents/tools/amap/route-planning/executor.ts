@@ -1,7 +1,6 @@
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
+import { callAmapApi, formatLocation, getAmapApiKey } from '../utils';
 import { routePlanningParamsSchema } from './schema';
-import { ToolContext } from '../../context';
-import { getAmapApiKey, callAmapApi, formatLocation } from '../utils';
 
 /**
  * 高德地图路径规划API
@@ -12,7 +11,6 @@ async function planRouteFromAmap(
   destination: string | { longitude: number; latitude: number },
   strategy: string,
   waypoints: Array<string | { longitude: number; latitude: number }> | undefined,
-  context: ToolContext,
 ) {
   const apiKey = getAmapApiKey();
 
@@ -56,27 +54,25 @@ async function planRouteFromAmap(
   };
 }
 
-export const routePlanningExecutor = definitionToolExecutor(routePlanningParamsSchema, async (args, context) => {
-  return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
-    try {
-      const { origin, destination, strategy = '0', waypoints } = args;
+export const routePlanningExecutor = definitionToolExecutor(routePlanningParamsSchema, async args => {
+  try {
+    const { origin, destination, strategy = '0', waypoints } = args;
 
-      const result = await planRouteFromAmap(origin, destination, strategy, waypoints, context);
+    const result = await planRouteFromAmap(origin, destination, strategy, waypoints);
 
-      const bestRoute = result.routes[0];
-      const distanceKm = (bestRoute.distance / 1000).toFixed(2);
-      const durationMin = Math.round(bestRoute.duration / 60);
+    const bestRoute = result.routes[0];
+    const distanceKm = (bestRoute.distance / 1000).toFixed(2);
+    const durationMin = Math.round(bestRoute.duration / 60);
 
-      return {
-        success: true,
-        data: result,
-        message: `已规划路径，共 ${result.routes.length} 条方案。推荐方案：距离 ${distanceKm} 公里，预计 ${durationMin} 分钟，过路费 ${bestRoute.tolls} 元`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: (error as Error).message,
-      };
-    }
-  });
+    return {
+      success: true,
+      data: result,
+      message: `已规划路径，共 ${result.routes.length} 条方案。推荐方案：距离 ${distanceKm} 公里，预计 ${durationMin} 分钟，过路费 ${bestRoute.tolls} 元`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
 });

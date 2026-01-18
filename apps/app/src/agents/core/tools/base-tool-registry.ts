@@ -3,9 +3,9 @@
  * 提供通用的工具注册和执行功能
  */
 
-import { ToolResult } from './tool-definition';
 import { ToolContext } from '@/agents/tools/context';
 import { z } from 'zod';
+import { ToolResult } from './tool-definition';
 
 /**
  * 工具执行器类型
@@ -56,67 +56,52 @@ export abstract class BaseToolbox {
   }
 
   /**
-   * 执行工具
-   * 支持两种调用方式：
-   * 1. execute(toolName, args, context) - 直接调用
-   * 2. execute(toolCall, context) - 通过 ToolCall 格式调用（自动解析 arguments）
+   * 解析工具调用的 arguments
+   * @param toolName 工具名称（用于错误信息）
+   * @param argumentsStrOrObj 工具参数（字符串或对象）
+   * @returns 解析后的参数对象，如果解析失败则返回错误结果
    */
-  async execute(
-    toolNameOrCall: string | { function: { name: string; arguments: string | object } },
-    argsOrContext: any,
-    context?: ToolContext,
-  ): Promise<ToolResult> {
-    let toolName: string;
-    let args: any;
-    let execContext: ToolContext;
+  private parseToolArguments(toolName: string, argumentsStrOrObj: string | object): { success: true; args: any } | { success: false; error: string } {
+    if (typeof argumentsStrOrObj === 'object' && argumentsStrOrObj !== null) {
+      return { success: true, args: argumentsStrOrObj };
+    }
 
-    // 判断是 ToolCall 格式还是直接调用格式
-    if (typeof toolNameOrCall === 'string') {
-      // 直接调用格式：execute(toolName, args, context)
-      toolName = toolNameOrCall;
-      args = argsOrContext;
-      execContext = context!;
-    } else {
-      // ToolCall 格式：execute(toolCall, context)
-      const toolCall = toolNameOrCall;
-      toolName = toolCall.function.name;
-      execContext = argsOrContext as ToolContext;
-
-      // 解析 arguments
-      const argsStr = toolCall.function.arguments;
-      if (typeof argsStr === 'object' && argsStr !== null) {
-        args = argsStr;
-      } else if (typeof argsStr === 'string') {
-        // 检查是否是 "[object Object]" 这种错误转换的字符串
-        if (argsStr === '[object Object]') {
-          return {
-            success: false,
-            error: `Invalid arguments for ${toolName}: arguments was incorrectly converted to string "[object Object]". Please ensure arguments are properly serialized as JSON.`,
-          };
-        }
-        try {
-          args = JSON.parse(argsStr);
-        } catch (parseError) {
-          const errorMessage = (parseError as Error).message;
-          // 如果错误信息就是 "[object Object]" is not valid JSON，提供更友好的错误信息
-          if (errorMessage.includes('[object Object]')) {
-            return {
-              success: false,
-              error: `Invalid arguments for ${toolName}: arguments contains "[object Object]" which indicates an object was incorrectly converted to string. Original error: ${errorMessage}`,
-            };
-          }
-          return {
-            success: false,
-            error: `Invalid JSON arguments for ${toolName}: ${errorMessage}`,
-          };
-        }
-      } else {
+    if (typeof argumentsStrOrObj === 'string') {
+      try {
+        const args = JSON.parse(argumentsStrOrObj);
+        return { success: true, args };
+      } catch (parseError) {
+        const errorMessage = (parseError as Error).message;
         return {
           success: false,
-          error: `Invalid arguments type for ${toolName}: ${typeof argsStr}`,
+          error: `Invalid JSON arguments for ${toolName}: ${errorMessage}`,
         };
       }
     }
+
+    return {
+      success: false,
+      error: `Invalid arguments type for ${toolName}: ${typeof argumentsStrOrObj}`,
+    };
+  }
+
+  /**
+   * 执行工具
+   * 通过 ToolCall 格式调用（自动解析 arguments）
+   */
+  async execute(toolCall: { function: { name: string; arguments: string | object } }, context: ToolContext): Promise<ToolResult> {
+    const toolName = toolCall.function.name;
+
+    // 解析 arguments
+    const parseResult = this.parseToolArguments(toolName, toolCall.function.arguments);
+    if (!parseResult.success) {
+      return {
+        success: false,
+        error: parseResult.error,
+      };
+    }
+
+    const args = parseResult.args;
 
     const executor = this.executors.get(toolName);
     if (!executor) {
@@ -126,7 +111,7 @@ export abstract class BaseToolbox {
       };
     }
 
-    return await executor(args, execContext);
+    return await executor(args, context);
   }
 
   /**

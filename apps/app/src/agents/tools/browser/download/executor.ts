@@ -1,16 +1,14 @@
-import { ToolContext } from '../../context';
-import { browserDownloadParamsSchema } from './schema';
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
+import { getSandboxHandleFromState } from '@/agents/tools/sandbox/utils';
+import { createAssetFromTool } from '@/agents/utils/asset-helper';
 import { getBrowserRuntimeManager } from '@/lib/server/browser';
 import { updateBrowserHandleLastUsed } from '@/lib/server/browser/handle';
-import { ensureBrowser, saveBrowserHandleToState } from '../utils';
-import { createAssetFromTool } from '@/agents/utils/asset-helper';
 import { getSandboxRuntimeManager } from '@/lib/server/sandbox';
-import { getSandboxHandleFromState } from '@/agents/tools/sandbox/utils';
+import { ensureBrowser, saveBrowserHandleToState } from '../utils';
+import { browserDownloadParamsSchema } from './schema';
 
 export const browserDownloadExecutor = definitionToolExecutor(browserDownloadParamsSchema, async (args, context) => {
-  return await context.workflow.run(`toolcall-${context.toolCallId || 'browser-download'}`, async () => {
-    try {
+  try {
       if (!context.sessionId) {
         return {
           success: false,
@@ -114,5 +112,5 @@ export const browserDownloadExecutor = definitionToolExecutor(browserDownloadPar
         error: error instanceof Error ? error.message : String(error),
       };
     }
-  });
-});
+  },
+);

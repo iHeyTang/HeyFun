@@ -1,10 +1,10 @@
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
+import { createAssetsFromAigcResults } from '@/agents/utils/aigc-asset-helper';
 import { prisma } from '@/lib/server/prisma';
 import { workflow } from '@/lib/server/workflow';
 import AIGC, { GenerationType, videoParamsSchema } from '@/llm/aigc';
 import type { z } from 'zod';
 import { generateVideoParamsSchema } from './schema';
-import { createAssetsFromAigcResults } from '@/agents/utils/aigc-asset-helper';
 
 /**
  * 根据参数推断视频生成类型
@@ -23,23 +23,32 @@ function inferVideoGenerationType(params: z.infer<typeof videoParamsSchema>): Ge
 }
 
 export const generateVideoExecutor = definitionToolExecutor(generateVideoParamsSchema, async (args, context) => {
-  const { error, task } = await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
+  try {
     const { model, prompt, firstFrame, lastFrame, referenceImage, video, audio, aspectRatio, resolution, duration, advanced } = args;
 
     if (!context.organizationId) {
-      return { error: 'Organization ID is required' };
+      return {
+        success: false,
+        error: 'Organization ID is required',
+      };
     }
 
     // 获取模型信息
     const modelInstance = AIGC.getModel(model);
     if (!modelInstance) {
-      return { error: `Model "${model}" not found. Use get_aigc_models to see available models.` };
+      return {
+        success: false,
+        error: `Model "${model}" not found. Use get_aigc_models to see available models.`,
+      };
     }
 
     // 检查余额
     const credit = await prisma.credit.findUnique({ where: { organizationId: context.organizationId } });
     if (!credit || credit.amount <= 0) {
-      return { error: 'Insufficient balance' };
+      return {
+        success: false,
+        error: 'Insufficient balance',
+      };
     }
 
     // 构建参数
@@ -96,6 +105,7 @@ export const generateVideoExecutor = definitionToolExecutor(generateVideoParamsS
     // 验证模型是否支持该生成类型
     if (!modelInstance.generationTypes.includes(generationType)) {
       return {
+        success: false,
         error: `Model "${model}" does not support generation type "${generationType}". Supported types: ${modelInstance.generationTypes.join(', ')}`,
       };
     }
@@ -103,7 +113,7 @@ export const generateVideoExecutor = definitionToolExecutor(generateVideoParamsS
     // 创建数据库任务记录
     const createdTask = await prisma.paintboardTasks.create({
       data: {
-        organizationId: context.organizationId!,
+        organizationId: context.organizationId,
         service: 'unknown',
         model,
         generationType,
@@ -112,57 +122,78 @@ export const generateVideoExecutor = definitionToolExecutor(generateVideoParamsS
       },
     });
 
-    // 触发 paintboard workflow
+    // 触发 paintboard workflow（工具内部使用独立的 workflow）
     await workflow.trigger({
       url: '/api/workflow/paintboard',
       body: { taskId: createdTask.id },
       flowControl: { key: `paintboard-${context.organizationId}`, parallelism: 2 },
     });
 
-    return { task: createdTask };
-  });
+    // 等待任务完成（轮询方式，因为工具不再有 workflow context）
+    // 注意：这是一个长时间运行的任务，工具内部实现了独立的 workflow
+    let attempts = 0;
+    const maxAttempts = 120; // 最多等待 10 分钟（每 5 秒检查一次）
 
-  if (error || !task) {
-    return {
-      success: false,
-      error: error || 'Task creation failed',
-    };
-  }
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 5000)); // 等待 5 秒
 
-  // waitForEvent 需要使用不同的 step name
-  const result = await context.workflow.waitForEvent<{ taskId: string; results?: PrismaJson.PaintboardTaskResult; error?: string }>(
-    `toolcall-${context.toolCallId}-wait`,
-    `paintboard-result-${task.id}`,
-  );
+      const task = await prisma.paintboardTasks.findUnique({
+        where: { id: createdTask.id },
+      });
 
-  if (result.eventData?.error) {
-    return {
-      success: false,
-      error: result.eventData.error,
-    };
-  }
+      if (!task) {
+        return {
+          success: false,
+          error: 'Task not found',
+        };
+      }
 
-  // 为生成的结果文件创建 Assets 记录
-  if (result.eventData?.results && Array.isArray(result.eventData.results) && result.eventData.results.length > 0) {
-    const assets = await createAssetsFromAigcResults(context, result.eventData.results, {
-      defaultType: 'video',
-      titlePrefix: '生成的视频',
-      toolArgs: args,
-    });
+      if (task.status === 'completed' && task.results) {
+        const results = task.results as any;
 
-    if (assets.length > 0) {
-      return {
-        success: true,
-        data: {
-          ...result.eventData.results,
-          assets,
-        },
-      };
+        // 为生成的结果文件创建 Assets 记录
+        if (Array.isArray(results) && results.length > 0) {
+          const assets = await createAssetsFromAigcResults(context, results, {
+            defaultType: 'video',
+            titlePrefix: '生成的视频',
+            toolArgs: args,
+          });
+
+          if (assets.length > 0) {
+            return {
+              success: true,
+              data: {
+                ...results,
+                assets,
+              },
+            };
+          }
+        }
+
+        return {
+          success: true,
+          data: results,
+        };
+      }
+
+      if (task.status === 'failed') {
+        return {
+          success: false,
+          error: task.error || 'Task failed',
+        };
+      }
+
+      attempts++;
     }
-  }
 
-  return {
-    success: true,
-    data: result.eventData.results,
-  };
+    return {
+      success: false,
+      error: 'Task timeout: video generation took too long',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 });

@@ -6,11 +6,11 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useRealtime } from '@/lib/realtime-client';
 import { useChatMessagesStore } from './use-chat-messages';
 import { useChatSessionsListStore } from './use-chat-sessions-list';
 import { useChatSessionsStore } from './use-chat-sessions';
 import { ChatMessages } from '@prisma/client';
+import { useRealtime } from '@/lib/realtime-client';
 
 interface UseChatMessageSyncOptions {
   /** Session ID */
@@ -21,7 +21,7 @@ interface UseChatMessageSyncOptions {
  * Chat Message Sync Hook
  * 统一管理消息同步逻辑：
  * 1. 使用 realtime 订阅实时消息更新
- * 2. 当 session 状态为 pending 或 processing 时，自动启动 polling
+ * 2. 当 session 状态不是 idle 或 failed 时，自动启动 polling
  * 3. 当状态变为 idle 或 failed 时，自动停止 polling
  */
 export function useChatMessageSync({ sessionId }: UseChatMessageSyncOptions) {

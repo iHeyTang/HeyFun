@@ -415,7 +415,7 @@ export const ChatInput = ({
   }
 
   return (
-    <div className={cn('pointer-events-none py-4', className)}>
+    <div className={cn('pointer-events-none mt-4', className)}>
       <div className="pointer-events-auto mx-auto flex w-full max-w-4xl flex-col gap-2">
         {renderHeader && renderHeader()}
         <div className="dark:bg-background flex w-full flex-col rounded-3xl border">

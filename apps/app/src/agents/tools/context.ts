@@ -1,6 +1,5 @@
-import { WorkflowContext } from '@upstash/workflow';
-import type { UnifiedChat, ChatClient } from '@/llm/chat';
 import { ReactAgent } from '@/agents/core/frameworks/react';
+import type { ChatClient, UnifiedChat } from '@/llm/chat';
 
 /**
  * 动态系统提示词管理器
@@ -207,15 +206,16 @@ export function clearSessionCompletion(sessionId: string): void {
 /**
  * 通用工具执行上下文
  * 所有工具都使用这个统一的上下文
+ *
+ * 注意：工具执行不再依赖 workflow，所有工具直接执行
+ * 如果工具需要长时间运行或需要可靠性保证，可以在工具内部实现独立的 workflow
  */
 export interface ToolContext {
   /** 组织ID */
   organizationId?: string;
   /** 会话ID */
   sessionId?: string;
-  /** Workflow上下文 */
-  workflow: WorkflowContext;
-  /** 工具调用ID，用于生成唯一的 step name */
+  /** 工具调用ID */
   toolCallId?: string;
   /** 消息ID，用于保存 toolResults */
   messageId?: string;

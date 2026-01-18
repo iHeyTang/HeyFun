@@ -152,144 +152,142 @@ ${slidesJson}
 }
 
 export const generatePresentationExecutor = definitionToolExecutor(generatePresentationParamsSchema, async (args, context) => {
-  return await context.workflow.run(`toolcall-${context.toolCallId || 'generate-presentation'}`, async () => {
-    try {
-      if (!context.sessionId || !context.organizationId) {
-        return {
-          success: false,
-          error: 'Session ID and Organization ID are required',
-        };
-      }
-
-      const { title, slides, style = { theme: 'default', colorScheme: 'light' }, exportFormats = ['html'] } = args;
-
-      // 使用 LLM 进行智能设计决策
-      let designedSlides: ExtendedLegacySlide[] = slides;
-
-      if (context.llmClient) {
-        try {
-          designedSlides = await designSlidesWithLLM(title, slides, style, context.llmClient);
-        } catch (error) {
-          console.error('Failed to design slides with LLM, using fallback:', error);
-          // LLM 设计失败时，使用原始数据 + 智能分析
-          designedSlides = slides;
-        }
-      }
-
-      // 将设计后的数据转换为新格式（统一数据结构）
-      const presentationData = convertLegacyPresentationToNewFormat(title, designedSlides, style);
-
-      // 生成HTML内容
-      let htmlContent = '';
-      if (exportFormats.includes('html')) {
-        htmlContent = generateHtmlContent(presentationData);
-      }
-
-      // 生成PPTX Buffer
-      let pptxBuffer: Buffer | null = null;
-      if (exportFormats.includes('pptx')) {
-        try {
-          pptxBuffer = await generatePptxBuffer(presentationData);
-        } catch (error) {
-          console.error('Failed to generate PPTX:', error);
-          // PPTX 生成失败不影响 HTML 生成
-        }
-      }
-
-      // 使用 AssetManager 上传文件，确保路径正确并创建 Assets 记录
-      const assets: Array<{ id: string; fileKey: string; fileUrl: string; type: string }> = [];
-      let htmlUrl = '';
-      let pptxUrl = '';
-
-      if (!context.organizationId || !context.sessionId) {
-        return {
-          success: false,
-          error: 'Organization ID and Session ID are required',
-        };
-      }
-
-      // 上传HTML文件
-      if (exportFormats.includes('html') && htmlContent) {
-        try {
-          const htmlAsset = await AssetManager.createAsset({
-            organizationId: context.organizationId,
-            sessionId: context.sessionId,
-            fileContent: Buffer.from(htmlContent, 'utf-8'),
-            fileName: `${title || 'presentation'}.html`,
-            mimeType: 'text/html',
-            type: 'presentation',
-            title: `${title || '演示文稿'} (HTML)`,
-            description: `HTML版本的演示文稿：${title}`,
-            toolCallId: context.toolCallId,
-            messageId: context.messageId,
-            metadata: {
-              presentationTitle: title,
-              slides: slides,
-              style: style,
-              exportFormats: exportFormats,
-              version: 2, // 新版本使用统一数据结构
-              isHistory: false,
-              presentationData: presentationData, // 保存统一数据结构
-            },
-          });
-          assets.push(htmlAsset);
-          htmlUrl = htmlAsset.fileUrl;
-        } catch (error) {
-          console.error('Failed to upload HTML:', error);
-        }
-      }
-
-      // 上传PPTX文件
-      if (exportFormats.includes('pptx') && pptxBuffer) {
-        try {
-          const pptxAsset = await AssetManager.createAsset({
-            organizationId: context.organizationId,
-            sessionId: context.sessionId,
-            fileContent: pptxBuffer,
-            fileName: `${title || 'presentation'}.pptx`,
-            mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            type: 'presentation',
-            title: `${title || '演示文稿'} (PPTX)`,
-            description: `PPTX版本的演示文稿：${title}`,
-            toolCallId: context.toolCallId,
-            messageId: context.messageId,
-            metadata: {
-              presentationTitle: title,
-              slides: slides,
-              style: style,
-              exportFormats: exportFormats,
-              version: 2, // 新版本使用统一数据结构
-              isHistory: false,
-              presentationData: presentationData, // 保存统一数据结构
-            },
-          });
-          assets.push(pptxAsset);
-          pptxUrl = pptxAsset.fileUrl;
-        } catch (error) {
-          console.error('Failed to upload PPTX:', error);
-        }
-      }
-
-      return {
-        success: true,
-        data: {
-          htmlUrl: htmlUrl || undefined,
-          pptxUrl: pptxUrl || undefined,
-          assets: assets.map(a => ({
-            id: a.id,
-            fileKey: a.fileKey,
-            fileUrl: a.fileUrl,
-            type: a.type,
-          })),
-          // 向后兼容：保留 fileKeys
-          fileKeys: assets.map(a => a.fileKey),
-        },
-      };
-    } catch (error) {
+  try {
+    if (!context.sessionId || !context.organizationId) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: 'Session ID and Organization ID are required',
       };
     }
-  });
+
+    const { title, slides, style = { theme: 'default', colorScheme: 'light' }, exportFormats = ['html'] } = args;
+
+    // 使用 LLM 进行智能设计决策
+    let designedSlides: ExtendedLegacySlide[] = slides;
+
+    if (context.llmClient) {
+      try {
+        designedSlides = await designSlidesWithLLM(title, slides, style, context.llmClient);
+      } catch (error) {
+        console.error('Failed to design slides with LLM, using fallback:', error);
+        // LLM 设计失败时，使用原始数据 + 智能分析
+        designedSlides = slides;
+      }
+    }
+
+    // 将设计后的数据转换为新格式（统一数据结构）
+    const presentationData = convertLegacyPresentationToNewFormat(title, designedSlides, style);
+
+    // 生成HTML内容
+    let htmlContent = '';
+    if (exportFormats.includes('html')) {
+      htmlContent = generateHtmlContent(presentationData);
+    }
+
+    // 生成PPTX Buffer
+    let pptxBuffer: Buffer | null = null;
+    if (exportFormats.includes('pptx')) {
+      try {
+        pptxBuffer = await generatePptxBuffer(presentationData);
+      } catch (error) {
+        console.error('Failed to generate PPTX:', error);
+        // PPTX 生成失败不影响 HTML 生成
+      }
+    }
+
+    // 使用 AssetManager 上传文件，确保路径正确并创建 Assets 记录
+    const assets: Array<{ id: string; fileKey: string; fileUrl: string; type: string }> = [];
+    let htmlUrl = '';
+    let pptxUrl = '';
+
+    if (!context.organizationId || !context.sessionId) {
+      return {
+        success: false,
+        error: 'Organization ID and Session ID are required',
+      };
+    }
+
+    // 上传HTML文件
+    if (exportFormats.includes('html') && htmlContent) {
+      try {
+        const htmlAsset = await AssetManager.createAsset({
+          organizationId: context.organizationId,
+          sessionId: context.sessionId,
+          fileContent: Buffer.from(htmlContent, 'utf-8'),
+          fileName: `${title || 'presentation'}.html`,
+          mimeType: 'text/html',
+          type: 'presentation',
+          title: `${title || '演示文稿'} (HTML)`,
+          description: `HTML版本的演示文稿：${title}`,
+          toolCallId: context.toolCallId,
+          messageId: context.messageId,
+          metadata: {
+            presentationTitle: title,
+            slides: slides,
+            style: style,
+            exportFormats: exportFormats,
+            version: 2, // 新版本使用统一数据结构
+            isHistory: false,
+            presentationData: presentationData, // 保存统一数据结构
+          },
+        });
+        assets.push(htmlAsset);
+        htmlUrl = htmlAsset.fileUrl;
+      } catch (error) {
+        console.error('Failed to upload HTML:', error);
+      }
+    }
+
+    // 上传PPTX文件
+    if (exportFormats.includes('pptx') && pptxBuffer) {
+      try {
+        const pptxAsset = await AssetManager.createAsset({
+          organizationId: context.organizationId,
+          sessionId: context.sessionId,
+          fileContent: pptxBuffer,
+          fileName: `${title || 'presentation'}.pptx`,
+          mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          type: 'presentation',
+          title: `${title || '演示文稿'} (PPTX)`,
+          description: `PPTX版本的演示文稿：${title}`,
+          toolCallId: context.toolCallId,
+          messageId: context.messageId,
+          metadata: {
+            presentationTitle: title,
+            slides: slides,
+            style: style,
+            exportFormats: exportFormats,
+            version: 2, // 新版本使用统一数据结构
+            isHistory: false,
+            presentationData: presentationData, // 保存统一数据结构
+          },
+        });
+        assets.push(pptxAsset);
+        pptxUrl = pptxAsset.fileUrl;
+      } catch (error) {
+        console.error('Failed to upload PPTX:', error);
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        htmlUrl: htmlUrl || undefined,
+        pptxUrl: pptxUrl || undefined,
+        assets: assets.map(a => ({
+          id: a.id,
+          fileKey: a.fileKey,
+          fileUrl: a.fileUrl,
+          type: a.type,
+        })),
+        // 向后兼容：保留 fileKeys
+        fileKeys: assets.map(a => a.fileKey),
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 });

@@ -4,9 +4,11 @@ import { useSessionAssets } from '@/hooks/use-session-assets';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Image as ImageIcon, Video, FileText, Download, Music, Code, File } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { ImagePreview } from '@/components/block/preview/image-preview';
 import { VideoPreview } from '@/components/block/preview/video-preview';
 import { PresentationPreview } from '@/components/block/preview/presentation-preview';
+import { NotePreview } from '@/components/block/preview/note-preview';
 import { AudioPlayer } from '@/components/block/audio-player';
 import { useState, useEffect } from 'react';
 import { useSignedUrl } from '@/hooks/use-signed-url';
@@ -38,7 +40,11 @@ function getAssetIcon(type: string) {
   }
 }
 
-function getAssetTypeLabel(type: string) {
+function getAssetTypeLabel(type: string, metadata?: any) {
+  // 如果 metadata 中有 noteId，则认为是笔记类型
+  if (metadata?.noteId) {
+    return '笔记';
+  }
   switch (type) {
     case 'image':
       return '图片';
@@ -55,6 +61,11 @@ function getAssetTypeLabel(type: string) {
     default:
       return '其他';
   }
+}
+
+// 判断是否为笔记类型
+function isNoteAsset(metadata?: any): boolean {
+  return !!(metadata && typeof metadata === 'object' && 'noteId' in metadata && metadata.noteId);
 }
 
 export function AssetsDialog({ sessionId, open, onOpenChange }: AssetsDialogProps) {
@@ -148,10 +159,12 @@ function PdfDownloadCard({ pdfUrl, title, className }: { pdfUrl: string; title?:
 }
 
 function AssetCard({ asset }: { asset: any }) {
-  const typeLabel = getAssetTypeLabel(asset.type);
+  const typeLabel = getAssetTypeLabel(asset.type, asset.metadata);
   const { getSignedUrl } = useSignedUrl();
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const isPdf = asset.type === 'document' && isPdfFile(asset.fileName, asset.mimeType);
+  const isNote = isNoteAsset(asset.metadata);
+  const noteId = asset.metadata?.noteId;
 
   // 获取文件 URL
   useEffect(() => {
@@ -195,7 +208,12 @@ function AssetCard({ asset }: { asset: any }) {
         {isPdf && fileUrl && (
           <PdfDownloadCard pdfUrl={fileUrl} title={asset.title || asset.fileName} className="h-full w-full border-0 bg-transparent p-0" />
         )}
-        {!['image', 'video', 'presentation', 'audio'].includes(asset.type) && !isPdf && (
+        {isNote && noteId && (
+          <div className="relative h-full w-full overflow-hidden" style={{ pointerEvents: 'auto' }}>
+            <NotePreview noteId={noteId} title={asset.title || asset.fileName} className="h-full w-full border-0 bg-transparent p-0" />
+          </div>
+        )}
+        {!['image', 'video', 'presentation', 'audio'].includes(asset.type) && !isPdf && !isNote && (
           <div className="flex h-full items-center justify-center">
             {(() => {
               const Icon = getAssetIcon(asset.type);

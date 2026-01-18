@@ -4,11 +4,10 @@ import zodToJsonSchema from 'zod-to-json-schema';
 
 /**
  * 构建系统提示词参数 Schema
+ * 使用简短常见的参数名，提高 LLM 生成准确率
  */
 export const initializeAgentParamsSchema = z.object({
-  userMessage: z.string().describe('用户的消息内容，用于检索相关的提示词片段'),
-  maxFragments: z.number().int().min(1).max(10).default(5).describe('最多使用的片段数量（1-10）'),
-  basePrompt: z.string().optional().describe('可选的基础系统提示词，如果提供，将在此基础上构建；如果不提供，将使用默认的基础提示词'),
+  message: z.string().describe('Required. 用户的消息内容，用于检索相关的提示词片段'),
 });
 
 export type InitializeAgentParams = z.infer<typeof initializeAgentParamsSchema>;
@@ -16,7 +15,7 @@ export type InitializeAgentParams = z.infer<typeof initializeAgentParamsSchema>;
 export const initializeAgentSchema: ToolDefinition = {
   name: 'initialize_agent',
   description:
-    'Agent 初始化工具 - 仅在需要特定领域知识或新工具时调用。功能：1) 检索与任务相关的提示词片段；2) 生成针对性的动态系统提示词；3) 检索并激活相关工具。**注意：这是开销较大的工具，不要频繁调用。简单任务（搜索、对话、通用问答等）直接使用现有工具即可，无需调用此工具。同一会话中任务类型没有重大变化时，不需要重复调用。**',
+    'Agent 初始化工具 - 仅在需要特定领域知识或新工具时调用。功能：1) 检索与任务相关的提示词片段；2) 生成针对性的动态系统提示词；3) 检索并激活相关工具。**注意：这是开销较大的工具，不要频繁调用。简单任务（搜索、对话、通用问答等）直接使用现有工具即可，无需调用此工具。**',
   displayName: {
     en: 'Initialize Agent',
     'zh-CN': '初始化智能体',
@@ -47,9 +46,7 @@ initialize_agent 用于获取特定领域的专业知识和激活相关工具。
 4. **追问或补充**：用户只是在追问上一个问题的细节
 
 ## 参数说明
-- **userMessage**（必填）：用户的消息内容
-- **maxFragments**（可选）：最多使用的片段数量（1-10），默认5
-- **basePrompt**（可选）：可选的基础系统提示词
+- **message**（必填）：用户的消息内容
 
 ## 使用原则
 1. **能不调用就不调用**：这是开销较大的工具，只有确实需要时才调用
@@ -57,9 +54,9 @@ initialize_agent 用于获取特定领域的专业知识和激活相关工具。
 3. **优先使用现有工具**：如果当前工具能完成任务，直接使用
 
 ## 示例
-- ✅ 需要调用：userMessage="帮我制定一份日本7日旅游计划"（需要跨境旅游专业知识）
-- ❌ 不需要调用：userMessage="帮我搜索最新的AI新闻"（直接用 web_search）
-- ❌ 不需要调用：userMessage="现在几点了"（直接用 get_current_time）`,
+- ✅ 需要调用：message="帮我制定一份日本7日旅游计划"（需要跨境旅游专业知识）
+- ❌ 不需要调用：message="帮我搜索最新的AI新闻"（直接用 web_search）
+- ❌ 不需要调用：message="现在几点了"（直接用 get_current_time）`,
   returnSchema: {
     type: 'object',
     properties: {

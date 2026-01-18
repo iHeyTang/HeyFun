@@ -1,7 +1,6 @@
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
+import { callAmapApi, formatCoordinate, getAmapApiKey } from '../utils';
 import { calculateDistanceParamsSchema } from './schema';
-import { ToolContext } from '../../context';
-import { getAmapApiKey, callAmapApi, formatCoordinate } from '../utils';
 
 /**
  * 高德地图距离计算API
@@ -11,7 +10,6 @@ async function calculateDistanceFromAmap(
   origin: { longitude: number; latitude: number },
   destination: { longitude: number; latitude: number },
   type: string,
-  context: ToolContext,
 ) {
   const apiKey = getAmapApiKey();
   const originStr = formatCoordinate(origin);
@@ -50,27 +48,25 @@ async function calculateDistanceFromAmap(
   }
 }
 
-export const calculateDistanceExecutor = definitionToolExecutor(calculateDistanceParamsSchema, async (args, context) => {
-  return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
-    try {
-      const { origin, destination, type = '1' } = args;
+export const calculateDistanceExecutor = definitionToolExecutor(calculateDistanceParamsSchema, async args => {
+  try {
+    const { origin, destination, type = '1' } = args;
 
-      const result = await calculateDistanceFromAmap(origin, destination, type, context);
+    const result = await calculateDistanceFromAmap(origin, destination, type);
 
-      const distanceKm = (result.distance / 1000).toFixed(2);
-      const durationMin = result.duration ? Math.round(result.duration / 60) : null;
-      const message = result.duration ? `${result.type}：${distanceKm} 公里，预计 ${durationMin} 分钟` : `${result.type}：${distanceKm} 公里`;
+    const distanceKm = (result.distance / 1000).toFixed(2);
+    const durationMin = result.duration ? Math.round(result.duration / 60) : null;
+    const message = result.duration ? `${result.type}：${distanceKm} 公里，预计 ${durationMin} 分钟` : `${result.type}：${distanceKm} 公里`;
 
-      return {
-        success: true,
-        data: result,
-        message,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: (error as Error).message,
-      };
-    }
-  });
+    return {
+      success: true,
+      data: result,
+      message,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
 });

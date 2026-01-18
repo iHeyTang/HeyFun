@@ -146,7 +146,9 @@
       "taskError": "哎呀！出错了",
       "inputTokens": "输入",
       "completionTokens": "输出",
-      "suggestedQuestions": "建议追问"
+      "suggestedQuestions": "建议追问",
+      "cancelledByUser": "已中断（用户主动取消）",
+      "cancelledBySystem": "已中断（系统取消）"
     },
     "confirm": {
       "terminate": {

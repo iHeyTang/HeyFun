@@ -1,13 +1,12 @@
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
+import { callAmapApi, formatCoordinate, getAmapApiKey } from '../utils';
 import { reverseGeocodeParamsSchema } from './schema';
-import { ToolContext } from '../../context';
-import { getAmapApiKey, callAmapApi, formatCoordinate } from '../utils';
 
 /**
  * 高德地图逆地理编码API
  * 文档: https://lbs.amap.com/api/webservice/guide/api/georegeo
  */
-async function reverseGeocodeFromAmap(longitude: number, latitude: number, radius: number | undefined, context: ToolContext) {
+async function reverseGeocodeFromAmap(longitude: number, latitude: number, radius: number | undefined) {
   const apiKey = getAmapApiKey();
   let url = `https://restapi.amap.com/v3/geocode/regeo?key=${apiKey}&location=${formatCoordinate({ longitude, latitude })}`;
   if (radius) {
@@ -38,23 +37,21 @@ async function reverseGeocodeFromAmap(longitude: number, latitude: number, radiu
   };
 }
 
-export const reverseGeocodeExecutor = definitionToolExecutor(reverseGeocodeParamsSchema, async (args, context) => {
-  return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
-    try {
-      const { longitude, latitude, radius } = args;
+export const reverseGeocodeExecutor = definitionToolExecutor(reverseGeocodeParamsSchema, async args => {
+  try {
+    const { longitude, latitude, radius } = args;
 
-      const result = await reverseGeocodeFromAmap(longitude, latitude, radius, context);
+    const result = await reverseGeocodeFromAmap(longitude, latitude, radius);
 
-      return {
-        success: true,
-        data: result,
-        message: `已获取坐标 (${longitude}, ${latitude}) 的地址信息`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: (error as Error).message,
-      };
-    }
-  });
+    return {
+      success: true,
+      data: result,
+      message: `已获取坐标 (${longitude}, ${latitude}) 的地址信息`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
 });

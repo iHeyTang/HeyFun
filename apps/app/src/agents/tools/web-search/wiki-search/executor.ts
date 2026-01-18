@@ -97,11 +97,7 @@ async function searchWikipedia(query: string, maxResults: number = 5, language: 
 /**
  * 尝试多个语言版本的 Wikipedia
  */
-async function searchWikipediaMultiLanguage(
-  query: string,
-  maxResults: number = 5,
-  preferredLanguage: string = 'zh',
-): Promise<WikiResult[]> {
+async function searchWikipediaMultiLanguage(query: string, maxResults: number = 5, preferredLanguage: string = 'zh'): Promise<WikiResult[]> {
   // 语言优先级列表
   const languages = [preferredLanguage, 'en', 'zh', 'ja', 'ko'].filter(
     (lang, index, self) => self.indexOf(lang) === index, // 去重
@@ -123,39 +119,36 @@ async function searchWikipediaMultiLanguage(
 }
 
 export const wikiSearchExecutor = definitionToolExecutor(wikiSearchParamsSchema, async (args, context) => {
-  return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
-    try {
-      const { query, maxResults = 5, language = 'zh' } = args;
+  try {
+    const { query, maxResults = 5, language = 'zh' } = args;
 
-      // 使用 Wikipedia API 搜索
-      let results = await searchWikipedia(query, maxResults, language);
+    // 使用 Wikipedia API 搜索
+    let results = await searchWikipedia(query, maxResults, language);
 
-      // 如果首选语言没有结果，尝试其他语言
-      if (results.length === 0 && language !== 'en') {
-        results = await searchWikipediaMultiLanguage(query, maxResults, language);
-      }
+    // 如果首选语言没有结果，尝试其他语言
+    if (results.length === 0 && language !== 'en') {
+      results = await searchWikipediaMultiLanguage(query, maxResults, language);
+    }
 
-      if (!results || results.length === 0) {
-        return {
-          success: false,
-          error: 'No wiki results found. Please try a different query or check if the topic exists in Wikipedia.',
-        };
-      }
-
-      return {
-        success: true,
-        data: {
-          query,
-          results,
-          count: results.length,
-        },
-      };
-    } catch (error) {
+    if (!results || results.length === 0) {
       return {
         success: false,
-        error: (error as Error).message,
+        error: 'No wiki results found. Please try a different query or check if the topic exists in Wikipedia.',
       };
     }
-  });
-});
 
+    return {
+      success: true,
+      data: {
+        query,
+        results,
+        count: results.length,
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});

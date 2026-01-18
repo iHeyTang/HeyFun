@@ -1,7 +1,6 @@
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
+import { callAmapApi, formatCoordinate, getAmapApiKey, parseCoordinateString } from '../utils';
 import { searchPoiParamsSchema } from './schema';
-import { ToolContext } from '../../context';
-import { getAmapApiKey, callAmapApi, formatCoordinate, parseCoordinateString } from '../utils';
 
 /**
  * 高德地图POI搜索API
@@ -15,7 +14,6 @@ async function searchPoiFromAmap(
   types: string | undefined,
   page: number,
   pageSize: number,
-  context: ToolContext,
 ) {
   const apiKey = getAmapApiKey();
 
@@ -65,23 +63,21 @@ async function searchPoiFromAmap(
   };
 }
 
-export const searchPoiExecutor = definitionToolExecutor(searchPoiParamsSchema, async (args, context) => {
-  return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
-    try {
-      const { keyword, city, location, radius, types, page = 1, pageSize = 10 } = args;
+export const searchPoiExecutor = definitionToolExecutor(searchPoiParamsSchema, async args => {
+  try {
+    const { keyword, city, location, radius, types, page = 1, pageSize = 10 } = args;
 
-      const result = await searchPoiFromAmap(keyword, city, location, radius, types, page, pageSize, context);
+    const result = await searchPoiFromAmap(keyword, city, location, radius, types, page, pageSize);
 
-      return {
-        success: true,
-        data: result,
-        message: `找到 ${result.count} 个相关POI，当前显示第 ${page} 页，共 ${result.pois.length} 条结果`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: (error as Error).message,
-      };
-    }
-  });
+    return {
+      success: true,
+      data: result,
+      message: `找到 ${result.count} 个相关POI，当前显示第 ${page} 页，共 ${result.pois.length} 条结果`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
 });

@@ -20,6 +20,9 @@ import { BrowserDownloadResult } from './tool-renderers/browser-download-result'
 import { ConfigureEnvironmentVariableResult } from './tool-renderers/configure-environment-variable-result';
 import { DouyinGetVideoInfoResult } from './tool-renderers/douyin-get-video-info-result';
 import { DouyinDownloadVideoResult } from './tool-renderers/douyin-download-video-result';
+import { NoteCreateResult } from './tool-renderers/note-create-result';
+import { NoteEditResult } from './tool-renderers/note-edit-result';
+import { NoteReadResult } from './tool-renderers/note-read-result';
 import { useBuiltinTools } from '@/hooks/use-builtin-tools';
 
 interface ToolCallCardProps {
@@ -28,22 +31,28 @@ interface ToolCallCardProps {
   className?: string;
   messageId?: string;
   sessionId?: string;
+  onToolClick?: (toolCallId: string) => void;
 }
 
-export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, sessionId }: ToolCallCardProps) => {
+export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, sessionId, onToolClick }: ToolCallCardProps) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const { getToolDisplayName } = useBuiltinTools();
 
-  const toggleExpand = (id: string) => {
-    setExpandedIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
+  const handleToolClick = (toolCallId: string) => {
+    if (onToolClick) {
+      onToolClick(toolCallId);
+    } else {
+      // 如果没有提供回调，保持原来的展开行为（向后兼容）
+      setExpandedIds(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(toolCallId)) {
+          newSet.delete(toolCallId);
+        } else {
+          newSet.add(toolCallId);
+        }
+        return newSet;
+      });
+    }
   };
 
   const parseArguments = (args: string) => {
@@ -85,6 +94,9 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
       configure_environment_variable: ConfigureEnvironmentVariableResult,
       douyin_get_video_info: DouyinGetVideoInfoResult,
       douyin_download_video: DouyinDownloadVideoResult,
+      note_create: NoteCreateResult,
+      note_edit: NoteEditResult,
+      note_read: NoteReadResult,
     };
     return renderers[toolName];
   };
@@ -153,11 +165,10 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
     const isExpanded = expandedIds.has(toolCall.id);
     const args = parseArguments(toolCall.function.arguments);
     const result = getResultForTool(toolCall.function.name);
-
     return (
       <div className={cn('min-w-0 space-y-0', className)}>
         <div className="border-border/20 bg-muted/30 hover:border-border/40 hover:bg-muted/50 group w-full min-w-0 rounded-md border transition-all">
-          <div className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-xs" onClick={() => toggleExpand(toolCall.id)}>
+          <div className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-xs" onClick={() => handleToolClick(toolCall.id)}>
             <Wrench className="text-muted-foreground h-3 w-3 opacity-60" />
             <span className="text-muted-foreground flex-1 opacity-80">{getToolDisplayName(toolCall.function.name)}</span>
 
@@ -225,7 +236,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
             key={toolCall.id}
             className="border-border/20 bg-muted/30 hover:border-border/40 hover:bg-muted/50 group w-fit min-w-0 rounded-md border transition-all"
           >
-            <div className="group flex cursor-pointer items-center gap-2 px-2.5 py-1.5" onClick={() => toggleExpand(toolCall.id)}>
+            <div className="group flex cursor-pointer items-center gap-2 px-2.5 py-1.5" onClick={() => handleToolClick(toolCall.id)}>
               <Wrench className="text-muted-foreground h-3 w-3 opacity-60" />
               <span className="text-muted-foreground flex-1 text-xs opacity-80">
                 {getToolDisplayName(toolCall.function.name)}
@@ -245,7 +256,7 @@ export const ToolCallCard = ({ toolCalls, toolResults, className, messageId, ses
             </div>
 
             {/* 展开内容：输入参数 + 输出结果 */}
-            {isExpanded && (
+            {isExpanded && toolCall.function.name !== 'initialize_agent' && (
               <div className="border-border/20 border-t">
                 {/* 输入参数 - 只有在没有自定义渲染器或需要显示时才显示 */}
                 {!getToolRenderer(toolCall.function.name) && (

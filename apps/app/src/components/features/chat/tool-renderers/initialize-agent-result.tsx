@@ -4,9 +4,9 @@
 
 'use client';
 
-import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { CheckCircle2, AlertCircle, Loader2, Sparkles, FileText, Wrench } from 'lucide-react';
 import { useBuiltinTools } from '@/hooks/use-builtin-tools';
+import { WysiwygEditor } from '@/components/block/wysiwyg-editor';
 
 interface InitializeAgentResultProps {
   args?: Record<string, any>;
@@ -42,7 +42,6 @@ interface InitializeAgentData {
 }
 
 export function InitializeAgentResult({ args, result, status, error }: InitializeAgentResultProps) {
-  const [isPromptExpanded, setIsPromptExpanded] = useState(false);
   const { getToolDisplayName } = useBuiltinTools();
 
   const data: InitializeAgentData | null = result && status === 'success' ? result : null;
@@ -51,12 +50,12 @@ export function InitializeAgentResult({ args, result, status, error }: Initializ
   // 错误状态
   if (status === 'error' || error) {
     return (
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2 text-xs text-red-500">
-          <AlertCircle className="h-3.5 w-3.5" />
-          <span>初始化失败</span>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm">
+          <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+          <span className="text-foreground font-medium">初始化失败</span>
         </div>
-        <p className="text-muted-foreground text-[11px]">{error || 'Agent 初始化失败'}</p>
+        <p className="text-muted-foreground text-sm leading-relaxed">{error || 'Agent 初始化失败'}</p>
       </div>
     );
   }
@@ -64,9 +63,9 @@ export function InitializeAgentResult({ args, result, status, error }: Initializ
   // 加载状态
   if (status === 'pending' || status === 'running') {
     return (
-      <div className="flex items-center gap-2 text-xs">
-        <Loader2 className="text-muted-foreground h-3.5 w-3.5 animate-spin" />
-        <span className="text-muted-foreground">正在初始化...</span>
+      <div className="flex items-center gap-2.5 text-sm">
+        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+        <span className="text-muted-foreground">正在初始化 Agent...</span>
       </div>
     );
   }
@@ -78,52 +77,70 @@ export function InitializeAgentResult({ args, result, status, error }: Initializ
   const hasPrompt = !!data?.dynamicSystemPrompt;
 
   return (
-    <div className="space-y-3">
-      {/* 摘要行 */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-        <span className="text-muted-foreground flex items-center gap-1.5">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-          初始化完成
-        </span>
+    <div className="space-y-4">
+      {/* 状态摘要 */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+          <span className="text-foreground text-sm font-medium">初始化完成</span>
+        </div>
         {hasFragments && (
-          <span className="text-muted-foreground">
-            <span className="text-foreground/80 font-medium">{data!.fragments!.length}</span> 个片段
-          </span>
+          <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
+            <FileText className="h-3.5 w-3.5" />
+            <span>
+              <span className="text-foreground font-medium">{data!.fragments!.length}</span> 个片段
+            </span>
+          </div>
         )}
         {hasTools && (
-          <span className="text-muted-foreground">
-            <span className="text-foreground/80 font-medium">{data!.tools!.length}</span> 个工具
-          </span>
+          <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
+            <Wrench className="h-3.5 w-3.5" />
+            <span>
+              <span className="text-foreground font-medium">{data!.tools!.length}</span> 个工具
+            </span>
+          </div>
         )}
       </div>
 
       {/* 关键词 */}
       {hasKeywords && (
-        <div className="space-y-1.5">
-          <p className="text-muted-foreground/60 text-[10px] uppercase tracking-wide">关键词</p>
-          <div className="flex flex-wrap gap-1">
-            {data!.keywords!.slice(0, 15).map((keyword, index) => (
-              <span key={index} className="bg-muted/50 text-foreground/70 rounded px-1.5 py-0.5 text-[10px]">
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="text-muted-foreground/70 h-3.5 w-3.5" />
+            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">关键词</p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {data!.keywords!.slice(0, 20).map((keyword, index) => (
+              <span
+                key={index}
+                className="border-border/50 bg-muted/40 text-foreground/80 hover:bg-muted/60 dark:bg-muted/30 dark:hover:bg-muted/50 rounded-md border px-2 py-1 text-xs font-medium transition-colors"
+              >
                 {keyword}
               </span>
             ))}
-            {data!.keywords!.length > 15 && <span className="text-muted-foreground/50 px-1 py-0.5 text-[10px]">+{data!.keywords!.length - 15}</span>}
+            {data!.keywords!.length > 20 && (
+              <span className="text-muted-foreground/60 flex items-center px-2 py-1 text-xs">+{data!.keywords!.length - 20}</span>
+            )}
           </div>
         </div>
       )}
 
       {/* 片段列表 */}
       {hasFragments && (
-        <div className="space-y-1.5">
-          <p className="text-muted-foreground/60 text-[10px] uppercase tracking-wide">检索到的片段</p>
-          <div className="flex flex-wrap gap-1.5">
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-1.5">
+            <FileText className="text-muted-foreground/70 h-3.5 w-3.5" />
+            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">检索到的片段</p>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {data!.fragments!.map((fragment, index) => (
               <div
                 key={fragment.id || index}
-                className="bg-muted/30 hover:bg-muted/40 max-w-[180px] rounded px-2 py-1 transition-colors"
+                className="border-border/50 bg-muted/30 hover:border-border hover:bg-muted/50 dark:bg-muted/20 dark:hover:bg-muted/40 group cursor-pointer rounded-lg border p-2.5 transition-all"
                 title={fragment.description}
               >
-                <p className="text-foreground/90 truncate text-[11px] font-medium">{fragment.name}</p>
+                <p className="text-foreground truncate text-sm font-medium">{fragment.name}</p>
+                {fragment.description && <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed">{fragment.description}</p>}
               </div>
             ))}
           </div>
@@ -132,17 +149,27 @@ export function InitializeAgentResult({ args, result, status, error }: Initializ
 
       {/* 工具列表 */}
       {hasTools && (
-        <div className="space-y-1.5">
-          <p className="text-muted-foreground/60 text-[10px] uppercase tracking-wide">已装载的工具</p>
-          <div className="flex flex-wrap gap-1.5">
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-1.5">
+            <Wrench className="text-muted-foreground/70 h-3.5 w-3.5" />
+            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">已装载的工具</p>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {data!.tools!.map((tool, index) => (
               <div
                 key={tool.name || index}
-                className="bg-muted/30 hover:bg-muted/40 max-w-[200px] rounded px-2 py-1 transition-colors"
+                className="border-border/50 bg-muted/30 hover:border-border hover:bg-muted/50 dark:bg-muted/20 dark:hover:bg-muted/40 group cursor-pointer rounded-lg border p-2.5 transition-all"
                 title={tool.description}
               >
-                <p className="text-foreground/90 truncate text-[11px] font-medium">{getToolDisplayName(tool.name)}</p>
-                {tool.category && <p className="text-muted-foreground/50 truncate text-[9px]">{tool.category}</p>}
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-foreground truncate text-sm font-medium">{getToolDisplayName(tool.name)}</p>
+                  {tool.category && (
+                    <span className="text-muted-foreground/70 bg-muted/50 flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">
+                      {tool.category}
+                    </span>
+                  )}
+                </div>
+                {tool.description && <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed">{tool.description}</p>}
               </div>
             ))}
           </div>
@@ -151,34 +178,35 @@ export function InitializeAgentResult({ args, result, status, error }: Initializ
 
       {/* 动态提示词 */}
       {hasPrompt && (
-        <div className="space-y-1.5">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
-            <p className="text-muted-foreground/60 text-[10px] uppercase tracking-wide">动态提示词</p>
-            {data!.shouldUpdateSystemPrompt && <span className="text-[9px] text-emerald-500">已应用</span>}
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="text-muted-foreground/70 h-3.5 w-3.5" />
+              <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">动态提示词</p>
+            </div>
+            {data!.shouldUpdateSystemPrompt && (
+              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">已应用</span>
+            )}
           </div>
-          <div className="bg-muted/20 rounded">
-            <pre
-              className={`text-muted-foreground overflow-x-auto whitespace-pre-wrap p-2 text-[10px] leading-relaxed ${
-                isPromptExpanded ? '' : 'line-clamp-4'
-              }`}
-            >
-              {data!.dynamicSystemPrompt}
-            </pre>
+          <div className="border-border/50 bg-muted/20 dark:bg-muted/10 rounded-lg border">
+            <WysiwygEditor
+              value={data!.dynamicSystemPrompt || ''}
+              readOnly={true}
+              showToolbar={false}
+              isStreaming={false}
+              className="text-xs"
+              editorClassName="p-3 min-h-[80px]"
+            />
           </div>
-          {data!.dynamicSystemPrompt!.length > 200 && (
-            <button
-              type="button"
-              onClick={() => setIsPromptExpanded(!isPromptExpanded)}
-              className="text-muted-foreground/50 hover:text-muted-foreground text-[10px] transition-colors"
-            >
-              {isPromptExpanded ? '收起' : '展开全部'}
-            </button>
-          )}
         </div>
       )}
 
       {/* 无结果提示 */}
-      {!hasFragments && !hasTools && <p className="text-muted-foreground/60 text-[11px]">未检索到相关片段或工具</p>}
+      {!hasFragments && !hasTools && !hasPrompt && (
+        <div className="border-border/50 bg-muted/20 dark:bg-muted/10 rounded-lg border p-4 text-center">
+          <p className="text-muted-foreground text-sm">未检索到相关片段或工具</p>
+        </div>
+      )}
     </div>
   );
 }

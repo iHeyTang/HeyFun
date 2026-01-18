@@ -4,15 +4,12 @@ import { Tool, ToolRegistry } from './registry';
  */
 import { baseToolboxes } from './base';
 import { aigcToolboxes } from './aigc';
-import { notesToolboxes } from './notes';
-import { flowcanvasToolboxes } from './flowcanvas';
 import { webSearchToolboxes } from './web-search';
 import { amapToolboxes } from './amap';
 import { sandboxToolboxes } from './sandbox';
 import { presentationToolboxes } from './presentation';
 import { browserToolboxes } from './browser';
-import { douyinToolboxes } from './douyin';
-
+import { noteToolboxes } from './note';
 /**
  * 全局工具注册表实例
  */
@@ -22,14 +19,12 @@ const toolRegistry = new ToolRegistry();
 const allTools: Tool[] = [
   ...baseToolboxes,
   ...aigcToolboxes,
-  ...notesToolboxes,
-  ...flowcanvasToolboxes,
   ...webSearchToolboxes,
   ...amapToolboxes,
   ...sandboxToolboxes,
   ...presentationToolboxes,
   ...browserToolboxes,
-  ...douyinToolboxes,
+  ...noteToolboxes,
 ].flat();
 
 // 注册所有工具（会自动同步到工具库）
@@ -40,11 +35,9 @@ export { toolRegistry, ToolRegistry };
 // Toolboxes
 export { aigcToolboxes } from './aigc';
 export { baseToolboxes } from './base';
-export { notesToolboxes } from './notes';
-export { flowcanvasToolboxes } from './flowcanvas';
 export { webSearchToolboxes } from './web-search';
 export { amapToolboxes } from './amap';
 export { sandboxToolboxes } from './sandbox';
 export { presentationToolboxes } from './presentation';
 export { browserToolboxes } from './browser';
-export { douyinToolboxes } from './douyin';
+export { noteToolboxes } from './note';

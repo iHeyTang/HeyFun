@@ -131,10 +131,7 @@ export function AigcModelsResult({ args, result, status, error }: AigcModelsResu
 
       <div className="grid space-y-1.5 overflow-x-auto">
         {data.models.map((model, index) => (
-          <div
-            key={index}
-            className="border-border/30 bg-muted/20 hover:bg-muted/30 whitespace-nowrap rounded border p-1.5 transition-colors"
-          >
+          <div key={index} className="border-border/30 bg-muted/20 hover:bg-muted/30 whitespace-nowrap rounded border p-1.5 transition-colors">
             {/* 第一行：模型名称、提供商、模型ID */}
             <div className="mb-1 flex items-center gap-1.5">
               <Bot className="text-muted-foreground/50 h-3 w-3 flex-shrink-0" />

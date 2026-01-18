@@ -1,13 +1,12 @@
 import { definitionToolExecutor } from '@/agents/core/tools/tool-executor';
-import { geocodeParamsSchema } from './schema';
-import { ToolContext } from '../../context';
 import { geocodeAddress, parseCoordinateString } from '../utils';
+import { geocodeParamsSchema } from './schema';
 
 /**
  * 高德地图地理编码API
  * 文档: https://lbs.amap.com/api/webservice/guide/api/georegeo
  */
-async function geocodeFromAmap(address: string, city: string | undefined, context: ToolContext) {
+async function geocodeFromAmap(address: string, city: string | undefined) {
   const geocode = await geocodeAddress(address, city);
   const location = parseCoordinateString(geocode.location);
 
@@ -23,23 +22,21 @@ async function geocodeFromAmap(address: string, city: string | undefined, contex
   };
 }
 
-export const geocodeExecutor = definitionToolExecutor(geocodeParamsSchema, async (args, context) => {
-  return await context.workflow.run(`toolcall-${context.toolCallId}`, async () => {
-    try {
-      const { address, city } = args;
+export const geocodeExecutor = definitionToolExecutor(geocodeParamsSchema, async args => {
+  try {
+    const { address, city } = args;
 
-      const result = await geocodeFromAmap(address, city, context);
+    const result = await geocodeFromAmap(address, city);
 
-      return {
-        success: true,
-        data: result,
-        message: `已获取地址 "${address}" 的地理坐标`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: (error as Error).message,
-      };
-    }
-  });
+    return {
+      success: true,
+      data: result,
+      message: `已获取地址 "${address}" 的地理坐标`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
 });

@@ -105,8 +105,9 @@ export const useChatMessagesStore = create<ChatMessagesStore>()((set, get) => ({
           const toolCallId = toolResult.toolCallId;
           const toolCall = toolCalls.find((tc: any) => tc.id === toolCallId);
 
-          // 提取工具结果数据
+          // 提取工具结果数据（保留 toolCallId）
           const resultData = {
+            toolCallId: toolCallId,
             toolName: toolCall?.function?.name || 'unknown',
             success: toolResult.success ?? true,
             data: toolResult.data,
@@ -385,21 +386,22 @@ export const useChatMessagesStore = create<ChatMessagesStore>()((set, get) => ({
 
           return {
             status: sessionStatus,
-            shouldContinue: sessionStatus === 'pending' || sessionStatus === 'processing',
+            shouldContinue: sessionStatus !== 'idle' && sessionStatus !== 'failed',
             messages: sortedMessages,
           };
         } else {
           // 没有变化，返回现有消息，避免重新渲染
           return {
             status: sessionStatus,
-            shouldContinue: sessionStatus === 'pending' || sessionStatus === 'processing',
+            shouldContinue: sessionStatus !== 'idle' && sessionStatus !== 'failed',
             messages: existingMessages,
           };
         }
       }
 
       // 基于处理状态判断是否继续轮询
-      const shouldContinue = sessionStatus === 'pending' || sessionStatus === 'processing';
+      // 只有在 idle 或 failed 时才停止轮询，其他状态（pending, processing, cancelling）都继续轮询
+      const shouldContinue = sessionStatus !== 'idle' && sessionStatus !== 'failed';
 
       // 如果没有新消息，返回现有的消息
       const currentMessages = get().sessionMessages[sessionId] || [];

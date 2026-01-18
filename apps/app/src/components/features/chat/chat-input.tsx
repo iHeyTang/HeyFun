@@ -10,11 +10,10 @@ import { useChatSessionsStore } from '@/hooks/use-chat-sessions';
 import { useLLM } from '@/hooks/use-llm';
 import { usePreferences } from '@/hooks/use-preferences';
 import { ModelInfo } from '@/llm/chat';
-import { ArrowUp, FileIcon, Loader2, Plus, StopCircle, X, FolderOpen } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { ArrowUp, FileIcon, Loader2, Plus, X, Monitor } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { ModelIcon } from '../model-icon';
-import { AssetsDialog } from './assets-dialog';
 
 interface ChatInputProps {
   sessionId: string;
@@ -29,6 +28,9 @@ interface ChatInputProps {
   isLoading?: boolean;
   className?: string;
   onCancel?: () => void;
+  onExpandSidebar?: () => void;
+  onCollapseSidebar?: () => void;
+  isSidebarCollapsed?: boolean;
 }
 
 const useChatbotModelSelectorStore = create<{
@@ -69,10 +71,12 @@ export const ChatInput = ({
   isLoading = false,
   className,
   onCancel,
+  onExpandSidebar,
+  onCollapseSidebar,
+  isSidebarCollapsed = false,
 }: ChatInputProps) => {
   const modelSelectorRef = useRef<ModelSelectorRef>(null);
   const { selectedModel, setSelectedModel } = useChatbotModelSelector();
-  const [assetsDialogOpen, setAssetsDialogOpen] = useState(false);
 
   // 从 store 获取输入值和附件
   const { sessionInputValues, sessionAttachments, setSessionInputValue, setSessionAttachments } = useChatSessionsStore();
@@ -92,30 +96,42 @@ export const ChatInput = ({
     setSelectedModel(model);
   };
 
+  const handleToggleSidebar = () => {
+    if (isSidebarCollapsed && onExpandSidebar) {
+      onExpandSidebar();
+    } else if (!isSidebarCollapsed && onCollapseSidebar) {
+      onCollapseSidebar();
+    }
+  };
+
   const renderHeader = () => {
-    if (!usage) {
+    if (!usage && !onExpandSidebar && !onCollapseSidebar) {
       return null;
     }
     return (
       <div className="text-muted-foreground/60 flex items-center gap-2 px-2 text-xs">
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className="h-6 w-6 flex-shrink-0"
-          onClick={() => setAssetsDialogOpen(true)}
-          disabled={disabled}
-          aria-label="查看素材库"
-          title="查看素材库"
-        >
-          <FolderOpen className="h-4 w-4" />
-        </Button>
-        <div className="flex items-center gap-2">
-          <span>输入: {usage.inputTokens.toLocaleString()} tokens</span>
-          <span>输出: {usage.outputTokens.toLocaleString()} tokens</span>
-          <span>缓存输入: {usage.cachedInputTokens.toLocaleString()} tokens</span>
-          <span>缓存输出: {usage.cachedOutputTokens.toLocaleString()} tokens</span>
-        </div>
+        {/* Computer 面板展开/收起按钮 */}
+        {(onExpandSidebar || onCollapseSidebar) && (
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 flex-shrink-0"
+            onClick={handleToggleSidebar}
+            aria-label={isSidebarCollapsed ? "展开 Agent's Computer" : "收起 Agent's Computer"}
+            title={isSidebarCollapsed ? "展开 Agent's Computer" : "收起 Agent's Computer"}
+          >
+            <Monitor className="h-4 w-4" />
+          </Button>
+        )}
+        {usage && (
+          <div className="flex items-center gap-2">
+            <span>输入: {usage.inputTokens.toLocaleString()} tokens</span>
+            <span>输出: {usage.outputTokens.toLocaleString()} tokens</span>
+            <span>缓存输入: {usage.cachedInputTokens.toLocaleString()} tokens</span>
+            <span>缓存输出: {usage.cachedOutputTokens.toLocaleString()} tokens</span>
+          </div>
+        )}
       </div>
     );
   };
@@ -267,7 +283,6 @@ export const ChatInput = ({
         className={className}
       />
       <ModelSelectorDialog ref={modelSelectorRef} selectedModel={selectedModel} onModelSelect={handleModelSelect} type="language" />
-      <AssetsDialog sessionId={sessionId} open={assetsDialogOpen} onOpenChange={setAssetsDialogOpen} />
     </>
   );
 };

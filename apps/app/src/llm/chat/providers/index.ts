@@ -4,6 +4,7 @@ import { AnthropicProvider } from './anthropic';
 import { OpenRouterProvider } from './openrouter';
 import { DeepSeekProvider } from './deepseek';
 import { VercelProvider } from './vercel';
+import { VApiProvider } from './v-api';
 
 export { BaseProvider } from './base';
 export type { ProviderConfig } from './base';
@@ -19,6 +20,7 @@ const providerClasses: Record<string, new (config?: ProviderConfig) => BaseProvi
   openrouter: OpenRouterProvider,
   deepseek: DeepSeekProvider,
   vercel: VercelProvider,
+  vapi: VApiProvider,
 };
 
 export function createProvider(providerId: string, config?: ProviderConfig): BaseProvider {

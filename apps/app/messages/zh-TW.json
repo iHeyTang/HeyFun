@@ -146,7 +146,9 @@
       "taskError": "哎呀！出錯了",
       "inputTokens": "輸入",
       "completionTokens": "輸出",
-      "suggestedQuestions": "建議追問"
+      "suggestedQuestions": "建議追問",
+      "cancelledByUser": "已中斷（使用者主動取消）",
+      "cancelledBySystem": "已中斷（系統取消）"
     },
     "confirm": {
       "terminate": {

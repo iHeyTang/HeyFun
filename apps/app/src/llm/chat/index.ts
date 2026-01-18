@@ -35,6 +35,7 @@ export interface ChatHostConfig {
   deepseek?: ProviderConfig;
   google?: ProviderConfig;
   vercel?: ProviderConfig;
+  vapi?: ProviderConfig;
 }
 
 export class ChatHost {
@@ -50,6 +51,7 @@ export class ChatHost {
     if (config.deepseek) this.providerConfigs.set('deepseek', config.deepseek);
     if (config.google) this.providerConfigs.set('google', config.google);
     if (config.vercel) this.providerConfigs.set('vercel', config.vercel);
+    if (config.vapi) this.providerConfigs.set('vapi', config.vapi);
   }
 
   /**
@@ -110,6 +112,10 @@ const CHAT = new ChatHost({
   vercel: {
     apiKey: process.env.VERCEL_AI_GATEWAY_API_KEY || '',
     baseURL: process.env.VERCEL_AI_GATEWAY_BASE_URL,
+  },
+  vapi: {
+    apiKey: process.env.VAPI_API_KEY || '',
+    baseURL: process.env.VAPI_BASE_URL,
   },
 });
 
